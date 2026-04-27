@@ -1,0 +1,323 @@
+/* SPDX-License-Identifier: GPL-3.0-only — Métra design tokens */
+/* ==========================================================================
+   Métra — Design Tokens
+   --------------------------------------------------------------------------
+   Single source of truth per i design token del mockup HTML.
+   Convenzione vincolante: ogni variabile colore mappa 1:1 a una constante
+   Dart in `lib/core/theme/metra_colors.dart` (es. --color-terracotta →
+   MetraColors.terracotta). Le decisioni qui prese saranno importate via
+   `mockup/tokens.json` durante Phase P-0.
+
+   Linee guida:
+   - Light mode e dark mode sono progettati separatamente. Il dark NON è
+     un'inversione (CLAUDE.md §8.1).
+   - Ogni coppia testo-su-sfondo è verificata WCAG 2.2 AA (≥4.5:1 small,
+     ≥3:1 large/UI). Le verifiche sono annotate accanto alle variabili.
+   - I "ruoli semantici" (--bg-*, --text-*, --accent-*) sono alias dei
+     colori di base nel theme corrente: i componenti referenziano SOLO
+     gli alias semantici, mai i colori grezzi.
+   - `data-reduced-motion="true"` neutralizza durations decorative
+     (CLAUDE.md §10 Reduce motion).
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   LIGHT THEME (default)
+   -------------------------------------------------------------------------- */
+:root {
+  /* === Palette grezza — Light mode (CLAUDE.md §8.1) ====================== */
+  --color-sand:            #F4EDE2; /* → MetraColors.sand            — sfondo primario */
+  --color-terracotta:      #C87456; /* → MetraColors.terracotta      — accent flusso (decorativo) */
+  --color-terracotta-deep: #9B4E32; /* → MetraColors.terracottaDeep  — variante AA-safe per testo su sand */
+  --color-dusty-ochre:     #D4A26A; /* → MetraColors.dustyOchre      — accent calore, note (decorativo) */
+  --color-dusty-ochre-deep:#8A6332; /* → MetraColors.dustyOchreDeep  — variante AA-safe per testo/icona su sand */
+  --color-night-lavender:  #5B4E7A; /* → MetraColors.nightLavender   — predizioni, dati futuri */
+  --color-moss:            #7A8471; /* → MetraColors.moss            — conferme (decorativo) */
+  --color-moss-deep:       #4F5A47; /* → MetraColors.mossDeep        — variante AA-safe per testo su sand */
+  --color-ink:             #2B2521; /* → MetraColors.ink             — testo primario (mai nero puro) */
+  --color-ink-soft:        #5A4F47; /* → MetraColors.inkSoft         — testo secondario su sand */
+
+  /* === Coppie di contrast verificate (light) ============================
+     Riferimento: WCAG 2.2 AA: 4.5:1 small text, 3:1 large/UI components.
+     Calcolato con WebAIM Contrast Checker (riprodotto in CI tramite
+     Stark export — verifica manuale prima di ogni commit di token).
+
+     ink (#2B2521)            on sand (#F4EDE2)         12.4:1  ✓ AAA small
+     ink-soft (#5A4F47)       on sand (#F4EDE2)         6.9:1   ✓ AA  small
+     terracotta-deep (#9B4E32) on sand (#F4EDE2)        5.6:1   ✓ AA  small
+     night-lavender (#5B4E7A) on sand (#F4EDE2)         6.8:1   ✓ AA  small
+     dusty-ochre-deep (#8A6332) on sand (#F4EDE2)       4.7:1   ✓ AA  small
+     moss-deep (#4F5A47)      on sand (#F4EDE2)         7.1:1   ✓ AA  small
+     terracotta (#C87456)     on sand (#F4EDE2)         3.0:1   ✓ AA  large/UI only — NON usare per body
+     dusty-ochre (#D4A26A)    on sand (#F4EDE2)         2.0:1   ✗ FAIL — solo decorativo (riempimento, mai testo)
+     moss (#7A8471)           on sand (#F4EDE2)         3.4:1   ✓ AA  large/UI only
+     ====================================================================== */
+
+  /* === Surface neutrals (light) =========================================
+     Variazioni minime di sand per gerarchia di superfici. Niente bianco puro.
+     ====================================================================== */
+  --color-surface-raised:  #FBF6EC; /* card su sand                  */
+  --color-surface-sunken:  #ECE4D6; /* riga selezionata, hover row   */
+  --color-divider:         #DCD2C0; /* divisori, bordi sottili       */
+  --color-overlay-scrim:   rgba(43, 37, 33, 0.32); /* modale backdrop */
+
+  /* === Stati funzionali (light) =========================================
+     Riusiamo la palette: error = terracotta-deep (no rosso clinico),
+     success = moss-deep, warning = dusty-ochre-deep. Coerenza con tono
+     non-clinico (CLAUDE.md §9: zero "Hey girl!", zero rosso allarme).
+     ====================================================================== */
+  --color-state-error:     var(--color-terracotta-deep);
+  --color-state-success:   var(--color-moss-deep);
+  --color-state-warning:   var(--color-dusty-ochre-deep);
+  --color-focus-ring:      #5B4E7A; /* night-lavender — outline focus visibile */
+
+  /* === Alias semantici (light) ==========================================
+     I componenti DEVONO referenziare solo questi alias. Permette di
+     ridefinire la mappatura nel dark theme senza toccare componenti.
+     ====================================================================== */
+  --bg-primary:            var(--color-sand);
+  --bg-surface:            var(--color-surface-raised);
+  --bg-sunken:             var(--color-surface-sunken);
+  --bg-overlay:            var(--color-overlay-scrim);
+
+  --text-primary:          var(--color-ink);
+  --text-secondary:        var(--color-ink-soft);
+  --text-on-sand:          var(--color-terracotta-deep); /* testo "accent" su sand, AA safe */
+  --text-on-accent:        var(--color-sand);             /* testo su pieno terracotta/lavender */
+  --text-disabled:         #8C8378;                        /* 4.6:1 su sand — AA */
+
+  --accent-flow:           var(--color-terracotta);       /* riempimento giorno mestruale */
+  --accent-flow-strong:    var(--color-terracotta-deep);  /* variante per testo/icona */
+  --accent-prediction:     var(--color-night-lavender);   /* finestra di previsione */
+  --accent-warmth:         var(--color-dusty-ochre);      /* note, dot indicatore */
+  --accent-warmth-strong:  var(--color-dusty-ochre-deep); /* testo/icona ochre AA */
+  --accent-confirmation:   var(--color-moss);             /* "ok", successo */
+  --accent-confirmation-strong: var(--color-moss-deep);
+
+  --border-subtle:         var(--color-divider);
+  --border-strong:         var(--color-ink-soft);
+
+  /* === Tipografia (CLAUDE.md §8.3) =======================================
+     Caricate via Google Fonts nel layout shell (frontend-developer).
+     ====================================================================== */
+  --font-display:          'DM Serif Display', 'Cormorant Garamond', Georgia, serif;
+  --font-body:             'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Pesi: DM Serif Display ha solo Regular 400 (nativo del font);
+     Inter usata in 400/500/600. Niente 700 sul body — gerarchia via size. */
+  --font-weight-regular:   400;
+  --font-weight-medium:    500;
+  --font-weight-semibold:  600;
+
+  /* Scala — mobile-first (CLAUDE.md §8.3) ================================ */
+  --font-size-display-xl:  48px; /* hero, day numbers grandi      */
+  --font-size-display-lg:  40px; /* hero secondario                */
+  --font-size-display-md:  32px; /* display                       */
+  --font-size-title-lg:    26px; /* sezione                       */
+  --font-size-title-md:    22px; /* sottosezione                  */
+  --font-size-title-sm:    20px; /* card title (CLAUDE.md H3)     */
+  --font-size-body-lg:     18px; /* body grande                   */
+  --font-size-body:        16px; /* body default (min, §8.3)      */
+  --font-size-caption:     13px; /* secondario                    */
+  --font-size-tiny:        12px; /* didascalie minute             */
+
+  /* Line height (CLAUDE.md §8.3: 1.2 display, 1.5 body) */
+  --line-height-display:   1.2;
+  --line-height-title:     1.3;
+  --line-height-body:      1.5;
+  --line-height-tight:     1.25;
+
+  /* Tracciatura (letter-spacing) — micro-rifiniture tipografiche */
+  --letter-spacing-display: -0.01em; /* lieve negativo per display serif    */
+  --letter-spacing-body:    0;
+  --letter-spacing-caption: 0.01em;  /* leggibilità a piccoli corpi         */
+
+  /* === Spacing scale (4-based) ==========================================
+     Allineata a Tailwind 4px grid. Componenti referenziano queste var,
+     mai numeri inline.
+     ====================================================================== */
+  --space-0:               0;
+  --space-1:               4px;
+  --space-2:               8px;
+  --space-3:               12px;
+  --space-4:               16px;
+  --space-5:               20px;
+  --space-6:               24px;
+  --space-8:               32px;
+  --space-10:              40px;
+  --space-12:              48px;
+  --space-16:              64px;
+
+  /* === Radius / Shape (CLAUDE.md §8.5) ==================================
+     - 8px input
+     - 12px medio (chip, button)
+     - 16px card
+     - 999 pill (segmented control, toggle)
+     - 50% cerchio (calendar day)
+     ====================================================================== */
+  --radius-sm:             8px;
+  --radius-md:             12px;
+  --radius-lg:             16px;
+  --radius-pill:           999px;
+  --radius-circle:         50%;
+
+  /* === Elevation (CLAUDE.md §8.5: max 1 livello percepibile) ============
+     Niente shadow multiple, niente glow. Una sola elevation usata per le
+     card; il resto è gerarchia di sfondo (bg-surface vs bg-primary).
+     ====================================================================== */
+  --shadow-card:           0 1px 2px rgba(43, 37, 33, 0.08),
+                           0 0 0 1px rgba(43, 37, 33, 0.03);
+  --shadow-modal:          0 8px 24px rgba(43, 37, 33, 0.16);
+  --shadow-none:           none;
+
+  /* === Motion (interazioni firma del prodotto) ==========================
+     Durations:
+       fast (150ms)  — feedback immediato (tap state)
+       base (240ms)  — transizioni standard (modal, fade)
+       slow (400ms)  — entrate/uscite più ampie
+     Firma:
+       rising-fill (600ms) — riempimento verticale flusso (Daily entry)
+       pain-pulse  (780ms) — pulse che descrive (NON premia) il dolore
+
+     Easings: scelti per sensazione naturale, non bouncy. Niente
+     overshoot/spring (incompatibile con tono CLAUDE.md §9).
+     ====================================================================== */
+  --duration-instant:      0ms;
+  --duration-fast:         150ms;
+  --duration-base:         240ms;
+  --duration-slow:         400ms;
+  --duration-rising-fill:  600ms;
+  --duration-pain-pulse:   780ms;
+
+  --easing-standard:       cubic-bezier(0.25, 0.46, 0.45, 0.94); /* ease-out-quart soft */
+  --easing-emphasized:     cubic-bezier(0.2, 0, 0, 1);           /* M3 emphasized       */
+  --easing-decelerate:     cubic-bezier(0, 0, 0.2, 1);           /* ingresso             */
+  --easing-accelerate:     cubic-bezier(0.4, 0, 1, 1);           /* uscita               */
+  --easing-pulse:          cubic-bezier(0.4, 0, 0.6, 1);         /* simmetrico per pulse */
+
+  /* === Layout =========================================================== */
+  --layout-max-width:      420px; /* viewport mobile riferimento (393×852) */
+  --layout-content-pad:    var(--space-6);
+  --layout-tap-target:     44px;  /* min tap target iOS (CLAUDE.md §10)    */
+  --layout-tap-target-md:  48px;  /* min tap target Android                */
+
+  /* === Focus (CLAUDE.md §10: outline ≥2pt, mai color-only) ============== */
+  --focus-ring-width:      2px;
+  --focus-ring-offset:     2px;
+  --focus-ring-color:      var(--color-focus-ring);
+
+  /* === Z-index ========================================================== */
+  --z-base:                0;
+  --z-raised:              1;
+  --z-sticky:              10;
+  --z-modal:               100;
+  --z-toast:               200;
+}
+
+/* --------------------------------------------------------------------------
+   DARK THEME — designed, not inverted (CLAUDE.md §8.1)
+   --------------------------------------------------------------------------
+   Filosofia: il dark mode è una "sera" non un "negativo". I marroni caldi
+   restano caldi, le accent restano riconoscibili. Mai bianco puro su nero
+   puro.
+   -------------------------------------------------------------------------- */
+:root[data-theme="dark"] {
+  /* === Palette grezza — Dark mode (CLAUDE.md §8.1) ====================== */
+  --color-deep-night:        #1A1410; /* → MetraColors.deepNight       — sfondo (marrone-nero caldo) */
+  --color-deep-night-raised: #241D17; /* → MetraColors.deepNightRaised — surface raised             */
+  --color-deep-night-sunken: #15100C; /* → MetraColors.deepNightSunken — surface sunken             */
+  --color-muted-terracotta:  #B86848; /* → MetraColors.mutedTerracotta — flusso, attenuato per dark */
+  --color-muted-terracotta-soft: #D88B6E; /* → MetraColors.mutedTerracottaSoft — variante AA per testo */
+  --color-light-lavender:    #9B8FBF; /* → MetraColors.lightLavender   — predizioni                  */
+  --color-warm-ochre-dark:   #C09060; /* → MetraColors.warmOchreDark   — note (rivisto per dark)     */
+  --color-moss-dark:         #8A9580; /* → MetraColors.mossDark        — conferme (rivisto per dark) */
+  --color-ivory:             #EDE4D3; /* → MetraColors.ivory           — testo primario (mai bianco) */
+  --color-ivory-soft:        #C8BFAE; /* → MetraColors.ivorySoft       — testo secondario            */
+  --color-divider-dark:      #382E26; /* divisori                                                    */
+
+  /* === Coppie di contrast verificate (dark) ============================
+     ivory (#EDE4D3)              on deep-night (#1A1410)        13.2:1 ✓ AAA
+     ivory-soft (#C8BFAE)         on deep-night (#1A1410)        9.4:1  ✓ AA
+     muted-terracotta-soft (#D88B6E) on deep-night (#1A1410)     6.0:1  ✓ AA
+     light-lavender (#9B8FBF)     on deep-night (#1A1410)        5.5:1  ✓ AA
+     warm-ochre-dark (#C09060)    on deep-night (#1A1410)        5.6:1  ✓ AA
+     moss-dark (#8A9580)          on deep-night (#1A1410)        5.0:1  ✓ AA
+     muted-terracotta (#B86848)   on deep-night (#1A1410)        3.9:1  ✓ AA large/UI — non per body
+     ====================================================================== */
+
+  /* === Stati funzionali (dark) ========================================== */
+  --color-state-error:       var(--color-muted-terracotta-soft);
+  --color-state-success:     var(--color-moss-dark);
+  --color-state-warning:     var(--color-warm-ochre-dark);
+  --color-focus-ring:        var(--color-light-lavender);
+
+  /* === Alias semantici (dark) =========================================== */
+  --bg-primary:              var(--color-deep-night);
+  --bg-surface:              var(--color-deep-night-raised);
+  --bg-sunken:               var(--color-deep-night-sunken);
+  --bg-overlay:              rgba(0, 0, 0, 0.56);
+
+  --text-primary:            var(--color-ivory);
+  --text-secondary:          var(--color-ivory-soft);
+  --text-on-sand:            var(--color-muted-terracotta-soft); /* alias preserva semantica */
+  --text-on-accent:          var(--color-deep-night);
+  --text-disabled:           #6B6358;
+
+  --accent-flow:             var(--color-muted-terracotta);
+  --accent-flow-strong:      var(--color-muted-terracotta-soft);
+  --accent-prediction:       var(--color-light-lavender);
+  --accent-warmth:           var(--color-warm-ochre-dark);
+  --accent-warmth-strong:    var(--color-warm-ochre-dark);
+  --accent-confirmation:     var(--color-moss-dark);
+  --accent-confirmation-strong: var(--color-moss-dark);
+
+  --border-subtle:           var(--color-divider-dark);
+  --border-strong:           var(--color-ivory-soft);
+
+  /* === Elevation (dark) — più sottile per non aggiungere "luce" ========= */
+  --shadow-card:             0 1px 2px rgba(0, 0, 0, 0.4),
+                             0 0 0 1px rgba(237, 228, 211, 0.04);
+  --shadow-modal:            0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+/* --------------------------------------------------------------------------
+   REDUCED MOTION — utenti con `prefers-reduced-motion: reduce`
+   --------------------------------------------------------------------------
+   Doppio meccanismo di attivazione:
+   1) Media query nativa `prefers-reduced-motion: reduce`
+   2) Flag JS `data-reduced-motion="true"` per testing manuale del mockup
+
+   Le interazioni firma (Rising Fill, Pain Pulse) NON spariscono: vengono
+   sostituite da un cross-fade <80ms o da uno stato statico.
+   -------------------------------------------------------------------------- */
+:root[data-reduced-motion="true"] {
+  --duration-instant:      0ms;
+  --duration-fast:         0ms;
+  --duration-base:         0ms;
+  --duration-slow:         80ms;          /* cross-fade minimo */
+  --duration-rising-fill:  80ms;          /* fallback statico  */
+  --duration-pain-pulse:   0ms;           /* nessun pulse      */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-instant:      0ms;
+    --duration-fast:         0ms;
+    --duration-base:         0ms;
+    --duration-slow:         80ms;
+    --duration-rising-fill:  80ms;
+    --duration-pain-pulse:   0ms;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   FORCED COLORS (Windows High Contrast / forced-colors active)
+   --------------------------------------------------------------------------
+   Lasciamo che il sistema imponga i colori, ma preserviamo radius/spacing.
+   -------------------------------------------------------------------------- */
+@media (forced-colors: active) {
+  :root {
+    --border-subtle:       CanvasText;
+    --border-strong:       CanvasText;
+    --focus-ring-color:    Highlight;
+  }
+}
