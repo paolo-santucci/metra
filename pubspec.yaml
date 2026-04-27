@@ -1,19 +1,70 @@
 name: metra
-description: "Métra — privacy-first, local-first menstrual cycle tracker."
-publish_to: 'none'
+description: "Métra — privacy-first menstrual cycle tracker."
+publish_to: none
 version: 0.1.0+1
 
 environment:
-  sdk: ^3.11.5
+  sdk: ">=3.3.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # Routing
+  go_router: ^14.2.7
+
+  # Fonts
+  google_fonts: ^6.2.1
+
+  # Local DB (added in P-0b)
+  # drift: ^2.18.0
+  # drift_flutter: ^0.2.0
+
+  # DB encryption (added in P-0b)
+  # sqlcipher_flutter_libs: ^0.5.4
+
+  # Cryptography (added in P-0b)
+  # cryptography: ^2.7.0
+
+  # Keychain (added in P-0b)
+  # flutter_secure_storage: ^9.2.2
+
+  # Charts (added in P-2)
+  # fl_chart: ^0.68.0
+
+  # Notifications (added in P-3)
+  # flutter_local_notifications: ^17.2.2
+  # flutter_timezone: ^3.0.0
+
+  # Device calendar (added in P-5)
+  # device_calendar: ^4.3.1
+
+  # Cloud sync auth (added in P-6)
+  # google_sign_in: ^6.2.1
+  # googleapis: ^13.2.0
+  # http: ^1.2.2
+
+  # Export/share (added in P-5)
+  # file_picker: ^8.1.2
+  # share_plus: ^10.0.2
+  # csv: ^6.0.0
+
+  # i18n
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^6.0.0
+  flutter_lints: ^4.0.0
+  riverpod_generator: ^2.4.3
+  build_runner: ^2.4.11
 
 flutter:
   uses-material-design: true
+  generate: true
