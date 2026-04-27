@@ -68,5 +68,21 @@ void main() {
     test('terracotta on sand is large-text-only (3.0:1)', () {
       expect(MetraColors.light.terracotta, isNot(equals(MetraColors.light.terracottaDeep)));
     });
+
+    test('light bgOverlay maps to overlayScrim', () {
+      expect(MetraColors.light.bgOverlay, MetraColors.light.overlayScrim);
+    });
+
+    test('dark bgOverlay maps to overlayScrim', () {
+      expect(MetraColors.dark.bgOverlay, MetraColors.dark.overlayScrim);
+    });
+
+    test('light textDisabledColor maps to textDisabled primitive', () {
+      expect(MetraColors.light.textDisabledColor, const Color(0xFF8C8378));
+    });
+
+    test('dark textDisabledColor maps to textDisabled primitive', () {
+      expect(MetraColors.dark.textDisabledColor, const Color(0xFF6B6358));
+    });
   });
 }

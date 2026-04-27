@@ -62,6 +62,8 @@ final class _LightPalette {
   Color get stateSuccess       => mossDeep;
   Color get stateWarning       => dustyOchreDeep;
   Color get focusRing          => nightLavender;
+  Color get bgOverlay          => overlayScrim;
+  Color get textDisabledColor  => textDisabled;
 }
 
 @immutable
@@ -105,6 +107,8 @@ final class _DarkPalette {
   Color get stateSuccess       => mossDark;
   Color get stateWarning       => warmOchreDark;
   Color get focusRing          => lightLavender;
+  Color get bgOverlay          => overlayScrim;
+  Color get textDisabledColor  => textDisabled;
 }
 
 abstract final class MetraColors {
