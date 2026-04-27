@@ -1,4 +1,6 @@
-// Copyright (C) 2026  Paolo Santucci
+#!/usr/bin/env bash
+# Stamps GPL-3.0 header on Dart files missing it.
+HEADER="// Copyright (C) 2026  Paolo Santucci
 //
 // This file is part of Métra.
 //
@@ -14,24 +16,11 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
+"
 
-import 'package:flutter/material.dart';
-
-void main() {
-  runApp(const MainApp());
-}
-
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
-        ),
-      ),
-    );
-  }
-}
+find lib test -name "*.dart" 2>/dev/null | while read -r file; do
+  if ! head -1 "$file" | grep -q "Copyright"; then
+    echo "Stamping $file"
+    printf '%s\n' "$HEADER" | cat - "$file" > /tmp/metra_hdr && mv /tmp/metra_hdr "$file"
+  fi
+done
