@@ -1,0 +1,715 @@
+/* SPDX-License-Identifier: GPL-3.0-only — Métra component styles */
+/* ==========================================================================
+   Métra — Componenti astratti
+   --------------------------------------------------------------------------
+   Stili dei componenti riusabili. Niente schermate qui (territorio W2).
+   Tutti i componenti referenziano SOLO alias semantici (--bg-*, --text-*,
+   --accent-*, --border-*) — mai colori grezzi. Convenzione BEM pura:
+   block__element--modifier.
+
+   Mappatura Flutter target documentata in COMPONENTS_SPEC.md.
+
+   Vincoli A11y (CLAUDE.md §10):
+   - Hit area minima 44×44pt (iOS) / 48×48dp (Android). Quando l'elemento
+     visivo è più piccolo, la hit area è estesa via ::before invisibile.
+   - Focus visibile con outline ≥2pt, MAI color-only.
+   - Stati distinguibili senza colore (forma + presenza/assenza).
+   ========================================================================== */
+
+/* ==========================================================================
+   RESET MINIMO (limitato a quanto serve ai componenti qui)
+   ========================================================================== */
+.btn,
+.chip,
+.segmented-control__option,
+.input-text,
+.input-textarea {
+  font-family: var(--font-body);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  color: inherit;
+  margin: 0;
+}
+
+/* ==========================================================================
+   .btn — Pulsante base
+   --------------------------------------------------------------------------
+   Modifier: --primary, --secondary, --ghost, --danger, --block (full width).
+   Stati: default, hover, active, focus-visible, disabled, loading.
+   Mapping Flutter: ButtonPrimary / ButtonSecondary / ButtonGhost.
+   ========================================================================== */
+.btn {
+  /* Layout */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--layout-tap-target);          /* 44pt — CLAUDE.md §10 */
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+
+  /* Tipografia */
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-body);
+  letter-spacing: 0;
+  text-decoration: none;
+  white-space: nowrap;
+
+  /* Interazione */
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color var(--duration-fast) var(--easing-standard),
+    color            var(--duration-fast) var(--easing-standard),
+    border-color     var(--duration-fast) var(--easing-standard),
+    transform        var(--duration-fast) var(--easing-standard);
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.btn:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.5;       /* aggiunge anche un cambio percepibile non-color */
+  pointer-events: none;
+}
+
+/* --- Primary ------------------------------------------------------------ */
+/* Riempimento terracotta-deep (variante AA) per garantire contrast del
+   testo "sand" sul pulsante. La terracotta "decorativa" #C87456 NON
+   passerebbe il contrast sul testo sand a corpi normali. */
+.btn--primary {
+  background: var(--accent-flow-strong);
+  color: var(--text-on-accent);
+  border-color: var(--accent-flow-strong);
+}
+.btn--primary:hover { background: var(--color-ink); border-color: var(--color-ink); }
+.btn--primary:active { transform: scale(0.98); }
+
+/* --- Secondary ---------------------------------------------------------- */
+/* Outline su sand. Il bordo usa border-strong per garantire 3:1 UI. */
+.btn--secondary {
+  background: transparent;
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+.btn--secondary:hover { background: var(--bg-sunken); }
+.btn--secondary:active { transform: scale(0.98); }
+
+/* --- Ghost -------------------------------------------------------------- */
+/* Solo testo. Hit area piena, ma nessun bordo. Usato per azioni terziarie. */
+.btn--ghost {
+  background: transparent;
+  color: var(--text-on-sand);
+  border-color: transparent;
+  padding-left: var(--space-3);
+  padding-right: var(--space-3);
+}
+.btn--ghost:hover { background: var(--bg-sunken); }
+
+/* --- Danger ------------------------------------------------------------- */
+/* Tono di richiamo non-clinico: terracotta-deep, non rosso allarme. */
+.btn--danger {
+  background: transparent;
+  color: var(--color-state-error);
+  border-color: var(--color-state-error);
+}
+.btn--danger:hover { background: var(--bg-sunken); }
+
+/* --- Block (full width) ------------------------------------------------- */
+.btn--block { width: 100%; }
+
+/* ==========================================================================
+   .chip — Chip selezionabile (toggle simbolico, multi-select)
+   --------------------------------------------------------------------------
+   Esempi d'uso: "Crampi" / "Mal di schiena" in Daily entry; toggle filtri.
+   Stati distinguibili senza colore: selected ha icona check + bordo pieno,
+   default ha bordo sottile.
+   Mapping Flutter: ChoiceChipMetra.
+   ========================================================================== */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 36px;                              /* visivo */
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  user-select: none;
+  position: relative;                            /* per ::before hit-area */
+  transition:
+    background-color var(--duration-fast) var(--easing-standard),
+    border-color     var(--duration-fast) var(--easing-standard),
+    color            var(--duration-fast) var(--easing-standard);
+}
+
+/* Estensione hit area a 44×44pt (visivo è 36pt) — CLAUDE.md §10 */
+.chip::before {
+  content: "";
+  position: absolute;
+  inset: -4px -4px;                              /* 8 + 36 = 44 */
+  border-radius: inherit;
+}
+
+.chip:hover { background: var(--bg-sunken); }
+.chip:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Selected: bordo pieno + check icon (icona renderizzata dal frontend
+   come <svg> inline o ::before glyph; lo stato è leggibile senza colore). */
+.chip--selected {
+  background: var(--accent-warmth);
+  border-color: var(--accent-warmth-strong);
+  color: var(--color-ink);
+  font-weight: var(--font-weight-semibold);
+}
+.chip--selected:hover { background: var(--accent-warmth-strong); color: var(--text-on-accent); }
+
+/* Variante predizione (lavanda, per chip "previsto") */
+.chip--prediction {
+  background: transparent;
+  border-color: var(--accent-prediction);
+  color: var(--accent-prediction);
+}
+
+.chip:disabled,
+.chip[aria-disabled="true"] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   .list-row — Riga di lista (Settings, Timeline)
+   --------------------------------------------------------------------------
+   Composizione: leading icon (opzionale) + content (title + caption) +
+   trailing (chevron, valore, switch).
+   Mapping Flutter: ListRowMetra.
+   ========================================================================== */
+.list-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: var(--layout-tap-target-md);       /* 48dp */
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--easing-standard);
+}
+
+.list-row:last-child { border-bottom: none; }
+.list-row:hover { background: var(--bg-sunken); }
+.list-row:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: calc(var(--focus-ring-offset) * -1); /* inset, non rompe layout */
+}
+
+.list-row__leading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.list-row__content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;                                  /* permette truncate */
+}
+
+.list-row__title {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  line-height: var(--line-height-body);
+}
+
+.list-row__caption {
+  font-size: var(--font-size-caption);
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+.list-row__trailing {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-secondary);
+  font-size: var(--font-size-caption);
+  flex-shrink: 0;
+}
+
+.list-row--header {
+  background: transparent;
+  border-bottom: none;
+  cursor: default;
+  pointer-events: none;
+}
+.list-row--header .list-row__title {
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ==========================================================================
+   .segmented-control — Toggle a 2-3 opzioni (Timeline ↔ Tabella)
+   --------------------------------------------------------------------------
+   Pattern iOS-friendly. Usa pill radius e fondo "sunken" con il segmento
+   attivo in surface raised.
+   Mapping Flutter: SegmentedControlMetra.
+   ========================================================================== */
+.segmented-control {
+  display: inline-flex;
+  padding: 2px;
+  background: var(--bg-sunken);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-subtle);
+  gap: 0;
+}
+
+.segmented-control__option {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  min-width: var(--layout-tap-target);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-base) var(--easing-standard),
+    color            var(--duration-base) var(--easing-standard);
+}
+
+.segmented-control__option:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.segmented-control__option--active {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-weight: var(--font-weight-semibold);
+  box-shadow: var(--shadow-card);
+}
+
+.segmented-control__option:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   .day-circle — Cella giorno del calendario (CLAUDE.md §8.2)
+   --------------------------------------------------------------------------
+   Encoding semantico, COLOR-BLIND SAFE:
+   - flow-solid:    cerchio pieno terracotta + giorno in "ivory"
+   - flow-light:    cerchio outline terracotta + giorno in terracotta-deep
+   - prediction:    cerchio outline tratteggiato lavanda (non-color cue)
+   - has-notes:     dot ochre 4×4 sotto il cerchio (non-color cue)
+   - today:         thin ring (non fill) attorno al cerchio
+   - selected:      ring spesso lavanda
+   - empty:         solo numero giorno
+
+   La hit area minima è 44×44pt (CLAUDE.md §10). Il cerchio visibile può
+   essere 36-40pt; ::before estende l'area cliccabile.
+
+   Mapping Flutter: CalendarDayWidget.
+   ========================================================================== */
+.day-circle {
+  /* Container quadrato: contiene il cerchio + dot di sotto */
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: var(--layout-tap-target);               /* 44pt */
+  height: calc(var(--layout-tap-target) + 8px);  /* spazio per dot ochre */
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-display);
+  color: var(--text-primary);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Cerchio visivo */
+.day-circle__shape {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-circle);
+  border: 1.5px solid transparent;
+  background: transparent;
+  font-family: var(--font-display);
+  font-size: 18px;
+  line-height: 1;
+  color: inherit;
+  transition:
+    background-color var(--duration-base) var(--easing-standard),
+    border-color     var(--duration-base) var(--easing-standard),
+    color            var(--duration-base) var(--easing-standard);
+}
+
+/* Numero del giorno */
+.day-circle__label {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Dot per "ha note/sintomi" — sotto il cerchio (non-color cue: presenza/assenza) */
+.day-circle__dot {
+  width: 4px;
+  height: 4px;
+  border-radius: var(--radius-circle);
+  background: transparent;
+  margin-top: 4px;
+}
+
+/* Focus visibile: ring lavanda inset attorno al cerchio */
+.day-circle:focus-visible .day-circle__shape {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* --- Modifier: --flow-solid (mestruazione confermata) ------------------- */
+/* Forma: cerchio PIENO. Distintivo senza colore. */
+.day-circle--flow-solid .day-circle__shape {
+  background: var(--accent-flow);
+  border-color: var(--accent-flow);
+  color: var(--color-sand); /* etichetta sul pieno terracotta */
+}
+
+/* In dark mode il "sand" su muted-terracotta resta leggibile, ma usiamo
+   l'alias text-on-accent per coerenza con la palette dark. */
+:root[data-theme="dark"] .day-circle--flow-solid .day-circle__shape {
+  color: var(--color-ivory);
+}
+
+/* --- Modifier: --flow-light (spotting / luce) -------------------------- */
+/* Forma: cerchio OUTLINE. Riconoscibile a colpo d'occhio anche b/n. */
+.day-circle--flow-light .day-circle__shape {
+  background: transparent;
+  border-color: var(--accent-flow);
+  border-width: 2px;
+  color: var(--accent-flow-strong);
+}
+
+/* --- Modifier: --prediction (finestra prevista) ----------------------- */
+/* Forma: cerchio OUTLINE TRATTEGGIATO. Tratteggio = "non ancora reale"
+   (cue NON di colore, comprensibile anche in monocromatico). */
+.day-circle--prediction .day-circle__shape {
+  background: transparent;
+  border-color: var(--accent-prediction);
+  border-style: dashed;
+  border-width: 1.5px;
+  color: var(--accent-prediction);
+}
+
+/* --- Modifier: --has-notes (dot ochre sotto) -------------------------- */
+/* Cue di forma (presenza dot), indipendente dal cerchio. */
+.day-circle--has-notes .day-circle__dot {
+  background: var(--accent-warmth-strong);
+}
+
+/* --- Modifier: --today (anello sottile) ------------------------------- */
+/* Anello esterno sottile. NON un fill — preserva il contenuto semantico
+   sottostante (today può coesistere con flow-solid, ecc.). */
+.day-circle--today .day-circle__shape {
+  box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 3.5px var(--text-primary);
+}
+
+/* --- Modifier: --selected (focus persistente, non solo focus tastiera) - */
+.day-circle--selected .day-circle__shape {
+  box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 4px var(--accent-prediction);
+}
+
+/* --- Modifier: --disabled (giorni futuri non interagibili) ------------ */
+.day-circle--disabled {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Out-of-month (giorni di riempimento ai bordi del mese) */
+.day-circle--out-of-month .day-circle__label {
+  color: var(--text-disabled);
+}
+
+/* ==========================================================================
+   .input-text — Input testuale singola riga
+   --------------------------------------------------------------------------
+   Mapping Flutter: TextFieldMetra.
+   ========================================================================== */
+.input-text {
+  display: block;
+  width: 100%;
+  min-height: var(--layout-tap-target);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  transition:
+    border-color var(--duration-fast) var(--easing-standard),
+    background-color var(--duration-fast) var(--easing-standard);
+}
+
+.input-text::placeholder {
+  color: var(--text-secondary);
+  opacity: 1;                                    /* override Firefox */
+}
+
+.input-text:hover { border-color: var(--border-strong); }
+
+.input-text:focus,
+.input-text:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  border-color: var(--focus-ring-color);
+}
+
+.input-text:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--bg-sunken);
+}
+
+.input-text--error {
+  border-color: var(--color-state-error);
+}
+.input-text--error:focus,
+.input-text--error:focus-visible {
+  outline-color: var(--color-state-error);
+  border-color: var(--color-state-error);
+}
+
+/* ==========================================================================
+   .input-textarea — Input multilinea (note)
+   --------------------------------------------------------------------------
+   Mapping Flutter: TextFieldMetra (maxLines: null).
+   ========================================================================== */
+.input-textarea {
+  display: block;
+  width: 100%;
+  min-height: 96px;
+  padding: var(--space-4);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  resize: vertical;
+  transition:
+    border-color var(--duration-fast) var(--easing-standard);
+}
+
+.input-textarea::placeholder { color: var(--text-secondary); opacity: 1; }
+.input-textarea:hover  { border-color: var(--border-strong); }
+.input-textarea:focus,
+.input-textarea:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  border-color: var(--focus-ring-color);
+}
+.input-textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--bg-sunken);
+}
+
+/* ==========================================================================
+   .section-title — Titolo di sezione
+   --------------------------------------------------------------------------
+   Variant: --display per hero (DM Serif Display 32-48), default per
+   sezioni interne. Mai grassetto in body — gerarchia tramite font + size.
+   Mapping Flutter: SectionTitleMetra.
+   ========================================================================== */
+.section-title {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--font-size-title-md);
+  line-height: var(--line-height-title);
+  letter-spacing: var(--letter-spacing-display);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-3) 0;
+}
+
+.section-title--display {
+  font-size: var(--font-size-display-md);
+  line-height: var(--line-height-display);
+  margin-bottom: var(--space-4);
+}
+
+.section-title--lg {
+  font-size: var(--font-size-title-lg);
+}
+
+.section-title__caption {
+  display: block;
+  font-family: var(--font-body);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-regular);
+  color: var(--text-secondary);
+  letter-spacing: var(--letter-spacing-caption);
+  margin-top: var(--space-1);
+}
+
+/* ==========================================================================
+   .privacy-banner — Banner inline che ricorda la natura local-first
+   --------------------------------------------------------------------------
+   Compare in onboarding e in Settings → Backup. Tono pacato, non allarme.
+   Forma: card bg-sunken con bordo lavanda sottile. Niente icone-emoji.
+   Mapping Flutter: PrivacyBannerMetra.
+   ========================================================================== */
+.privacy-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--bg-sunken);
+  border: 1px solid var(--accent-prediction);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+}
+
+.privacy-banner__icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  color: var(--accent-prediction);
+  margin-top: 2px;
+}
+
+.privacy-banner__content { flex: 1; min-width: 0; }
+
+.privacy-banner__title {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--font-size-title-sm);
+  line-height: var(--line-height-title);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-1) 0;
+}
+
+.privacy-banner__body {
+  display: block;
+  font-size: var(--font-size-caption);
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.privacy-banner--inline {
+  /* Variante più discreta, senza bordo, per usi a metà schermata */
+  border: none;
+  background: transparent;
+  padding: var(--space-2) 0;
+}
+
+/* ==========================================================================
+   .wordmark — Logotipo "Mētra"
+   --------------------------------------------------------------------------
+   CLAUDE.md §1 + §8.3:
+   - Il NOME del prodotto è "Métra" (è acuto). Usalo in <title>, body,
+     ARIA label, codice, commit message.
+   - Il WORDMARK tipografico è "Mētra" (e con macron). Va usato SOLO nei
+     titoli display in DM Serif Display (hero, splash, header del prodotto).
+   - La macron NON deve essere il glifo Unicode `ē` (U+0113) — sarebbe
+     visivamente diverso dalla "e" del DM Serif Display. È un elemento
+     d'identità: qui è un pseudo-elemento posizionato sopra la "e",
+     calibrato per coprire la x-height senza toccare le serif.
+   - L'accessibilità legge SEMPRE "Métra" (aria-label sul wrapper, span
+     interni con aria-hidden).
+
+   Mapping Flutter target: WordmarkWidget (lib/core/widgets/wordmark.dart) —
+   in Dart la macron sarà un Container Positioned sopra il glifo "e".
+   ========================================================================== */
+.wordmark {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-weight: var(--font-weight-regular);
+  font-size: var(--font-size-display-xl);
+  line-height: var(--line-height-display);
+  letter-spacing: var(--letter-spacing-display);
+  color: var(--text-primary);
+  font-variant-ligatures: none;
+}
+
+/* Modifier per scale tipografiche più piccole. */
+.wordmark--lg { font-size: var(--font-size-display-lg); }
+.wordmark--md { font-size: var(--font-size-display-md); }
+.wordmark--sm { font-size: var(--font-size-title-lg); }
+
+/* Inversione cromatica (es. su sfondo accent pieno). */
+.wordmark--on-accent { color: var(--text-on-accent); }
+.wordmark__svg { display: block; }
+
+/* Linea terracotta: si disegna una volta al caricamento, come si traccia una riga su carta */
+@keyframes wordmark-draw {
+  from { stroke-dashoffset: 40; }
+  to   { stroke-dashoffset: 0; }
+}
+
+.wordmark__accent {
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+  animation: wordmark-draw 550ms 200ms cubic-bezier(0.22, 0, 0.1, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wordmark__accent {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ==========================================================================
+   UTILITY MINIME (solo le strettamente necessarie ai componenti)
+   --------------------------------------------------------------------------
+   Niente sistema utility-first qui — il frontend-developer le aggiungerà
+   in screens.css se servono.
+   ========================================================================== */
+.is-visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0);
+  white-space: nowrap; border: 0;
+}

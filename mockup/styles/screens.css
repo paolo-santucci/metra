@@ -1,0 +1,1687 @@
+/* SPDX-License-Identifier: GPL-3.0-only — Métra mockup */
+
+/* ==========================================================================
+   Métra — Stili delle 8 schermate (Wave 2)
+   --------------------------------------------------------------------------
+   Questo file dipende da tokens.css e components.css già caricati.
+   Usa SOLO alias semantici (--bg-*, --text-*, --accent-*, ecc.).
+   Mai hex diretti. Mai !important (eccetto override mirati e documentati).
+   ========================================================================== */
+
+/* ==========================================================================
+   RESET SCREEN BASE
+   Le schermate usano flex column senza padding di default per poter
+   gestire header sticky + area scorrevole separatamente.
+   ========================================================================== */
+
+.screen {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Aree scrollabili all'interno delle schermate */
+.screen__scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.screen__scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* ==========================================================================
+   TAB BAR — nascondi per schermate non-tabbed
+   ========================================================================== */
+
+/* Onboarding: schermata a pieno schermo senza navigazione tab */
+.stage[data-screen="onboarding"] ~ .tab-bar {
+  display: none;
+}
+
+/* Daily entry: overlay/schermata modale senza tab bar */
+.stage[data-screen="daily-entry"] ~ .tab-bar {
+  display: none;
+}
+
+/* Backup: flusso secondario senza tab bar */
+.stage[data-screen="backup"] ~ .tab-bar {
+  display: none;
+}
+
+/* ==========================================================================
+   PILL TOGGLE (switch ON/OFF nelle impostazioni)
+   --------------------------------------------------------------------------
+   <input type="checkbox" class="toggle" id="..." role="switch">
+   <label for="...">Label</label>
+   Il toggle è accessibile: usa role="switch" + aria-checked via CSS content
+   non funzionale, ma il browser legge lo stato checked nativo.
+   ========================================================================== */
+
+.toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  width: 48px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  background: var(--border-subtle);
+  border: 1.5px solid var(--border-subtle);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background-color var(--duration-base) var(--easing-standard),
+    border-color var(--duration-base) var(--easing-standard);
+}
+
+.toggle::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-circle);
+  background: var(--bg-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  transition: transform var(--duration-base) var(--easing-standard);
+}
+
+.toggle:checked {
+  background: var(--accent-flow-strong);
+  border-color: var(--accent-flow-strong);
+}
+
+.toggle:checked::after {
+  transform: translateX(20px);
+}
+
+.toggle:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* ==========================================================================
+   HEADER SCREEN (sticky, condiviso tra daily-entry e backup)
+   ========================================================================== */
+
+.screen-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--layout-tap-target);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.screen-header__back {
+  position: absolute;
+  left: var(--space-4);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--layout-tap-target);
+  min-height: var(--layout-tap-target);
+  color: var(--accent-flow-strong);
+  border-radius: var(--radius-md);
+}
+
+.screen-header__back:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.screen-header__title {
+  font-family: var(--font-body);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  text-align: center;
+}
+
+/* ==========================================================================
+   SCHERMATA: onboarding
+   ========================================================================== */
+
+.screen--onboarding {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-12) var(--space-6) var(--space-8);
+  min-height: 100%;
+  background: var(--bg-primary);
+}
+
+.onboarding__top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-8);
+  text-align: center;
+}
+
+.onboarding__headline {
+  font-family: var(--font-display);
+  font-size: var(--font-size-display-md);
+  line-height: var(--line-height-display);
+  letter-spacing: var(--letter-spacing-display);
+  color: var(--text-primary);
+  margin: 0;
+  /* Permette a textContent con \n di andare a capo (i18n.js sostituisce il nodo) */
+  white-space: pre-line;
+}
+
+.onboarding__promises {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  width: 100%;
+  text-align: left;
+}
+
+.onboarding__promise {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.onboarding__promise-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  color: var(--accent-prediction);
+  margin-top: 1px;
+}
+
+.onboarding__promise-text {
+  font-family: var(--font-body);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  color: var(--text-primary);
+}
+
+.onboarding__promise-text strong {
+  color: var(--text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.onboarding__promise-text small {
+  display: block;
+  font-size: var(--font-size-caption);
+  color: var(--text-secondary);
+  margin-top: var(--space-1);
+}
+
+.onboarding__footer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.onboarding__tagline {
+  text-align: center;
+  font-size: var(--font-size-caption);
+  color: var(--text-secondary);
+}
+
+/* ==========================================================================
+   SCHERMATA: calendar
+   ========================================================================== */
+
+.screen--calendar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Header mese */
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  flex-shrink: 0;
+}
+
+.calendar-header__nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--layout-tap-target);
+  min-height: var(--layout-tap-target);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+}
+
+.calendar-header__nav:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.calendar-header__month {
+  font-family: var(--font-display);
+  font-size: var(--font-size-title-md);
+  line-height: var(--line-height-title);
+  letter-spacing: var(--letter-spacing-display);
+  color: var(--text-primary);
+}
+
+/* Griglia giorni della settimana */
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 0 var(--space-3);
+  flex-shrink: 0;
+}
+
+.calendar-weekday {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  font-family: var(--font-body);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  letter-spacing: var(--letter-spacing-caption);
+}
+
+/* Griglia giorni */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: var(--space-2) var(--space-3);
+  gap: var(--space-1) 0;
+  flex-shrink: 0;
+}
+
+.calendar-grid__cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Cella vuota (padding mese) */
+.calendar-grid__cell--empty {
+  height: calc(var(--layout-tap-target) + 8px);
+}
+
+/* Out of month (maggio nel calendario di aprile) */
+.calendar-grid__cell--out-of-month .day-circle__label {
+  color: var(--text-disabled);
+}
+
+/* Legenda */
+.calendar-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.calendar-legend__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.calendar-legend__symbol {
+  flex-shrink: 0;
+}
+
+.calendar-legend__label {
+  font-size: var(--font-size-tiny);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* FAB — bottone + per accedere a daily entry */
+.calendar-fab {
+  position: absolute;
+  bottom: var(--space-6);
+  right: var(--space-5);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-circle);
+  background: var(--accent-flow-strong);
+  color: var(--text-on-accent);
+  box-shadow: var(--shadow-modal);
+  z-index: var(--z-raised);
+  transition: transform var(--duration-fast) var(--easing-standard);
+}
+
+.calendar-fab:active {
+  transform: scale(0.95);
+}
+
+.calendar-fab:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Previsione prossimo ciclo — banner sotto legenda */
+.calendar-prediction {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  margin: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+}
+
+.calendar-prediction__icon {
+  width: 20px;
+  height: 20px;
+  color: var(--accent-prediction);
+  flex-shrink: 0;
+}
+
+.calendar-prediction__text {
+  font-size: var(--font-size-caption);
+  color: var(--text-secondary);
+}
+
+.calendar-prediction__date {
+  font-weight: var(--font-weight-semibold);
+  color: var(--accent-prediction);
+}
+
+/* Wrapper per posizionamento relativo del FAB */
+.calendar-body {
+  position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-bottom: var(--space-4);
+}
+
+/* ==========================================================================
+   SCHERMATA: daily-entry
+   ========================================================================== */
+
+.screen--daily-entry {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-primary);
+}
+
+.daily-entry__scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: var(--space-5) var(--space-5) var(--space-10);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.daily-entry__scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Sezione generica daily entry */
+.daily-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.daily-section__label {
+  font-family: var(--font-body);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* --- Rising Fill (design brief §6.3) ---------------------------------- */
+
+.rising-fill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Label del livello: DM Serif italic 22pt, terracotta.
+   Invisibile a livello 0; appare/scompare con fade 0.28s.
+   Cross-fade tra livelli non-zero (gestito da JS via opacity). */
+.rising-fill__label {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 22px;
+  color: var(--accent-flow-strong);
+  min-height: 1.4em;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.28s ease;
+  pointer-events: none;
+}
+
+.rising-fill__label--visible {
+  opacity: 1;
+}
+
+/* Cerchio contenitore 120×120 — il fill interno è ritagliato dall'overflow */
+.rising-fill__circle {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: var(--radius-circle);
+  background: var(--bg-sunken);
+  border: 1.5px solid var(--border-subtle);
+  overflow: hidden;
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+.rising-fill__circle:focus-visible {
+  outline: 2px solid var(--accent-flow);
+  outline-offset: 3px;
+}
+
+/* Superficie liquida ondeggiante: animazione asimmetrica del border-radius
+   superiore. Il fill è leggermente più largo del contenitore in modo che
+   i bordi laterali ondulati restino nascosti dall'overflow:hidden del cerchio. */
+@keyframes liquid-wave {
+  0%   { border-radius: 58% 42% 0 0 / 52% 48% 0 0; }
+  20%  { border-radius: 44% 56% 0 0 / 58% 42% 0 0; }
+  40%  { border-radius: 56% 44% 0 0 / 44% 56% 0 0; }
+  60%  { border-radius: 42% 58% 0 0 / 56% 44% 0 0; }
+  80%  { border-radius: 50% 50% 0 0 / 46% 54% 0 0; }
+  100% { border-radius: 58% 42% 0 0 / 52% 48% 0 0; }
+}
+
+.rising-fill__fill {
+  position: absolute;
+  bottom: 0;
+  left: -18%;
+  right: -18%;
+  /* Altezza iniziale: livello 2 = Medio = 65% (aggiornata via JS style.height) */
+  height: 65%;
+  background: linear-gradient(180deg, rgba(200, 116, 86, 0.82) 0%, #C87456 100%);
+  border-radius: 58% 42% 0 0 / 52% 48% 0 0;
+  animation: liquid-wave 2.2s ease-in-out infinite;
+  transition: height 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: height;
+}
+
+/* Micro-bloom al rilascio del gesto */
+@keyframes rising-fill-bloom {
+  0%   { transform: scale(1);    box-shadow: none; }
+  30%  { transform: scale(1.07); box-shadow: 0 4px 32px rgba(200, 116, 86, 0.4); }
+  65%  { transform: scale(0.98); box-shadow: 0 2px 12px rgba(200, 116, 86, 0.2); }
+  100% { transform: scale(1);    box-shadow: none; }
+}
+
+.rising-fill__circle--bloom {
+  animation: rising-fill-bloom 350ms cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
+}
+
+/* Hint: Inter 12pt, opacity 0.38. Svanisce al primo gesto. */
+.rising-fill__hint {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--text-secondary);
+  opacity: 0.38;
+  text-align: center;
+  transition: opacity 0.28s ease;
+  pointer-events: none;
+}
+
+.rising-fill__hint--hidden {
+  opacity: 0;
+}
+
+/* Reduced motion: niente wave, niente bloom; solo transizione altezza ridotta. */
+@media (prefers-reduced-motion: reduce) {
+  .rising-fill__fill {
+    animation: none;
+    border-radius: 0;
+    transition: height 0.1s ease;
+  }
+  .rising-fill__circle--bloom {
+    animation: none;
+    box-shadow: none;
+    transform: none;
+  }
+}
+
+/* --- Pain Pulse (design brief §6.3) ----------------------------------- */
+
+.pain-pulse {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Label livello: DM Serif italic 26pt, lavanda */
+.pain-pulse__label {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 26px;
+  color: var(--accent-prediction);
+  min-height: 1.3em;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.28s ease;
+  pointer-events: none;
+}
+
+.pain-pulse__label--visible {
+  opacity: 1;
+}
+
+/* Wrapper 150×150: contiene l'arc SVG sovrapposto e il cerchio */
+.pain-pulse__wrap {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Arc SVG sovrapposto al wrapper */
+.pain-pulse__arc {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Cerchio principale 140×140pt */
+.pain-pulse__circle {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  border-radius: var(--radius-circle);
+  background: rgba(91, 78, 122, 0.10);
+  border: 1.5px solid var(--accent-prediction);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: none;
+  transition: box-shadow 0.4s ease;
+  z-index: 1;
+}
+
+.pain-pulse__circle:focus-visible {
+  outline: 2px solid var(--accent-prediction);
+  outline-offset: 4px;
+}
+
+/* Cerchio interno pulsante */
+.pain-pulse__inner {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 90px;
+  height: 90px;
+  border-radius: var(--radius-circle);
+  background: var(--accent-prediction);
+  opacity: 0;
+  transform: scale(0.82);
+  pointer-events: none;
+}
+
+/* Pulse animations per i 3 livelli (durate da §6.3) */
+@keyframes pulse-lieve {
+  0%, 100% { transform: scale(0.82); opacity: 0.18; }
+  50%      { transform: scale(0.95); opacity: 0.30; }
+}
+
+@keyframes pulse-moderato {
+  0%, 100% { transform: scale(0.82); opacity: 0.30; }
+  50%      { transform: scale(0.95); opacity: 0.50; }
+}
+
+@keyframes pulse-intenso {
+  0%, 100% { transform: scale(0.82); opacity: 0.50; }
+  50%      { transform: scale(0.95); opacity: 0.75; }
+}
+
+/* Wobble border: deformazione asimmetrica del border-radius */
+@keyframes wobble-border {
+  0%   { border-radius: 52% 48% 50% 50% / 50% 52% 48% 50%; }
+  25%  { border-radius: 48% 52% 54% 46% / 52% 48% 50% 50%; }
+  50%  { border-radius: 50% 50% 48% 52% / 48% 52% 52% 48%; }
+  75%  { border-radius: 54% 46% 50% 50% / 50% 50% 46% 54%; }
+  100% { border-radius: 52% 48% 50% 50% / 50% 52% 48% 50%; }
+}
+
+/* Livello 1 — Lieve (pulse 2.4s, wobble 3.8s) */
+.pain-pulse[data-pulse-level="1"] .pain-pulse__inner {
+  animation: pulse-lieve 2.4s ease-in-out infinite;
+}
+.pain-pulse[data-pulse-level="1"] .pain-pulse__circle {
+  animation: wobble-border 3.8s ease-in-out infinite;
+}
+
+/* Livello 2 — Moderato (pulse 1.3s, wobble 2.0s) */
+.pain-pulse[data-pulse-level="2"] .pain-pulse__inner {
+  animation: pulse-moderato 1.3s ease-in-out infinite;
+}
+.pain-pulse[data-pulse-level="2"] .pain-pulse__circle {
+  animation: wobble-border 2.0s ease-in-out infinite;
+}
+
+/* Livello 3 — Intenso (pulse 0.55s, wobble 0.85s) */
+.pain-pulse[data-pulse-level="3"] .pain-pulse__inner {
+  animation: pulse-intenso 0.55s ease-in-out infinite;
+}
+.pain-pulse[data-pulse-level="3"] .pain-pulse__circle {
+  animation: wobble-border 0.85s ease-in-out infinite;
+}
+
+/* Glow esterno durante pressione */
+.pain-pulse__circle--pressing {
+  box-shadow: 0 0 32px 8px rgba(91, 78, 122, 0.25);
+}
+
+/* Bloom al rilascio: scale(1) → 1.18 → 0.96 → 1 in 450ms */
+@keyframes pain-pulse-bloom {
+  0%   { transform: scale(1); }
+  25%  { transform: scale(1.18); }
+  70%  { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+
+.pain-pulse__circle--bloom {
+  animation: pain-pulse-bloom 450ms cubic-bezier(0.22, 0.68, 0, 1.2) forwards;
+}
+
+/* Tre dot di correzione */
+.pain-pulse__correction {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 20px;
+}
+
+.pain-pulse__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-circle);
+  background: var(--accent-prediction);
+  opacity: 0.25;
+  border: none;
+  padding: 0;
+  cursor: default;
+  pointer-events: none;
+  transition:
+    width 0.2s ease,
+    height 0.2s ease,
+    opacity 0.2s ease,
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pain-pulse__dot--active {
+  opacity: 0.85;
+}
+
+/* Finestra correzione (3s post-rilascio): dot crescono e diventano cliccabili */
+.pain-pulse--correction-window .pain-pulse__dot {
+  width: 10px;
+  height: 10px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.pain-pulse--correction-window .pain-pulse__dot--active {
+  opacity: 1;
+}
+
+/* Bump 1.3× sul dot del nuovo livello */
+@keyframes dot-bump {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+.pain-pulse__dot--bump {
+  animation: dot-bump 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Undo button (3s dopo conferma) */
+.pain-pulse__undo {
+  font-size: var(--font-size-caption);
+  color: var(--accent-prediction);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--accent-prediction);
+  background: none;
+  cursor: pointer;
+  display: none;
+}
+
+.pain-pulse__undo--visible {
+  display: inline-flex;
+}
+
+/* Reduced motion: niente pulse/wobble/bloom (cross-fade tra stati discreti) */
+@media (prefers-reduced-motion: reduce) {
+  .pain-pulse[data-pulse-level="1"] .pain-pulse__inner,
+  .pain-pulse[data-pulse-level="2"] .pain-pulse__inner,
+  .pain-pulse[data-pulse-level="3"] .pain-pulse__inner {
+    animation: none;
+    opacity: 0.35;
+    transform: scale(0.88);
+  }
+  .pain-pulse[data-pulse-level="1"] .pain-pulse__circle,
+  .pain-pulse[data-pulse-level="2"] .pain-pulse__circle,
+  .pain-pulse[data-pulse-level="3"] .pain-pulse__circle {
+    animation: none;
+  }
+  .pain-pulse__circle--bloom { animation: none; transform: none; }
+  .pain-pulse__dot--bump { animation: none; }
+}
+
+/* --- Chips sintomi ----------------------------------------------------- */
+
+.daily-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chip--add {
+  border-style: dashed;
+  color: var(--text-secondary);
+}
+.chip--add:hover {
+  border-color: var(--accent-flow);
+  color: var(--accent-flow);
+  background: transparent;
+}
+
+.symptom-add-form {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+.symptom-add-form__input {
+  flex: 1;
+  height: 36px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--accent-prediction);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: var(--font-size-caption);
+  font-family: var(--font-body);
+  outline: none;
+  transition: border-color var(--duration-fast) var(--easing-standard);
+}
+.symptom-add-form__input:focus {
+  border-color: var(--accent-flow);
+}
+
+/* CTA salva (sticky in fondo) */
+.daily-entry__footer {
+  flex-shrink: 0;
+  padding: var(--space-4) var(--space-5) var(--space-6);
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* ==========================================================================
+   SCHERMATA: timeline
+   ========================================================================== */
+
+.screen--timeline {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.timeline-header {
+  padding: var(--space-4) var(--space-5) var(--space-3);
+  flex-shrink: 0;
+}
+
+.timeline-header__title {
+  font-family: var(--font-display);
+  font-size: var(--font-size-title-md);
+  color: var(--text-primary);
+  margin-bottom: var(--space-3);
+}
+
+.timeline-toggle {
+  display: flex;
+  width: 100%;
+}
+
+.timeline-toggle .segmented-control {
+  width: 100%;
+}
+
+/* Vista Timeline */
+.timeline-view {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: var(--space-3) var(--space-5) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.timeline-view::-webkit-scrollbar {
+  display: none;
+}
+
+/* Vista nascosta */
+.timeline-view[hidden],
+.table-view[hidden] {
+  display: none;
+}
+
+/* Card ciclo nella timeline */
+.timeline-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  padding: var(--space-4) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  box-shadow: var(--shadow-card);
+}
+
+.timeline-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.timeline-card__dates {
+  font-family: var(--font-display);
+  font-size: var(--font-size-title-sm);
+  color: var(--text-primary);
+}
+
+.timeline-card__badge {
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  padding: var(--space-1) var(--space-3);
+  background: var(--bg-sunken);
+  border-radius: var(--radius-pill);
+}
+
+.timeline-card__badge--current {
+  background: var(--accent-flow);
+  color: var(--text-on-accent);
+}
+
+/* Barra durata ciclo */
+.timeline-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.timeline-bar {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-flow);
+  /* Larghezza è impostata inline come percentuale del max (30g = 100%) */
+}
+
+.timeline-bar--current {
+  background: var(--accent-flow);
+  opacity: 0.7; /* in corso: leggermente attenuato */
+}
+
+.timeline-bar__meta {
+  font-size: var(--font-size-caption);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* Vista Tabella */
+.table-view {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: var(--space-3) var(--space-5) var(--space-6);
+}
+
+.table-view::-webkit-scrollbar {
+  display: none;
+}
+
+.cycle-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-caption);
+}
+
+.cycle-table th {
+  text-align: left;
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  font-size: var(--font-size-tiny);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: var(--space-2) var(--space-2) var(--space-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+
+.cycle-table td {
+  padding: var(--space-3) var(--space-2) var(--space-3) 0;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  vertical-align: top;
+}
+
+.cycle-table tr:last-child td {
+  border-bottom: none;
+}
+
+.cycle-table__symptoms {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* ==========================================================================
+   SCHERMATA: stats
+   ========================================================================== */
+
+.screen--stats {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.stats-scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: var(--space-4) var(--space-5) var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.stats-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.stats-header {
+  padding-top: var(--space-2);
+}
+
+.stats-header__title {
+  font-family: var(--font-display);
+  font-size: var(--font-size-title-md);
+  color: var(--text-primary);
+}
+
+/* Card statistica */
+.stat-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  box-shadow: var(--shadow-card);
+}
+
+.stat-card__title {
+  font-family: var(--font-body);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.stat-card__average {
+  font-family: var(--font-display);
+  font-size: var(--font-size-title-lg);
+  color: var(--text-primary);
+  margin-top: var(--space-2);
+}
+
+/* Grafico linee CSS */
+.line-chart {
+  position: relative;
+  height: 64px;
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+}
+
+.line-chart__svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.line-chart__line {
+  fill: none;
+  stroke: var(--accent-flow);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.line-chart__dot {
+  fill: var(--accent-flow-strong);
+}
+
+.line-chart__area {
+  fill: var(--accent-flow);
+  opacity: 0.12;
+}
+
+/* Grafico barre orizzontali */
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.bar-chart__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.bar-chart__label {
+  font-size: var(--font-size-caption);
+  color: var(--text-secondary);
+  min-width: 72px;
+  flex-shrink: 0;
+}
+
+.bar-chart__track {
+  flex: 1;
+  height: 8px;
+  background: var(--bg-sunken);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.bar-chart__fill {
+  height: 100%;
+  background: var(--accent-warmth);
+  border-radius: var(--radius-pill);
+  /* Larghezza via CSS custom property --bar-pct (impostata inline) */
+  width: var(--bar-pct, 0%);
+}
+
+.bar-chart__value {
+  font-size: var(--font-size-caption);
+  color: var(--text-secondary);
+  min-width: 28px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* Flow intensity display */
+.flow-intensity {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  height: 48px;
+}
+
+.flow-intensity__col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.flow-intensity__bar {
+  width: 100%;
+  background: var(--accent-flow);
+  opacity: 0.4;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  /* Altezza via CSS custom property --bar-h (impostata inline) */
+  height: var(--bar-h, 32px);
+}
+
+.flow-intensity__bar--high {
+  opacity: 0.75;
+}
+
+.flow-intensity__col-label {
+  font-size: 9px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* ==========================================================================
+   SCHERMATA: settings
+   ========================================================================== */
+
+.screen--settings {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.settings-scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: var(--space-8);
+}
+
+.settings-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.settings-header {
+  padding: var(--space-5) var(--space-5) var(--space-3);
+}
+
+.settings-header__title {
+  font-family: var(--font-display);
+  font-size: var(--font-size-title-md);
+  color: var(--text-primary);
+}
+
+/* Gruppo impostazioni */
+.settings-group {
+  margin-bottom: var(--space-4);
+}
+
+.settings-group__header {
+  padding: var(--space-3) var(--space-5) var(--space-2);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.settings-group__rows {
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.settings-group__rows .list-row {
+  padding-left: var(--space-5);
+  padding-right: var(--space-5);
+}
+
+/* Footer versione/licenza */
+.settings-footer {
+  padding: var(--space-6) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.settings-footer__text {
+  font-size: var(--font-size-caption);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.settings-footer__link {
+  color: var(--accent-prediction);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* Pulsanti danger/ghost nelle impostazioni */
+.settings-group__rows .btn {
+  margin: var(--space-3) var(--space-5);
+  width: calc(100% - var(--space-10));
+}
+
+/* ==========================================================================
+   SCHERMATA: backup
+   ========================================================================== */
+
+.screen--backup {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-primary);
+}
+
+/* Step indicator */
+.backup-steps {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.backup-step {
+  display: none;
+  flex-direction: column;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: var(--space-6) var(--space-5) var(--space-6);
+}
+
+.backup-step::-webkit-scrollbar {
+  display: none;
+}
+
+.backup-steps[data-step="1"] .backup-step--1,
+.backup-steps[data-step="2"] .backup-step--2,
+.backup-steps[data-step="3"] .backup-step--3 {
+  display: flex;
+}
+
+/* Progress dots */
+.backup-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5) 0;
+  flex-shrink: 0;
+}
+
+.backup-progress__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-circle);
+  background: var(--border-subtle);
+  transition: background-color var(--duration-base) var(--easing-standard),
+              transform var(--duration-base) var(--easing-standard);
+}
+
+.backup-progress__dot--active {
+  background: var(--accent-flow-strong);
+  transform: scale(1.25);
+}
+
+/* Contenuto step */
+.backup-step__icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--space-6);
+  color: var(--accent-prediction);
+}
+
+.backup-step__title {
+  font-family: var(--font-display);
+  font-size: var(--font-size-title-lg);
+  line-height: var(--line-height-title);
+  color: var(--text-primary);
+  margin-bottom: var(--space-4);
+  text-align: center;
+}
+
+.backup-step__body {
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: var(--space-6);
+}
+
+.backup-step__bullets {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+  align-self: stretch;
+}
+
+.backup-step__bullet {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--font-size-body);
+  color: var(--text-primary);
+}
+
+.backup-step__bullet-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--accent-confirmation-strong);
+  flex-shrink: 0;
+}
+
+.backup-step__nav {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  margin-top: auto;
+  padding-top: var(--space-5);
+}
+
+/* Provider card (step 2) */
+.provider-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+  align-self: stretch;
+}
+
+.provider-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--border-subtle);
+  background: var(--bg-surface);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--easing-standard),
+    background-color var(--duration-fast) var(--easing-standard);
+}
+
+.provider-option:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.provider-option--selected {
+  border-color: var(--accent-prediction);
+  background: var(--bg-sunken);
+}
+
+.provider-option__radio {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-circle);
+  border: 2px solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.provider-option--selected .provider-option__radio {
+  border-color: var(--accent-prediction);
+}
+
+.provider-option--selected .provider-option__radio::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-circle);
+  background: var(--accent-prediction);
+}
+
+.provider-option__icon {
+  width: 32px;
+  height: 32px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.provider-option__label {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+/* Step 3 — Passphrase */
+.passphrase-field {
+  position: relative;
+  align-self: stretch;
+}
+
+.passphrase-field .input-text {
+  padding-right: var(--space-10);
+}
+
+.passphrase-field__toggle {
+  position: absolute;
+  right: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--layout-tap-target);
+  height: var(--layout-tap-target);
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.passphrase-field__toggle:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  border-radius: var(--radius-sm);
+}
+
+.backup-step__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  align-self: stretch;
+  margin-bottom: var(--space-5);
+}
+
+.backup-step__form-label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.backup-step__form-label-text {
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+}
+
+/* Warning passphrase */
+.backup-step__warning {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--bg-sunken);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--accent-prediction);
+  align-self: stretch;
+  margin-bottom: var(--space-4);
+}
+
+.backup-step__warning-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--accent-prediction);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.backup-step__warning-text {
+  font-size: var(--font-size-caption);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* Metadata testuale nei timeline-card (sostituisce span con style inline) */
+.timeline-card__meta {
+  font-size: var(--font-size-caption);
+  color: var(--text-secondary);
+}
+
+/* Bottone che si espande per riempire lo spazio nel backup-step__nav */
+.btn--grow {
+  flex: 1;
+}
+
+/* Container azioni standalone nelle impostazioni */
+.settings-actions {
+  padding: var(--space-3) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}/* --- Calendar day-detail card ------------------------------------------ */
+
+.calendar-day-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-subtle);
+  min-height: 56px;
+}
+
+.calendar-day-card__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.calendar-day-card__date {
+  font-family: var(--font-body);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.calendar-day-card__moon {
+  display: flex;
+  align-items: center;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.calendar-day-card__flow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+}
+
+.calendar-day-card__flow-label {
+  font-size: var(--font-size-caption);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.calendar-day-card__edit {
+  background: none;
+  border: 1px solid var(--accent-flow-strong);
+  border-radius: var(--radius-pill);
+  color: var(--accent-flow-strong);
+  font-family: var(--font-body);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-medium);
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 44px;
+  min-width: 44px;
+  flex-shrink: 0;
+  transition: background var(--duration-fast) var(--easing-standard);
+}
+
+.calendar-day-card__edit:hover {
+  background: var(--accent-flow);
+  color: var(--text-on-accent);
+}
+
+.calendar-day-card__edit:focus-visible {
+  outline: 2px solid var(--accent-flow-strong);
+  outline-offset: 2px;
+}
+
+/* --- Settings danger zone ---------------------------------------------- */
+
+.settings-group--danger .settings-group__label {
+  color: var(--color-danger, #c0392b);
+}
+
+.list-row--danger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  background: none;
+  border: none;
+  padding: var(--space-3) var(--space-5);
+  cursor: pointer;
+  min-height: var(--layout-tap-target-md);
+  text-align: left;
+  color: var(--color-danger, #c0392b);
+  font-family: var(--font-body);
+  font-size: var(--font-size-body);
+  transition: background var(--duration-fast) var(--easing-standard);
+}
+
+.list-row--danger:hover {
+  background: color-mix(in srgb, var(--color-danger, #c0392b) 8%, transparent);
+}
+
+.list-row--danger:focus-visible {
+  outline: 2px solid var(--color-danger, #c0392b);
+  outline-offset: -2px;
+}
+
+.list-row--danger .list-row__leading {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.list-row--danger .list-row__title {
+  font-weight: var(--font-weight-medium);
+}
+
+/* Header stats senza padding inline */
+.stats-header--padded {
+  padding: var(--space-4) var(--space-5) 0;
+}
+
+/* Label ciclo nei dettagli statistiche */
+.stats-flow-labels {
+  display: flex;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+  font-size: var(--font-size-caption);
+  color: var(--text-secondary);
+}

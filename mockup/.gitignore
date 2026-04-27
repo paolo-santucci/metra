@@ -1,0 +1,21 @@
+# Métra mockup — file ignorati da git
+
+# Node (precauzione: non usiamo Node, ma se qualcuno lo introducesse...)
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Editor / OS
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Build artifacts
+dist/
+build/
+.cache/

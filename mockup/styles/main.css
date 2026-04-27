@@ -1,0 +1,400 @@
+/* SPDX-License-Identifier: GPL-3.0-only — Métra mockup */
+
+/*
+ * main.css — Layer base + reset + layout shell.
+ * I colori e i caratteri arrivano da tokens.css (prodotto in parallelo
+ * dall'agent ui-designer). Qui si usa SOLO var(--token-name) — mai hex.
+ */
+
+/* ---------- Token "shell" del mockup ----------
+ * Questi NON fanno parte del design system Métra (non vengono esportati a
+ * Dart). Servono solo a vestire la cornice del mockup: device frame, toolbar
+ * di debug, sfondo della pagina desktop. Sono alias semantici dei token app
+ * con un default sensato. Definirli qui evita di sporcare tokens.css con
+ * concetti che non esisteranno nell'app finale.
+ */
+:root {
+  --bg-app:        var(--bg-primary);
+  --bg-page:       var(--bg-sunken, var(--bg-primary));
+  --bg-elevated:   var(--bg-surface, var(--bg-primary));
+  --bg-toolbar:    var(--bg-surface, var(--bg-primary));
+  --device-bezel:  #1A1410;
+  --font-mono:     ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --toolbar-h:     88px;
+}
+
+/* ---------- Reset minimale ---------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  font-family: var(--font-body, system-ui, sans-serif);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background-color: var(--bg-app, var(--bg-primary));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+ul,
+ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: 400;
+}
+
+p {
+  margin: 0;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* Tap highlight neutralizzato per coerenza con app nativa. */
+a,
+button,
+[role="button"],
+[role="tab"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Selezione testo: non offrire feedback su elementi tab/button. */
+button,
+[role="tab"] {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ---------- Page background (fuori dal device frame, solo desktop) ---------- */
+
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Sfondo neutro per "vetrina" del device su desktop.
+     Nessun colore decorativo: usa il token bg-primary leggermente desaturato. */
+  background-color: var(--bg-page, var(--bg-primary));
+}
+
+/* ---------- Toolbar globale del mockup ---------- */
+
+.toolbar-global {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3, 12px);
+  padding: var(--space-3, 12px) var(--space-4, 16px);
+  background-color: var(--bg-toolbar, var(--bg-elevated, var(--bg-primary)));
+  border-bottom: 1px solid var(--border-subtle, currentColor);
+  font-size: 0.875rem;
+}
+
+.toolbar-global__group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2, 8px);
+}
+
+.toolbar-global__btn {
+  min-height: 36px;
+  padding: var(--space-2, 8px) var(--space-3, 12px);
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle, currentColor);
+  background-color: transparent;
+  color: var(--text-primary);
+  font-weight: 500;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.toolbar-global__btn:hover {
+  background-color: var(--bg-elevated, transparent);
+}
+
+.toolbar-global__btn[aria-pressed="true"] {
+  background-color: var(--accent-flow);
+  color: var(--text-on-accent, var(--bg-primary));
+  border-color: var(--accent-flow);
+}
+
+.toolbar-global__indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  font-size: 0.8125rem;
+  color: var(--text-secondary, var(--text-primary));
+}
+
+.toolbar-global__indicator-value {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  padding: 2px 8px;
+  border-radius: 6px;
+  background-color: var(--bg-elevated, transparent);
+  border: 1px solid var(--border-subtle, currentColor);
+}
+
+/* ---------- Device frame (393x852, iPhone 15 Pro reference) ---------- */
+
+.device {
+  position: relative;
+  width: 393px;
+  height: 852px;
+  margin: var(--space-6, 24px) auto;
+  background-color: var(--bg-app, var(--bg-primary));
+  border-radius: 40px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow:
+    0 0 0 10px var(--device-bezel, #1a1410),
+    0 18px 48px rgba(0, 0, 0, 0.18);
+  isolation: isolate;
+}
+
+/* Su mobile: full-screen, niente cornice device. */
+@media (max-width: 480px) {
+  .toolbar-global {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .device {
+    width: 100%;
+    height: calc(100dvh - var(--toolbar-h, 88px));
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+/* ---------- Status bar mock ---------- */
+
+.status-bar {
+  flex: 0 0 auto;
+  height: 44px;
+  padding: 0 var(--space-5, 20px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  background-color: transparent;
+  /* Margini per safe-area "fittizia" del notch. */
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+.status-bar__time {
+  font-variant-numeric: tabular-nums;
+}
+
+.status-bar__indicators {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.status-bar__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--text-primary);
+  opacity: 0.7;
+}
+
+/* ---------- Stage (contenitore schermate) ---------- */
+
+.stage {
+  flex: 1 1 auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.stage::-webkit-scrollbar {
+  display: none;
+}
+
+/* Le schermate sono nascoste di default. Il router attiva quella richiesta. */
+.stage > [data-screen] {
+  display: none;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.stage > [data-screen][data-active="true"] {
+  display: flex;
+}
+
+/* ---------- Schermata generica ---------- */
+
+.screen {
+  width: 100%;
+  flex: 1 1 auto;
+  padding: var(--space-6, 24px) var(--space-5, 20px);
+}
+
+.screen__inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 12px);
+  max-width: 100%;
+}
+
+.screen__title {
+  font-family: var(--font-display, serif);
+  font-size: clamp(2rem, 6vw, 2.75rem);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.screen__body {
+  font-family: var(--font-body, system-ui, sans-serif);
+  font-size: 1rem;
+  color: var(--text-secondary, var(--text-primary));
+}
+
+.screen--upcoming .screen__body {
+  font-style: italic;
+  opacity: 0.75;
+}
+
+/* ---------- Tab bar ---------- */
+
+.tab-bar {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  padding: var(--space-2, 8px) var(--space-2, 8px) var(--space-3, 12px);
+  background-color: var(--bg-elevated, var(--bg-primary));
+  border-top: 1px solid var(--border-subtle, currentColor);
+}
+
+.tab-bar__tab {
+  /* Tap target ≥ 48dp Android / 44pt iOS. */
+  min-height: 56px;
+  min-width: 48px;
+  padding: var(--space-2, 8px) var(--space-1, 4px);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 12px;
+  color: var(--text-secondary, var(--text-primary));
+  transition: color 160ms ease, background-color 160ms ease;
+}
+
+.tab-bar__tab[aria-selected="true"] {
+  color: var(--accent-flow);
+}
+
+.tab-bar__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tab-bar__label {
+  font-size: 0.75rem;
+  line-height: 1;
+  font-weight: 500;
+}
+
+/* ---------- Home indicator iPhone ---------- */
+
+.home-indicator {
+  flex: 0 0 auto;
+  height: 6px;
+  width: 134px;
+  margin: 6px auto calc(env(safe-area-inset-bottom, 0) + 6px);
+  border-radius: 999px;
+  background-color: var(--text-primary);
+  opacity: 0.18;
+}
+
+/* ---------- Focus visible (WCAG 2.2 AA, ≥2pt) ---------- */
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-flow);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.tab-bar__tab:focus-visible {
+  outline-offset: -2px;
+}
+
+/* ---------- Reduced motion ---------- */
+
+/* Fallback CSS basato sulla preferenza di sistema. theme.js può anche
+   forzare l'attributo data-reduced-motion="true" per test manuale. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+[data-reduced-motion="true"] *,
+[data-reduced-motion="true"] *::before,
+[data-reduced-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
