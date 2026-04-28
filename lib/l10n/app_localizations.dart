@@ -578,6 +578,12 @@ abstract class AppLocalizations {
   /// **'{n} g in media'**
   String stats_period_length_avg(int n);
 
+  /// Accessibility label fragment: n days, used in chart semantics labels
+  ///
+  /// In it, this message translates to:
+  /// **'{n} giorni'**
+  String stats_n_days(int n);
+
   /// Segmented control label for timeline view
   ///
   /// In it, this message translates to:

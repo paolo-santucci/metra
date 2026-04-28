@@ -34,6 +34,7 @@ class PeriodLengthChart extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final reduceMotion = MediaQuery.of(context).disableAnimations;
+    final locale = Localizations.localeOf(context).toString();
 
     final lineColor =
         isDark ? MetraColors.dark.accentWarmth : MetraColors.light.accentWarmth;
@@ -47,7 +48,11 @@ class PeriodLengthChart extends StatelessWidget {
         .entries
         .where((e) => e.value.periodLength != null)
         .map(
-          (e) => FlSpot(e.key.toDouble(), e.value.periodLength!.toDouble()),
+          (e) => FlSpot(
+            e.key.toDouble(),
+            e.value.periodLength!
+                .toDouble(), // safe: non-null guaranteed by the .where filter above
+          ),
         )
         .toList();
 
@@ -65,7 +70,8 @@ class PeriodLengthChart extends StatelessWidget {
     final avg = (nonNullLengths.reduce((a, b) => a + b) / nonNullLengths.length)
         .round();
     final minY =
-        nonNullLengths.reduce((a, b) => a < b ? a : b).toDouble() - 2.0;
+        (nonNullLengths.reduce((a, b) => a < b ? a : b).toDouble() - 2.0)
+            .clamp(0.0, double.infinity);
     final maxY =
         nonNullLengths.reduce((a, b) => a > b ? a : b).toDouble() + 2.0;
 
@@ -73,7 +79,7 @@ class PeriodLengthChart extends StatelessWidget {
         .where((p) => p.periodLength != null)
         .map(
           (p) =>
-              '${intl.DateFormat.MMM('it').format(p.startDate)}: ${p.periodLength} giorni',
+              '${intl.DateFormat.MMM(locale).format(p.startDate)}: ${l10n.stats_n_days(p.periodLength!)}',
         )
         .join(', ');
 
@@ -82,6 +88,7 @@ class PeriodLengthChart extends StatelessWidget {
       children: [
         Semantics(
           label: semanticsLabel,
+          excludeSemantics: true,
           child: SizedBox(
             height: 120,
             child: LineChart(
@@ -131,7 +138,7 @@ class PeriodLengthChart extends StatelessWidget {
                         }
                         return Text(
                           intl.DateFormat.MMM(
-                            'it',
+                            locale,
                           ).format(points[idx].startDate),
                           style: TextStyle(color: textColor, fontSize: 10),
                         );
@@ -145,7 +152,10 @@ class PeriodLengthChart extends StatelessWidget {
                 maxY: maxY,
                 lineTouchData: const LineTouchData(enabled: false),
               ),
-              duration: Duration(milliseconds: reduceMotion ? 0 : 240),
+              duration: Duration(
+                milliseconds:
+                    reduceMotion ? MetraMotion.instant : MetraMotion.base,
+              ),
             ),
           ),
         ),
