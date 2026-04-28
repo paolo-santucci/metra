@@ -1,10 +1,10 @@
 # Threat Model — Métra
 
-**Versione:** 1.0
+**Versione:** 1.1
 **Data:** 2026-04-28
-**Autori:** Paolo Santucci (owner), revisione architetturale sicurezza P-0c
+**Autori:** Paolo Santucci (owner), revisione architetturale sicurezza P-0c / P-1
 **Metodo:** STRIDE per i data path tecnici; LINDDUN per gli asset di privacy
-**Ambito:** P-0b completato — DB cifrato, EncryptionService, provider Riverpod. Cloud sync (P-6) modellato come prospettico.
+**Ambito:** P-0b completato — DB cifrato, EncryptionService, provider Riverpod. P-1 completato — UI daily entry (QuickEntryModal, HistoricalEntryScreen), calendar grid con stream Drift, SaveDailyLog use case, RecomputeCycleEntries. Cloud sync (P-6) modellato come prospettico.
 **Revisione programmata:** ad ogni release maggiore o ogni 6 mesi.
 
 ---
@@ -176,14 +176,107 @@ Categorie LINDDUN:
 
 ## 5. Gap noti e roadmap di remediation
 
-| ID | Gap | Priorità | Owner | Target |
-|---|---|---|---|---|
-| GAP-01 | `flutter_secure_storage` senza opzioni esplicite (iOS accessibility, Android EncryptedSharedPreferences) | Alta | Dev | P-1 |
-| GAP-02 | Assenza wrapper logging con redazione campi `DailyLog`/`notes` in release build | Alta | Dev | P-1 |
-| GAP-03 | Rigenerazione silenziosa della chiave DB in caso di validazione fallita invece di eccezione esplicita | Media | Dev | P-1 |
-| GAP-04 | `FLAG_SECURE` (Android) / `blurImage` (iOS) assenti su schermate sensibili | Alta | Dev | P-1 |
-| GAP-05 | `android:allowBackup` non configurato esplicitamente — rischio backup ADB della chiave | Alta | Dev | P-1 |
-| GAP-06 | Nessun indicatore di forza passphrase backup e requisito minimo lunghezza | Media | Dev | P-6 |
-| GAP-07 | Blob backup senza versioning (rollback attack prospettico) | Bassa | Dev | P-6 |
-| GAP-08 | Correlazione metadata blob cloud (dimensione/timing) | Bassa | Arch | P-6 (padding) |
-| GAP-09 | Avviso obbligatorio export CSV "dati in chiaro" non ancora implementato | Alta | Dev | P-5 |
+| ID | Gap | Priorità | Owner | Target | Status P-1 |
+|---|---|---|---|---|---|
+| GAP-01 | `flutter_secure_storage` senza opzioni esplicite (iOS accessibility, Android EncryptedSharedPreferences) | Alta | Dev | P-1 | Parzialmente risolto — `AndroidOptions(encryptedSharedPreferences: true)` impostato in `encryption_provider.dart:26`. iOS: nessuna `IOSOptions` configurata, accessibility usa il default OS. Ancora aperto per iOS — target: P-2 |
+| GAP-02 | Assenza wrapper logging con redazione campi `DailyLog`/`notes` in release build | Alta | Dev | P-1 | Ancora aperto — nessun wrapper di redazione implementato. P-1 non ha introdotto nuove violazioni: il solo `debugPrint` aggiunto (`historical_entry_screen.dart:156`) è dentro `assert(() {...}())` (compilato fuori in release) e stampa solo il testo dell'eccezione, non campi di `DailyLogEntity`. Target: P-2 |
+| GAP-03 | Rigenerazione silenziosa della chiave DB in caso di validazione fallita invece di eccezione esplicita | Media | Dev | P-1 | Ancora aperto — `key_management_service.dart:32`: se `existing != null` ma `_isValidHexKey` fallisce, il branch non è preso e si procede alla rigenerazione silenziosa (line 34–35), equivalente a un wipe silenzioso del DB. Target: P-2 |
+| GAP-04 | `FLAG_SECURE` (Android) / `blurImage` (iOS) assenti su schermate sensibili | Alta | Dev | P-1 | Ancora aperto — P-1 ha reso concrete le schermate sensibili (HistoricalEntryScreen, QuickEntryModal). Il campo note è ora visibile a schermo. Nessuna protezione screenshot implementata. Target: P-2 |
+| GAP-05 | `android:allowBackup` non configurato esplicitamente — rischio backup ADB della chiave | Alta | Dev | P-1 | Ancora aperto — `android:allowBackup` assente in `AndroidManifest.xml`. Target: P-2 |
+| GAP-06 | Nessun indicatore di forza passphrase backup e requisito minimo lunghezza | Media | Dev | P-6 | Non in scope P-1 |
+| GAP-07 | Blob backup senza versioning (rollback attack prospettico) | Bassa | Dev | P-6 | Non in scope P-1 |
+| GAP-08 | Correlazione metadata blob cloud (dimensione/timing) | Bassa | Arch | P-6 (padding) | Non in scope P-1 |
+| GAP-09 | Avviso obbligatorio export CSV "dati in chiaro" non ancora implementato | Alta | Dev | P-5 | Non in scope P-1 |
+
+---
+
+## 6. Delta P-1 — Path daily entry e calendar grid
+
+Questa sezione estende il modello P-0b per coprire i data path introdotti da P-1: inserimento dati utente tramite UI reale (`QuickEntryModal`, `HistoricalEntryScreen`), stream del calendario mensile e ricalcolo cicli post-salvataggio.
+
+---
+
+### 6.1 Path A+C: Inserimento dati utente → `SaveDailyLog` → `DailyLogDao`
+
+**Descrizione del path:** L'utente inserisce dati di flow, dolore e note in `QuickEntryModal` (oggi) o `HistoricalEntryScreen` (data arbitraria passata). Il widget costruisce un `DailyLogEntity` e chiama `DailyEntryNotifier.save()` → `SaveDailyLog` use case → `DailyLogRepositoryImpl.saveDailyLog()` → `DailyLogDao.upsertDailyLog()` (Drift, `insertOnConflictUpdate`, parametrizzato) → SQLCipher DB.
+
+Per il Path C (storico), la data arriva come parametro URL `/daily-entry/:date` e viene parsata in `app_router.dart:48–53` con `split('-')` + `int.parse()` prima di essere passata a `HistoricalEntryScreen`.
+
+Rispetto a §2.1 (che modellava il path a livello di DAO senza UI), questo path aggiunge: la validazione temporale in `SaveDailyLog`, il parsing del parametro URL, la visualizzazione del campo note a schermo, e la catena di errori Riverpod.
+
+| STRIDE | Minaccia | Likelihood | Impact | Priorità | Controllo esistente | Gap / Azione |
+|---|---|---|---|---|---|---|
+| Spoofing | Inserimento di un log con data futura per falsificare il contesto temporale dell'evento. | Bassa — richiede la costruzione manuale di un `DailyLogEntity` con data futura, che la normale UI non consente. | Medio | Bassa | `SaveDailyLog` (line 41–46): normalizza la data a UTC midnight e lancia `ValidationException` se `logDay.isAfter(todayDay)`. Il risultato `Err` è restituito al notifier senza propagare al framework. | Nota: l'inserimento di date passate è consentito per design (entry storico è una feature P-1). La minaccia speculare — data eccessivamente lontana nel passato — non ha mitigazione ma l'impatto è basso (nessun effetto di sicurezza, solo qualità del dato). |
+| Tampering | Iniezione SQL tramite campo `notes` (ora un `TextField` reale) o campo `customLabel`. | Bassa — Drift usa query parametrizzate. | Critico | Bassa | Drift ORM parametrizza tutti i campi. `DailyLogDao.upsertDailyLog` usa `DailyLogsCompanion` → parametri bind. Nessuna interpolazione di stringa. (Vedi analisi completa in §2.1.) | Verificare che nessuna query futura usi `customStatement` con interpolazione. |
+| Tampering | Manomissione del parametro URL `:date` per iniettare una data malformata (es. `"2026-99-99"` o `"../../etc"`). | Bassa — nessun `intent-filter` deep-link registrato in `AndroidManifest.xml`; il routing è esclusivamente interno all'app. | Basso | Bassa | `app_router.dart:48–53`: `int.parse()` su `parts[0..2]` lancia `FormatException` su input non numerico. `DateTime.utc()` lancia `ArgumentError` su valori fuori range. Entrambe le eccezioni si propagano come crash del route builder — non è un fail-secure elegante, ma non espone dati. | Nessuna superficie di attacco esterna verificata (nessun deep-link intent). Se in futuro si aggiungono App Links/Universal Links, aggiungere try/catch nel route builder con redirect a un error screen. |
+| Tampering | Il `PainIntensitySlider` potrebbe essere manipolato per inviare valori fuori range [0–3]. | Molto bassa — il widget Flutter `Slider` garantisce il clamping nel range configurato; il valore non può uscire dal widget. | Basso | Bassa | `PainIntensitySlider` usa `Slider` Flutter con `min: 0`, `max: 3`. `SaveDailyLog` (line 48–53) aggiunge un controllo difensivo: rifiuta `painIntensity` fuori da `[0, _maxPainIntensity]` con `ValidationException`. Defense-in-depth corretto. | Nessuna azione richiesta. |
+| Repudiation | N/A — app single-user, nessun audit trail lato server richiesto. | — | — | N/A | — | — |
+| Information Disclosure | Note libere (campo `TextField`) ora visibili a schermo: rischio screenshot OS in background e shoulder surfing. | Alta — comportamento OS default; nessuna protezione schermata attiva. | Alto | Alta | SQLCipher protegge le note a riposo. Drift parametrizza la scrittura. Nessuna protezione per la visualizzazione a schermo. | **GAP-04 ancora aperto.** `FLAG_SECURE` (Android) e `blurImage` (iOS) non implementati. Target: P-2. Vedi §6.4. |
+| Information Disclosure | `debugPrint` di campi `DailyLogEntity` in log di sviluppo. | Bassa in P-1 — l'unico `debugPrint` aggiunto (`historical_entry_screen.dart:156`) è dentro `assert(() {...}())`, compila fuori in release, e stampa solo il testo dell'eccezione (non campi entità). | Alto (se avvenisse) | Bassa (P-1 non introduce violazioni) | Commento esplicito `// Do not log DailyLogEntity fields — security requirement` in `daily_entry_controller.dart:64`. Il pattern `assert()` garantisce la compilazione fuori in release. | **GAP-02 ancora aperto** per il wrapper sistematico. In P-1 nessuna nuova violazione introdotta. Target: P-2. |
+| Denial of Service | Invio ripetuto di richieste di salvataggio per saturare il DB SQLite. | Molto bassa — app single-user, nessun accesso concorrente esterno; SQLite serializza le scritture. | Basso | Bassa | Sandbox OS isola il file DB. La UI non consente batch automatici. | N/A. |
+| Elevation of Privilege | N/A — nessun cambio di boundary di fiducia rispetto a §2.1. | — | — | N/A | — | — |
+
+---
+
+### 6.2 Path B: `CalendarMonthNotifier` → `GetMonthLogs` → stream DB
+
+**Descrizione del path:** `CalendarMonthNotifier.build()` inizializza uno stream Drift mensile tramite `GetMonthLogs(year, month)` → `DailyLogRepository.watchMonth()` → `DailyLogDao` → SQLCipher DB. Il path è **read-only**: nessuna scrittura, nessun input utente diretto se non la navigazione mese precedente/successivo.
+
+Superficie di attacco ridotta: l'unico input esterno è la selezione del mese (intero `year`, intero `month`), costruita internamente dal notifier con aritmetica verificata. Non esiste path da input utente grezzo a parametro di query DB.
+
+| STRIDE | Minaccia | Likelihood | Impact | Priorità | Controllo esistente | Gap / Azione |
+|---|---|---|---|---|---|---|
+| Spoofing | N/A — path read-only, nessuna identità da verificare. | — | — | N/A | — | — |
+| Tampering | N/A — nessuna scrittura in questo path. | — | — | N/A | — | — |
+| Repudiation | N/A | — | — | N/A | — | — |
+| Information Disclosure | Dati del mese (flow, dolore) visualizzati nella griglia calendario: stessi rischi di screenshot di §6.1 (ID) e §2.3. | Alta | Alto | Alta | SQLCipher protegge a riposo. Nessuna protezione schermata. | Stesso gap di GAP-04. La calendar screen espone i dati di flow con encoding semantico (cerchi terracotta). Incluso nell'implementazione attesa di FLAG_SECURE in P-2. |
+| Denial of Service | Stream Drift che emette un volume elevato di aggiornamenti se il DB è mutato rapidamente. | Molto bassa — la navigazione mensile cancella e ricrea la subscription; nessuna query non limitata. `watchMonth` filtra per `(year, month)` — O(giorni del mese), non O(intera tabella). | Basso | Bassa | `_subscribeToMonth` cancella la subscription precedente prima di crearne una nuova (`_logSub?.cancel()`). | N/A. |
+| Elevation of Privilege | N/A | — | — | N/A | — | — |
+
+---
+
+### 6.3 Path A/C: `RecomputeCycleEntries` post-salvataggio
+
+**Descrizione del path:** Dopo ogni salvataggio riuscito (`DailyEntryNotifier.save()`, line 71–72), viene invocato `RecomputeCycleEntries.call()`, che esegue `DailyLogRepository.getAllOrderedByDate()` → lettura dell'intera tabella `DailyLogs` → algoritmo `_compute()` → `CycleEntryRepository.replaceAll()`. Il ricalcolo è sincrono rispetto al salvataggio: l'utente deve attendere il completamento prima che lo stato si aggiorni.
+
+| STRIDE | Minaccia | Likelihood | Impact | Priorità | Controllo esistente | Gap / Azione |
+|---|---|---|---|---|---|---|
+| Tampering | Un salvataggio con dati manipolati (es. flow intensity forged) altera la derivazione dei cicli. | Bassa — i controlli in `SaveDailyLog` validano il payload prima della persistenza. | Medio | Bassa | `SaveDailyLog` valida flow+spotting (mutuamente esclusivi), range `painIntensity`, data non futura. Drift parametrizza la scrittura. | La catena di validazione è corretta. Documentare che `_compute()` è una funzione pura testabile indipendentemente (già esposta come `RecomputeCycleEntries.compute()` static). |
+| Denial of Service | Un singolo salvataggio scatena un ricalcolo su tutta la cronologia: costo proporzionale al numero di righe. | Molto bassa — volume realistico: ~1 riga/giorno × anni = poche migliaia di righe. `_compute()` è O(N) single-pass (loop a line 69). Nessun loop annidato, nessun algoritmo quadratico. | Basso | Bassa | `_compute()` è single-pass su `flowDays` (un sottoinsieme di `DailyLogs`). Limite naturale: N < 10.000 per qualsiasi uso realistico. | Documentare il bound esplicito in un commento in `recompute_cycle_entries.dart`. Nessuna azione di sicurezza richiesta. |
+| Information Disclosure | `getAllOrderedByDate()` carica l'intera cronologia in memoria per la durata del ricalcolo. | Bassa | Medio | Bassa | I dati risiedono nella sandbox privata dell'app, già decifrati dal layer Drift/SQLCipher nel processo app. Nessuna esposizione a processi terzi. | N/A in architettura local-only. |
+| Spoofing / Repudiation / Elevation of Privilege | N/A per questo path. | — | — | N/A | — | — |
+
+---
+
+### 6.4 Note libere — aggiornamento del modello (aggiornamento §2.3)
+
+In P-0b, la minaccia di Information Disclosure per screenshot del campo `notes` era classificata come **prospettica** (§2.3, seconda riga ID), perché la UI non era ancora implementata. Con P-1, `HistoricalEntryScreen` include un `TextField` per le note (line 326–332) e il valore è visibile a schermo quando `_notesEnabled == true`.
+
+**Stato aggiornato:**
+
+Il rischio di screenshot OS (LINDDUN categoria Di) è ora **concreto**, non più prospettico. La minaccia era già classificata Priorità Alta in §2.3; questa conferma non modifica la priorità ma aggiorna lo stato da "rischio prospettico" a "superficie esposta in produzione".
+
+I controlli esistenti a riposo rimangono invariati e sufficienti per P-1:
+- SQLCipher AES-256 protegge `notes` nel file DB.
+- Drift parametrizza la scrittura: nessun rischio di SQL injection.
+- L'entità `DailyLogEntity` non ha `toString()` override che esponga campi.
+
+Il gap residuo — `FLAG_SECURE` (Android) e `blurImage`/`ignoreInRecents` (iOS) — rimane aperto (GAP-04). La sua applicazione deve coprire almeno: `HistoricalEntryScreen` (note visibili), `QuickEntryModal` (flow visibile), e la `CalendarScreen` (pattern biologico visibile). La mitigazione è schedulata per P-2.
+
+**Nota sull'`assert` a `historical_entry_screen.dart:155–159`:** il `debugPrint` di failure di `replacePainSymptoms` stampa solo il testo dell'eccezione (`$e`), non campi di `DailyLogEntity`. In release mode, il blocco `assert()` viene eliminato dal compilatore. Non costituisce una nuova violazione di §11 CLAUDE.md.
+
+---
+
+### 6.5 Aggiornamento gap table
+
+Vedi tabella aggiornata in §5. Riepilogo delle variazioni rispetto alla versione 1.0:
+
+**GAP-01** — Parzialmente risolto. `AndroidOptions(encryptedSharedPreferences: true)` è configurato in `lib/providers/encryption_provider.dart:26`. L'opzione iOS (`IOSOptions` con `accessibility: IOSAccessibility.first_unlock_this_device`) non è impostata: il comportamento su iOS resta il default OS. Gap residuo: iOS. Target spostato a P-2.
+
+**GAP-02** — Ancora aperto. Nessun wrapper di redazione sistematico implementato. P-1 non introduce nuove violazioni (l'unico `debugPrint` aggiunto è in `assert`, stampa solo testo di eccezione, compila fuori in release). Target spostato a P-2.
+
+**GAP-03** — Ancora aperto. `key_management_service.dart:32`: il ramo `if (existing != null && _isValidHexKey(existing))` non è preso quando `existing` è non-null ma malformato, causando rigenerazione silenziosa della chiave (wipe silenzioso del DB). Deve essere convertito in `StorageException` esplicita. Target spostato a P-2.
+
+**GAP-04** — Ancora aperto. P-1 ha reso concrete le schermate sensibili. La superficie esposta è aumentata: `HistoricalEntryScreen` (note, flusso, dolore), `QuickEntryModal` (flusso), `CalendarScreen` (griglia con encoding biologico). Target spostato a P-2.
+
+**GAP-05** — Ancora aperto. `android:allowBackup` assente in `android/app/src/main/AndroidManifest.xml`. Target spostato a P-2.

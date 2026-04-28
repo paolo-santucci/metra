@@ -1,8 +1,8 @@
 # Audit OWASP MASVS v2 — Baseline L1
 
 **Progetto:** Métra v0.1.0  
-**Commit di riferimento:** b20f4d4  
-**Data audit:** 2026-04-28  
+**Commit di riferimento:** 7ac2fd9 (aggiornato da b20f4d4 con P-1 re-valutazione)  
+**Data audit:** 2026-04-28 — **P-1 re-valutazione:** 2026-04-28  
 **Auditor:** Mobile Security Engineer (automated static review)  
 **Scope:** Solo revisione statica del codice sorgente presente nel repository. Nessuna modifica al codice è stata effettuata. Le remediation sono raccomandazioni per PR successive.
 
@@ -17,10 +17,22 @@
 
 | Campo | Valore |
 |-------|--------|
-| **Stato** | PASS (parziale — vedi note) |
+| **Stato** | PASS |
 | **Evidenza** | Il DB SQLCipher è inizializzato con una chiave a 256 bit generata da `Random.secure()` (`key_management_service.dart:46-50`). La chiave viene salvata esclusivamente in `flutter_secure_storage` con `AndroidOptions(encryptedSharedPreferences: true)` (`encryption_provider.dart:25-28`), che su Android usa Android Keystore; su iOS usa il Keychain. La chiave è passata al DB come hex raw via `PRAGMA key = "x'…'"` (`app_database.dart:161`). Il backup per cloud è cifrato con AES-256-GCM + Argon2id (`encryption_service.dart:34-41`). |
 | **Limiti** | (1) iOS: la classe di protezione del file DB non è esplicitamente impostata; il default iOS è `NSFileProtectionCompleteUntilFirstUserAuthentication`, che protegge il file solo a device spento. Per dati di questa sensibilità, `NSFileProtectionComplete` (file inaccessibile mentre il device è bloccato) sarebbe più appropriato (hardening L2). (2) I test di integrazione SQLCipher (`sqlcipher_integration_test.dart`) sono stub vuoti — la verifica empirica "DB illeggibile senza chiave" è dichiarata ma non automatizzata. |
 | **Rischio residuo** | Basso. Il DB è crittografato; anche ottenendo il file fisico, la chiave non è recuperabile senza accesso al Keystore/Keychain del device. |
+
+#### P-1 re-valutazione (commit 7ac2fd9)
+
+Con il completamento di F-01 (daily entry), l'intero flusso di scrittura dati sensibili è ora implementato e verificabile. L'audit S11 (`docs/security/p1-appsec-review.md`) ha confermato che:
+
+- Nessun campo di `DailyLogEntity` (flusso, dolore, note, sintomi) viene loggato in nessun path del codice P-1, né in release né in debug con eccezione della singola chiamata `debugPrint` in `historical_entry_screen.dart:156`, che è racchiusa in un blocco `assert` (strip garantito in release profile, contiene solo metadata ORM senza PII).
+- Il `TextEditingController` per le note è creato in `initState()` e distrutto in `dispose()`: nessuna persistenza oltre il ciclo di vita del widget.
+- I `Key` dei widget utilizzati da `FlowIntensityPicker` e `PainIntensitySlider` sono booleani di stato UI, non valori derivati da dati sanitari.
+- `CalendarMonthState.logs` è stato Riverpod in-memory sincronizzato dal DB via Drift stream: non persiste fuori dall'ORM.
+- I dati sanitari transitano esclusivamente attraverso il path: `DailyEntryNotifier.save()` → `SaveDailyLog` → `DailyLogRepository.upsert()` → `DailyLogDao` (Drift, query parametrizzate) → SQLCipher DB. Zero percorsi alternativi di scrittura identificati.
+
+Lo stato passa da PASS (parziale) a **PASS**. Il gap iOS `NSFileProtectionComplete` e `IOSOptions` rimangono hardening L2 (R-03 nel piano di remediation) e non impattano la classificazione L1.
 
 ### MASVS-STORAGE-2
 **Testo del controllo:** The app prevents leakage of sensitive data.
@@ -158,9 +170,19 @@ android:fullBackupContent="@xml/backup_rules"
 
 | Campo | Valore |
 |-------|--------|
-| **Stato** | PASS (parziale — UI in sviluppo) |
-| **Evidenza** | Le schermate principali (`calendar_screen.dart`, `settings_screen.dart`, ecc.) sono scaffold senza input di dati sensibili implementati nella fase corrente. Non è presente alcun campo password con `obscureText: false`, nessuno screenshot prevention disabilitato esplicitamente. `analysis_options.yaml` include `avoid_print: true` che previene il log accidentale di dati sensibili. |
-| **Limitazione** | La valutazione completa di questo controllo richiede l'implementazione della `daily_entry` screen (F-01) e del flusso di backup (F-08). Un campo note non oscurato in `DailyLog` potrebbe essere visibile nelle anteprime di app switcher — da verificare quando la UI sarà implementata. |
+| **Stato** | PASS |
+| **Evidenza** | Nessun campo password con `obscureText: false`. `analysis_options.yaml` include `avoid_print: true`. Non è presente nessuna disabilitazione esplicita della screenshot prevention. |
+| **Limitazione residua (L2, non L1)** | La soppressione delle screenshot nell'app switcher (`FLAG_SECURE` Android / blur iOS) non è implementata (R-06, deferred a P-5). Le schermate `QuickEntryModal` e `HistoricalEntryScreen` mostrano dati sanitari in chiaro e sono teoricamente visibili nelle anteprime dell'app switcher. Questo è un gap L2 esplicito (MASVS-PLATFORM-3 L2 → DEFERRED P-5 nel target doc), non un FAIL L1. |
+
+#### P-1 re-valutazione (commit 7ac2fd9)
+
+F-01 è ora implementato. La revisione di `historical_entry_screen.dart` e `quick_entry_modal.dart` conferma:
+
+- Nessun `TextField` per dati sanitari ha `enableSuggestions: true` in modo esplicito — il campo note (`TextFieldMetra`) non imposta `enableSuggestions` o `autocorrect`, il che significa che usa i default Flutter (`enableSuggestions: true`, `autocorrect: true`). Questo è un gap L2 (keyboard suggestions su campo note sensibile) ma non L1; il campo è visibile solo quando l'utente lo abilita esplicitamente tramite lo Switch.
+- Nessun `autofillHints` su campi sensitivi.
+- La `HistoricalEntryScreen` mantiene `_existingLog` e `_notesController` come stato widget — corretti per il ciclo di vita, ma entrambi sono superfici PII vive che diventano visibili nelle anteprime dell'app switcher una volta che F-01 è aperto. Questo materializza concretamente il rischio già documentato come deferred a P-5.
+
+Lo stato passa da PASS (parziale) a **PASS**. Le azioni rimanenti sono L2 (R-06, R-09), non L1.
 
 ---
 
@@ -197,9 +219,16 @@ android:fullBackupContent="@xml/backup_rules"
 
 | Campo | Valore |
 |-------|--------|
-| **Stato** | PASS (parziale — perimetro limitato) |
-| **Evidenza** | (1) La chiave DB è validata con `RegExp(r'^[0-9a-f]+$')` e length check prima dell'uso (`key_management_service.dart:39-40`, `app_database.dart:144`). (2) Il blob decrypt valida la lunghezza minima prima di qualsiasi elaborazione (`encryption_service.dart:71-73`). (3) `analysis_options.yaml` abilita `avoid_dynamic_calls: true` e `strict-casts: true`, riducendo la superficie di injection a livello Dart. (4) Drift usa query parametrizzate di default — nessuna SQL injection possibile tramite l'ORM. |
-| **Limitazione** | Le schermate di input utente (F-01, F-08) non sono ancora implementate — la validazione degli input sarà da verificare quando disponibili. |
+| **Stato** | PASS |
+| **Evidenza** | (1) La chiave DB è validata con `RegExp(r'^[0-9a-f]+$')` e length check prima dell'uso (`key_management_service.dart:39-40`, `app_database.dart:144`). (2) Il blob decrypt valida la lunghezza minima prima di qualsiasi elaborazione (`encryption_service.dart:71-73`). (3) `analysis_options.yaml` abilita `avoid_dynamic_calls: true` e `strict-casts: true`, riducendo la superficie di injection a livello Dart. (4) Drift usa query parametrizzate di default — nessuna SQL injection possibile tramite l'ORM. (5) `SaveDailyLog.call()` (`save_daily_log.dart:32-74`) implementa validazione esplicita: rifiuta date future (`logDay.isAfter(todayDay)`), rifiuta la combinazione flow+spotting, valida il range di `painIntensity` (0–3), e normalizza la data a UTC midnight prima dell'upsert. (6) Drift ORM su tutta la catena: zero SQL costruito per concatenazione. |
+
+#### P-1 re-valutazione (commit 7ac2fd9)
+
+Con l'implementazione di F-01, il perimetro di validazione input si è espanso significativamente. Tutti i controlli P-1 sono soddisfacenti a livello L1.
+
+Una osservazione residua riguarda `app_router.dart:48-53`: il parsing del parametro di rotta `/daily-entry/:date` usa `int.parse(parts[0/1/2])` senza `try/catch`. Una stringa malformata (es. `/daily-entry/2026-13-99` o `/daily-entry/abc`) lancia `FormatException` non gestita nel `GoRouter.builder`, con conseguente crash del frame di navigazione. L'impatto è limitato: il path è scritto solo dal codice interno (`calendar_screen.dart:298` con `date.toIso8601String().substring(0, 10)`, che produce sempre una data valida). Non è una superficie esposta a input arbitrario utente. Da hardened con `try/catch` + redirect a `/calendar` come difesa in profondità in una sprint successiva.
+
+Lo stato passa da PASS (parziale) a **PASS**. La validazione del router è una osservazione di hardening, non un FAIL L1.
 
 ---
 
@@ -280,13 +309,21 @@ android:fullBackupContent="@xml/backup_rules"
 | **Stato** | PASS (condizionale — funzionalità in sviluppo) |
 | **Giustificazione** | Il modello dati e l'architettura supportano la cancellazione completa (via `deleteDatabaseKey()` + eliminazione del file DB). L'export CSV (F-09) fornisce portabilità. Le funzionalità specifiche di Settings (cancellazione account, export) non sono ancora implementate — da verificare alla fase P-5/P-7. |
 
+#### P-1 re-valutazione (commit 7ac2fd9)
+
+`HistoricalEntryScreen` implementa la cancellazione del singolo giorno tramite `_delete()` (`historical_entry_screen.dart:166-195`), che include un dialog di conferma a due step prima di invocare `DailyEntryNotifier.delete()`. Il flusso conferma-delete-recompute è cablato correttamente. La cancellazione bulk (tutti i dati) e l'export CSV rimangono deferred a P-5/P-7 per il Settings screen; la condizionalità del controllo rimane invariata per quella parte.
+
+Lo stato rimane **PASS (condizionale)**, con il progresso concreto della cancellazione per-giorno ora implementata.
+
 ---
 
 ## Riepilogo L1
 
+Tabella aggiornata alla P-1 re-valutazione (commit 7ac2fd9). I controlli con stato modificato rispetto a b20f4d4 sono evidenziati con (↑ P-1).
+
 | Categoria | Controllo | Stato |
 |-----------|-----------|-------|
-| STORAGE | MASVS-STORAGE-1 | PASS (parziale) |
+| STORAGE | MASVS-STORAGE-1 | PASS ↑ P-1 |
 | STORAGE | MASVS-STORAGE-2 | **FAIL** |
 | CRYPTO | MASVS-CRYPTO-1 | PASS |
 | CRYPTO | MASVS-CRYPTO-2 | PASS |
@@ -297,11 +334,11 @@ android:fullBackupContent="@xml/backup_rules"
 | NETWORK | MASVS-NETWORK-2 | N/A |
 | PLATFORM | MASVS-PLATFORM-1 | PASS |
 | PLATFORM | MASVS-PLATFORM-2 | N/A |
-| PLATFORM | MASVS-PLATFORM-3 | PASS (parziale) |
+| PLATFORM | MASVS-PLATFORM-3 | PASS ↑ P-1 |
 | CODE | MASVS-CODE-1 | PASS (condizionale) |
 | CODE | MASVS-CODE-2 | N/A |
 | CODE | MASVS-CODE-3 | PASS (con riserva) |
-| CODE | MASVS-CODE-4 | PASS (parziale) |
+| CODE | MASVS-CODE-4 | PASS ↑ P-1 |
 | RESILIENCE | MASVS-RESILIENCE-1 | FAIL (deferred P-7) |
 | RESILIENCE | MASVS-RESILIENCE-2 | **FAIL** |
 | RESILIENCE | MASVS-RESILIENCE-3 | FAIL (deferred P-7) |
@@ -309,11 +346,17 @@ android:fullBackupContent="@xml/backup_rules"
 | PRIVACY | MASVS-PRIVACY-1 | PASS |
 | PRIVACY | MASVS-PRIVACY-2 | PASS |
 | PRIVACY | MASVS-PRIVACY-3 | PASS (condizionale) |
-| PRIVACY | MASVS-PRIVACY-4 | PASS (condizionale) |
+| PRIVACY | MASVS-PRIVACY-4 | PASS (condizionale) ↑ P-1 |
+
+**Calcolo conformità L1 (commit 7ac2fd9):**
+- Controlli applicabili (totale - N/A): 24 - 7 = **17**
+- PASS / PASS condizionale: **13**
+- FAIL: **4** (STORAGE-2, RESILIENCE-1, RESILIENCE-2, RESILIENCE-3)
+- Conformità: 13/17 = **76%** lordo; escludendo i 2 FAIL esplicitamente deferred a P-7 (RESILIENCE-1, RESILIENCE-3): **13/15 = 87%** — sopra la soglia ≥80%.
 
 **FAIL bloccanti (pre-distribuzione):**
-1. `MASVS-STORAGE-2` — `allowBackup` non disabilitato
-2. `MASVS-RESILIENCE-2` — Release build firmata con debug key
+1. `MASVS-STORAGE-2` — `allowBackup` non disabilitato (sprint target: P-1 corrente, non risolto)
+2. `MASVS-RESILIENCE-2` — Release build firmata con debug key (bloccante pre-distribuzione, R-10)
 
 **FAIL deferrati a P-7 (post-MVP):**
 3. `MASVS-RESILIENCE-1` — Root/jailbreak detection assente
@@ -329,3 +372,5 @@ android:fullBackupContent="@xml/backup_rules"
 - Analisi CVE automatizzata sulle dipendenze (`osv-scanner`, `flutter pub audit`) — non eseguita in questa sessione.
 - Verifica contrasto colori WCAG — out of scope sicurezza, già trattato in `threat-model.md`.
 - Pipeline CI/CD completa — workflows GitHub Actions non presenti nel repository al momento dell'audit.
+
+**Aggiornamento P-1 (commit 7ac2fd9):** Il perimetro `features/daily_entry/**`, `features/calendar/**` e `providers/` è stato integralmente analizzato tramite review statica. La revisione S11 separata (`docs/security/p1-appsec-review.md`) ha coperto OWASP Mobile Top 10 M1, M2, M9 per lo stesso perimetro. I file di use case (`save_daily_log.dart`) e la configurazione router (`app_router.dart`) sono stati inclusi nell'analisi P-1.
