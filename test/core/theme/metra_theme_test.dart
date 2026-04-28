@@ -55,7 +55,8 @@ void main() {
       expect(theme.brightness, Brightness.dark);
     });
 
-    testWidgets('scaffold background is deepNight', (WidgetTester tester) async {
+    testWidgets('scaffold background is deepNight',
+        (WidgetTester tester) async {
       final theme = MetraTheme.dark();
       expect(theme.scaffoldBackgroundColor, MetraColors.dark.deepNight);
     });

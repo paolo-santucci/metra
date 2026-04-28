@@ -1,0 +1,360 @@
+{
+  "@@locale": "it",
+  "@@last_modified": "2026-04-28",
+
+  "common_appName": "Mētra",
+  "@common_appName": {
+    "description": "App name displayed in the wordmark and title bar"
+  },
+
+  "common_loading": "Caricamento…",
+  "@common_loading": {
+    "description": "Generic loading indicator label"
+  },
+
+  "common_save": "Salva",
+  "@common_save": {
+    "description": "Generic save button"
+  },
+
+  "common_cancel": "Annulla",
+  "@common_cancel": {
+    "description": "Generic cancel button"
+  },
+
+  "common_delete": "Elimina",
+  "@common_delete": {
+    "description": "Generic delete button"
+  },
+
+  "common_ok": "OK",
+  "@common_ok": {
+    "description": "Generic confirmation button"
+  },
+
+  "common_error_generic": "Qualcosa è andato storto. Riprova.",
+  "@common_error_generic": {
+    "description": "Generic error message shown when an operation fails unexpectedly"
+  },
+
+  "daily_entry_title": "Registro giornaliero",
+  "@daily_entry_title": {
+    "description": "Title of the daily entry screen"
+  },
+
+  "daily_entry_flow_label": "Flusso",
+  "@daily_entry_flow_label": {
+    "description": "Section heading for the flow intensity picker"
+  },
+
+  "daily_entry_flow_none": "Nessun flusso",
+  "@daily_entry_flow_none": {
+    "description": "Flow level: no flow at all"
+  },
+
+  "daily_entry_flow_spotting": "Spotting",
+  "@daily_entry_flow_spotting": {
+    "description": "Label for the spotting toggle in the daily entry form. Spotting and flow are mutually exclusive. 'Spotting' is an established medical loanword in Italian — do not translate."
+  },
+
+  "daily_entry_flow_light": "Flusso leggero",
+  "@daily_entry_flow_light": {
+    "description": "Flow level: light flow. Includes noun so it reads naturally in accessibility labels."
+  },
+
+  "daily_entry_flow_medium": "Flusso moderato",
+  "@daily_entry_flow_medium": {
+    "description": "Flow level: moderate flow"
+  },
+
+  "daily_entry_flow_heavy": "Flusso intenso",
+  "@daily_entry_flow_heavy": {
+    "description": "Flow level: heavy flow"
+  },
+
+  "daily_entry_flow_veryHeavy": "Flusso molto intenso",
+  "@daily_entry_flow_veryHeavy": {
+    "description": "Flow level: very heavy flow"
+  },
+
+  "daily_entry_pain_label": "Dolore",
+  "@daily_entry_pain_label": {
+    "description": "Section heading for the pain intensity slider"
+  },
+
+  "daily_entry_pain_none": "Nessun dolore",
+  "@daily_entry_pain_none": {
+    "description": "Pain level: no pain"
+  },
+
+  "daily_entry_pain_mild": "Lieve",
+  "@daily_entry_pain_mild": {
+    "description": "Pain level: mild pain"
+  },
+
+  "daily_entry_pain_moderate": "Moderato",
+  "@daily_entry_pain_moderate": {
+    "description": "Pain level: moderate pain"
+  },
+
+  "daily_entry_pain_severe": "Intenso",
+  "@daily_entry_pain_severe": {
+    "description": "Pain level: severe pain"
+  },
+
+  "daily_entry_symptoms_label": "Sintomi",
+  "@daily_entry_symptoms_label": {
+    "description": "Section heading for the symptom chips"
+  },
+
+  "daily_entry_symptom_cramps": "Crampi",
+  "@daily_entry_symptom_cramps": {
+    "description": "Symptom chip: menstrual cramps"
+  },
+
+  "daily_entry_symptom_backPain": "Mal di schiena",
+  "@daily_entry_symptom_backPain": {
+    "description": "Symptom chip: back pain"
+  },
+
+  "daily_entry_symptom_headache": "Mal di testa",
+  "@daily_entry_symptom_headache": {
+    "description": "Symptom chip: headache"
+  },
+
+  "daily_entry_symptom_migraine": "Emicrania",
+  "@daily_entry_symptom_migraine": {
+    "description": "Symptom chip: migraine"
+  },
+
+  "daily_entry_symptom_bloating": "Gonfiore",
+  "@daily_entry_symptom_bloating": {
+    "description": "Symptom chip: bloating"
+  },
+
+  "daily_entry_symptom_custom": "Personalizzato",
+  "@daily_entry_symptom_custom": {
+    "description": "Symptom chip: custom user-defined symptom"
+  },
+
+  "daily_entry_symptom_custom_placeholder": "Nome del sintomo…",
+  "@daily_entry_symptom_custom_placeholder": {
+    "description": "Placeholder text for the custom symptom name input field"
+  },
+
+  "daily_entry_notes_label": "Note",
+  "@daily_entry_notes_label": {
+    "description": "Section heading for the notes field"
+  },
+
+  "daily_entry_notes_placeholder": "Aggiungi una nota…",
+  "@daily_entry_notes_placeholder": {
+    "description": "Placeholder text inside the notes text field"
+  },
+
+  "daily_entry_save": "Salva",
+  "@daily_entry_save": {
+    "description": "Save button on the daily entry screen"
+  },
+
+  "daily_entry_cancel": "Annulla",
+  "@daily_entry_cancel": {
+    "description": "Cancel button on the daily entry screen — discards unsaved changes"
+  },
+
+  "daily_entry_delete_confirmation_title": "Elimina registro",
+  "@daily_entry_delete_confirmation_title": {
+    "description": "Title of the confirmation dialog when the user wants to delete a daily entry"
+  },
+
+  "daily_entry_delete_confirmation_body": "Eliminare i dati di questo giorno? Questa azione non può essere annullata.",
+  "@daily_entry_delete_confirmation_body": {
+    "description": "Body text of the delete confirmation dialog"
+  },
+
+  "calendar_month_title": "{month} {year}",
+  "@calendar_month_title": {
+    "description": "Month and year heading in the calendar header, e.g. 'aprile 2026'",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+
+  "calendar_prev_month": "Mese precedente",
+  "@calendar_prev_month": {
+    "description": "Accessibility label for the previous-month navigation button"
+  },
+
+  "calendar_next_month": "Mese successivo",
+  "@calendar_next_month": {
+    "description": "Accessibility label for the next-month navigation button"
+  },
+
+  "calendar_today": "Oggi",
+  "@calendar_today": {
+    "description": "Label used to refer to today's date"
+  },
+
+  "calendar_empty_state": "Nessun dato registrato per questo mese.\nTocca un giorno per iniziare.",
+  "@calendar_empty_state": {
+    "description": "Empty-state message shown when the calendar month has no logged entries"
+  },
+
+  "calendar_legend_flow": "Flusso",
+  "@calendar_legend_flow": {
+    "description": "Calendar legend entry for days with logged flow"
+  },
+
+  "calendar_legend_spotting": "Spotting",
+  "@calendar_legend_spotting": {
+    "description": "Calendar legend entry for spotting days"
+  },
+
+  "calendar_legend_prediction": "Previsione",
+  "@calendar_legend_prediction": {
+    "description": "Calendar legend entry for predicted cycle days"
+  },
+
+  "calendar_legend_notes": "Note",
+  "@calendar_legend_notes": {
+    "description": "Calendar legend entry for days that have a note"
+  },
+
+  "calendar_prediction_label": "Prossimo ritmo previsto:",
+  "@calendar_prediction_label": {
+    "description": "Label preceding the predicted next cycle date range"
+  },
+
+  "calendar_fab_label": "Aggiungi o modifica il registro di oggi",
+  "@calendar_fab_label": {
+    "description": "Accessibility label for the floating action button on the calendar screen"
+  },
+
+  "settings_language_label": "Lingua",
+  "@settings_language_label": {
+    "description": "Settings row label for language selection"
+  },
+
+  "settings_theme_label": "Tema",
+  "@settings_theme_label": {
+    "description": "Settings row label for theme selection"
+  },
+
+  "settings_theme_system": "Sistema",
+  "@settings_theme_system": {
+    "description": "Theme option: follow system setting"
+  },
+
+  "settings_theme_light": "Chiaro",
+  "@settings_theme_light": {
+    "description": "Theme option: light mode"
+  },
+
+  "settings_theme_dark": "Scuro",
+  "@settings_theme_dark": {
+    "description": "Theme option: dark mode"
+  },
+
+  "settings_notifications_label": "Promemoria ciclo",
+  "@settings_notifications_label": {
+    "description": "Settings row label for cycle reminder notifications toggle"
+  },
+
+  "settings_notifications_on": "Attive",
+  "@settings_notifications_on": {
+    "description": "Notifications toggle state: on"
+  },
+
+  "settings_notifications_off": "Disattivate",
+  "@settings_notifications_off": {
+    "description": "Notifications toggle state: off"
+  },
+
+  "settings_backup_label": "Backup cloud",
+  "@settings_backup_label": {
+    "description": "Settings row label for cloud backup (stub — UI ships later)"
+  },
+
+  "settings_backup_not_configured": "Non configurato",
+  "@settings_backup_not_configured": {
+    "description": "Settings backup row value when cloud backup has not been set up"
+  },
+
+  "settings_export_csv": "Esporta CSV",
+  "@settings_export_csv": {
+    "description": "Settings action to export data as a CSV file"
+  },
+
+  "settings_delete_all": "Cancella tutti i dati",
+  "@settings_delete_all": {
+    "description": "Settings danger-zone action to delete all user data"
+  },
+
+  "a11y_calendar_day_no_flow": "Nessun dato, {date}",
+  "@a11y_calendar_day_no_flow": {
+    "description": "Accessibility label for a calendar day with no logged data",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+
+  "a11y_calendar_day_flow": "{flowLevel}, {date}",
+  "@a11y_calendar_day_flow": {
+    "description": "Accessibility label for a calendar day with logged flow. flowLevel comes from daily_entry_flow_* labels (e.g. 'Flusso leggero, 15 aprile').",
+    "placeholders": {
+      "flowLevel": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+
+  "a11y_calendar_day_spotting": "Spotting, {date}",
+  "@a11y_calendar_day_spotting": {
+    "description": "Accessibility label for a calendar day with spotting logged",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+
+  "a11y_calendar_day_has_note": "{date}, con nota",
+  "@a11y_calendar_day_has_note": {
+    "description": "Accessibility label suffix added when a calendar day has a note",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+
+  "a11y_calendar_day_prediction": "Ciclo previsto, {date}",
+  "@a11y_calendar_day_prediction": {
+    "description": "Accessibility label for a predicted-cycle day on the calendar",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+
+  "a11y_calendar_day_today": "Oggi, {date}",
+  "@a11y_calendar_day_today": {
+    "description": "Accessibility label for today's date on the calendar",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  }
+}

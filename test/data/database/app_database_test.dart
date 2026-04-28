@@ -49,8 +49,10 @@ void main() {
 
       expect(row, isNotNull);
       // Drift reads DateTime back in local time; compare epoch to avoid isUtc mismatch.
-      expect(row!.date.millisecondsSinceEpoch,
-          equals(date.millisecondsSinceEpoch),);
+      expect(
+        row!.date.millisecondsSinceEpoch,
+        equals(date.millisecondsSinceEpoch),
+      );
       expect(row.flowIntensity, equals(3));
       expect(row.notes, equals('mild headache'));
       expect(row.painIntensity, equals(4));

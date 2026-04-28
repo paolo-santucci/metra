@@ -85,7 +85,7 @@ class EncryptionService {
       return Uint8List.fromList(plaintext);
     } on SecretBoxAuthenticationError {
       throw const CryptoException(
-          'Decryption failed: wrong passphrase or corrupted data',
+        'Decryption failed: wrong passphrase or corrupted data',
       );
     }
   }

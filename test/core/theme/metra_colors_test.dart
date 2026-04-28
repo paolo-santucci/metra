@@ -66,7 +66,10 @@ void main() {
     });
 
     test('terracotta on sand is large-text-only (3.0:1)', () {
-      expect(MetraColors.light.terracotta, isNot(equals(MetraColors.light.terracottaDeep)));
+      expect(
+        MetraColors.light.terracotta,
+        isNot(equals(MetraColors.light.terracottaDeep)),
+      );
     });
 
     test('light bgOverlay maps to overlayScrim', () {

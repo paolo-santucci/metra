@@ -15,4 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
-enum FlowIntensity { none, spotting, light, medium, heavy, veryHeavy }
+// Ordinal flow intensity. Spotting is tracked separately via DailyLogEntity.spotting
+// (the two are mutually exclusive: a day cannot have both flow and spotting).
+enum FlowIntensity { none, light, medium, heavy, veryHeavy }

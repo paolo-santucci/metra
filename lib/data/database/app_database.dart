@@ -37,7 +37,8 @@ class DailyLogs extends Table {
   DateTimeColumn get date => dateTime()();
   IntColumn get flowIntensity => integer().nullable()(); // FlowIntensity.index
   BoolColumn get spotting => boolean().withDefault(const Constant(false))();
-  BoolColumn get otherDischarge => boolean().withDefault(const Constant(false))();
+  BoolColumn get otherDischarge =>
+      boolean().withDefault(const Constant(false))();
   BoolColumn get painEnabled => boolean().withDefault(const Constant(false))();
   IntColumn get painIntensity => integer().nullable()();
   BoolColumn get notesEnabled => boolean().withDefault(const Constant(false))();
@@ -77,13 +78,10 @@ class SymptomTemplates extends Table {
 /// Singleton settings row — always id = 1.
 class AppSettings extends Table {
   IntColumn get id => integer().autoIncrement()();
-  TextColumn get languageCode =>
-      text().withDefault(const Constant('it'))();
+  TextColumn get languageCode => text().withDefault(const Constant('it'))();
   BoolColumn get darkMode => boolean().nullable()(); // null = follow system
-  BoolColumn get painEnabled =>
-      boolean().withDefault(const Constant(true))();
-  BoolColumn get notesEnabled =>
-      boolean().withDefault(const Constant(true))();
+  BoolColumn get painEnabled => boolean().withDefault(const Constant(true))();
+  BoolColumn get notesEnabled => boolean().withDefault(const Constant(true))();
   IntColumn get notificationDaysBefore =>
       integer().withDefault(const Constant(2))();
   BoolColumn get notificationsEnabled =>
@@ -95,7 +93,8 @@ class AppSettings extends Table {
 class SyncLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
   DateTimeColumn get timestamp => dateTime()();
-  TextColumn get provider => text()(); // 'google_drive' | 'dropbox' | 'onedrive'
+  TextColumn get provider =>
+      text()(); // 'google_drive' | 'dropbox' | 'onedrive'
   TextColumn get operation => text()(); // 'backup' | 'restore'
   BoolColumn get success => boolean()();
   TextColumn get errorMessage => text().nullable()();
