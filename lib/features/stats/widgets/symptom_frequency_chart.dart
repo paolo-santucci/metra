@@ -40,7 +40,7 @@ class SymptomFrequencyChart extends StatelessWidget {
         : MetraColors.light.textSecondary;
 
     final nonZero = frequencies.entries
-        .where((e) => e.key != PainSymptomType.custom && e.value > 0)
+        .where((e) => e.key != PainSymptomType.custom && e.value > 0) // custom excluded per P-2 scope (§1)
         .toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 

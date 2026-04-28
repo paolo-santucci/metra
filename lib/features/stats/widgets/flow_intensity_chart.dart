@@ -101,9 +101,8 @@ class FlowIntensityChart extends StatelessWidget {
             gridData: const FlGridData(show: false),
             barTouchData: BarTouchData(enabled: false),
           ),
-          swapAnimationDuration: Duration(
-            milliseconds: reduceMotion ? 0 : 240,
-          ),
+          swapAnimationDuration:
+              reduceMotion ? Duration.zero : const Duration(milliseconds: 240),
         ),
       ),
     );
