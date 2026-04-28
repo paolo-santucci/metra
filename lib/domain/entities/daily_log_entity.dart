@@ -22,6 +22,7 @@ class DailyLogEntity {
     required this.date,
     this.flowIntensity,
     this.spotting = false,
+    this.otherDischarge = false,
     this.painEnabled = false,
     this.painIntensity,
     this.notesEnabled = false,
@@ -31,6 +32,7 @@ class DailyLogEntity {
   final DateTime date;
   final FlowIntensity? flowIntensity;
   final bool spotting;
+  final bool otherDischarge;
   final bool painEnabled;
   final int? painIntensity;
   final bool notesEnabled;
@@ -40,6 +42,7 @@ class DailyLogEntity {
     DateTime? date,
     FlowIntensity? flowIntensity,
     bool? spotting,
+    bool? otherDischarge,
     bool? painEnabled,
     int? painIntensity,
     bool? notesEnabled,
@@ -49,6 +52,7 @@ class DailyLogEntity {
       date: date ?? this.date,
       flowIntensity: flowIntensity ?? this.flowIntensity,
       spotting: spotting ?? this.spotting,
+      otherDischarge: otherDischarge ?? this.otherDischarge,
       painEnabled: painEnabled ?? this.painEnabled,
       painIntensity: painIntensity ?? this.painIntensity,
       notesEnabled: notesEnabled ?? this.notesEnabled,
@@ -64,6 +68,7 @@ class DailyLogEntity {
           date == other.date &&
           flowIntensity == other.flowIntensity &&
           spotting == other.spotting &&
+          otherDischarge == other.otherDischarge &&
           painEnabled == other.painEnabled &&
           painIntensity == other.painIntensity &&
           notesEnabled == other.notesEnabled &&
@@ -74,6 +79,7 @@ class DailyLogEntity {
       date.hashCode ^
       flowIntensity.hashCode ^
       spotting.hashCode ^
+      otherDischarge.hashCode ^
       painEnabled.hashCode ^
       painIntensity.hashCode ^
       notesEnabled.hashCode ^
