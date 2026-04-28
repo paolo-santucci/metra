@@ -29,12 +29,15 @@ class KeyManagementService {
   /// Generates and persists it on first call.
   Future<String> getOrCreateDatabaseKey() async {
     final existing = await _storage.read(key: _dbKeyStorageKey);
-    if (existing != null && existing.length == 64) return existing;
+    if (existing != null && _isValidHexKey(existing)) return existing;
 
     final key = _generateHexKey();
     await _storage.write(key: _dbKeyStorageKey, value: key);
     return key;
   }
+
+  bool _isValidHexKey(String key) =>
+      key.length == 64 && RegExp(r'^[0-9a-f]+$').hasMatch(key);
 
   /// Deletes the DB key from secure storage.
   /// Call only during full data wipe / factory reset — data becomes irrecoverable.

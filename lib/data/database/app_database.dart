@@ -141,17 +141,34 @@ class AppDatabase extends _$AppDatabase {
   /// The key is passed directly to SQLCipher via `PRAGMA key = "x'…'"` so
   /// it is treated as a raw binary key, not a passphrase.
   static QueryExecutor openConnection(String dbPath, String hexKey) {
-    assert(
-      RegExp(r'^[0-9a-fA-F]{64}$').hasMatch(hexKey),
-      'hexKey must be a 64-character hex string (0-9, a-f, A-F) representing 32 bytes',
-    );
+    if (!RegExp(r'^[0-9a-fA-F]{64}$').hasMatch(hexKey)) {
+      throw ArgumentError(
+        'hexKey must be a 64-character hex string (0-9, a-f, A-F) representing 32 bytes',
+      );
+    }
     return LazyDatabase(() async {
       final file = File(dbPath);
       return NativeDatabase.createInBackground(
         file,
+        // Re-register the SQLCipher override in the background isolate.
+        // open.overrideFor registrations are isolate-local and are NOT
+        // inherited by child isolates spawned by createInBackground.
+        isolateSetup: () async {
+          open.overrideFor(OperatingSystem.android, openCipherOnAndroid);
+        },
         setup: (rawDb) {
           // Unlock the SQLCipher database with the raw hex key.
           rawDb.execute("PRAGMA key = \"x'$hexKey'\"");
+          // Verify SQLCipher loaded. If cipher_version is empty, the DB would
+          // be unencrypted. Fail loudly rather than silently.
+          final result = rawDb.select('PRAGMA cipher_version');
+          if (result.isEmpty ||
+              (result.first['cipher_version'] as String? ?? '').isEmpty) {
+            throw StateError(
+              'SQLCipher not loaded — database would be unencrypted. '
+              'Ensure sqlcipher_flutter_libs is correctly linked.',
+            );
+          }
           // Enforce referential integrity for ON DELETE CASCADE to take effect.
           rawDb.execute('PRAGMA foreign_keys = ON');
         },

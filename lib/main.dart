@@ -20,7 +20,8 @@ import 'package:flutter/material.dart';
 import 'app.dart';
 import 'data/database/app_database.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   // Must run before any database is opened.
   AppDatabase.initializeSQLCipher();
   runApp(const MetraApp());
