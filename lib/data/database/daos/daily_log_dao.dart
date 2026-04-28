@@ -31,9 +31,13 @@ class DailyLogDao extends DatabaseAccessor<AppDatabase>
   DateTime _toUtcDay(DateTime date) =>
       DateTime.utc(date.year, date.month, date.day);
 
-  /// Callers must pass a UTC-midnight date (use [_toUtcDay] before inserting).
-  Future<void> upsertDailyLog(DailyLogsCompanion entry) =>
-      into(dailyLogs).insertOnConflictUpdate(entry);
+  /// Normalizes the date to UTC midnight before upserting.
+  Future<void> upsertDailyLog(DailyLogsCompanion entry) {
+    if (entry.date.present) {
+      entry = entry.copyWith(date: Value(_toUtcDay(entry.date.value)));
+    }
+    return into(dailyLogs).insertOnConflictUpdate(entry);
+  }
 
   Stream<DailyLog?> watchDay(DateTime date) =>
       (select(dailyLogs)..where((t) => t.date.equals(_toUtcDay(date))))
