@@ -1,0 +1,17 @@
+Flutter 3.41.8 • channel stable • https://github.com/flutter/flutter.git
+Framework • revision 02085feb3f (4 giorni fa) • 2026-04-24 13:54:45 -0700
+Engine • hash 7a53c052bc4b472cf780b199087e1368e4a9aa8c (revision 59aa584fdf) (12 days ago) • 2026-04-16 02:32:16.000Z
+Tools • Dart 3.11.5 • DevTools 2.54.2
+
+=== Verified on 2026-04-28 ===
+AVD available:    metra_pixel (target=android-34)
+Connected device: none at verification time
+
+Automated checks (passed):
+  - flutter analyze: No issues found!
+  - flutter test:    28/28 passed (5 nav + 23 theme/colors)
+  - flutter build apk --debug: built build/app/outputs/flutter-apk/app-debug.apk
+
+Manual verification still required (DoD §Task 12 Steps 2-3):
+  - Boot AVD metra_pixel and run `flutter run`: 4 tabs visible + tappable
+  - System Settings → Display → Dark mode: app switches to designed dark theme
