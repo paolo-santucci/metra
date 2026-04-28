@@ -17,6 +17,8 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../domain/use_cases/compute_cycle_stats.dart';
+import '../domain/use_cases/get_cycle_summaries.dart';
 import '../domain/use_cases/get_month_logs.dart';
 import '../domain/use_cases/recompute_cycle_entries.dart';
 import '../domain/use_cases/save_daily_log.dart';
@@ -38,4 +40,19 @@ final recomputeCycleEntriesProvider = FutureProvider<RecomputeCycleEntries>((
   final logRepo = await ref.watch(dailyLogRepositoryProvider.future);
   final cycleRepo = await ref.watch(cycleEntryRepositoryProvider.future);
   return RecomputeCycleEntries(logRepo, cycleRepo);
+});
+
+final getCycleSummariesProvider = FutureProvider<GetCycleSummaries>((
+  ref,
+) async {
+  final logRepo = await ref.watch(dailyLogRepositoryProvider.future);
+  final cycleRepo = await ref.watch(cycleEntryRepositoryProvider.future);
+  return GetCycleSummaries(logRepo, cycleRepo);
+});
+
+final computeCycleStatsProvider = FutureProvider<ComputeCycleStats>((
+  ref,
+) async {
+  final getCycleSummaries = await ref.watch(getCycleSummariesProvider.future);
+  return ComputeCycleStats(getCycleSummaries);
 });
