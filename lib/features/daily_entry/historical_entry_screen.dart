@@ -111,17 +111,16 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
   }
 
   DailyLogEntity _buildEntity() => DailyLogEntity(
-    date: widget.date,
-    flowIntensity: _selectedFlow,
-    spotting: _isSpotting,
-    painEnabled: _painEnabled,
-    painIntensity: _painEnabled ? _painIntensity : null,
-    notesEnabled: _notesEnabled,
-    notes:
-        _notesEnabled && _notesController.text.trim().isNotEmpty
+        date: widget.date,
+        flowIntensity: _selectedFlow,
+        spotting: _isSpotting,
+        painEnabled: _painEnabled,
+        painIntensity: _painEnabled ? _painIntensity : null,
+        notesEnabled: _notesEnabled,
+        notes: _notesEnabled && _notesController.text.trim().isNotEmpty
             ? _notesController.text.trim()
             : null,
-  );
+      );
 
   Future<void> _save() async {
     // safe: delegates registered in MetraApp
@@ -168,21 +167,20 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
     final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: Text(l10n.daily_entry_delete_confirmation_title),
-            content: Text(l10n.daily_entry_delete_confirmation_body),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
-                child: Text(l10n.daily_entry_cancel),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(true),
-                child: Text(l10n.common_delete),
-              ),
-            ],
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.daily_entry_delete_confirmation_title),
+        content: Text(l10n.daily_entry_delete_confirmation_body),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n.daily_entry_cancel),
           ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(l10n.common_delete),
+          ),
+        ],
+      ),
     );
 
     if (confirmed != true) return;
@@ -208,9 +206,7 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
 
     // One-shot symptom load — FutureProvider resolves once, never re-fires.
     // _initSymptoms guards against double-seeding.
-    ref
-        .watch(painSymptomsProvider(widget.date))
-        .whenData(_initSymptoms);
+    ref.watch(painSymptomsProvider(widget.date)).whenData(_initSymptoms);
 
     return Scaffold(
       backgroundColor: bgColor,

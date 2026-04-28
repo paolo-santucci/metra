@@ -126,7 +126,8 @@ void main() {
       expect(lastChanged!, isNot(contains(PainSymptomType.cramps)));
     });
 
-    testWidgets('multiple chips can be selected simultaneously', (tester) async {
+    testWidgets('multiple chips can be selected simultaneously',
+        (tester) async {
       await tester.pumpWidget(_wrap());
       await tester.pumpAndSettle();
 

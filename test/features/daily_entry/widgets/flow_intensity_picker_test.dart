@@ -57,7 +57,8 @@ void main() {
       expect(find.text('Flusso molto intenso'), findsOneWidget);
     });
 
-    testWidgets('tapping a flow chip fires onFlowChanged with correct FlowIntensity',
+    testWidgets(
+        'tapping a flow chip fires onFlowChanged with correct FlowIntensity',
         (tester) async {
       FlowIntensity? captured;
       await tester.pumpWidget(
@@ -85,8 +86,7 @@ void main() {
       expect(spottingCaptured, isTrue);
     });
 
-    testWidgets(
-        'selecting flow when spotting is active clears spotting',
+    testWidgets('selecting flow when spotting is active clears spotting',
         (tester) async {
       FlowIntensity? flowCapture;
       bool? spottingCapture;

@@ -71,13 +71,13 @@ class _QuickEntryModalState extends ConsumerState<QuickEntryModal> {
   }
 
   Future<void> _save() async {
-    final l10n = AppLocalizations.of(context)!; // safe: delegates registered in MetraApp
+    final l10n =
+        AppLocalizations.of(context)!; // safe: delegates registered in MetraApp
     final notifier = ref.read(dailyEntryProvider(_today).notifier);
 
     // Merge flow/spotting changes onto the existing entity so pain, notes, and
     // other fields set via HistoricalEntryScreen are not silently destroyed.
-    final log =
-        _existingLog?.copyWith(
+    final log = _existingLog?.copyWith(
           flowIntensity: _selectedFlow,
           spotting: _isSpotting,
         ) ??

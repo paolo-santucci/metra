@@ -161,7 +161,8 @@ void main() {
       expect(fakeCycleRepo.entries, hasLength(1));
     });
 
-    test('sets state to AsyncError on validation failure (future date)', () async {
+    test('sets state to AsyncError on validation failure (future date)',
+        () async {
       final fakeRepo = _StreamableFakeDailyLogRepository();
       final fakeCycleRepo = FakeCycleEntryRepository();
       final container = _makeContainer(fakeRepo, fakeCycleRepo);
