@@ -1,0 +1,133 @@
+{
+  "@@locale": "en",
+  "@@last_modified": "2026-04-28",
+
+  "common_appName": "Mētra",
+  "common_loading": "Loading…",
+  "common_save": "Save",
+  "common_cancel": "Cancel",
+  "common_delete": "Delete",
+  "common_ok": "OK",
+  "common_error_generic": "Something went wrong. Please try again.",
+
+  "daily_entry_title": "Daily log",
+  "daily_entry_flow_label": "Flow",
+  "daily_entry_flow_none": "No flow",
+  "daily_entry_flow_spotting": "Spotting",
+  "daily_entry_flow_light": "Light flow",
+  "daily_entry_flow_medium": "Moderate flow",
+  "daily_entry_flow_heavy": "Heavy flow",
+  "daily_entry_flow_veryHeavy": "Very heavy flow",
+  "daily_entry_pain_label": "Pain",
+  "daily_entry_pain_none": "No pain",
+  "daily_entry_pain_mild": "Mild",
+  "daily_entry_pain_moderate": "Moderate",
+  "daily_entry_pain_severe": "Severe",
+  "daily_entry_symptoms_label": "Symptoms",
+  "daily_entry_symptom_cramps": "Cramps",
+  "daily_entry_symptom_backPain": "Back pain",
+  "daily_entry_symptom_headache": "Headache",
+  "daily_entry_symptom_migraine": "Migraine",
+  "daily_entry_symptom_bloating": "Bloating",
+  "daily_entry_symptom_custom": "Custom",
+  "daily_entry_symptom_custom_placeholder": "Symptom name…",
+  "daily_entry_notes_label": "Notes",
+  "daily_entry_notes_placeholder": "Add a note…",
+  "daily_entry_save": "Save",
+  "daily_entry_cancel": "Cancel",
+  "daily_entry_delete_confirmation_title": "Delete log",
+  "daily_entry_delete_confirmation_body": "Delete the data for this day? This action cannot be undone.",
+
+  "calendar_month_title": "{month} {year}",
+  "@calendar_month_title": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+
+  "calendar_prev_month": "Previous month",
+  "calendar_next_month": "Next month",
+  "calendar_today": "Today",
+  "calendar_empty_state": "No data logged for this month.\nTap a day to get started.",
+  "calendar_legend_flow": "Flow",
+  "calendar_legend_spotting": "Spotting",
+  "calendar_legend_prediction": "Prediction",
+  "calendar_legend_notes": "Notes",
+  "calendar_prediction_label": "Next predicted cycle:",
+  "calendar_fab_label": "Add or edit today's log",
+
+  "settings_language_label": "Language",
+  "settings_theme_label": "Theme",
+  "settings_theme_system": "System",
+  "settings_theme_light": "Light",
+  "settings_theme_dark": "Dark",
+  "settings_notifications_label": "Cycle reminder",
+  "settings_notifications_on": "On",
+  "settings_notifications_off": "Off",
+  "settings_backup_label": "Cloud backup",
+  "settings_backup_not_configured": "Not configured",
+  "settings_export_csv": "Export CSV",
+  "settings_delete_all": "Delete all data",
+
+  "a11y_calendar_day_no_flow": "No data, {date}",
+  "@a11y_calendar_day_no_flow": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+
+  "a11y_calendar_day_flow": "{flowLevel}, {date}",
+  "@a11y_calendar_day_flow": {
+    "placeholders": {
+      "flowLevel": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+
+  "a11y_calendar_day_spotting": "Spotting, {date}",
+  "@a11y_calendar_day_spotting": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+
+  "a11y_calendar_day_has_note": "{date}, with note",
+  "@a11y_calendar_day_has_note": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+
+  "a11y_calendar_day_prediction": "Predicted cycle, {date}",
+  "@a11y_calendar_day_prediction": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+
+  "a11y_calendar_day_today": "Today, {date}",
+  "@a11y_calendar_day_today": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  }
+}

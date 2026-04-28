@@ -23,6 +23,7 @@ linter:
     avoid_type_to_string: true
     cancel_subscriptions: true
     close_sinks: true
+    unawaited_futures: true
     # Dart idioms
     use_super_parameters: true
     use_string_buffers: true

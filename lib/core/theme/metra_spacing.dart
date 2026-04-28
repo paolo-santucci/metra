@@ -17,36 +17,36 @@
 
 // Spacing, radius, and motion tokens sourced from mockup/tokens.json.
 abstract final class MetraSpacing {
-  static const double s0  = 0;
-  static const double s1  = 4;
-  static const double s2  = 8;
-  static const double s3  = 12;
-  static const double s4  = 16;
-  static const double s5  = 20;
-  static const double s6  = 24;
-  static const double s8  = 32;
+  static const double s0 = 0;
+  static const double s1 = 4;
+  static const double s2 = 8;
+  static const double s3 = 12;
+  static const double s4 = 16;
+  static const double s5 = 20;
+  static const double s6 = 24;
+  static const double s8 = 32;
   static const double s10 = 40;
   static const double s12 = 48;
   static const double s16 = 64;
 }
 
 abstract final class MetraRadius {
-  static const double sm   = 8;
-  static const double md   = 12;
-  static const double lg   = 16;
+  static const double sm = 8;
+  static const double md = 12;
+  static const double lg = 16;
   static const double pill = 999;
 }
 
 abstract final class MetraMotion {
   // Durations (milliseconds) — use as Duration(milliseconds: MetraMotion.base)
-  static const int instant    = 0;
-  static const int fast       = 150;
-  static const int base       = 240;
-  static const int slow       = 400;
+  static const int instant = 0;
+  static const int fast = 150;
+  static const int base = 240;
+  static const int slow = 400;
   static const int risingFill = 600;
-  static const int painPulse  = 780;
+  static const int painPulse = 780;
 
   // Reduced-motion fallbacks (check MediaQuery.of(context).disableAnimations)
-  static const int slowReduced       = 80;
+  static const int slowReduced = 80;
   static const int risingFillReduced = 80;
 }

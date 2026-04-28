@@ -35,3 +35,11 @@ final class SyncException extends MetraException {
 final class CryptoException extends MetraException {
   const CryptoException(super.message);
 }
+
+final class DatabaseException extends MetraException {
+  const DatabaseException(super.message);
+}
+
+final class ValidationException extends MetraException {
+  const ValidationException(super.message);
+}

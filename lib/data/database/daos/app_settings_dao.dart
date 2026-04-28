@@ -35,9 +35,8 @@ class AppSettingsDao extends DatabaseAccessor<AppDatabase>
   /// Runs inside a transaction to avoid a TOCTOU race on first launch.
   Future<AppSetting> getOrCreateSettings() async {
     return transaction(() async {
-      final existing =
-          await (select(appSettings)..where((t) => t.id.equals(1)))
-              .getSingleOrNull();
+      final existing = await (select(appSettings)..where((t) => t.id.equals(1)))
+          .getSingleOrNull();
       if (existing != null) return existing;
       await into(appSettings).insert(const AppSettingsCompanion(id: Value(1)));
       return (select(appSettings)..where((t) => t.id.equals(1))).getSingle();

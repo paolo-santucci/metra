@@ -27,15 +27,13 @@ class CycleEntryDao extends DatabaseAccessor<AppDatabase>
   CycleEntryDao(super.db);
 
   Stream<List<CycleEntry>> watchAllOrderedByStart() =>
-      (select(cycleEntries)
-            ..orderBy([(t) => OrderingTerm.desc(t.startDate)]))
+      (select(cycleEntries)..orderBy([(t) => OrderingTerm.desc(t.startDate)]))
           .watch();
 
-  Future<List<CycleEntry>> getRecentCycles(int n) =>
-      (select(cycleEntries)
-            ..orderBy([(t) => OrderingTerm.desc(t.startDate)])
-            ..limit(n))
-          .get();
+  Future<List<CycleEntry>> getRecentCycles(int n) => (select(cycleEntries)
+        ..orderBy([(t) => OrderingTerm.desc(t.startDate)])
+        ..limit(n))
+      .get();
 
   Future<int> insertCycleEntry(CycleEntriesCompanion entry) =>
       into(cycleEntries).insert(entry);
