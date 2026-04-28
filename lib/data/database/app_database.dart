@@ -143,7 +143,7 @@ class AppDatabase extends _$AppDatabase {
   static QueryExecutor openConnection(String dbPath, String hexKey) {
     assert(
       RegExp(r'^[0-9a-fA-F]{64}$').hasMatch(hexKey),
-      'hexKey must be a 64-character lowercase hex string (32 bytes)',
+      'hexKey must be a 64-character hex string (0-9, a-f, A-F) representing 32 bytes',
     );
     return LazyDatabase(() async {
       final file = File(dbPath);
