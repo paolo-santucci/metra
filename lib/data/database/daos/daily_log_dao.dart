@@ -26,27 +26,45 @@ class DailyLogDao extends DatabaseAccessor<AppDatabase>
     with _$DailyLogDaoMixin {
   DailyLogDao(super.db);
 
+  /// Normalizes [date] to UTC midnight so that all date comparisons are
+  /// consistent regardless of the local timezone the caller used.
+  DateTime _toUtcDay(DateTime date) =>
+      DateTime.utc(date.year, date.month, date.day);
+
+  /// Callers must pass a UTC-midnight date (use [_toUtcDay] before inserting).
+  Future<void> upsertDailyLog(DailyLogsCompanion entry) =>
+      into(dailyLogs).insertOnConflictUpdate(entry);
+
   Stream<DailyLog?> watchDay(DateTime date) =>
-      (select(dailyLogs)..where((t) => t.date.equals(date)))
+      (select(dailyLogs)..where((t) => t.date.equals(_toUtcDay(date))))
           .watchSingleOrNull();
 
   Stream<List<DailyLog>> watchMonth(int year, int month) {
-    final start = DateTime(year, month);
-    final end = DateTime(year, month + 1);
+    final start = DateTime.utc(year, month);
+    // Half-open interval [start, end) — excludes the first day of next month.
+    final end = DateTime.utc(year, month + 1);
     return (select(dailyLogs)
-          ..where((t) => t.date.isBetweenValues(start, end))
+          ..where(
+            (t) =>
+                t.date.isBiggerOrEqualValue(start) &
+                t.date.isSmallerThanValue(end),
+          )
           ..orderBy([(t) => OrderingTerm.asc(t.date)]))
         .watch();
   }
 
-  Future<void> upsertDailyLog(DailyLogsCompanion entry) =>
-      into(dailyLogs).insertOnConflictUpdate(entry);
-
   Future<void> deleteDailyLog(DateTime date) =>
-      (delete(dailyLogs)..where((t) => t.date.equals(date))).go();
+      (delete(dailyLogs)..where((t) => t.date.equals(_toUtcDay(date)))).go();
 
   Future<List<PainSymptom>> getPainSymptoms(DateTime date) =>
-      (select(painSymptoms)..where((t) => t.dailyLogDate.equals(date))).get();
+      (select(painSymptoms)
+            ..where((t) => t.dailyLogDate.equals(_toUtcDay(date))))
+          .get();
+
+  Stream<List<PainSymptom>> watchPainSymptoms(DateTime date) =>
+      (select(painSymptoms)
+            ..where((t) => t.dailyLogDate.equals(_toUtcDay(date))))
+          .watch();
 
   Future<void> replacePainSymptoms(
     DateTime date,
@@ -54,7 +72,7 @@ class DailyLogDao extends DatabaseAccessor<AppDatabase>
   ) =>
       transaction(() async {
         await (delete(painSymptoms)
-              ..where((t) => t.dailyLogDate.equals(date)))
+              ..where((t) => t.dailyLogDate.equals(_toUtcDay(date))))
             .go();
         await batch((b) => b.insertAll(painSymptoms, symptoms));
       });
