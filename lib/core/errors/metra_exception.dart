@@ -31,3 +31,7 @@ final class EncryptionException extends MetraException {
 final class SyncException extends MetraException {
   const SyncException(super.message);
 }
+
+final class CryptoException extends MetraException {
+  const CryptoException(super.message);
+}
