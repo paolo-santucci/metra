@@ -171,6 +171,12 @@
   "@stats_period_length_avg": {
     "placeholders": { "n": { "type": "int" } }
   },
+  "stats_n_days": "{n} days",
+  "@stats_n_days": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
   "timeline_view_toggle": "Timeline",
   "table_view_toggle": "Table"
 }

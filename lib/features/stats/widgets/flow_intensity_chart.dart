@@ -20,6 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' as intl;
 
 import '../../../core/theme/metra_colors.dart';
+import '../../../core/theme/metra_spacing.dart';
 import '../../../domain/entities/cycle_stats_data.dart';
 import '../../../domain/entities/flow_intensity.dart';
 import '../../../l10n/app_localizations.dart';
@@ -39,6 +40,7 @@ class FlowIntensityChart extends StatelessWidget {
         ? MetraColors.dark.textSecondary
         : MetraColors.light.textSecondary;
     final reduceMotion = MediaQuery.of(context).disableAnimations;
+    final locale = Localizations.localeOf(context).toString();
 
     final barGroups = points.asMap().entries.map((e) {
       final ordinal = (e.value.dominantFlow?.index ?? 0).toDouble();
@@ -58,12 +60,13 @@ class FlowIntensityChart extends StatelessWidget {
     final semanticsLabel = points
         .map(
           (p) =>
-              '${intl.DateFormat.MMM('it').format(p.startDate)}: ${_flowLabel(l10n, p.dominantFlow)}',
+              '${intl.DateFormat.MMM(locale).format(p.startDate)}: ${_flowLabel(l10n, p.dominantFlow)}',
         )
         .join(', ');
 
     return Semantics(
       label: semanticsLabel,
+      excludeSemantics: true,
       child: SizedBox(
         height: 120,
         child: BarChart(
@@ -90,7 +93,7 @@ class FlowIntensityChart extends StatelessWidget {
                       return const SizedBox.shrink();
                     }
                     return Text(
-                      intl.DateFormat.MMM('it').format(points[idx].startDate),
+                      intl.DateFormat.MMM(locale).format(points[idx].startDate),
                       style: TextStyle(color: textColor, fontSize: 10),
                     );
                   },
@@ -101,8 +104,9 @@ class FlowIntensityChart extends StatelessWidget {
             gridData: const FlGridData(show: false),
             barTouchData: BarTouchData(enabled: false),
           ),
-          swapAnimationDuration:
-              reduceMotion ? Duration.zero : const Duration(milliseconds: 240),
+          swapAnimationDuration: reduceMotion
+              ? Duration.zero
+              : const Duration(milliseconds: MetraMotion.base),
         ),
       ),
     );

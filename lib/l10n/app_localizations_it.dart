@@ -276,6 +276,11 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
+  String stats_n_days(int n) {
+    return '$n giorni';
+  }
+
+  @override
   String get timeline_view_toggle => 'Timeline';
 
   @override

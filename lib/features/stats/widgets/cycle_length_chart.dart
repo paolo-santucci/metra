@@ -34,6 +34,7 @@ class CycleLengthChart extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final reduceMotion = MediaQuery.of(context).disableAnimations;
+    final locale = Localizations.localeOf(context).toString();
 
     final lineColor =
         isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
@@ -53,15 +54,16 @@ class CycleLengthChart extends StatelessWidget {
     final avg = lengths.isEmpty
         ? 0
         : (lengths.reduce((a, b) => a + b) / lengths.length).round();
-    final mean =
-        lengths.isEmpty ? 28.0 : lengths.reduce((a, b) => a + b) / lengths.length;
+    final mean = lengths.isEmpty
+        ? 28.0
+        : lengths.reduce((a, b) => a + b) / lengths.length;
     final minY = mean - 5.0;
     final maxY = mean + 5.0;
 
     final semanticsLabel = points
         .map(
           (p) =>
-              '${intl.DateFormat.MMM('it').format(p.startDate)}: ${p.cycleLength} giorni',
+              '${intl.DateFormat.MMM(locale).format(p.startDate)}: ${l10n.stats_n_days(p.cycleLength)}',
         )
         .join(', ');
 
@@ -70,6 +72,7 @@ class CycleLengthChart extends StatelessWidget {
       children: [
         Semantics(
           label: semanticsLabel,
+          excludeSemantics: true,
           child: SizedBox(
             height: 120,
             child: LineChart(
@@ -119,7 +122,7 @@ class CycleLengthChart extends StatelessWidget {
                         }
                         return Text(
                           intl.DateFormat.MMM(
-                            'it',
+                            locale,
                           ).format(points[idx].startDate),
                           style: TextStyle(color: textColor, fontSize: 10),
                         );
@@ -133,7 +136,10 @@ class CycleLengthChart extends StatelessWidget {
                 maxY: maxY,
                 lineTouchData: const LineTouchData(enabled: false),
               ),
-              duration: Duration(milliseconds: reduceMotion ? 0 : 240),
+              duration: Duration(
+                milliseconds:
+                    reduceMotion ? MetraMotion.instant : MetraMotion.base,
+              ),
             ),
           ),
         ),

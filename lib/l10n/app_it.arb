@@ -436,6 +436,14 @@
     "placeholders": { "n": { "type": "int" } }
   },
 
+  "stats_n_days": "{n} giorni",
+  "@stats_n_days": {
+    "description": "Accessibility label fragment: n days, used in chart semantics labels",
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+
   "timeline_view_toggle": "Timeline",
   "@timeline_view_toggle": { "description": "Segmented control label for timeline view" },
 
