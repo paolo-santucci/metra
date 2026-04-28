@@ -47,7 +47,7 @@ Every PR, feature and refactor must respect these five principles. If a technica
 | Google OAuth | `google_sign_in` + `googleapis` | ^6.2.1 / ^13.2.0 |
 | HTTP (Dropbox, OneDrive) | `http` | ^1.2.2 |
 | File/Share/CSV | `file_picker` / `share_plus` / `csv` | ^8.1.2 / ^10.0.2 / ^6.0.0 |
-| i18n | `intl` + Flutter gen_l10n | ^0.19.0 |
+| i18n | `intl` + Flutter gen_l10n | ^0.20.2 |
 
 **Environment constraints:**
 - Development on **Fedora Linux**. No Mac available.
