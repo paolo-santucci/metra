@@ -286,7 +286,8 @@ void main() {
       );
     });
 
-    testWidgets('flow day has flow level in the semantics label', (tester) async {
+    testWidgets('flow day has flow level in the semantics label',
+        (tester) async {
       await tester.pumpWidget(
         _wrapWithRouter([
           calendarMonthProvider.overrideWith(

@@ -30,8 +30,7 @@ import '../../../helpers/fake_daily_log_repository.dart';
 
 // A fake repo where watchMonth returns a controllable stream.
 class _StreamableMonthRepo extends FakeDailyLogRepository {
-  final _monthController =
-      StreamController<List<DailyLogEntity>>.broadcast();
+  final _monthController = StreamController<List<DailyLogEntity>>.broadcast();
 
   void pushMonth(List<DailyLogEntity> logs) => _monthController.add(logs);
 
@@ -102,7 +101,8 @@ void main() {
       // current month until we reach month == 1.
       await container.read(calendarMonthProvider.future);
       final now = DateTime.now();
-      final stepsToJanuary = now.month - 1; // current month - 1 steps to reach Jan
+      final stepsToJanuary =
+          now.month - 1; // current month - 1 steps to reach Jan
 
       for (var i = 0; i < stepsToJanuary; i++) {
         container.read(calendarMonthProvider.notifier).goToPrevMonth();

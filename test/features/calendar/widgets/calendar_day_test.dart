@@ -36,7 +36,8 @@ CalendarDay _day({
   bool isToday = false,
   bool isSelected = false,
   VoidCallback? onTap,
-}) => CalendarDay(
+}) =>
+    CalendarDay(
       date: _date,
       semanticsLabel: _semanticsLabel,
       isFlow: isFlow,

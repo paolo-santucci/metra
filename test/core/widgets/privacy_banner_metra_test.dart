@@ -25,8 +25,7 @@ Widget _wrap(Widget child, ThemeData theme) => MaterialApp(
       home: Scaffold(body: Center(child: child)),
     );
 
-const _testMessage =
-    'I tuoi dati rimangono solo su questo dispositivo.';
+const _testMessage = 'I tuoi dati rimangono solo su questo dispositivo.';
 
 void main() {
   testWidgets('golden — light theme', (tester) async {

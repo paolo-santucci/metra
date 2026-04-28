@@ -45,6 +45,6 @@ final cycleEntryRepositoryProvider = FutureProvider<CycleEntryRepository>((
 /// without triggering rebuild loops.
 final painSymptomsProvider = FutureProvider.autoDispose
     .family<List<PainSymptomData>, DateTime>((ref, date) async {
-      final repo = await ref.watch(dailyLogRepositoryProvider.future);
-      return repo.getPainSymptoms(date);
-    });
+  final repo = await ref.watch(dailyLogRepositoryProvider.future);
+  return repo.getPainSymptoms(date);
+});

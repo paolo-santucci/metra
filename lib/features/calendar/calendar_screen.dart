@@ -64,8 +64,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor =
         isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
-    final textColor =
-        isDark ? MetraColors.dark.textSecondary : MetraColors.light.textSecondary;
+    final textColor = isDark
+        ? MetraColors.dark.textSecondary
+        : MetraColors.light.textSecondary;
 
     final reduceMotion = MediaQuery.of(context).disableAnimations;
     final fabDuration = reduceMotion
@@ -93,8 +94,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           ),
           data: (monthState) {
             final now = DateTime.now();
-            final isCurrentMonth = monthState.year == now.year &&
-                monthState.month == now.month;
+            final isCurrentMonth =
+                monthState.year == now.year && monthState.month == now.month;
 
             // intl.DateFormat.MMMM uses locale-aware month name.
             final monthName = intl.DateFormat.MMMM('it').format(
@@ -111,12 +112,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   title: title,
                   prevLabel: l10n.calendar_prev_month,
                   nextLabel: l10n.calendar_next_month,
-                  onPrev: () => ref
-                      .read(calendarMonthProvider.notifier)
-                      .goToPrevMonth(),
-                  onNext: () => ref
-                      .read(calendarMonthProvider.notifier)
-                      .goToNextMonth(),
+                  onPrev: () =>
+                      ref.read(calendarMonthProvider.notifier).goToPrevMonth(),
+                  onNext: () =>
+                      ref.read(calendarMonthProvider.notifier).goToNextMonth(),
                   canGoNext: !isCurrentMonth,
                 ),
                 // Day-of-week header row.
@@ -226,8 +225,7 @@ class _CalendarGrid extends StatelessWidget {
     if (isToday) return l10n.a11y_calendar_day_today(dateStr);
     if (log == null) return l10n.a11y_calendar_day_no_flow(dateStr);
     if (log.spotting) return l10n.a11y_calendar_day_spotting(dateStr);
-    if (log.flowIntensity != null &&
-        log.flowIntensity != FlowIntensity.none) {
+    if (log.flowIntensity != null && log.flowIntensity != FlowIntensity.none) {
       final flowLabel = _flowLabel(log.flowIntensity!, l10n);
       return l10n.a11y_calendar_day_flow(flowLabel, dateStr);
     }

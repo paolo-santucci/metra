@@ -27,10 +27,7 @@ import '../../../providers/use_case_providers.dart';
 // Family key is always a UTC-midnight DateTime (normalized before calling).
 // Using a family so each date gets its own isolated, auto-disposed notifier.
 final dailyEntryProvider = AutoDisposeAsyncNotifierProviderFamily<
-  DailyEntryNotifier,
-  DailyLogEntity?,
-  DateTime
->(DailyEntryNotifier.new);
+    DailyEntryNotifier, DailyLogEntity?, DateTime>(DailyEntryNotifier.new);
 
 class DailyEntryNotifier
     extends AutoDisposeFamilyAsyncNotifier<DailyLogEntity?, DateTime> {

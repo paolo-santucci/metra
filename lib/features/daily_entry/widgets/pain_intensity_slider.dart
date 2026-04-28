@@ -71,8 +71,9 @@ class PainIntensitySlider extends StatelessWidget {
     // safe: delegates registered in MetraApp
     final l10n = AppLocalizations.of(context)!;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final labelColor =
-        isDark ? MetraColors.dark.textSecondary : MetraColors.light.textSecondary;
+    final labelColor = isDark
+        ? MetraColors.dark.textSecondary
+        : MetraColors.light.textSecondary;
     final activeColor =
         isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
     final inactiveColor =
