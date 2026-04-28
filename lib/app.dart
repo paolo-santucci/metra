@@ -18,19 +18,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/metra_theme.dart';
+import 'l10n/app_localizations.dart';
 import 'router/app_router.dart';
 
 class MetraApp extends StatelessWidget {
-  const MetraApp({super.key});
+  const MetraApp({
+    super.key,
+    // Optional provider overrides — used only in tests.
+    this.overrides = const [],
+  });
+
+  final List<Override> overrides;
 
   @override
   Widget build(BuildContext context) {
     return ProviderScope(
+      overrides: overrides,
       child: MaterialApp.router(
         title: 'Mētra',
         theme: MetraTheme.light(),
         darkTheme: MetraTheme.dark(),
         themeMode: ThemeMode.system,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         routerConfig: appRouter,
         debugShowCheckedModeBanner: false,
       ),

@@ -19,14 +19,37 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/app.dart';
 import 'package:metra/features/calendar/calendar_screen.dart';
+import 'package:metra/features/calendar/state/calendar_month_controller.dart';
 import 'package:metra/features/settings/settings_screen.dart';
 import 'package:metra/features/stats/stats_screen.dart';
 import 'package:metra/features/timeline/timeline_screen.dart';
 
+/// A stub [CalendarMonthNotifier] that returns an empty state immediately
+/// without touching the database. Used in navigation tests to prevent the
+/// [calendarMonthProvider] from hanging on an unavailable SQLCipher backend.
+class _StubCalendarMonthNotifier extends CalendarMonthNotifier {
+  @override
+  Future<CalendarMonthState> build() async {
+    final now = DateTime.now();
+    return CalendarMonthState(year: now.year, month: now.month);
+  }
+
+  @override
+  void goToPrevMonth() {}
+
+  @override
+  void goToNextMonth() {}
+}
+
+/// Provider override that injects [_StubCalendarMonthNotifier].
+final _calendarOverride = calendarMonthProvider.overrideWith(
+  _StubCalendarMonthNotifier.new,
+);
+
 void main() {
   group('Bottom navigation shell', () {
     testWidgets('renders 4 navigation destinations', (tester) async {
-      await tester.pumpWidget(const MetraApp());
+      await tester.pumpWidget(MetraApp(overrides: [_calendarOverride]));
       await tester.pumpAndSettle();
 
       // NavigationBar has 4 items: Calendar, Timeline, Stats, Settings.
@@ -35,7 +58,7 @@ void main() {
     });
 
     testWidgets('Calendar is the initial route', (tester) async {
-      await tester.pumpWidget(const MetraApp());
+      await tester.pumpWidget(MetraApp(overrides: [_calendarOverride]));
       await tester.pumpAndSettle();
 
       // Assert by widget type to avoid collision with the destination label
@@ -45,7 +68,7 @@ void main() {
     });
 
     testWidgets('tapping Timeline tab shows timeline screen', (tester) async {
-      await tester.pumpWidget(const MetraApp());
+      await tester.pumpWidget(MetraApp(overrides: [_calendarOverride]));
       await tester.pumpAndSettle();
 
       // Tap the 2nd navigation destination (index 1 = Timeline).
@@ -57,7 +80,7 @@ void main() {
     });
 
     testWidgets('tapping Stats tab shows stats screen', (tester) async {
-      await tester.pumpWidget(const MetraApp());
+      await tester.pumpWidget(MetraApp(overrides: [_calendarOverride]));
       await tester.pumpAndSettle();
 
       final destinations = find.byType(NavigationDestination);
@@ -68,7 +91,7 @@ void main() {
     });
 
     testWidgets('tapping Settings tab shows settings screen', (tester) async {
-      await tester.pumpWidget(const MetraApp());
+      await tester.pumpWidget(MetraApp(overrides: [_calendarOverride]));
       await tester.pumpAndSettle();
 
       final destinations = find.byType(NavigationDestination);
