@@ -49,13 +49,15 @@ void main() {
 
       expect(row, isNotNull);
       // Drift reads DateTime back in local time; compare epoch to avoid isUtc mismatch.
-      expect(row!.date.millisecondsSinceEpoch, equals(date.millisecondsSinceEpoch));
+      expect(row!.date.millisecondsSinceEpoch,
+          equals(date.millisecondsSinceEpoch),);
       expect(row.flowIntensity, equals(3));
       expect(row.notes, equals('mild headache'));
       expect(row.painIntensity, equals(4));
     });
 
-    test('upsert is idempotent: second write for same date wins, no duplicates', () async {
+    test('upsert is idempotent: second write for same date wins, no duplicates',
+        () async {
       final date = DateTime.utc(2026, 4, 2);
 
       await db.dailyLogDao.upsertDailyLog(
@@ -91,7 +93,9 @@ void main() {
   });
 
   group('PainSymptoms via DailyLogDao', () {
-    test('replacePainSymptoms replaces all: insert 2 then replace with 1 → only 1 remains', () async {
+    test(
+        'replacePainSymptoms replaces all: insert 2 then replace with 1 → only 1 remains',
+        () async {
       final date = DateTime.utc(2026, 4, 3);
       // Insert parent row first so FK cascade works on production; in memory FK
       // is not enforced, but we add the parent to mirror realistic usage.
@@ -130,7 +134,8 @@ void main() {
   });
 
   group('CycleEntryDao', () {
-    test('insert 5 entries, getRecentCycles(3) returns 3 latest in desc order', () async {
+    test('insert 5 entries, getRecentCycles(3) returns 3 latest in desc order',
+        () async {
       // Insert 5 entries with distinct startDates.
       for (var i = 1; i <= 5; i++) {
         await db.cycleEntryDao.insertCycleEntry(
@@ -162,7 +167,8 @@ void main() {
   });
 
   group('AppSettingsDao', () {
-    test('getOrCreateSettings: calling twice returns same singleton row', () async {
+    test('getOrCreateSettings: calling twice returns same singleton row',
+        () async {
       final first = await db.appSettingsDao.getOrCreateSettings();
       final second = await db.appSettingsDao.getOrCreateSettings();
 
