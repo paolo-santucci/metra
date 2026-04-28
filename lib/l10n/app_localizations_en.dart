@@ -212,4 +212,71 @@ class AppLocalizationsEn extends AppLocalizations {
   String a11y_calendar_day_today(String date) {
     return 'Today, $date';
   }
+
+  @override
+  String get timeline_empty_hint => 'Log your first cycle to see the timeline';
+
+  @override
+  String get timeline_cycle_in_progress => 'In progress';
+
+  @override
+  String timeline_cycle_length_days(int n) {
+    return '$n d';
+  }
+
+  @override
+  String timeline_card_a11y(String start, String end, int n) {
+    return 'Cycle from $start to $end, $n days';
+  }
+
+  @override
+  String timeline_card_a11y_in_progress(String start) {
+    return 'Cycle from $start, in progress';
+  }
+
+  @override
+  String get table_col_start => 'Start';
+
+  @override
+  String get table_col_cycle => 'Cycle';
+
+  @override
+  String get table_col_period => 'Period';
+
+  @override
+  String get table_col_symptoms => 'Symptoms';
+
+  @override
+  String get table_cycle_dash => '—';
+
+  @override
+  String get stats_cycle_length_title => 'Cycle length';
+
+  @override
+  String get stats_period_length_title => 'Period length';
+
+  @override
+  String get stats_symptoms_title => 'Frequent symptoms';
+
+  @override
+  String get stats_flow_title => 'Flow intensity';
+
+  @override
+  String get stats_insufficient_data => 'Insufficient data';
+
+  @override
+  String stats_cycle_length_avg(int n) {
+    return '$n d on average';
+  }
+
+  @override
+  String stats_period_length_avg(int n) {
+    return '$n d on average';
+  }
+
+  @override
+  String get timeline_view_toggle => 'Timeline';
+
+  @override
+  String get table_view_toggle => 'Table';
 }

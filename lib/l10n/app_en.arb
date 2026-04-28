@@ -129,5 +129,48 @@
         "type": "String"
       }
     }
-  }
+  },
+
+  "timeline_empty_hint": "Log your first cycle to see the timeline",
+  "timeline_cycle_in_progress": "In progress",
+  "timeline_cycle_length_days": "{n} d",
+  "@timeline_cycle_length_days": {
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "timeline_card_a11y": "Cycle from {start} to {end}, {n} days",
+  "@timeline_card_a11y": {
+    "placeholders": {
+      "start": { "type": "String" },
+      "end":   { "type": "String" },
+      "n":     { "type": "int" }
+    }
+  },
+  "timeline_card_a11y_in_progress": "Cycle from {start}, in progress",
+  "@timeline_card_a11y_in_progress": {
+    "placeholders": {
+      "start": { "type": "String" }
+    }
+  },
+  "table_col_start": "Start",
+  "table_col_cycle": "Cycle",
+  "table_col_period": "Period",
+  "table_col_symptoms": "Symptoms",
+  "table_cycle_dash": "—",
+  "stats_cycle_length_title": "Cycle length",
+  "stats_period_length_title": "Period length",
+  "stats_symptoms_title": "Frequent symptoms",
+  "stats_flow_title": "Flow intensity",
+  "stats_insufficient_data": "Insufficient data",
+  "stats_cycle_length_avg": "{n} d on average",
+  "@stats_cycle_length_avg": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "stats_period_length_avg": "{n} d on average",
+  "@stats_period_length_avg": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "timeline_view_toggle": "Timeline",
+  "table_view_toggle": "Table"
 }

@@ -158,7 +158,7 @@ abstract class AppLocalizations {
   /// **'Nessun flusso'**
   String get daily_entry_flow_none;
 
-  /// Flow level: spotting (established medical loanword, do not translate)
+  /// Label for the spotting toggle in the daily entry form. Spotting and flow are mutually exclusive. 'Spotting' is an established medical loanword in Italian — do not translate.
   ///
   /// In it, this message translates to:
   /// **'Spotting'**
@@ -475,6 +475,120 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Oggi, {date}'**
   String a11y_calendar_day_today(String date);
+
+  /// Empty-state hint on the timeline and table views
+  ///
+  /// In it, this message translates to:
+  /// **'Registra il tuo primo ciclo per vedere la timeline'**
+  String get timeline_empty_hint;
+
+  /// Badge on the current (in-progress) cycle card
+  ///
+  /// In it, this message translates to:
+  /// **'In corso'**
+  String get timeline_cycle_in_progress;
+
+  /// Cycle length label on a timeline card, e.g. '28 g'
+  ///
+  /// In it, this message translates to:
+  /// **'{n} g'**
+  String timeline_cycle_length_days(int n);
+
+  /// Accessibility label for a timeline card
+  ///
+  /// In it, this message translates to:
+  /// **'Ciclo dal {start} al {end}, {n} giorni'**
+  String timeline_card_a11y(String start, String end, int n);
+
+  /// Accessibility label for an in-progress cycle card
+  ///
+  /// In it, this message translates to:
+  /// **'Ciclo dal {start}, in corso'**
+  String timeline_card_a11y_in_progress(String start);
+
+  /// Table column header: start date
+  ///
+  /// In it, this message translates to:
+  /// **'Inizio'**
+  String get table_col_start;
+
+  /// Table column header: cycle length
+  ///
+  /// In it, this message translates to:
+  /// **'Ciclo'**
+  String get table_col_cycle;
+
+  /// Table column header: period length
+  ///
+  /// In it, this message translates to:
+  /// **'Mestr.'**
+  String get table_col_period;
+
+  /// Table column header: symptoms
+  ///
+  /// In it, this message translates to:
+  /// **'Sintomi'**
+  String get table_col_symptoms;
+
+  /// Placeholder shown when cycle length is unknown
+  ///
+  /// In it, this message translates to:
+  /// **'—'**
+  String get table_cycle_dash;
+
+  /// Stat card title: cycle length chart
+  ///
+  /// In it, this message translates to:
+  /// **'Lunghezza ciclo'**
+  String get stats_cycle_length_title;
+
+  /// Stat card title: period length chart
+  ///
+  /// In it, this message translates to:
+  /// **'Durata mestruazione'**
+  String get stats_period_length_title;
+
+  /// Stat card title: symptom frequency chart
+  ///
+  /// In it, this message translates to:
+  /// **'Sintomi frequenti'**
+  String get stats_symptoms_title;
+
+  /// Stat card title: flow intensity chart
+  ///
+  /// In it, this message translates to:
+  /// **'Intensità flusso'**
+  String get stats_flow_title;
+
+  /// Shown inside a stat card when there are no complete cycles
+  ///
+  /// In it, this message translates to:
+  /// **'Dati insufficienti'**
+  String get stats_insufficient_data;
+
+  /// Average cycle length label below the cycle-length chart
+  ///
+  /// In it, this message translates to:
+  /// **'{n} g in media'**
+  String stats_cycle_length_avg(int n);
+
+  /// Average period length label below the period-length chart
+  ///
+  /// In it, this message translates to:
+  /// **'{n} g in media'**
+  String stats_period_length_avg(int n);
+
+  /// Segmented control label for timeline view
+  ///
+  /// In it, this message translates to:
+  /// **'Timeline'**
+  String get timeline_view_toggle;
+
+  /// Segmented control label for table view
+  ///
+  /// In it, this message translates to:
+  /// **'Tabella'**
+  String get table_view_toggle;
 }
 
 class _AppLocalizationsDelegate

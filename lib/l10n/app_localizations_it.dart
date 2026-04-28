@@ -212,4 +212,72 @@ class AppLocalizationsIt extends AppLocalizations {
   String a11y_calendar_day_today(String date) {
     return 'Oggi, $date';
   }
+
+  @override
+  String get timeline_empty_hint =>
+      'Registra il tuo primo ciclo per vedere la timeline';
+
+  @override
+  String get timeline_cycle_in_progress => 'In corso';
+
+  @override
+  String timeline_cycle_length_days(int n) {
+    return '$n g';
+  }
+
+  @override
+  String timeline_card_a11y(String start, String end, int n) {
+    return 'Ciclo dal $start al $end, $n giorni';
+  }
+
+  @override
+  String timeline_card_a11y_in_progress(String start) {
+    return 'Ciclo dal $start, in corso';
+  }
+
+  @override
+  String get table_col_start => 'Inizio';
+
+  @override
+  String get table_col_cycle => 'Ciclo';
+
+  @override
+  String get table_col_period => 'Mestr.';
+
+  @override
+  String get table_col_symptoms => 'Sintomi';
+
+  @override
+  String get table_cycle_dash => '—';
+
+  @override
+  String get stats_cycle_length_title => 'Lunghezza ciclo';
+
+  @override
+  String get stats_period_length_title => 'Durata mestruazione';
+
+  @override
+  String get stats_symptoms_title => 'Sintomi frequenti';
+
+  @override
+  String get stats_flow_title => 'Intensità flusso';
+
+  @override
+  String get stats_insufficient_data => 'Dati insufficienti';
+
+  @override
+  String stats_cycle_length_avg(int n) {
+    return '$n g in media';
+  }
+
+  @override
+  String stats_period_length_avg(int n) {
+    return '$n g in media';
+  }
+
+  @override
+  String get timeline_view_toggle => 'Timeline';
+
+  @override
+  String get table_view_toggle => 'Tabella';
 }
