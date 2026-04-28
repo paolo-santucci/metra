@@ -17,7 +17,6 @@
 
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -36,9 +35,7 @@ class DatabaseNotifier extends AsyncNotifier<AppDatabase> {
     final keyService = ref.read(keyManagementServiceProvider);
     final hexKey = await keyService.getOrCreateDatabaseKey();
 
-    final dbPath = kIsWeb
-        ? ':memory:'
-        : await _resolveDatabasePath('metra.db');
+    final dbPath = await _resolveDatabasePath('metra.db');
 
     final executor = AppDatabase.openConnection(dbPath, hexKey);
     final db = AppDatabase(executor);
@@ -48,7 +45,7 @@ class DatabaseNotifier extends AsyncNotifier<AppDatabase> {
   }
 
   Future<String> _resolveDatabasePath(String filename) async {
-    final dir = await getApplicationDocumentsDirectory();
+    final dir = await getApplicationSupportDirectory();
     return '${dir.path}${Platform.pathSeparator}$filename';
   }
 }
