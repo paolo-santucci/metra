@@ -16,8 +16,24 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter/material.dart';
-import 'app.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/theme/metra_theme.dart';
+import 'router/app_router.dart';
 
-void main() {
-  runApp(const MetraApp());
+class MetraApp extends StatelessWidget {
+  const MetraApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ProviderScope(
+      child: MaterialApp.router(
+        title: 'Mētra',
+        theme: MetraTheme.light(),
+        darkTheme: MetraTheme.dark(),
+        themeMode: ThemeMode.system,
+        routerConfig: appRouter,
+        debugShowCheckedModeBanner: false,
+      ),
+    );
+  }
 }
