@@ -73,7 +73,7 @@ class PeriodLengthChart extends StatelessWidget {
         .where((p) => p.periodLength != null)
         .map(
           (p) =>
-              '${intl.DateFormat.MMM('it').format(p.startDate)}: ${p.periodLength} g',
+              '${intl.DateFormat.MMM('it').format(p.startDate)}: ${p.periodLength} giorni',
         )
         .join(', ');
 

@@ -53,15 +53,15 @@ class CycleLengthChart extends StatelessWidget {
     final avg = lengths.isEmpty
         ? 0
         : (lengths.reduce((a, b) => a + b) / lengths.length).round();
-    final minY =
-        (lengths.isEmpty ? 20 : lengths.reduce((a, b) => a < b ? a : b)) - 5.0;
-    final maxY =
-        (lengths.isEmpty ? 35 : lengths.reduce((a, b) => a > b ? a : b)) + 5.0;
+    final mean =
+        lengths.isEmpty ? 28.0 : lengths.reduce((a, b) => a + b) / lengths.length;
+    final minY = mean - 5.0;
+    final maxY = mean + 5.0;
 
     final semanticsLabel = points
         .map(
           (p) =>
-              '${intl.DateFormat.MMM('it').format(p.startDate)}: ${p.cycleLength} g',
+              '${intl.DateFormat.MMM('it').format(p.startDate)}: ${p.cycleLength} giorni',
         )
         .join(', ');
 
