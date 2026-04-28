@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pre-API-31 full-backup-content rules.
+     Excludes all app data from Google Cloud Backup (Auto Backup).
+     Paired with android:allowBackup="false" for defence in depth. -->
+<full-backup-content>
+    <exclude domain="root" />
+    <exclude domain="database" />
+    <exclude domain="sharedpref" />
+    <exclude domain="external" />
+    <exclude domain="file" />
+</full-backup-content>
