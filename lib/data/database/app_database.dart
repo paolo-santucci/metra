@@ -19,6 +19,8 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:sqlite3/open.dart';
+import 'package:sqlcipher_flutter_libs/sqlcipher_flutter_libs.dart';
 
 import 'daos/app_settings_dao.dart';
 import 'daos/cycle_entry_dao.dart';
@@ -50,7 +52,7 @@ class DailyLogs extends Table {
 class PainSymptoms extends Table {
   IntColumn get id => integer().autoIncrement()();
   DateTimeColumn get dailyLogDate =>
-      dateTime().references(DailyLogs, #date)();
+      dateTime().references(DailyLogs, #date, onDelete: KeyAction.cascade)();
   IntColumn get symptomType => integer()(); // PainSymptomType.index
   TextColumn get customLabel => text().nullable()();
 }
@@ -124,12 +126,25 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration =>
       MigrationStrategy(onCreate: (m) => m.createAll());
 
+  /// Must be called once at app startup, before any database is opened.
+  ///
+  /// Wires the `sqlite3` dynamic library to use the SQLCipher build provided
+  /// by `sqlcipher_flutter_libs` instead of the system sqlite3 on Android.
+  /// On iOS/macOS the CocoaPod handles linking automatically.
+  static void initializeSQLCipher() {
+    open.overrideFor(OperatingSystem.android, openCipherOnAndroid);
+  }
+
   /// Opens an encrypted SQLCipher database at [dbPath] using [hexKey].
   ///
   /// [hexKey] must be a 64-character hex string (32 bytes = 256 bits).
   /// The key is passed directly to SQLCipher via `PRAGMA key = "x'…'"` so
   /// it is treated as a raw binary key, not a passphrase.
   static QueryExecutor openConnection(String dbPath, String hexKey) {
+    assert(
+      RegExp(r'^[0-9a-fA-F]{64}$').hasMatch(hexKey),
+      'hexKey must be a 64-character lowercase hex string (32 bytes)',
+    );
     return LazyDatabase(() async {
       final file = File(dbPath);
       return NativeDatabase.createInBackground(
@@ -137,6 +152,8 @@ class AppDatabase extends _$AppDatabase {
         setup: (rawDb) {
           // Unlock the SQLCipher database with the raw hex key.
           rawDb.execute("PRAGMA key = \"x'$hexKey'\"");
+          // Enforce referential integrity for ON DELETE CASCADE to take effect.
+          rawDb.execute('PRAGMA foreign_keys = ON');
         },
       );
     });

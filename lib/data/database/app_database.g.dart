@@ -481,8 +481,8 @@ class $PainSymptomsTable extends PainSymptoms
       'daily_log_date', aliasedName, false,
       type: DriftSqlType.dateTime,
       requiredDuringInsert: true,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('REFERENCES daily_logs (date)'));
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES daily_logs (date) ON DELETE CASCADE'));
   static const VerificationMeta _symptomTypeMeta =
       const VerificationMeta('symptomType');
   @override
@@ -2048,6 +2048,18 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         appSettings,
         syncLogs
       ];
+  @override
+  StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules(
+        [
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('daily_logs',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('pain_symptoms', kind: UpdateKind.delete),
+            ],
+          ),
+        ],
+      );
 }
 
 typedef $$DailyLogsTableCreateCompanionBuilder = DailyLogsCompanion Function({

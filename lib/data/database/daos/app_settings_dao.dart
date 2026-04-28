@@ -31,13 +31,17 @@ class AppSettingsDao extends DatabaseAccessor<AppDatabase>
       (select(appSettings)..where((t) => t.id.equals(1))).watchSingleOrNull();
 
   /// Returns the singleton settings row, creating it with defaults if absent.
+  ///
+  /// Runs inside a transaction to avoid a TOCTOU race on first launch.
   Future<AppSetting> getOrCreateSettings() async {
-    final existing = await (select(appSettings)
-          ..where((t) => t.id.equals(1)))
-        .getSingleOrNull();
-    if (existing != null) return existing;
-    await into(appSettings).insert(const AppSettingsCompanion(id: Value(1)));
-    return (select(appSettings)..where((t) => t.id.equals(1))).getSingle();
+    return transaction(() async {
+      final existing =
+          await (select(appSettings)..where((t) => t.id.equals(1)))
+              .getSingleOrNull();
+      if (existing != null) return existing;
+      await into(appSettings).insert(const AppSettingsCompanion(id: Value(1)));
+      return (select(appSettings)..where((t) => t.id.equals(1))).getSingle();
+    });
   }
 
   Future<void> updateSettings(AppSettingsCompanion settings) =>
