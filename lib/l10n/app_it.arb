@@ -356,5 +356,89 @@
         "type": "String"
       }
     }
-  }
+  },
+
+  "timeline_empty_hint": "Registra il tuo primo ciclo per vedere la timeline",
+  "@timeline_empty_hint": {
+    "description": "Empty-state hint on the timeline and table views"
+  },
+
+  "timeline_cycle_in_progress": "In corso",
+  "@timeline_cycle_in_progress": {
+    "description": "Badge on the current (in-progress) cycle card"
+  },
+
+  "timeline_cycle_length_days": "{n} g",
+  "@timeline_cycle_length_days": {
+    "description": "Cycle length label on a timeline card, e.g. '28 g'",
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+
+  "timeline_card_a11y": "Ciclo dal {start} al {end}, {n} giorni",
+  "@timeline_card_a11y": {
+    "description": "Accessibility label for a timeline card",
+    "placeholders": {
+      "start": { "type": "String", "example": "15 gen 2026" },
+      "end":   { "type": "String", "example": "20 gen 2026" },
+      "n":     { "type": "int" }
+    }
+  },
+
+  "timeline_card_a11y_in_progress": "Ciclo dal {start}, in corso",
+  "@timeline_card_a11y_in_progress": {
+    "description": "Accessibility label for an in-progress cycle card",
+    "placeholders": {
+      "start": { "type": "String", "example": "13 apr 2026" }
+    }
+  },
+
+  "table_col_start": "Inizio",
+  "@table_col_start": { "description": "Table column header: start date" },
+
+  "table_col_cycle": "Ciclo",
+  "@table_col_cycle": { "description": "Table column header: cycle length" },
+
+  "table_col_period": "Mestr.",
+  "@table_col_period": { "description": "Table column header: period length" },
+
+  "table_col_symptoms": "Sintomi",
+  "@table_col_symptoms": { "description": "Table column header: symptoms" },
+
+  "table_cycle_dash": "—",
+  "@table_cycle_dash": { "description": "Placeholder shown when cycle length is unknown" },
+
+  "stats_cycle_length_title": "Lunghezza ciclo",
+  "@stats_cycle_length_title": { "description": "Stat card title: cycle length chart" },
+
+  "stats_period_length_title": "Durata mestruazione",
+  "@stats_period_length_title": { "description": "Stat card title: period length chart" },
+
+  "stats_symptoms_title": "Sintomi frequenti",
+  "@stats_symptoms_title": { "description": "Stat card title: symptom frequency chart" },
+
+  "stats_flow_title": "Intensità flusso",
+  "@stats_flow_title": { "description": "Stat card title: flow intensity chart" },
+
+  "stats_insufficient_data": "Dati insufficienti",
+  "@stats_insufficient_data": { "description": "Shown inside a stat card when there are no complete cycles" },
+
+  "stats_cycle_length_avg": "{n} g in media",
+  "@stats_cycle_length_avg": {
+    "description": "Average cycle length label below the cycle-length chart",
+    "placeholders": { "n": { "type": "int" } }
+  },
+
+  "stats_period_length_avg": "{n} g in media",
+  "@stats_period_length_avg": {
+    "description": "Average period length label below the period-length chart",
+    "placeholders": { "n": { "type": "int" } }
+  },
+
+  "timeline_view_toggle": "Timeline",
+  "@timeline_view_toggle": { "description": "Segmented control label for timeline view" },
+
+  "table_view_toggle": "Tabella",
+  "@table_view_toggle": { "description": "Segmented control label for table view" }
 }
