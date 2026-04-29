@@ -49,10 +49,10 @@ class DropboxProvider implements CloudBackupProvider {
 
   static const _accessTokenKey = 'metra_dropbox_access_token_v1';
   static const _refreshTokenKey = 'metra_dropbox_refresh_token_v1';
-  // ASCII-only path: Dropbox-API-Arg is a JSON-in-header; HTTP/1.1 header
-  // values are Latin-1 and Dart's jsonEncode does not ASCII-escape non-BMP
-  // characters. Using an ASCII folder name prevents silent mangling on the wire.
-  static const _appFolder = '/Apps/Metra';
+  // App-folder access: the Dropbox app console is set to "App folder" type,
+  // so all paths are relative to /Apps/<AppName>/ — root is '' and files are
+  // '/<filename>'. This also eliminates the Latin-1 encoding concern that
+  // required the former ASCII-only absolute path.
   static const _filePrefix = 'metra_backup_';
   static const _fileSuffix = '.enc';
   static const _redirectUri = 'metra://oauth-callback';
@@ -154,7 +154,7 @@ class DropboxProvider implements CloudBackupProvider {
       headers: {
         'Content-Type': 'application/octet-stream',
         'Dropbox-API-Arg': jsonEncode({
-          'path': '$_appFolder/$filename',
+          'path': '/$filename',
           'mode': 'add',
           'autorename': false,
           'mute': true,
@@ -172,7 +172,7 @@ class DropboxProvider implements CloudBackupProvider {
       Uri.https('content.dropboxapi.com', '/2/files/download'),
       body: '',
       headers: {
-        'Dropbox-API-Arg': jsonEncode({'path': '$_appFolder/$filename'}),
+        'Dropbox-API-Arg': jsonEncode({'path': '/$filename'}),
       },
     );
     if (res.statusCode != 200) {
@@ -185,7 +185,7 @@ class DropboxProvider implements CloudBackupProvider {
   Future<List<String>> listFiles() async {
     final res = await _authenticatedPost(
       Uri.https('api.dropboxapi.com', '/2/files/list_folder'),
-      body: jsonEncode({'path': _appFolder}),
+      body: jsonEncode({'path': ''}),
       headers: {'Content-Type': 'application/json'},
     );
     if (res.statusCode == 409) {
@@ -210,7 +210,7 @@ class DropboxProvider implements CloudBackupProvider {
   Future<void> deleteFile(String filename) async {
     final res = await _authenticatedPost(
       Uri.https('api.dropboxapi.com', '/2/files/delete_v2'),
-      body: jsonEncode({'path': '$_appFolder/$filename'}),
+      body: jsonEncode({'path': '/$filename'}),
       headers: {'Content-Type': 'application/json'},
     );
     if (res.statusCode != 200) {
