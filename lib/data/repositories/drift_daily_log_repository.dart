@@ -145,11 +145,24 @@ class DriftDailyLogRepository implements DailyLogRepository {
   @override
   Future<void> deleteAll() => _dao.deleteAll();
 
-  // TODO(T7): implement atomic deleteAllAndReplace via Drift transaction.
   @override
   Future<void> deleteAllAndReplace(
     List<DailyLogEntity> logs,
-    Map<DateTime, List<PainSymptomData>> symptoms,
+    Map<DateTime, List<PainSymptomData>> symptomsMap,
   ) =>
-      throw UnimplementedError('deleteAllAndReplace — implemented in T7');
+      _dao.transaction(() async {
+        // Deletes all daily_logs rows; PainSymptoms cascade-deleted via FK.
+        await _dao.deleteAll();
+        for (final log in logs) {
+          await _dao.upsertDailyLog(_toCompanion(log));
+        }
+        for (final entry in symptomsMap.entries) {
+          final companions = entry.value
+              .map((s) => _symptomToCompanion(entry.key, s))
+              .toList();
+          if (companions.isNotEmpty) {
+            await _dao.replacePainSymptoms(entry.key, companions);
+          }
+        }
+      });
 }
