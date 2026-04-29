@@ -43,7 +43,13 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
       );
       ref.invalidateSelf();
     } catch (e) {
-      state = AsyncData(BackupErrorState(e.toString()));
+      state = AsyncData(
+        BackupErrorState(
+          e is MetraException
+              ? e.message
+              : 'Something went wrong. Please try again.',
+        ),
+      );
     }
   }
 
@@ -60,7 +66,13 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
       await ref.read(secureStorageProvider).delete(key: _passphraseKey);
       ref.invalidateSelf();
     } catch (e) {
-      state = AsyncData(BackupErrorState(e.toString()));
+      state = AsyncData(
+        BackupErrorState(
+          e is MetraException
+              ? e.message
+              : 'Something went wrong. Please try again.',
+        ),
+      );
     }
   }
 
@@ -91,7 +103,13 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
           state = AsyncData(BackupErrorState(error.message));
       }
     } catch (e) {
-      state = AsyncData(BackupErrorState(e.toString()));
+      state = AsyncData(
+        BackupErrorState(
+          e is MetraException
+              ? e.message
+              : 'Something went wrong. Please try again.',
+        ),
+      );
     }
   }
 
@@ -107,7 +125,13 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
           state = AsyncData(BackupErrorState(error.message));
       }
     } catch (e) {
-      state = AsyncData(BackupErrorState(e.toString()));
+      state = AsyncData(
+        BackupErrorState(
+          e is MetraException
+              ? e.message
+              : 'Something went wrong. Please try again.',
+        ),
+      );
     }
   }
 }
