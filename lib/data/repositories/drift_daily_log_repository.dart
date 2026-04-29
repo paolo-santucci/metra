@@ -110,12 +110,7 @@ class DriftDailyLogRepository implements DailyLogRepository {
 
   @override
   Future<List<DailyLogEntity>> getAllOrderedByDate() async {
-    // getAllOrderedByDate is not on the DAO (DAO is frozen), so we query
-    // through the database accessor exposed by the DAO.
-    final db = _dao.attachedDatabase;
-    final rows = await (db.select(db.dailyLogs)
-          ..orderBy([(t) => OrderingTerm.asc(t.date)]))
-        .get();
+    final rows = await _dao.getAllOrderedByDate();
     return rows.map(_fromRow).toList();
   }
 

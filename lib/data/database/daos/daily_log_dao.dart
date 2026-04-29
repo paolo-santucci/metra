@@ -81,5 +81,8 @@ class DailyLogDao extends DatabaseAccessor<AppDatabase>
         await batch((b) => b.insertAll(painSymptoms, symptoms));
       });
 
+  Future<List<DailyLog>> getAllOrderedByDate() =>
+      (select(dailyLogs)..orderBy([(t) => OrderingTerm.asc(t.date)])).get();
+
   Future<void> deleteAll() => delete(dailyLogs).go();
 }
