@@ -148,6 +148,14 @@ class AppLocalizationsIt extends AppLocalizations {
   String get calendar_fab_label => 'Aggiungi o modifica il registro di oggi';
 
   @override
+  String get notification_prediction_title => 'Il tuo ciclo si avvicina';
+
+  @override
+  String notification_prediction_body(int days) {
+    return 'La finestra stimata inizia tra $days giorni';
+  }
+
+  @override
   String get settings_language_label => 'Lingua';
 
   @override
