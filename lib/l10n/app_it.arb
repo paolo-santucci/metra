@@ -235,6 +235,21 @@
     "description": "Accessibility label for the floating action button on the calendar screen"
   },
 
+  "notification_prediction_title": "Il tuo ciclo si avvicina",
+  "@notification_prediction_title": {
+    "description": "Title for the prediction notification"
+  },
+
+  "notification_prediction_body": "La finestra stimata inizia tra {days} giorni",
+  "@notification_prediction_body": {
+    "description": "Body text for the prediction notification",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+
   "settings_language_label": "Lingua",
   "@settings_language_label": {
     "description": "Settings row label for language selection"

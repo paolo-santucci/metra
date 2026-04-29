@@ -61,6 +61,21 @@
   "calendar_prediction_label": "Next predicted cycle:",
   "calendar_fab_label": "Add or edit today's log",
 
+  "notification_prediction_title": "Your cycle is approaching",
+  "@notification_prediction_title": {
+    "description": "Title for the prediction notification"
+  },
+
+  "notification_prediction_body": "Your predicted window starts in {days} days",
+  "@notification_prediction_body": {
+    "description": "Body text for the prediction notification",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+
   "settings_language_label": "Language",
   "settings_theme_label": "Theme",
   "settings_theme_system": "System",
