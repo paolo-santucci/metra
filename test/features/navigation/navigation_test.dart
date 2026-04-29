@@ -18,8 +18,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/app.dart';
+import 'package:metra/domain/entities/app_settings_data.dart';
 import 'package:metra/domain/entities/cycle_stats_data.dart';
 import 'package:metra/domain/entities/cycle_summary.dart';
+import 'package:metra/domain/repositories/app_settings_repository.dart';
 import 'package:metra/features/calendar/calendar_screen.dart';
 import 'package:metra/features/calendar/state/calendar_month_controller.dart';
 import 'package:metra/features/settings/settings_screen.dart';
@@ -27,6 +29,7 @@ import 'package:metra/features/stats/state/stats_controller.dart';
 import 'package:metra/features/stats/stats_screen.dart';
 import 'package:metra/features/timeline/state/timeline_controller.dart';
 import 'package:metra/features/timeline/timeline_screen.dart';
+import 'package:metra/providers/repository_providers.dart';
 
 /// A stub [CalendarMonthNotifier] that returns an empty state immediately
 /// without touching the database. Used in navigation tests to prevent the
@@ -61,6 +64,29 @@ class _StubTimelineNotifier extends TimelineNotifier {
   Future<List<CycleSummary>> build() async => const [];
 }
 
+/// A stub [AppSettingsRepository] that returns settings with
+/// [onboardingCompleted] = true so the router redirect skips onboarding.
+class _StubAppSettingsRepository implements AppSettingsRepository {
+  @override
+  Future<AppSettingsData> getOrCreate() async =>
+      const AppSettingsData.defaults().copyWith(onboardingCompleted: true);
+
+  @override
+  Stream<AppSettingsData?> watchSettings() => Stream.value(null);
+
+  @override
+  Future<void> updateSettings(AppSettingsData settings) async {}
+
+  @override
+  Future<void> markOnboardingComplete() async {}
+
+  @override
+  Future<void> updateBackupState({
+    required String? dropboxEmail,
+    required DateTime? lastBackupAt,
+  }) async {}
+}
+
 /// Provider override that injects [_StubCalendarMonthNotifier].
 final _calendarOverride = calendarMonthProvider.overrideWith(
   _StubCalendarMonthNotifier.new,
@@ -74,12 +100,22 @@ final _timelineOverride = timelineProvider.overrideWith(
   _StubTimelineNotifier.new,
 );
 
+/// Provider override that bypasses the onboarding redirect.
+final _settingsOverride = appSettingsRepositoryProvider.overrideWith(
+  (ref) async => _StubAppSettingsRepository(),
+);
+
 void main() {
   group('Bottom navigation shell', () {
     testWidgets('renders 4 navigation destinations', (tester) async {
       await tester.pumpWidget(
         MetraApp(
-          overrides: [_calendarOverride, _statsOverride, _timelineOverride],
+          overrides: [
+            _calendarOverride,
+            _statsOverride,
+            _timelineOverride,
+            _settingsOverride,
+          ],
         ),
       );
       await tester.pumpAndSettle();
@@ -92,7 +128,12 @@ void main() {
     testWidgets('Calendar is the initial route', (tester) async {
       await tester.pumpWidget(
         MetraApp(
-          overrides: [_calendarOverride, _statsOverride, _timelineOverride],
+          overrides: [
+            _calendarOverride,
+            _statsOverride,
+            _timelineOverride,
+            _settingsOverride,
+          ],
         ),
       );
       await tester.pumpAndSettle();
@@ -106,7 +147,12 @@ void main() {
     testWidgets('tapping Timeline tab shows timeline screen', (tester) async {
       await tester.pumpWidget(
         MetraApp(
-          overrides: [_calendarOverride, _statsOverride, _timelineOverride],
+          overrides: [
+            _calendarOverride,
+            _statsOverride,
+            _timelineOverride,
+            _settingsOverride,
+          ],
         ),
       );
       await tester.pumpAndSettle();
@@ -122,7 +168,12 @@ void main() {
     testWidgets('tapping Stats tab shows stats screen', (tester) async {
       await tester.pumpWidget(
         MetraApp(
-          overrides: [_calendarOverride, _statsOverride, _timelineOverride],
+          overrides: [
+            _calendarOverride,
+            _statsOverride,
+            _timelineOverride,
+            _settingsOverride,
+          ],
         ),
       );
       await tester.pumpAndSettle();
@@ -137,7 +188,12 @@ void main() {
     testWidgets('tapping Settings tab shows settings screen', (tester) async {
       await tester.pumpWidget(
         MetraApp(
-          overrides: [_calendarOverride, _statsOverride, _timelineOverride],
+          overrides: [
+            _calendarOverride,
+            _statsOverride,
+            _timelineOverride,
+            _settingsOverride,
+          ],
         ),
       );
       await tester.pumpAndSettle();
