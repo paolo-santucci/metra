@@ -20,6 +20,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/services/notification_service.dart';
 import '../domain/services/cycle_prediction_service.dart';
 import '../domain/services/notification_service.dart';
+import '../domain/use_cases/complete_onboarding.dart';
 import '../domain/use_cases/compute_cycle_stats.dart';
 import '../domain/use_cases/get_cycle_summaries.dart';
 import '../domain/use_cases/get_month_logs.dart';
@@ -108,4 +109,14 @@ final importDailyLogsProvider = FutureProvider<ImportDailyLogs>((ref) async {
   final logRepo = await ref.watch(dailyLogRepositoryProvider.future);
   final recompute = await ref.watch(recomputeCycleEntriesProvider.future);
   return ImportDailyLogs(logRepo, recompute);
+});
+
+// ── P-7 onboarding ──
+
+final completeOnboardingProvider = FutureProvider<CompleteOnboarding>((
+  ref,
+) async {
+  final cycleRepo = await ref.watch(cycleEntryRepositoryProvider.future);
+  final settingsRepo = await ref.watch(appSettingsRepositoryProvider.future);
+  return CompleteOnboarding(cycleRepo, settingsRepo);
 });
