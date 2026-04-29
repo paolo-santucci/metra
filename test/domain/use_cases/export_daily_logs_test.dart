@@ -35,8 +35,7 @@ void main() {
 
   test('empty repository → header-only CSV string', () async {
     final csv = await useCase.execute();
-    final lines =
-        csv.replaceAll('\r\n', '\n').trim().split('\n');
+    final lines = csv.replaceAll('\r\n', '\n').trim().split('\n');
     expect(lines, hasLength(1));
     expect(
       lines.first,
@@ -66,8 +65,7 @@ void main() {
     );
 
     final csv = await useCase.execute();
-    final lines =
-        csv.replaceAll('\r\n', '\n').trim().split('\n');
+    final lines = csv.replaceAll('\r\n', '\n').trim().split('\n');
     // header + 3 data rows
     expect(lines, hasLength(4));
   });
@@ -97,8 +95,7 @@ void main() {
 
   test('non-cycle-start day has cycle_start = 0', () async {
     // Only one log with no flow — not a cycle start.
-    await fakeRepo
-        .saveDailyLog(DailyLogEntity(date: DateTime.utc(2026, 1, 1)));
+    await fakeRepo.saveDailyLog(DailyLogEntity(date: DateTime.utc(2026, 1, 1)));
 
     final csv = await useCase.execute();
     final lines = csv.replaceAll('\r\n', '\n').trim().split('\n');

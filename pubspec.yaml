@@ -1,7 +1,7 @@
 name: metra
 description: "Métra — privacy-first menstrual cycle tracker."
 publish_to: none
-version: 0.1.0-p4+4
+version: 0.1.0-p5a+5
 
 environment:
   sdk: ">=3.3.0 <4.0.0"

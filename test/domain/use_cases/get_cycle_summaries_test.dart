@@ -48,13 +48,15 @@ void main() {
 
     test('returns one summary for one cycle with no logs', () async {
       final cycleRepo = FakeCycleEntryRepository();
-      cycleRepo.entries.add(CycleEntryEntity(
-        id: 1,
-        startDate: jan15,
-        endDate: jan20,
-        cycleLength: 28,
-        periodLength: 6,
-      ));
+      cycleRepo.entries.add(
+        CycleEntryEntity(
+          id: 1,
+          startDate: jan15,
+          endDate: jan20,
+          cycleLength: 28,
+          periodLength: 6,
+        ),
+      );
       final uc = GetCycleSummaries(FakeDailyLogRepository(), cycleRepo);
       final result = await uc().first;
       expect(result, hasLength(1));
@@ -65,27 +67,31 @@ void main() {
     test('extracts distinct symptoms from logs in range', () async {
       final logRepo = FakeDailyLogRepository();
       final cycleRepo = FakeCycleEntryRepository();
-      cycleRepo.entries.add(CycleEntryEntity(
-        id: 1,
-        startDate: jan15,
-        endDate: jan20,
-        cycleLength: 28,
-        periodLength: 6,
-      ));
+      cycleRepo.entries.add(
+        CycleEntryEntity(
+          id: 1,
+          startDate: jan15,
+          endDate: jan20,
+          cycleLength: 28,
+          periodLength: 6,
+        ),
+      );
       for (int d = 15; d <= 20; d++) {
-        logRepo.savedLogs.add(DailyLogEntity(
-          date: DateTime.utc(2026, 1, d),
-          flowIntensity: FlowIntensity.medium,
-        ));
+        logRepo.savedLogs.add(
+          DailyLogEntity(
+            date: DateTime.utc(2026, 1, d),
+            flowIntensity: FlowIntensity.medium,
+          ),
+        );
       }
       logRepo.symptoms[jan15] = [
-        PainSymptomData(symptomType: PainSymptomType.cramps),
+        const PainSymptomData(symptomType: PainSymptomType.cramps),
       ];
       logRepo.symptoms[jan16] = [
-        PainSymptomData(symptomType: PainSymptomType.cramps),
+        const PainSymptomData(symptomType: PainSymptomType.cramps),
       ];
       logRepo.symptoms[jan17] = [
-        PainSymptomData(symptomType: PainSymptomType.backPain),
+        const PainSymptomData(symptomType: PainSymptomType.backPain),
       ];
 
       final uc = GetCycleSummaries(logRepo, cycleRepo);
@@ -102,13 +108,15 @@ void main() {
         () async {
       final logRepo = FakeDailyLogRepository();
       final cycleRepo = FakeCycleEntryRepository();
-      cycleRepo.entries.add(CycleEntryEntity(
-        id: 1,
-        startDate: jan15,
-        endDate: jan20,
-        cycleLength: 28,
-        periodLength: 6,
-      ));
+      cycleRepo.entries.add(
+        CycleEntryEntity(
+          id: 1,
+          startDate: jan15,
+          endDate: jan20,
+          cycleLength: 28,
+          periodLength: 6,
+        ),
+      );
       // 2 × light, 2 × medium → tie → medium wins (higher ordinal)
       logRepo.savedLogs.addAll([
         DailyLogEntity(date: jan15, flowIntensity: FlowIntensity.light),
@@ -152,13 +160,15 @@ void main() {
       final cycleRepo = FakeCycleEntryRepository();
       final today = DateTime.now().toUtc();
       final todayNorm = DateTime.utc(today.year, today.month, today.day);
-      cycleRepo.entries.add(CycleEntryEntity(
-        id: 1,
-        startDate: todayNorm,
-        endDate: null,
-        cycleLength: null,
-        periodLength: null,
-      ));
+      cycleRepo.entries.add(
+        CycleEntryEntity(
+          id: 1,
+          startDate: todayNorm,
+          endDate: null,
+          cycleLength: null,
+          periodLength: null,
+        ),
+      );
       logRepo.savedLogs.add(
         DailyLogEntity(date: todayNorm, flowIntensity: FlowIntensity.heavy),
       );
@@ -172,18 +182,20 @@ void main() {
     test('does not include custom symptom type', () async {
       final logRepo = FakeDailyLogRepository();
       final cycleRepo = FakeCycleEntryRepository();
-      cycleRepo.entries.add(CycleEntryEntity(
-        id: 1,
-        startDate: jan15,
-        endDate: jan20,
-        cycleLength: 28,
-        periodLength: 6,
-      ));
+      cycleRepo.entries.add(
+        CycleEntryEntity(
+          id: 1,
+          startDate: jan15,
+          endDate: jan20,
+          cycleLength: 28,
+          periodLength: 6,
+        ),
+      );
       logRepo.savedLogs.add(
         DailyLogEntity(date: jan15, flowIntensity: FlowIntensity.light),
       );
       logRepo.symptoms[jan15] = [
-        PainSymptomData(
+        const PainSymptomData(
           symptomType: PainSymptomType.custom,
           customLabel: 'nausea',
         ),

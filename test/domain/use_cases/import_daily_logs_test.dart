@@ -99,8 +99,7 @@ void main() {
       );
       await useCase.execute(rows: [csvRow], mode: ImportMode.overwrite);
 
-      final saved = fakeLogRepo.savedLogs
-          .firstWhere((l) => l.date == date1);
+      final saved = fakeLogRepo.savedLogs.firstWhere((l) => l.date == date1);
       expect(saved.notes, 'new note');
     });
 
@@ -144,8 +143,7 @@ void main() {
         mode: ImportMode.keepExisting,
       );
 
-      final saved =
-          fakeLogRepo.savedLogs.firstWhere((l) => l.date == date1);
+      final saved = fakeLogRepo.savedLogs.firstWhere((l) => l.date == date1);
       expect(saved.notes, 'original');
     });
 
