@@ -78,6 +78,7 @@ void main() {
     notesEnabled: true,
     notificationDaysBefore: 2,
     notificationsEnabled: false,
+    onboardingCompleted: false,
   );
 
   group('SettingsScreen — smoke', () {

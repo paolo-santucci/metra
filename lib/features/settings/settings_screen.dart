@@ -336,6 +336,7 @@ class SettingsScreen extends ConsumerWidget {
                     notesEnabled: settings.notesEnabled,
                     notificationDaysBefore: settings.notificationDaysBefore,
                     notificationsEnabled: settings.notificationsEnabled,
+                    onboardingCompleted: settings.onboardingCompleted,
                   ),
                 );
               },

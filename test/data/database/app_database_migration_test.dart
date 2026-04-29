@@ -20,10 +20,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/data/database/app_database.dart';
 
 void main() {
-  test('schema version is 2', () {
+  test('schema version is 3', () {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
-    expect(db.schemaVersion, 2);
+    expect(db.schemaVersion, 3);
   });
 
   test('AppSettings has dropboxEmail and lastBackupAt columns', () async {
@@ -32,5 +32,13 @@ void main() {
     final settings = await db.appSettingsDao.getOrCreateSettings();
     expect(settings.dropboxEmail, isNull);
     expect(settings.lastBackupAt, isNull);
+  });
+
+  test('AppSettings has onboardingCompleted column defaulting to false',
+      () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final settings = await db.appSettingsDao.getOrCreateSettings();
+    expect(settings.onboardingCompleted, isFalse);
   });
 }

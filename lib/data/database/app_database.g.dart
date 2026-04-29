@@ -1345,6 +1345,16 @@ class $AppSettingsTable extends AppSettings
   late final GeneratedColumn<DateTime> lastBackupAt = GeneratedColumn<DateTime>(
       'last_backup_at', aliasedName, true,
       type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _onboardingCompletedMeta =
+      const VerificationMeta('onboardingCompleted');
+  @override
+  late final GeneratedColumn<bool> onboardingCompleted = GeneratedColumn<bool>(
+      'onboarding_completed', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("onboarding_completed" IN (0, 1))'),
+      defaultValue: const Constant(false));
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -1355,7 +1365,8 @@ class $AppSettingsTable extends AppSettings
         notificationDaysBefore,
         notificationsEnabled,
         dropboxEmail,
-        lastBackupAt
+        lastBackupAt,
+        onboardingCompleted
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1416,6 +1427,12 @@ class $AppSettingsTable extends AppSettings
           lastBackupAt.isAcceptableOrUnknown(
               data['last_backup_at']!, _lastBackupAtMeta));
     }
+    if (data.containsKey('onboarding_completed')) {
+      context.handle(
+          _onboardingCompletedMeta,
+          onboardingCompleted.isAcceptableOrUnknown(
+              data['onboarding_completed']!, _onboardingCompletedMeta));
+    }
     return context;
   }
 
@@ -1444,6 +1461,8 @@ class $AppSettingsTable extends AppSettings
           .read(DriftSqlType.string, data['${effectivePrefix}dropbox_email']),
       lastBackupAt: attachedDatabase.typeMapping.read(
           DriftSqlType.dateTime, data['${effectivePrefix}last_backup_at']),
+      onboardingCompleted: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool, data['${effectivePrefix}onboarding_completed'])!,
     );
   }
 
@@ -1463,6 +1482,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
   final bool notificationsEnabled;
   final String? dropboxEmail;
   final DateTime? lastBackupAt;
+  final bool onboardingCompleted;
   const AppSetting(
       {required this.id,
       required this.languageCode,
@@ -1472,7 +1492,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       required this.notificationDaysBefore,
       required this.notificationsEnabled,
       this.dropboxEmail,
-      this.lastBackupAt});
+      this.lastBackupAt,
+      required this.onboardingCompleted});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -1491,6 +1512,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     if (!nullToAbsent || lastBackupAt != null) {
       map['last_backup_at'] = Variable<DateTime>(lastBackupAt);
     }
+    map['onboarding_completed'] = Variable<bool>(onboardingCompleted);
     return map;
   }
 
@@ -1511,6 +1533,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       lastBackupAt: lastBackupAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lastBackupAt),
+      onboardingCompleted: Value(onboardingCompleted),
     );
   }
 
@@ -1529,6 +1552,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           serializer.fromJson<bool>(json['notificationsEnabled']),
       dropboxEmail: serializer.fromJson<String?>(json['dropboxEmail']),
       lastBackupAt: serializer.fromJson<DateTime?>(json['lastBackupAt']),
+      onboardingCompleted:
+          serializer.fromJson<bool>(json['onboardingCompleted']),
     );
   }
   @override
@@ -1544,6 +1569,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       'notificationsEnabled': serializer.toJson<bool>(notificationsEnabled),
       'dropboxEmail': serializer.toJson<String?>(dropboxEmail),
       'lastBackupAt': serializer.toJson<DateTime?>(lastBackupAt),
+      'onboardingCompleted': serializer.toJson<bool>(onboardingCompleted),
     };
   }
 
@@ -1556,7 +1582,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           int? notificationDaysBefore,
           bool? notificationsEnabled,
           Value<String?> dropboxEmail = const Value.absent(),
-          Value<DateTime?> lastBackupAt = const Value.absent()}) =>
+          Value<DateTime?> lastBackupAt = const Value.absent(),
+          bool? onboardingCompleted}) =>
       AppSetting(
         id: id ?? this.id,
         languageCode: languageCode ?? this.languageCode,
@@ -1570,6 +1597,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
             dropboxEmail.present ? dropboxEmail.value : this.dropboxEmail,
         lastBackupAt:
             lastBackupAt.present ? lastBackupAt.value : this.lastBackupAt,
+        onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
       );
   AppSetting copyWithCompanion(AppSettingsCompanion data) {
     return AppSetting(
@@ -1595,6 +1623,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       lastBackupAt: data.lastBackupAt.present
           ? data.lastBackupAt.value
           : this.lastBackupAt,
+      onboardingCompleted: data.onboardingCompleted.present
+          ? data.onboardingCompleted.value
+          : this.onboardingCompleted,
     );
   }
 
@@ -1609,7 +1640,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           ..write('notificationDaysBefore: $notificationDaysBefore, ')
           ..write('notificationsEnabled: $notificationsEnabled, ')
           ..write('dropboxEmail: $dropboxEmail, ')
-          ..write('lastBackupAt: $lastBackupAt')
+          ..write('lastBackupAt: $lastBackupAt, ')
+          ..write('onboardingCompleted: $onboardingCompleted')
           ..write(')'))
         .toString();
   }
@@ -1624,7 +1656,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       notificationDaysBefore,
       notificationsEnabled,
       dropboxEmail,
-      lastBackupAt);
+      lastBackupAt,
+      onboardingCompleted);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1637,7 +1670,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           other.notificationDaysBefore == this.notificationDaysBefore &&
           other.notificationsEnabled == this.notificationsEnabled &&
           other.dropboxEmail == this.dropboxEmail &&
-          other.lastBackupAt == this.lastBackupAt);
+          other.lastBackupAt == this.lastBackupAt &&
+          other.onboardingCompleted == this.onboardingCompleted);
 }
 
 class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
@@ -1650,6 +1684,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
   final Value<bool> notificationsEnabled;
   final Value<String?> dropboxEmail;
   final Value<DateTime?> lastBackupAt;
+  final Value<bool> onboardingCompleted;
   const AppSettingsCompanion({
     this.id = const Value.absent(),
     this.languageCode = const Value.absent(),
@@ -1660,6 +1695,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     this.notificationsEnabled = const Value.absent(),
     this.dropboxEmail = const Value.absent(),
     this.lastBackupAt = const Value.absent(),
+    this.onboardingCompleted = const Value.absent(),
   });
   AppSettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -1671,6 +1707,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     this.notificationsEnabled = const Value.absent(),
     this.dropboxEmail = const Value.absent(),
     this.lastBackupAt = const Value.absent(),
+    this.onboardingCompleted = const Value.absent(),
   });
   static Insertable<AppSetting> custom({
     Expression<int>? id,
@@ -1682,6 +1719,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     Expression<bool>? notificationsEnabled,
     Expression<String>? dropboxEmail,
     Expression<DateTime>? lastBackupAt,
+    Expression<bool>? onboardingCompleted,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1695,6 +1733,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
         'notifications_enabled': notificationsEnabled,
       if (dropboxEmail != null) 'dropbox_email': dropboxEmail,
       if (lastBackupAt != null) 'last_backup_at': lastBackupAt,
+      if (onboardingCompleted != null)
+        'onboarding_completed': onboardingCompleted,
     });
   }
 
@@ -1707,7 +1747,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
       Value<int>? notificationDaysBefore,
       Value<bool>? notificationsEnabled,
       Value<String?>? dropboxEmail,
-      Value<DateTime?>? lastBackupAt}) {
+      Value<DateTime?>? lastBackupAt,
+      Value<bool>? onboardingCompleted}) {
     return AppSettingsCompanion(
       id: id ?? this.id,
       languageCode: languageCode ?? this.languageCode,
@@ -1719,6 +1760,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       dropboxEmail: dropboxEmail ?? this.dropboxEmail,
       lastBackupAt: lastBackupAt ?? this.lastBackupAt,
+      onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
     );
   }
 
@@ -1753,6 +1795,9 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     if (lastBackupAt.present) {
       map['last_backup_at'] = Variable<DateTime>(lastBackupAt.value);
     }
+    if (onboardingCompleted.present) {
+      map['onboarding_completed'] = Variable<bool>(onboardingCompleted.value);
+    }
     return map;
   }
 
@@ -1767,7 +1812,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
           ..write('notificationDaysBefore: $notificationDaysBefore, ')
           ..write('notificationsEnabled: $notificationsEnabled, ')
           ..write('dropboxEmail: $dropboxEmail, ')
-          ..write('lastBackupAt: $lastBackupAt')
+          ..write('lastBackupAt: $lastBackupAt, ')
+          ..write('onboardingCompleted: $onboardingCompleted')
           ..write(')'))
         .toString();
   }
@@ -3029,6 +3075,7 @@ typedef $$AppSettingsTableCreateCompanionBuilder = AppSettingsCompanion
   Value<bool> notificationsEnabled,
   Value<String?> dropboxEmail,
   Value<DateTime?> lastBackupAt,
+  Value<bool> onboardingCompleted,
 });
 typedef $$AppSettingsTableUpdateCompanionBuilder = AppSettingsCompanion
     Function({
@@ -3041,6 +3088,7 @@ typedef $$AppSettingsTableUpdateCompanionBuilder = AppSettingsCompanion
   Value<bool> notificationsEnabled,
   Value<String?> dropboxEmail,
   Value<DateTime?> lastBackupAt,
+  Value<bool> onboardingCompleted,
 });
 
 class $$AppSettingsTableFilterComposer
@@ -3080,6 +3128,10 @@ class $$AppSettingsTableFilterComposer
 
   ColumnFilters<DateTime> get lastBackupAt => $composableBuilder(
       column: $table.lastBackupAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get onboardingCompleted => $composableBuilder(
+      column: $table.onboardingCompleted,
+      builder: (column) => ColumnFilters(column));
 }
 
 class $$AppSettingsTableOrderingComposer
@@ -3123,6 +3175,10 @@ class $$AppSettingsTableOrderingComposer
   ColumnOrderings<DateTime> get lastBackupAt => $composableBuilder(
       column: $table.lastBackupAt,
       builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get onboardingCompleted => $composableBuilder(
+      column: $table.onboardingCompleted,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$AppSettingsTableAnnotationComposer
@@ -3160,6 +3216,9 @@ class $$AppSettingsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get lastBackupAt => $composableBuilder(
       column: $table.lastBackupAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get onboardingCompleted => $composableBuilder(
+      column: $table.onboardingCompleted, builder: (column) => column);
 }
 
 class $$AppSettingsTableTableManager extends RootTableManager<
@@ -3194,6 +3253,7 @@ class $$AppSettingsTableTableManager extends RootTableManager<
             Value<bool> notificationsEnabled = const Value.absent(),
             Value<String?> dropboxEmail = const Value.absent(),
             Value<DateTime?> lastBackupAt = const Value.absent(),
+            Value<bool> onboardingCompleted = const Value.absent(),
           }) =>
               AppSettingsCompanion(
             id: id,
@@ -3205,6 +3265,7 @@ class $$AppSettingsTableTableManager extends RootTableManager<
             notificationsEnabled: notificationsEnabled,
             dropboxEmail: dropboxEmail,
             lastBackupAt: lastBackupAt,
+            onboardingCompleted: onboardingCompleted,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -3216,6 +3277,7 @@ class $$AppSettingsTableTableManager extends RootTableManager<
             Value<bool> notificationsEnabled = const Value.absent(),
             Value<String?> dropboxEmail = const Value.absent(),
             Value<DateTime?> lastBackupAt = const Value.absent(),
+            Value<bool> onboardingCompleted = const Value.absent(),
           }) =>
               AppSettingsCompanion.insert(
             id: id,
@@ -3227,6 +3289,7 @@ class $$AppSettingsTableTableManager extends RootTableManager<
             notificationsEnabled: notificationsEnabled,
             dropboxEmail: dropboxEmail,
             lastBackupAt: lastBackupAt,
+            onboardingCompleted: onboardingCompleted,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

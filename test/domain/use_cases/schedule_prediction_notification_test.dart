@@ -49,6 +49,7 @@ void main() {
         notesEnabled: true,
         notificationDaysBefore: 2,
         notificationsEnabled: true,
+        onboardingCompleted: false,
       );
 
       await useCase.execute(
@@ -73,6 +74,7 @@ void main() {
         notesEnabled: true,
         notificationDaysBefore: 2,
         notificationsEnabled: false,
+        onboardingCompleted: false,
       );
 
       await useCase.execute(
@@ -99,6 +101,7 @@ void main() {
         notesEnabled: true,
         notificationDaysBefore: 0,
         notificationsEnabled: true,
+        onboardingCompleted: false,
       );
 
       await useCase.execute(
@@ -124,6 +127,7 @@ void main() {
         notesEnabled: true,
         notificationDaysBefore: 2,
         notificationsEnabled: true,
+        onboardingCompleted: false,
       );
 
       await useCase.execute(
@@ -164,6 +168,7 @@ void main() {
         notesEnabled: true,
         notificationsEnabled: true,
         notificationDaysBefore: 0, // invalid: below 1
+        onboardingCompleted: false,
       );
 
       await uc.execute(

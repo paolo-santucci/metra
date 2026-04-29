@@ -25,6 +25,7 @@ class AppSettingsData {
     required this.notificationsEnabled,
     this.dropboxEmail,
     this.lastBackupAt,
+    required this.onboardingCompleted,
   });
 
   /// Factory returning the defaults that match DB column defaults.
@@ -46,6 +47,9 @@ class AppSettingsData {
   /// Timestamp of the last successful backup, or null if no backup has run.
   final DateTime? lastBackupAt;
 
+  /// True once the user has completed onboarding.
+  final bool onboardingCompleted;
+
   AppSettingsData copyWith({
     String? languageCode,
     bool? darkMode,
@@ -55,6 +59,7 @@ class AppSettingsData {
     bool? notificationsEnabled,
     String? dropboxEmail,
     DateTime? lastBackupAt,
+    bool? onboardingCompleted,
   }) {
     return AppSettingsData(
       languageCode: languageCode ?? this.languageCode,
@@ -66,6 +71,7 @@ class AppSettingsData {
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       dropboxEmail: dropboxEmail ?? this.dropboxEmail,
       lastBackupAt: lastBackupAt ?? this.lastBackupAt,
+      onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
     );
   }
 
@@ -81,7 +87,8 @@ class AppSettingsData {
           notificationDaysBefore == other.notificationDaysBefore &&
           notificationsEnabled == other.notificationsEnabled &&
           dropboxEmail == other.dropboxEmail &&
-          lastBackupAt == other.lastBackupAt;
+          lastBackupAt == other.lastBackupAt &&
+          onboardingCompleted == other.onboardingCompleted;
 
   @override
   int get hashCode =>
@@ -92,7 +99,8 @@ class AppSettingsData {
       notificationDaysBefore.hashCode ^
       notificationsEnabled.hashCode ^
       dropboxEmail.hashCode ^
-      lastBackupAt.hashCode;
+      lastBackupAt.hashCode ^
+      onboardingCompleted.hashCode;
 }
 
 class _AppSettingsDataDefaults extends AppSettingsData {
@@ -104,5 +112,6 @@ class _AppSettingsDataDefaults extends AppSettingsData {
           notesEnabled: true,
           notificationDaysBefore: 2,
           notificationsEnabled: false,
+          onboardingCompleted: false,
         );
 }

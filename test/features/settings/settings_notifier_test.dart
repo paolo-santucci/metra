@@ -40,6 +40,7 @@ void main() {
         notesEnabled: true,
         notificationDaysBefore: 3,
         notificationsEnabled: true,
+        onboardingCompleted: false,
       );
     final container = makeContainer(fakeRepo);
     addTearDown(container.dispose);
@@ -76,6 +77,7 @@ void main() {
       notesEnabled: false,
       notificationDaysBefore: 5,
       notificationsEnabled: true,
+      onboardingCompleted: false,
     );
     await container.read(settingsNotifierProvider.notifier).save(updated);
 

@@ -24,6 +24,9 @@ abstract class AppSettingsRepository {
 
   Future<void> updateSettings(AppSettingsData settings);
 
+  /// Marks onboarding as completed. Idempotent.
+  Future<void> markOnboardingComplete();
+
   /// Persists Dropbox backup state after a successful backup or sign-out.
   ///
   /// Pass explicit nulls to clear either field — callers must not use
