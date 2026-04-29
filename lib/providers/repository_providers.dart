@@ -17,9 +17,11 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/repositories/drift_app_settings_repository.dart';
 import '../data/repositories/drift_cycle_entry_repository.dart';
 import '../data/repositories/drift_daily_log_repository.dart';
 import '../domain/entities/pain_symptom_data.dart';
+import '../domain/repositories/app_settings_repository.dart';
 import '../domain/repositories/cycle_entry_repository.dart';
 import '../domain/repositories/daily_log_repository.dart';
 import 'database_provider.dart';
@@ -36,6 +38,12 @@ final cycleEntryRepositoryProvider = FutureProvider<CycleEntryRepository>((
 ) async {
   final db = await ref.watch(databaseProvider.future);
   return DriftCycleEntryRepository(db.cycleEntryDao);
+});
+
+final appSettingsRepositoryProvider =
+    FutureProvider<AppSettingsRepository>((ref) async {
+  final db = await ref.watch(databaseProvider.future);
+  return DriftAppSettingsRepository(db.appSettingsDao);
 });
 
 /// One-shot load of pain symptoms for a given UTC-midnight date.

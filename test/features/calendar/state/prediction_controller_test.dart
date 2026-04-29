@@ -18,6 +18,8 @@
 // NOTE: This test requires T8 to register `watchCyclePredictionProvider` in
 // `use_case_providers.dart` before it can be compiled and run.
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/domain/entities/cycle_prediction.dart';

@@ -20,7 +20,6 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/entities/cycle_prediction.dart';
-import '../../../domain/use_cases/watch_cycle_prediction.dart';
 import '../../../providers/use_case_providers.dart';
 
 /// Non-autoDispose provider: the prediction is app-lifetime state consumed by
@@ -33,11 +32,7 @@ final cyclePredictionProvider =
 class CyclePredictionNotifier extends AsyncNotifier<CyclePrediction?> {
   @override
   Future<CyclePrediction?> build() async {
-    // ignore: undefined_identifier — watchCyclePredictionProvider is declared
-    // in use_case_providers.dart by T8; this file won't compile until T8 runs.
-    final uc = await ref.read(
-      watchCyclePredictionProvider.future, // ignore: undefined_identifier
-    ) as WatchCyclePrediction;
+    final uc = await ref.read(watchCyclePredictionProvider.future);
     final completer = Completer<CyclePrediction?>();
     final sub = uc().listen((CyclePrediction? prediction) {
       if (!completer.isCompleted) {
