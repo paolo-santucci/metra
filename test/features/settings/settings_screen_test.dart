@@ -315,4 +315,20 @@ void main() {
       await tester.pump();
     });
   });
+
+  group('SettingsScreen — backup row', () {
+    testWidgets('backup row is visible', (tester) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final stub = _StubSettingsNotifier(defaults);
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Backup cloud'), findsOneWidget);
+    });
+  });
 }
