@@ -168,9 +168,8 @@ class _DataPage extends ConsumerWidget {
             ),
             const Spacer(),
             FilledButton(
-              onPressed: state.canSubmit
-                  ? () => _onSubmit(context, ref, state)
-                  : null,
+              onPressed:
+                  state.canSubmit ? () => _onSubmit(context, ref, state) : null,
               child: Text(l10n.onboarding_start),
             ),
             const SizedBox(height: MetraSpacing.s8),
@@ -214,7 +213,8 @@ class _DatePickerField extends StatelessWidget {
         : 'Select date';
 
     return Semantics(
-      label: 'Last period start date, ${selectedDate != null ? displayText : 'not selected'}',
+      label:
+          'Last period start date, ${selectedDate != null ? displayText : 'not selected'}',
       button: true,
       child: OutlinedButton.icon(
         style: OutlinedButton.styleFrom(

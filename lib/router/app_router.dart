@@ -39,8 +39,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: '/calendar',
     redirect: (context, state) async {
       if (state.uri.path == '/onboarding') return null;
-      final settingsRepo =
-          await ref.read(appSettingsRepositoryProvider.future);
+      final settingsRepo = await ref.read(appSettingsRepositoryProvider.future);
       final settings = await settingsRepo.getOrCreate();
       if (!settings.onboardingCompleted) return '/onboarding';
       return null;

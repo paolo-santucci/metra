@@ -68,8 +68,7 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
       _dao.updateSettings(_toCompanion(settings));
 
   @override
-  Future<void> markOnboardingComplete() =>
-      _dao.updateSettings(
+  Future<void> markOnboardingComplete() => _dao.updateSettings(
         const AppSettingsCompanion(onboardingCompleted: Value(true)),
       );
 
