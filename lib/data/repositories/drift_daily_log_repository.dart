@@ -141,4 +141,7 @@ class DriftDailyLogRepository implements DailyLogRepository {
         date,
         symptoms.map((s) => _symptomToCompanion(date, s)).toList(),
       );
+
+  @override
+  Future<void> deleteAll() => _dao.deleteAll();
 }

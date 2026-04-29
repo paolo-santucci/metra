@@ -80,4 +80,6 @@ class DailyLogDao extends DatabaseAccessor<AppDatabase>
             .go();
         await batch((b) => b.insertAll(painSymptoms, symptoms));
       });
+
+  Future<void> deleteAll() => delete(dailyLogs).go();
 }

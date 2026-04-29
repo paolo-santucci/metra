@@ -44,4 +44,6 @@ class CycleEntryDao extends DatabaseAccessor<AppDatabase>
 
   Future<void> deleteCycleEntry(int id) =>
       (delete(cycleEntries)..where((t) => t.id.equals(id))).go();
+
+  Future<void> deleteAllCycles() => delete(cycleEntries).go();
 }
