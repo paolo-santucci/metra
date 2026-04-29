@@ -19,8 +19,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/theme/metra_theme.dart';
+import 'domain/entities/app_settings_data.dart';
 import 'domain/entities/cycle_prediction.dart';
 import 'features/calendar/state/prediction_controller.dart';
+import 'features/settings/state/settings_notifier.dart';
 import 'l10n/app_localizations.dart';
 import 'providers/use_case_providers.dart';
 import 'router/app_router.dart';
@@ -64,23 +66,59 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = ref.watch(settingsNotifierProvider).valueOrNull;
+
+    final themeMode = switch (settings?.darkMode) {
+      null => ThemeMode.system,
+      false => ThemeMode.light,
+      true => ThemeMode.dark,
+    };
+
+    final locale = settings != null ? Locale(settings.languageCode) : null;
+
+    // Reschedule notification whenever the predicted next cycle date changes.
     ref.listen<AsyncValue<CyclePrediction?>>(
       cyclePredictionProvider,
       (_, next) async {
         final prediction = next.valueOrNull;
-        final settings = ref.read(getOrCreateSettingsProvider).valueOrNull;
-        if (settings == null) return;
-        final l10n =
-            await AppLocalizations.delegate.load(Locale(settings.languageCode));
+        final currentSettings = ref.read(settingsNotifierProvider).valueOrNull;
+        if (currentSettings == null) return;
+        final l10n = await AppLocalizations.delegate
+            .load(Locale(currentSettings.languageCode));
         final scheduler =
             await ref.read(schedulePredictionNotificationProvider.future);
         await scheduler.execute(
           prediction: prediction,
-          settings: settings,
+          settings: currentSettings,
           title: l10n.notification_prediction_title,
           body: prediction != null
               ? l10n.notification_prediction_body(
-                  settings.notificationDaysBefore,
+                  currentSettings.notificationDaysBefore,
+                )
+              : '',
+        );
+      },
+    );
+
+    // Reschedule notification immediately when the user changes settings
+    // (toggle notificationsEnabled or adjust notificationDaysBefore).
+    ref.listen<AsyncValue<AppSettingsData>>(
+      settingsNotifierProvider,
+      (_, next) async {
+        final currentSettings = next.valueOrNull;
+        if (currentSettings == null) return;
+        final prediction = ref.read(cyclePredictionProvider).valueOrNull;
+        final l10n = await AppLocalizations.delegate
+            .load(Locale(currentSettings.languageCode));
+        final scheduler =
+            await ref.read(schedulePredictionNotificationProvider.future);
+        await scheduler.execute(
+          prediction: prediction,
+          settings: currentSettings,
+          title: l10n.notification_prediction_title,
+          body: prediction != null
+              ? l10n.notification_prediction_body(
+                  currentSettings.notificationDaysBefore,
                 )
               : '',
         );
@@ -91,7 +129,8 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
       title: 'Mētra',
       theme: MetraTheme.light(),
       darkTheme: MetraTheme.dark(),
-      themeMode: ThemeMode.system,
+      themeMode: themeMode,
+      locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: appRouter,
