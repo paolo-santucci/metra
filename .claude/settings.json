@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter test *)",
+      "Bash(flutter analyze *)",
+      "Bash(source ~/.bashrc && flutter test *)",
+      "Bash(source ~/.bashrc && flutter analyze *)",
+      "mcp__ccd_session__mark_chapter"
+    ]
+  }
+}

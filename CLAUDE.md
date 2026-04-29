@@ -416,6 +416,8 @@ When working on this project:
     3. `Development Plan — Métra.md`
     4. The specific GitHub issue for the task in progress
 
+11. **Make agents evolve** At session start, read the evolving-agent skill and follow the boot/reflect/persist cycle.
+
 ---
 
 ## 18. Execution guidelines
