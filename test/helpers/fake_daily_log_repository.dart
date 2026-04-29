@@ -82,4 +82,20 @@ class FakeDailyLogRepository implements DailyLogRepository {
     savedLogs.clear();
     symptoms.clear();
   }
+
+  List<DailyLogEntity>? deleteAllAndReplaceCalledWithLogs;
+
+  @override
+  Future<void> deleteAllAndReplace(
+    List<DailyLogEntity> logs,
+    Map<DateTime, List<PainSymptomData>> newSymptoms,
+  ) async {
+    deleteAllAndReplaceCalledWithLogs = List.from(logs);
+    savedLogs
+      ..clear()
+      ..addAll(logs);
+    symptoms
+      ..clear()
+      ..addAll(newSymptoms);
+  }
 }
