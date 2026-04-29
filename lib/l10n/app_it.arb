@@ -616,5 +616,146 @@
       "count": { "type": "int" },
       "skipped": { "type": "int" }
     }
+  },
+
+  "backup_screen_title": "Backup",
+  "@backup_screen_title": {
+    "description": "Backup screen page title"
+  },
+
+  "backup_not_connected_body": "I tuoi dati restano sul dispositivo. Collega Dropbox per conservare una copia cifrata nel cloud — solo tu puoi leggerla.",
+  "@backup_not_connected_body": {
+    "description": "Body text shown on the backup screen when no provider is connected"
+  },
+
+  "backup_connect_dropbox": "Collega Dropbox",
+  "@backup_connect_dropbox": {
+    "description": "Button to initiate Dropbox OAuth connection"
+  },
+
+  "backup_connected_as": "Connesso come: {email}",
+  "@backup_connected_as": {
+    "description": "Status line showing the connected Dropbox account email",
+    "placeholders": {
+      "email": { "type": "String" }
+    }
+  },
+
+  "backup_last_backup_never": "Mai salvato",
+  "@backup_last_backup_never": {
+    "description": "Status shown when no backup has ever been created"
+  },
+
+  "backup_last_backup_at": "Ultimo backup: {datetime}",
+  "@backup_last_backup_at": {
+    "description": "Status showing the date and time of the last backup",
+    "placeholders": {
+      "datetime": { "type": "String" }
+    }
+  },
+
+  "backup_now": "Salva ora",
+  "@backup_now": {
+    "description": "Button to trigger an immediate backup"
+  },
+
+  "backup_restore": "Ripristina dal backup",
+  "@backup_restore": {
+    "description": "Button to restore data from the cloud backup"
+  },
+
+  "backup_disconnect": "Disconnetti",
+  "@backup_disconnect": {
+    "description": "Button to disconnect the cloud provider account"
+  },
+
+  "backup_in_progress": "Salvataggio in corso…",
+  "@backup_in_progress": {
+    "description": "Status text shown while a backup operation is running"
+  },
+
+  "backup_restore_in_progress": "Ripristino in corso…",
+  "@backup_restore_in_progress": {
+    "description": "Status text shown while a restore operation is running"
+  },
+
+  "backup_passphrase_title": "Imposta una passphrase",
+  "@backup_passphrase_title": {
+    "description": "Title of the passphrase setup dialog shown before the first backup"
+  },
+
+  "backup_passphrase_body": "Questa passphrase cifra il tuo backup. Se la perdi, il backup non può essere recuperato — non esiste un reset.",
+  "@backup_passphrase_body": {
+    "description": "Explanatory body text in the passphrase setup dialog"
+  },
+
+  "backup_passphrase_input_label": "Passphrase",
+  "@backup_passphrase_input_label": {
+    "description": "Label for the passphrase input field"
+  },
+
+  "backup_passphrase_confirm_label": "Conferma passphrase",
+  "@backup_passphrase_confirm_label": {
+    "description": "Label for the passphrase confirmation input field"
+  },
+
+  "backup_passphrase_mismatch": "Le passphrase non corrispondono.",
+  "@backup_passphrase_mismatch": {
+    "description": "Validation error shown when the two passphrase fields do not match"
+  },
+
+  "backup_passphrase_too_short": "La passphrase deve essere di almeno 8 caratteri.",
+  "@backup_passphrase_too_short": {
+    "description": "Validation error shown when the passphrase is shorter than 8 characters"
+  },
+
+  "backup_passphrase_confirm_button": "Ho capito — salva e fai il backup",
+  "@backup_passphrase_confirm_button": {
+    "description": "Confirm button in the passphrase setup dialog; acknowledges the no-reset warning"
+  },
+
+  "backup_restore_confirm_title": "Ripristinare il backup?",
+  "@backup_restore_confirm_title": {
+    "description": "Title of the restore confirmation dialog"
+  },
+
+  "backup_restore_confirm_body": "Tutti i dati attuali verranno sostituiti. Questa operazione non può essere annullata.",
+  "@backup_restore_confirm_body": {
+    "description": "Body text of the restore confirmation dialog"
+  },
+
+  "backup_restore_confirm_button": "Ripristina",
+  "@backup_restore_confirm_button": {
+    "description": "Confirm button in the restore confirmation dialog"
+  },
+
+  "backup_error_wrong_passphrase": "Passphrase errata. Riprova.",
+  "@backup_error_wrong_passphrase": {
+    "description": "Error message shown when the entered passphrase does not decrypt the backup"
+  },
+
+  "backup_error_generic": "Backup fallito. Riprova.",
+  "@backup_error_generic": {
+    "description": "Generic error message shown when a backup or restore operation fails"
+  },
+
+  "backup_error_no_backup_found": "Nessun backup trovato su Dropbox.",
+  "@backup_error_no_backup_found": {
+    "description": "Error message shown when no backup file is found in the connected Dropbox account"
+  },
+
+  "backup_disconnect_confirm_title": "Disconnettere Dropbox?",
+  "@backup_disconnect_confirm_title": {
+    "description": "Title of the Dropbox disconnect confirmation dialog"
+  },
+
+  "backup_disconnect_confirm_body": "Il backup nel cloud non verrà eliminato.",
+  "@backup_disconnect_confirm_body": {
+    "description": "Body text of the Dropbox disconnect confirmation dialog"
+  },
+
+  "backup_disconnect_confirm_button": "Disconnetti",
+  "@backup_disconnect_confirm_button": {
+    "description": "Confirm button in the Dropbox disconnect confirmation dialog"
   }
 }

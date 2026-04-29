@@ -346,5 +346,43 @@
       "count": { "type": "int" },
       "skipped": { "type": "int" }
     }
-  }
+  },
+
+  "backup_screen_title": "Backup",
+  "backup_not_connected_body": "Your data stays on your device. Connect Dropbox to keep an encrypted copy in the cloud — only you can read it.",
+  "backup_connect_dropbox": "Connect Dropbox",
+  "backup_connected_as": "Connected as: {email}",
+  "@backup_connected_as": {
+    "placeholders": {
+      "email": { "type": "String" }
+    }
+  },
+  "backup_last_backup_never": "Never backed up",
+  "backup_last_backup_at": "Last backup: {datetime}",
+  "@backup_last_backup_at": {
+    "placeholders": {
+      "datetime": { "type": "String" }
+    }
+  },
+  "backup_now": "Back up now",
+  "backup_restore": "Restore from backup",
+  "backup_disconnect": "Disconnect",
+  "backup_in_progress": "Backing up…",
+  "backup_restore_in_progress": "Restoring…",
+  "backup_passphrase_title": "Set a backup passphrase",
+  "backup_passphrase_body": "This passphrase encrypts your backup. If you lose it, your backup cannot be recovered — there is no reset.",
+  "backup_passphrase_input_label": "Passphrase",
+  "backup_passphrase_confirm_label": "Confirm passphrase",
+  "backup_passphrase_mismatch": "Passphrases do not match.",
+  "backup_passphrase_too_short": "Passphrase must be at least 8 characters.",
+  "backup_passphrase_confirm_button": "I understand — save and back up",
+  "backup_restore_confirm_title": "Restore backup?",
+  "backup_restore_confirm_body": "This will replace all current data. This cannot be undone.",
+  "backup_restore_confirm_button": "Restore",
+  "backup_error_wrong_passphrase": "Wrong passphrase. Please try again.",
+  "backup_error_generic": "Backup failed. Please try again.",
+  "backup_error_no_backup_found": "No backup found in your Dropbox.",
+  "backup_disconnect_confirm_title": "Disconnect Dropbox?",
+  "backup_disconnect_confirm_body": "Your cloud backup will not be deleted.",
+  "backup_disconnect_confirm_button": "Disconnect"
 }
