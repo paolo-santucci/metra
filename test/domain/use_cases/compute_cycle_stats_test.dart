@@ -43,28 +43,36 @@ void main() {
     });
 
     test('returns null when only in-progress cycle (no cycleLength)', () async {
-      final uc = ComputeCycleStats(_makeGetCycleSummaries(cycles: [
-        CycleEntryEntity(
-          id: 1,
-          startDate: DateTime.utc(2026, 4, 13),
-          endDate: null,
-          cycleLength: null,
-          periodLength: null,
+      final uc = ComputeCycleStats(
+        _makeGetCycleSummaries(
+          cycles: [
+            CycleEntryEntity(
+              id: 1,
+              startDate: DateTime.utc(2026, 4, 13),
+              endDate: null,
+              cycleLength: null,
+              periodLength: null,
+            ),
+          ],
         ),
-      ]));
+      );
       expect(await uc().first, isNull);
     });
 
     test('returns one data point for one complete cycle', () async {
-      final uc = ComputeCycleStats(_makeGetCycleSummaries(cycles: [
-        CycleEntryEntity(
-          id: 1,
-          startDate: DateTime.utc(2026, 1, 15),
-          endDate: DateTime.utc(2026, 1, 20),
-          cycleLength: 28,
-          periodLength: 6,
+      final uc = ComputeCycleStats(
+        _makeGetCycleSummaries(
+          cycles: [
+            CycleEntryEntity(
+              id: 1,
+              startDate: DateTime.utc(2026, 1, 15),
+              endDate: DateTime.utc(2026, 1, 20),
+              cycleLength: 28,
+              periodLength: 6,
+            ),
+          ],
         ),
-      ]));
+      );
       final result = await uc().first;
       expect(result, isNotNull);
       expect(result!.points, hasLength(1));
@@ -73,68 +81,81 @@ void main() {
     });
 
     test('points are oldest-first', () async {
-      final uc = ComputeCycleStats(_makeGetCycleSummaries(cycles: [
-        CycleEntryEntity(
-          id: 1,
-          startDate: DateTime.utc(2026, 2, 12),
-          endDate: DateTime.utc(2026, 2, 17),
-          cycleLength: 28,
-          periodLength: 6,
+      final uc = ComputeCycleStats(
+        _makeGetCycleSummaries(
+          cycles: [
+            CycleEntryEntity(
+              id: 1,
+              startDate: DateTime.utc(2026, 2, 12),
+              endDate: DateTime.utc(2026, 2, 17),
+              cycleLength: 28,
+              periodLength: 6,
+            ),
+            CycleEntryEntity(
+              id: 2,
+              startDate: DateTime.utc(2026, 1, 15),
+              endDate: DateTime.utc(2026, 1, 20),
+              cycleLength: 28,
+              periodLength: 6,
+            ),
+          ],
         ),
-        CycleEntryEntity(
-          id: 2,
-          startDate: DateTime.utc(2026, 1, 15),
-          endDate: DateTime.utc(2026, 1, 20),
-          cycleLength: 28,
-          periodLength: 6,
-        ),
-      ]));
+      );
       final result = await uc().first;
       expect(result!.points.first.startDate, DateTime.utc(2026, 1, 15));
       expect(result.points.last.startDate, DateTime.utc(2026, 2, 12));
     });
 
     test('excludes in-progress cycle from points', () async {
-      final uc = ComputeCycleStats(_makeGetCycleSummaries(cycles: [
-        CycleEntryEntity(
-          id: 1,
-          startDate: DateTime.utc(2026, 1, 15),
-          endDate: DateTime.utc(2026, 1, 20),
-          cycleLength: 28,
-          periodLength: 6,
+      final uc = ComputeCycleStats(
+        _makeGetCycleSummaries(
+          cycles: [
+            CycleEntryEntity(
+              id: 1,
+              startDate: DateTime.utc(2026, 1, 15),
+              endDate: DateTime.utc(2026, 1, 20),
+              cycleLength: 28,
+              periodLength: 6,
+            ),
+            CycleEntryEntity(
+              id: 2,
+              startDate: DateTime.utc(2026, 4, 13),
+              endDate: null,
+              cycleLength: null,
+              periodLength: null,
+            ),
+          ],
         ),
-        CycleEntryEntity(
-          id: 2,
-          startDate: DateTime.utc(2026, 4, 13),
-          endDate: null,
-          cycleLength: null,
-          periodLength: null,
-        ),
-      ]));
+      );
       final result = await uc().first;
       expect(result!.points, hasLength(1));
     });
 
     test('symptomFrequencies contains all 5 fixed types', () async {
-      final uc = ComputeCycleStats(_makeGetCycleSummaries(cycles: [
-        CycleEntryEntity(
-          id: 1,
-          startDate: DateTime.utc(2026, 1, 15),
-          endDate: DateTime.utc(2026, 1, 20),
-          cycleLength: 28,
-          periodLength: 6,
+      final uc = ComputeCycleStats(
+        _makeGetCycleSummaries(
+          cycles: [
+            CycleEntryEntity(
+              id: 1,
+              startDate: DateTime.utc(2026, 1, 15),
+              endDate: DateTime.utc(2026, 1, 20),
+              cycleLength: 28,
+              periodLength: 6,
+            ),
+          ],
         ),
-      ]));
+      );
       final result = await uc().first;
       expect(
-          result!.symptomFrequencies.keys,
-          containsAll([
-            PainSymptomType.cramps,
-            PainSymptomType.backPain,
-            PainSymptomType.headache,
-            PainSymptomType.migraine,
-            PainSymptomType.bloating,
-          ]));
+        result!.symptomFrequencies.keys,
+        containsAll([
+          PainSymptomType.cramps,
+          PainSymptomType.backPain,
+          PainSymptomType.headache,
+          PainSymptomType.migraine,
+          PainSymptomType.bloating,
+        ]),
+      );
       expect(
         result.symptomFrequencies.containsKey(PainSymptomType.custom),
         isFalse,
@@ -147,17 +168,20 @@ void main() {
       final logRepo = FakeDailyLogRepository();
       final start = DateTime.utc(2026, 1, 15);
       final end = DateTime.utc(2026, 1, 20);
-      cycleRepo.entries.add(CycleEntryEntity(
-        id: 1,
-        startDate: start,
-        endDate: end,
-        cycleLength: 28,
-        periodLength: 6,
-      ));
+      cycleRepo.entries.add(
+        CycleEntryEntity(
+          id: 1,
+          startDate: start,
+          endDate: end,
+          cycleLength: 28,
+          periodLength: 6,
+        ),
+      );
       logRepo.savedLogs.add(
-          DailyLogEntity(date: start, flowIntensity: FlowIntensity.medium));
+        DailyLogEntity(date: start, flowIntensity: FlowIntensity.medium),
+      );
       logRepo.symptoms[start] = [
-        PainSymptomData(symptomType: PainSymptomType.cramps),
+        const PainSymptomData(symptomType: PainSymptomType.cramps),
       ];
 
       final uc = ComputeCycleStats(GetCycleSummaries(logRepo, cycleRepo));

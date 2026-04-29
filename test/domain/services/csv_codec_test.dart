@@ -75,15 +75,17 @@ void main() {
     });
 
     test('FlowIntensity.none encodes as 0', () {
-      final csv = codec
-          .encode([row(date: DateTime.utc(2026, 3, 1), flow: FlowIntensity.none)]);
+      final csv = codec.encode(
+        [row(date: DateTime.utc(2026, 3, 1), flow: FlowIntensity.none)],
+      );
       final dataLine = csv.replaceAll('\r\n', '\n').split('\n')[1];
       expect(dataLine.split(',')[1], '0');
     });
 
     test('FlowIntensity.veryHeavy encodes as 4', () {
       final csv = codec.encode(
-          [row(date: DateTime.utc(2026, 3, 1), flow: FlowIntensity.veryHeavy)]);
+        [row(date: DateTime.utc(2026, 3, 1), flow: FlowIntensity.veryHeavy)],
+      );
       final dataLine = csv.replaceAll('\r\n', '\n').split('\n')[1];
       expect(dataLine.split(',')[1], '4');
     });
@@ -96,15 +98,15 @@ void main() {
     });
 
     test('cycleStart=true encodes as 1 in last column', () {
-      final csv = codec
-          .encode([row(date: DateTime.utc(2026, 3, 1), cycleStart: true)]);
+      final csv =
+          codec.encode([row(date: DateTime.utc(2026, 3, 1), cycleStart: true)]);
       final dataLine = csv.replaceAll('\r\n', '\n').split('\n')[1];
       expect(dataLine.split(',').last, '1');
     });
 
     test('cycle_start column is present even when false', () {
-      final csv =
-          codec.encode([row(date: DateTime.utc(2026, 3, 1), cycleStart: false)]);
+      final csv = codec
+          .encode([row(date: DateTime.utc(2026, 3, 1), cycleStart: false)]);
       final dataLine = csv.replaceAll('\r\n', '\n').split('\n')[1];
       expect(dataLine.split(',').last, '0');
     });
@@ -116,8 +118,8 @@ void main() {
         row(
           date: DateTime.utc(2026, 3, 1),
           symptoms: [
-            PainSymptomData(symptomType: PainSymptomType.cramps),
-            PainSymptomData(symptomType: PainSymptomType.backPain),
+            const PainSymptomData(symptomType: PainSymptomType.cramps),
+            const PainSymptomData(symptomType: PainSymptomType.backPain),
           ],
         ),
       ]);
@@ -129,8 +131,10 @@ void main() {
         row(
           date: DateTime.utc(2026, 3, 1),
           symptoms: [
-            PainSymptomData(
-                symptomType: PainSymptomType.custom, customLabel: 'Nausea'),
+            const PainSymptomData(
+              symptomType: PainSymptomType.custom,
+              customLabel: 'Nausea',
+            ),
           ],
         ),
       ]);
@@ -159,9 +163,11 @@ void main() {
         notesEnabled: true,
         notes: 'some note with, a comma',
         symptoms: [
-          PainSymptomData(symptomType: PainSymptomType.cramps),
-          PainSymptomData(
-              symptomType: PainSymptomType.custom, customLabel: 'Nausea'),
+          const PainSymptomData(symptomType: PainSymptomType.cramps),
+          const PainSymptomData(
+            symptomType: PainSymptomType.custom,
+            customLabel: 'Nausea',
+          ),
         ],
         cycleStart: true,
       );
@@ -184,7 +190,8 @@ void main() {
       expect(decoded.symptoms.last.customLabel, 'Nausea');
     });
 
-    test('cycle_start column is ignored on decode (not mapped to DailyLogRow)', () {
+    test('cycle_start column is ignored on decode (not mapped to DailyLogRow)',
+        () {
       final r = row(date: DateTime.utc(2026, 4, 1), cycleStart: true);
       final result = codec.decode(codec.encode([r]));
       expect(result.errors, isEmpty);
@@ -340,9 +347,9 @@ void main() {
     test('valid and invalid rows: valid rows included, invalid excluded', () {
       const csv =
           'date,flow,spotting,other_discharge,pain_intensity,symptoms,notes,cycle_start\r\n'
-          '2026-03-01,,0,0,,,, 0\r\n'     // valid
-          'bad-date,,0,0,,,, 0\r\n'       // invalid date
-          '2026-03-03,,0,0,,,, 0\r\n';    // valid
+          '2026-03-01,,0,0,,,, 0\r\n' // valid
+          'bad-date,,0,0,,,, 0\r\n' // invalid date
+          '2026-03-03,,0,0,,,, 0\r\n'; // valid
       final result = codec.decode(csv);
       expect(result.rows, hasLength(2));
       expect(result.errors, hasLength(1));

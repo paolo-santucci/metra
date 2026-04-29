@@ -195,10 +195,14 @@ void main() {
 
       final expectedStart = start2.add(const Duration(days: 28));
       expect(result!.expectedStart, equals(expectedStart));
-      expect(result.windowStart,
-          equals(expectedStart.subtract(const Duration(days: 2))));
       expect(
-          result.windowEnd, equals(expectedStart.add(const Duration(days: 2))));
+        result.windowStart,
+        equals(expectedStart.subtract(const Duration(days: 2))),
+      );
+      expect(
+        result.windowEnd,
+        equals(expectedStart.add(const Duration(days: 2))),
+      );
       expect(result.cyclesUsed, equals(3));
     });
 
@@ -257,8 +261,10 @@ void main() {
 
         // Last cycle's startDate + 28 days
         final lastStart = cycles.last.startDate;
-        expect(result.expectedStart,
-            equals(lastStart.add(const Duration(days: 28))));
+        expect(
+          result.expectedStart,
+          equals(lastStart.add(const Duration(days: 28))),
+        );
       },
     );
   });

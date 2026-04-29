@@ -102,8 +102,7 @@ class CsvCodec {
     return const ListToCsvConverter().convert(data);
   }
 
-  static String _fmtDate(DateTime d) =>
-      '${d.year.toString().padLeft(4, '0')}-'
+  static String _fmtDate(DateTime d) => '${d.year.toString().padLeft(4, '0')}-'
       '${d.month.toString().padLeft(2, '0')}-'
       '${d.day.toString().padLeft(2, '0')}';
 

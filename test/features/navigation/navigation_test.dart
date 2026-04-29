@@ -77,8 +77,11 @@ final _timelineOverride = timelineProvider.overrideWith(
 void main() {
   group('Bottom navigation shell', () {
     testWidgets('renders 4 navigation destinations', (tester) async {
-      await tester.pumpWidget(MetraApp(
-          overrides: [_calendarOverride, _statsOverride, _timelineOverride]));
+      await tester.pumpWidget(
+        MetraApp(
+          overrides: [_calendarOverride, _statsOverride, _timelineOverride],
+        ),
+      );
       await tester.pumpAndSettle();
 
       // NavigationBar has 4 items: Calendar, Timeline, Stats, Settings.
@@ -87,8 +90,11 @@ void main() {
     });
 
     testWidgets('Calendar is the initial route', (tester) async {
-      await tester.pumpWidget(MetraApp(
-          overrides: [_calendarOverride, _statsOverride, _timelineOverride]));
+      await tester.pumpWidget(
+        MetraApp(
+          overrides: [_calendarOverride, _statsOverride, _timelineOverride],
+        ),
+      );
       await tester.pumpAndSettle();
 
       // Assert by widget type to avoid collision with the destination label
@@ -98,8 +104,11 @@ void main() {
     });
 
     testWidgets('tapping Timeline tab shows timeline screen', (tester) async {
-      await tester.pumpWidget(MetraApp(
-          overrides: [_calendarOverride, _statsOverride, _timelineOverride]));
+      await tester.pumpWidget(
+        MetraApp(
+          overrides: [_calendarOverride, _statsOverride, _timelineOverride],
+        ),
+      );
       await tester.pumpAndSettle();
 
       // Tap the 2nd navigation destination (index 1 = Timeline).
@@ -111,8 +120,11 @@ void main() {
     });
 
     testWidgets('tapping Stats tab shows stats screen', (tester) async {
-      await tester.pumpWidget(MetraApp(
-          overrides: [_calendarOverride, _statsOverride, _timelineOverride]));
+      await tester.pumpWidget(
+        MetraApp(
+          overrides: [_calendarOverride, _statsOverride, _timelineOverride],
+        ),
+      );
       await tester.pumpAndSettle();
 
       final destinations = find.byType(NavigationDestination);
@@ -123,8 +135,11 @@ void main() {
     });
 
     testWidgets('tapping Settings tab shows settings screen', (tester) async {
-      await tester.pumpWidget(MetraApp(
-          overrides: [_calendarOverride, _statsOverride, _timelineOverride]));
+      await tester.pumpWidget(
+        MetraApp(
+          overrides: [_calendarOverride, _statsOverride, _timelineOverride],
+        ),
+      );
       await tester.pumpAndSettle();
 
       final destinations = find.byType(NavigationDestination);

@@ -120,7 +120,9 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(
-          find.textContaining('Registra il tuo primo ciclo'), findsOneWidget);
+        find.textContaining('Registra il tuo primo ciclo'),
+        findsOneWidget,
+      );
     });
   });
 

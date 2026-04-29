@@ -37,55 +37,58 @@ class GetCycleSummaries {
 
     final allLogs = await _logRepo.getAllOrderedByDate();
 
-    final summaries = await Future.wait(cycles.map((cycle) async {
-      final today = DateTime.now().toUtc();
-      final todayNorm = DateTime.utc(today.year, today.month, today.day);
-      final rangeEnd = cycle.endDate ?? todayNorm;
+    final summaries = await Future.wait(
+      cycles.map((cycle) async {
+        final today = DateTime.now().toUtc();
+        final todayNorm = DateTime.utc(today.year, today.month, today.day);
+        final rangeEnd = cycle.endDate ?? todayNorm;
 
-      final logsInRange = allLogs
-          .where(
-            (l) =>
-                !l.date.isBefore(cycle.startDate) && !l.date.isAfter(rangeEnd),
-          )
-          .toList();
+        final logsInRange = allLogs
+            .where(
+              (l) =>
+                  !l.date.isBefore(cycle.startDate) &&
+                  !l.date.isAfter(rangeEnd),
+            )
+            .toList();
 
-      // Collect distinct fixed symptom types; custom is excluded per spec.
-      final symptomSet = <PainSymptomType>{};
-      for (final log in logsInRange) {
-        final symptoms = await _logRepo.getPainSymptoms(log.date);
-        for (final s in symptoms) {
-          if (s.symptomType != PainSymptomType.custom) {
-            symptomSet.add(s.symptomType);
+        // Collect distinct fixed symptom types; custom is excluded per spec.
+        final symptomSet = <PainSymptomType>{};
+        for (final log in logsInRange) {
+          final symptoms = await _logRepo.getPainSymptoms(log.date);
+          for (final s in symptoms) {
+            if (s.symptomType != PainSymptomType.custom) {
+              symptomSet.add(s.symptomType);
+            }
           }
         }
-      }
 
-      // Compute dominant flow: mode with highest ordinal winning ties.
-      // FlowIntensity.none (index 0) is excluded — it means no flow logged.
-      final flowCounts = <FlowIntensity, int>{};
-      for (final log in logsInRange) {
-        final fi = log.flowIntensity;
-        if (fi != null && fi != FlowIntensity.none) {
-          flowCounts[fi] = (flowCounts[fi] ?? 0) + 1;
+        // Compute dominant flow: mode with highest ordinal winning ties.
+        // FlowIntensity.none (index 0) is excluded — it means no flow logged.
+        final flowCounts = <FlowIntensity, int>{};
+        for (final log in logsInRange) {
+          final fi = log.flowIntensity;
+          if (fi != null && fi != FlowIntensity.none) {
+            flowCounts[fi] = (flowCounts[fi] ?? 0) + 1;
+          }
         }
-      }
-      FlowIntensity? dominant;
-      var maxCount = 0;
-      for (final entry in flowCounts.entries) {
-        if (entry.value > maxCount ||
-            (entry.value == maxCount &&
-                (dominant == null || entry.key.index > dominant.index))) {
-          maxCount = entry.value;
-          dominant = entry.key;
+        FlowIntensity? dominant;
+        var maxCount = 0;
+        for (final entry in flowCounts.entries) {
+          if (entry.value > maxCount ||
+              (entry.value == maxCount &&
+                  (dominant == null || entry.key.index > dominant.index))) {
+            maxCount = entry.value;
+            dominant = entry.key;
+          }
         }
-      }
 
-      return CycleSummary(
-        cycle: cycle,
-        symptoms: symptomSet.toList(),
-        dominantFlow: dominant,
-      );
-    }));
+        return CycleSummary(
+          cycle: cycle,
+          symptoms: symptomSet.toList(),
+          dominantFlow: dominant,
+        );
+      }),
+    );
 
     summaries.sort(
       (a, b) => b.cycle.startDate.compareTo(a.cycle.startDate),
