@@ -25,6 +25,7 @@ import 'package:sqlcipher_flutter_libs/sqlcipher_flutter_libs.dart';
 import 'daos/app_settings_dao.dart';
 import 'daos/cycle_entry_dao.dart';
 import 'daos/daily_log_dao.dart';
+import 'daos/sync_log_dao.dart';
 
 part 'app_database.g.dart';
 
@@ -115,7 +116,7 @@ class SyncLogs extends Table {
     AppSettings,
     SyncLogs,
   ],
-  daos: [DailyLogDao, CycleEntryDao, AppSettingsDao],
+  daos: [DailyLogDao, CycleEntryDao, AppSettingsDao, SyncLogDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
