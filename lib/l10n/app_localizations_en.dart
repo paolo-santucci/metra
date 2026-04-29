@@ -148,6 +148,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendar_fab_label => 'Add or edit today\'s log';
 
   @override
+  String get notification_prediction_title => 'Your cycle is approaching';
+
+  @override
+  String notification_prediction_body(int days) {
+    return 'Your predicted window starts in $days days';
+  }
+
+  @override
   String get settings_language_label => 'Language';
 
   @override

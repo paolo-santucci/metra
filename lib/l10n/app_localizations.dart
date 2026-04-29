@@ -368,6 +368,18 @@ abstract class AppLocalizations {
   /// **'Aggiungi o modifica il registro di oggi'**
   String get calendar_fab_label;
 
+  /// Title for the prediction notification
+  ///
+  /// In it, this message translates to:
+  /// **'Il tuo ciclo si avvicina'**
+  String get notification_prediction_title;
+
+  /// Body text for the prediction notification
+  ///
+  /// In it, this message translates to:
+  /// **'La finestra stimata inizia tra {days} giorni'**
+  String notification_prediction_body(int days);
+
   /// Settings row label for language selection
   ///
   /// In it, this message translates to:
