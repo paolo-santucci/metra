@@ -89,6 +89,84 @@
   "settings_export_csv": "Export CSV",
   "settings_delete_all": "Delete all data",
 
+  "settings_screen_title": "Settings",
+  "@settings_screen_title": {
+    "description": "Settings screen page title"
+  },
+
+  "settings_section_preferences": "Preferences",
+  "@settings_section_preferences": {
+    "description": "Settings group header: appearance preferences"
+  },
+
+  "settings_section_log": "Log",
+  "@settings_section_log": {
+    "description": "Settings group header: daily log options"
+  },
+
+  "settings_section_notifications": "Notifications",
+  "@settings_section_notifications": {
+    "description": "Settings group header: notification options"
+  },
+
+  "settings_section_privacy": "Privacy & data",
+  "@settings_section_privacy": {
+    "description": "Settings group header: privacy and data"
+  },
+
+  "settings_section_danger": "Danger zone",
+  "@settings_section_danger": {
+    "description": "Settings group header: danger zone (destructive actions)"
+  },
+
+  "settings_pain_label": "Track pain",
+  "@settings_pain_label": {
+    "description": "Settings toggle label: enable pain tracking in daily log"
+  },
+
+  "settings_notes_label": "Daily notes",
+  "@settings_notes_label": {
+    "description": "Settings toggle label: enable daily notes in daily log"
+  },
+
+  "settings_advance_label": "Advance",
+  "@settings_advance_label": {
+    "description": "Settings row label: days before predicted cycle start for notification"
+  },
+
+  "settings_advance_value": "{n, plural, =1{1 day before} other{{n} days before}}",
+  "@settings_advance_value": {
+    "description": "Current value displayed for the advance notification setting",
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+
+  "settings_language_it": "Italian",
+  "@settings_language_it": {
+    "description": "Language option: Italian"
+  },
+
+  "settings_language_en": "English",
+  "@settings_language_en": {
+    "description": "Language option: English"
+  },
+
+  "settings_delete_all_confirm_title": "Delete all data",
+  "@settings_delete_all_confirm_title": {
+    "description": "Title of the delete-all confirmation dialog"
+  },
+
+  "settings_delete_all_confirm_body": "This cannot be undone. All log entries will be deleted. Your settings will remain unchanged.",
+  "@settings_delete_all_confirm_body": {
+    "description": "Body text of the delete-all confirmation dialog"
+  },
+
+  "settings_coming_soon": "Coming soon",
+  "@settings_coming_soon": {
+    "description": "Snackbar text shown for stub/not-yet-implemented settings rows"
+  },
+
   "a11y_calendar_day_no_flow": "No data, {date}",
   "@a11y_calendar_day_no_flow": {
     "placeholders": {

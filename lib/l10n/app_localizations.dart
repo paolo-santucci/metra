@@ -452,6 +452,96 @@ abstract class AppLocalizations {
   /// **'Cancella tutti i dati'**
   String get settings_delete_all;
 
+  /// Settings screen page title
+  ///
+  /// In it, this message translates to:
+  /// **'Impostazioni'**
+  String get settings_screen_title;
+
+  /// Settings group header: appearance preferences
+  ///
+  /// In it, this message translates to:
+  /// **'Preferenze'**
+  String get settings_section_preferences;
+
+  /// Settings group header: daily log options
+  ///
+  /// In it, this message translates to:
+  /// **'Registro'**
+  String get settings_section_log;
+
+  /// Settings group header: notification options
+  ///
+  /// In it, this message translates to:
+  /// **'Notifiche'**
+  String get settings_section_notifications;
+
+  /// Settings group header: privacy and data
+  ///
+  /// In it, this message translates to:
+  /// **'Privacy e dati'**
+  String get settings_section_privacy;
+
+  /// Settings group header: danger zone (destructive actions)
+  ///
+  /// In it, this message translates to:
+  /// **'Zona pericolosa'**
+  String get settings_section_danger;
+
+  /// Settings toggle label: enable pain tracking in daily log
+  ///
+  /// In it, this message translates to:
+  /// **'Traccia dolore'**
+  String get settings_pain_label;
+
+  /// Settings toggle label: enable daily notes in daily log
+  ///
+  /// In it, this message translates to:
+  /// **'Note giornaliere'**
+  String get settings_notes_label;
+
+  /// Settings row label: days before predicted cycle start for notification
+  ///
+  /// In it, this message translates to:
+  /// **'Anticipo'**
+  String get settings_advance_label;
+
+  /// Current value displayed for the advance notification setting
+  ///
+  /// In it, this message translates to:
+  /// **'{n, plural, =1{1 giorno prima} other{{n} giorni prima}}'**
+  String settings_advance_value(int n);
+
+  /// Language option: Italian
+  ///
+  /// In it, this message translates to:
+  /// **'Italiano'**
+  String get settings_language_it;
+
+  /// Language option: English
+  ///
+  /// In it, this message translates to:
+  /// **'Inglese'**
+  String get settings_language_en;
+
+  /// Title of the delete-all confirmation dialog
+  ///
+  /// In it, this message translates to:
+  /// **'Cancella tutti i dati'**
+  String get settings_delete_all_confirm_title;
+
+  /// Body text of the delete-all confirmation dialog
+  ///
+  /// In it, this message translates to:
+  /// **'Questa operazione è irreversibile. Tutto il registro sarà eliminato. Le impostazioni resteranno invariate.'**
+  String get settings_delete_all_confirm_body;
+
+  /// Snackbar text shown for stub/not-yet-implemented settings rows
+  ///
+  /// In it, this message translates to:
+  /// **'Prossimamente'**
+  String get settings_coming_soon;
+
   /// Accessibility label for a calendar day with no logged data
   ///
   /// In it, this message translates to:

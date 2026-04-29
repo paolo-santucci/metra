@@ -192,6 +192,60 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings_delete_all => 'Delete all data';
 
   @override
+  String get settings_screen_title => 'Settings';
+
+  @override
+  String get settings_section_preferences => 'Preferences';
+
+  @override
+  String get settings_section_log => 'Log';
+
+  @override
+  String get settings_section_notifications => 'Notifications';
+
+  @override
+  String get settings_section_privacy => 'Privacy & data';
+
+  @override
+  String get settings_section_danger => 'Danger zone';
+
+  @override
+  String get settings_pain_label => 'Track pain';
+
+  @override
+  String get settings_notes_label => 'Daily notes';
+
+  @override
+  String get settings_advance_label => 'Advance';
+
+  @override
+  String settings_advance_value(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n days before',
+      one: '1 day before',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settings_language_it => 'Italian';
+
+  @override
+  String get settings_language_en => 'English';
+
+  @override
+  String get settings_delete_all_confirm_title => 'Delete all data';
+
+  @override
+  String get settings_delete_all_confirm_body =>
+      'This cannot be undone. All log entries will be deleted. Your settings will remain unchanged.';
+
+  @override
+  String get settings_coming_soon => 'Coming soon';
+
+  @override
   String a11y_calendar_day_no_flow(String date) {
     return 'No data, $date';
   }

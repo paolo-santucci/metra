@@ -192,6 +192,60 @@ class AppLocalizationsIt extends AppLocalizations {
   String get settings_delete_all => 'Cancella tutti i dati';
 
   @override
+  String get settings_screen_title => 'Impostazioni';
+
+  @override
+  String get settings_section_preferences => 'Preferenze';
+
+  @override
+  String get settings_section_log => 'Registro';
+
+  @override
+  String get settings_section_notifications => 'Notifiche';
+
+  @override
+  String get settings_section_privacy => 'Privacy e dati';
+
+  @override
+  String get settings_section_danger => 'Zona pericolosa';
+
+  @override
+  String get settings_pain_label => 'Traccia dolore';
+
+  @override
+  String get settings_notes_label => 'Note giornaliere';
+
+  @override
+  String get settings_advance_label => 'Anticipo';
+
+  @override
+  String settings_advance_value(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n giorni prima',
+      one: '1 giorno prima',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settings_language_it => 'Italiano';
+
+  @override
+  String get settings_language_en => 'Inglese';
+
+  @override
+  String get settings_delete_all_confirm_title => 'Cancella tutti i dati';
+
+  @override
+  String get settings_delete_all_confirm_body =>
+      'Questa operazione è irreversibile. Tutto il registro sarà eliminato. Le impostazioni resteranno invariate.';
+
+  @override
+  String get settings_coming_soon => 'Prossimamente';
+
+  @override
   String a11y_calendar_day_no_flow(String date) {
     return 'Nessun dato, $date';
   }
