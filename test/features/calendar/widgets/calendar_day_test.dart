@@ -160,13 +160,14 @@ void main() {
   });
 
   group('tap target', () {
-    testWidgets('minimum size ≥ 44×44', (tester) async {
+    testWidgets('minimum size ≥ 48×48 (Android floor, CLAUDE.md §10)',
+        (tester) async {
       await tester.pumpWidget(
         _wrap(_day(onTap: () {}), MetraTheme.light()),
       );
       final size = tester.getSize(find.byType(CalendarDay));
-      expect(size.width, greaterThanOrEqualTo(44));
-      expect(size.height, greaterThanOrEqualTo(44));
+      expect(size.width, greaterThanOrEqualTo(48));
+      expect(size.height, greaterThanOrEqualTo(48));
     });
   });
 
