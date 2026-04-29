@@ -2,6 +2,8 @@
 .obsidian/
 per_riprendere.txt
 .claude/worktrees/
+.claude/experiences/
+.claude/settings.local.json
 .worktrees/
 
 # Flutter / Dart
