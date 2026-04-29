@@ -149,7 +149,8 @@ class SettingsScreen extends ConsumerWidget {
                       '${l10n.settings_advance_label}: ${l10n.settings_advance_value(settings.notificationDaysBefore)}',
                   trailing: _ChevronTrailing(
                     l10n.settings_advance_value(
-                        settings.notificationDaysBefore),
+                      settings.notificationDaysBefore,
+                    ),
                   ),
                   onTap: () => _showAdvancePicker(context, ref, settings, l10n),
                 ),
@@ -409,7 +410,8 @@ class SettingsScreen extends ConsumerWidget {
                     (uc) => uc.execute().then(
                           (_) => messenger.showSnackBar(
                             SnackBar(
-                                content: Text(l10n.settings_delete_all_done)),
+                              content: Text(l10n.settings_delete_all_done),
+                            ),
                           ),
                         ),
                   );
