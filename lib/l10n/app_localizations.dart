@@ -775,6 +775,168 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Importate {count} righe, saltate {skipped}'**
   String csv_import_success_skipped(int count, int skipped);
+
+  /// Backup screen page title
+  ///
+  /// In it, this message translates to:
+  /// **'Backup'**
+  String get backup_screen_title;
+
+  /// Body text shown on the backup screen when no provider is connected
+  ///
+  /// In it, this message translates to:
+  /// **'I tuoi dati restano sul dispositivo. Collega Dropbox per conservare una copia cifrata nel cloud — solo tu puoi leggerla.'**
+  String get backup_not_connected_body;
+
+  /// Button to initiate Dropbox OAuth connection
+  ///
+  /// In it, this message translates to:
+  /// **'Collega Dropbox'**
+  String get backup_connect_dropbox;
+
+  /// Status line showing the connected Dropbox account email
+  ///
+  /// In it, this message translates to:
+  /// **'Connesso come: {email}'**
+  String backup_connected_as(String email);
+
+  /// Status shown when no backup has ever been created
+  ///
+  /// In it, this message translates to:
+  /// **'Mai salvato'**
+  String get backup_last_backup_never;
+
+  /// Status showing the date and time of the last backup
+  ///
+  /// In it, this message translates to:
+  /// **'Ultimo backup: {datetime}'**
+  String backup_last_backup_at(String datetime);
+
+  /// Button to trigger an immediate backup
+  ///
+  /// In it, this message translates to:
+  /// **'Salva ora'**
+  String get backup_now;
+
+  /// Button to restore data from the cloud backup
+  ///
+  /// In it, this message translates to:
+  /// **'Ripristina dal backup'**
+  String get backup_restore;
+
+  /// Button to disconnect the cloud provider account
+  ///
+  /// In it, this message translates to:
+  /// **'Disconnetti'**
+  String get backup_disconnect;
+
+  /// Status text shown while a backup operation is running
+  ///
+  /// In it, this message translates to:
+  /// **'Salvataggio in corso…'**
+  String get backup_in_progress;
+
+  /// Status text shown while a restore operation is running
+  ///
+  /// In it, this message translates to:
+  /// **'Ripristino in corso…'**
+  String get backup_restore_in_progress;
+
+  /// Title of the passphrase setup dialog shown before the first backup
+  ///
+  /// In it, this message translates to:
+  /// **'Imposta una passphrase'**
+  String get backup_passphrase_title;
+
+  /// Explanatory body text in the passphrase setup dialog
+  ///
+  /// In it, this message translates to:
+  /// **'Questa passphrase cifra il tuo backup. Se la perdi, il backup non può essere recuperato — non esiste un reset.'**
+  String get backup_passphrase_body;
+
+  /// Label for the passphrase input field
+  ///
+  /// In it, this message translates to:
+  /// **'Passphrase'**
+  String get backup_passphrase_input_label;
+
+  /// Label for the passphrase confirmation input field
+  ///
+  /// In it, this message translates to:
+  /// **'Conferma passphrase'**
+  String get backup_passphrase_confirm_label;
+
+  /// Validation error shown when the two passphrase fields do not match
+  ///
+  /// In it, this message translates to:
+  /// **'Le passphrase non corrispondono.'**
+  String get backup_passphrase_mismatch;
+
+  /// Validation error shown when the passphrase is shorter than 8 characters
+  ///
+  /// In it, this message translates to:
+  /// **'La passphrase deve essere di almeno 8 caratteri.'**
+  String get backup_passphrase_too_short;
+
+  /// Confirm button in the passphrase setup dialog; acknowledges the no-reset warning
+  ///
+  /// In it, this message translates to:
+  /// **'Ho capito — salva e fai il backup'**
+  String get backup_passphrase_confirm_button;
+
+  /// Title of the restore confirmation dialog
+  ///
+  /// In it, this message translates to:
+  /// **'Ripristinare il backup?'**
+  String get backup_restore_confirm_title;
+
+  /// Body text of the restore confirmation dialog
+  ///
+  /// In it, this message translates to:
+  /// **'Tutti i dati attuali verranno sostituiti. Questa operazione non può essere annullata.'**
+  String get backup_restore_confirm_body;
+
+  /// Confirm button in the restore confirmation dialog
+  ///
+  /// In it, this message translates to:
+  /// **'Ripristina'**
+  String get backup_restore_confirm_button;
+
+  /// Error message shown when the entered passphrase does not decrypt the backup
+  ///
+  /// In it, this message translates to:
+  /// **'Passphrase errata. Riprova.'**
+  String get backup_error_wrong_passphrase;
+
+  /// Generic error message shown when a backup or restore operation fails
+  ///
+  /// In it, this message translates to:
+  /// **'Backup fallito. Riprova.'**
+  String get backup_error_generic;
+
+  /// Error message shown when no backup file is found in the connected Dropbox account
+  ///
+  /// In it, this message translates to:
+  /// **'Nessun backup trovato su Dropbox.'**
+  String get backup_error_no_backup_found;
+
+  /// Title of the Dropbox disconnect confirmation dialog
+  ///
+  /// In it, this message translates to:
+  /// **'Disconnettere Dropbox?'**
+  String get backup_disconnect_confirm_title;
+
+  /// Body text of the Dropbox disconnect confirmation dialog
+  ///
+  /// In it, this message translates to:
+  /// **'Il backup nel cloud non verrà eliminato.'**
+  String get backup_disconnect_confirm_body;
+
+  /// Confirm button in the Dropbox disconnect confirmation dialog
+  ///
+  /// In it, this message translates to:
+  /// **'Disconnetti'**
+  String get backup_disconnect_confirm_button;
 }
 
 class _AppLocalizationsDelegate

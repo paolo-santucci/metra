@@ -392,4 +392,96 @@ class AppLocalizationsEn extends AppLocalizations {
   String csv_import_success_skipped(int count, int skipped) {
     return 'Imported $count rows, skipped $skipped';
   }
+
+  @override
+  String get backup_screen_title => 'Backup';
+
+  @override
+  String get backup_not_connected_body =>
+      'Your data stays on your device. Connect Dropbox to keep an encrypted copy in the cloud — only you can read it.';
+
+  @override
+  String get backup_connect_dropbox => 'Connect Dropbox';
+
+  @override
+  String backup_connected_as(String email) {
+    return 'Connected as: $email';
+  }
+
+  @override
+  String get backup_last_backup_never => 'Never backed up';
+
+  @override
+  String backup_last_backup_at(String datetime) {
+    return 'Last backup: $datetime';
+  }
+
+  @override
+  String get backup_now => 'Back up now';
+
+  @override
+  String get backup_restore => 'Restore from backup';
+
+  @override
+  String get backup_disconnect => 'Disconnect';
+
+  @override
+  String get backup_in_progress => 'Backing up…';
+
+  @override
+  String get backup_restore_in_progress => 'Restoring…';
+
+  @override
+  String get backup_passphrase_title => 'Set a backup passphrase';
+
+  @override
+  String get backup_passphrase_body =>
+      'This passphrase encrypts your backup. If you lose it, your backup cannot be recovered — there is no reset.';
+
+  @override
+  String get backup_passphrase_input_label => 'Passphrase';
+
+  @override
+  String get backup_passphrase_confirm_label => 'Confirm passphrase';
+
+  @override
+  String get backup_passphrase_mismatch => 'Passphrases do not match.';
+
+  @override
+  String get backup_passphrase_too_short =>
+      'Passphrase must be at least 8 characters.';
+
+  @override
+  String get backup_passphrase_confirm_button =>
+      'I understand — save and back up';
+
+  @override
+  String get backup_restore_confirm_title => 'Restore backup?';
+
+  @override
+  String get backup_restore_confirm_body =>
+      'This will replace all current data. This cannot be undone.';
+
+  @override
+  String get backup_restore_confirm_button => 'Restore';
+
+  @override
+  String get backup_error_wrong_passphrase =>
+      'Wrong passphrase. Please try again.';
+
+  @override
+  String get backup_error_generic => 'Backup failed. Please try again.';
+
+  @override
+  String get backup_error_no_backup_found => 'No backup found in your Dropbox.';
+
+  @override
+  String get backup_disconnect_confirm_title => 'Disconnect Dropbox?';
+
+  @override
+  String get backup_disconnect_confirm_body =>
+      'Your cloud backup will not be deleted.';
+
+  @override
+  String get backup_disconnect_confirm_button => 'Disconnect';
 }
