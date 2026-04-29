@@ -31,4 +31,6 @@ abstract class CycleEntryRepository {
   /// Replaces the entire cycle entry table with [entries] in a single
   /// transaction.  Used by [RecomputeCycleEntries].
   Future<void> replaceAll(List<CycleEntryEntity> entries);
+
+  Future<void> deleteAll();
 }

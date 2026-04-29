@@ -68,4 +68,12 @@ class FakeCycleEntryRepository implements CycleEntryRepository {
       );
     }
   }
+
+  bool deleteAllCalled = false;
+
+  @override
+  Future<void> deleteAll() async {
+    deleteAllCalled = true;
+    entries.clear();
+  }
 }

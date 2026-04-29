@@ -93,4 +93,7 @@ class DriftCycleEntryRepository implements CycleEntryRepository {
       }
     });
   }
+
+  @override
+  Future<void> deleteAll() => _dao.deleteAllCycles();
 }

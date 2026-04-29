@@ -35,4 +35,6 @@ abstract class DailyLogRepository {
     DateTime date,
     List<PainSymptomData> symptoms,
   );
+
+  Future<void> deleteAll();
 }

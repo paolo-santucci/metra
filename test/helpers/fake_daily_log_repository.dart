@@ -73,4 +73,13 @@ class FakeDailyLogRepository implements DailyLogRepository {
     final utcDate = DateTime.utc(date.year, date.month, date.day);
     symptoms[utcDate] = newSymptoms;
   }
+
+  bool deleteAllCalled = false;
+
+  @override
+  Future<void> deleteAll() async {
+    deleteAllCalled = true;
+    savedLogs.clear();
+    symptoms.clear();
+  }
 }
