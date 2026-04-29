@@ -18,6 +18,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/services/notification_service.dart';
+import '../domain/entities/app_settings_data.dart';
 import '../domain/services/cycle_prediction_service.dart';
 import '../domain/services/notification_service.dart';
 import '../domain/use_cases/compute_cycle_stats.dart';
@@ -87,3 +88,10 @@ final schedulePredictionNotificationProvider =
     return SchedulePredictionNotification(notifService);
   },
 );
+
+final getOrCreateSettingsProvider = FutureProvider<AppSettingsData>((
+  ref,
+) async {
+  final repo = await ref.watch(appSettingsRepositoryProvider.future);
+  return repo.getOrCreate();
+});

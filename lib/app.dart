@@ -17,14 +17,18 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'core/theme/metra_theme.dart';
+import 'domain/entities/cycle_prediction.dart';
+import 'features/calendar/state/prediction_controller.dart';
 import 'l10n/app_localizations.dart';
+import 'providers/use_case_providers.dart';
 import 'router/app_router.dart';
 
+/// Root widget — owns [ProviderScope] and accepts overrides for tests.
 class MetraApp extends StatelessWidget {
   const MetraApp({
     super.key,
-    // Optional provider overrides — used only in tests.
     this.overrides = const [],
   });
 
@@ -34,16 +38,64 @@ class MetraApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ProviderScope(
       overrides: overrides,
-      child: MaterialApp.router(
-        title: 'Mētra',
-        theme: MetraTheme.light(),
-        darkTheme: MetraTheme.dark(),
-        themeMode: ThemeMode.system,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        routerConfig: appRouter,
-        debugShowCheckedModeBanner: false,
-      ),
+      child: const _MetraInner(),
+    );
+  }
+}
+
+class _MetraInner extends ConsumerStatefulWidget {
+  const _MetraInner();
+
+  @override
+  ConsumerState<_MetraInner> createState() => _MetraInnerState();
+}
+
+class _MetraInnerState extends ConsumerState<_MetraInner> {
+  @override
+  void initState() {
+    super.initState();
+    // Best-effort: initialize notification channels. Failures are non-fatal
+    // (e.g. test environments without a platform channel).
+    ref
+        .read(notificationServiceProvider)
+        .initialize()
+        .catchError((Object _) {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen<AsyncValue<CyclePrediction?>>(
+      cyclePredictionProvider,
+      (_, next) async {
+        final prediction = next.valueOrNull;
+        final settings = ref.read(getOrCreateSettingsProvider).valueOrNull;
+        if (settings == null) return;
+        final l10n =
+            await AppLocalizations.delegate.load(Locale(settings.languageCode));
+        final scheduler =
+            await ref.read(schedulePredictionNotificationProvider.future);
+        await scheduler.execute(
+          prediction: prediction,
+          settings: settings,
+          title: l10n.notification_prediction_title,
+          body: prediction != null
+              ? l10n.notification_prediction_body(
+                  settings.notificationDaysBefore,
+                )
+              : '',
+        );
+      },
+    );
+
+    return MaterialApp.router(
+      title: 'Mētra',
+      theme: MetraTheme.light(),
+      darkTheme: MetraTheme.dark(),
+      themeMode: ThemeMode.system,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      routerConfig: appRouter,
+      debugShowCheckedModeBanner: false,
     );
   }
 }
