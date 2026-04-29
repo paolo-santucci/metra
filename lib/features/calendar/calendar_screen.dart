@@ -23,10 +23,12 @@ import 'package:intl/intl.dart' as intl;
 import '../../core/theme/metra_colors.dart';
 import '../../core/theme/metra_spacing.dart';
 import '../../core/theme/metra_typography.dart';
+import '../../domain/entities/cycle_prediction.dart';
 import '../../domain/entities/daily_log_entity.dart';
 import '../../domain/entities/flow_intensity.dart';
 import '../../l10n/app_localizations.dart';
 import 'state/calendar_month_controller.dart';
+import 'state/prediction_controller.dart';
 import 'widgets/calendar_day.dart';
 import 'widgets/month_navigator.dart';
 
@@ -75,6 +77,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final fabCurve = reduceMotion ? Curves.easeOut : Curves.elasticOut;
 
     final calendarAsync = ref.watch(calendarMonthProvider);
+    final prediction = ref.watch(cyclePredictionProvider).valueOrNull;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -131,6 +134,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     logs: monthState.logs,
                     today: now,
                     l10n: l10n,
+                    prediction: prediction,
                   ),
                 ),
               ],
@@ -198,6 +202,7 @@ class _CalendarGrid extends StatelessWidget {
     required this.logs,
     required this.today,
     required this.l10n,
+    this.prediction,
   });
 
   final int year;
@@ -205,6 +210,7 @@ class _CalendarGrid extends StatelessWidget {
   final Map<DateTime, DailyLogEntity> logs;
   final DateTime today;
   final AppLocalizations l10n;
+  final CyclePrediction? prediction;
 
   /// Number of blank leading cells before day 1.
   /// Dart's DateTime.weekday: 1=Monday…7=Sunday. We want Monday first → offset = weekday - 1.
@@ -219,10 +225,14 @@ class _CalendarGrid extends StatelessWidget {
     DateTime date,
     DailyLogEntity? log,
     bool isToday,
+    bool hasPrediction,
     AppLocalizations l10n,
   ) {
     final dateStr = intl.DateFormat.yMMMMd('it').format(date);
     if (isToday) return l10n.a11y_calendar_day_today(dateStr);
+    if (hasPrediction && log == null) {
+      return l10n.a11y_calendar_day_prediction(dateStr);
+    }
     if (log == null) return l10n.a11y_calendar_day_no_flow(dateStr);
     if (log.spotting) return l10n.a11y_calendar_day_spotting(dateStr);
     if (log.flowIntensity != null && log.flowIntensity != FlowIntensity.none) {
@@ -284,12 +294,15 @@ class _CalendarGrid extends StatelessWidget {
             log!.flowIntensity != FlowIntensity.none;
         final isSpotting = log?.spotting ?? false;
         final hasNote = log?.notes != null && log!.notes!.isNotEmpty;
+        final hasPrediction = prediction?.containsDate(date) ?? false;
 
         return CalendarDay(
           date: date,
-          semanticsLabel: _buildSemantics(date, log, isToday, l10n),
+          semanticsLabel:
+              _buildSemantics(date, log, isToday, hasPrediction, l10n),
           isFlow: isFlow,
           isSpotting: isSpotting,
+          hasPrediction: hasPrediction,
           hasNote: hasNote,
           isToday: isToday,
           onTap: () => context.push(
