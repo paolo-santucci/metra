@@ -22,10 +22,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:metra/core/theme/metra_theme.dart';
+import 'package:metra/domain/entities/cycle_prediction.dart';
 import 'package:metra/domain/entities/daily_log_entity.dart';
 import 'package:metra/domain/entities/flow_intensity.dart';
 import 'package:metra/features/calendar/calendar_screen.dart';
 import 'package:metra/features/calendar/state/calendar_month_controller.dart';
+import 'package:metra/features/calendar/state/prediction_controller.dart';
 import 'package:metra/features/calendar/widgets/calendar_day.dart';
 import 'package:metra/l10n/app_localizations.dart';
 
@@ -86,12 +88,43 @@ class _ErrorCalendarNotifier extends CalendarMonthNotifier {
   }
 }
 
+class _StubCalendarMonthNotifierForYear extends CalendarMonthNotifier {
+  _StubCalendarMonthNotifierForYear({required this.year, required this.month});
+  final int year;
+  final int month;
+
+  @override
+  Future<CalendarMonthState> build() async =>
+      CalendarMonthState(year: year, month: month);
+
+  @override
+  void goToPrevMonth() {}
+
+  @override
+  void goToNextMonth() {}
+}
+
+class _StubCyclePredictionNotifier extends CyclePredictionNotifier {
+  _StubCyclePredictionNotifier(this._prediction);
+  final CyclePrediction? _prediction;
+
+  @override
+  Future<CyclePrediction?> build() async => _prediction;
+}
+
 // ---------------------------------------------------------------------------
 // Widget helpers
 // ---------------------------------------------------------------------------
 
 /// Wraps CalendarScreen with a minimal GoRouter for navigation tests.
-Widget _wrapWithRouter(List<Override> overrides) {
+///
+/// Always overrides [cyclePredictionProvider] with a no-DB stub so widget
+/// tests do not attempt database access. Pass an explicit prediction override
+/// in [overrides] to replace the default null stub.
+Widget _wrapWithRouter(
+  List<Override> overrides, {
+  CyclePrediction? prediction,
+}) {
   final testRouter = GoRouter(
     initialLocation: '/calendar',
     routes: [
@@ -115,7 +148,12 @@ Widget _wrapWithRouter(List<Override> overrides) {
   );
 
   return ProviderScope(
-    overrides: overrides,
+    overrides: [
+      // Default: no prediction (null) — prevents DB access in widget tests.
+      cyclePredictionProvider
+          .overrideWith(() => _StubCyclePredictionNotifier(prediction)),
+      ...overrides,
+    ],
     child: MaterialApp.router(
       theme: MetraTheme.light(),
       locale: const Locale('it'),
@@ -303,6 +341,101 @@ void main() {
         find.bySemanticsLabel(RegExp(r'^Flusso moderato,')),
         findsOneWidget,
       );
+    });
+  });
+
+  group('CalendarScreen prediction window', () {
+    testWidgets('days inside prediction window have hasPrediction true',
+        (tester) async {
+      // Prediction window: 12–16 January 2026.
+      final prediction = CyclePrediction(
+        windowStart: DateTime.utc(2026, 1, 12),
+        windowEnd: DateTime.utc(2026, 1, 16),
+        expectedStart: DateTime.utc(2026, 1, 14),
+        cyclesUsed: 3,
+      );
+
+      await tester.pumpWidget(
+        _wrapWithRouter(
+          [
+            calendarMonthProvider.overrideWith(
+              () => _StubCalendarMonthNotifierForYear(year: 2026, month: 1),
+            ),
+          ],
+          prediction: prediction,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final days =
+          tester.widgetList<CalendarDay>(find.byType(CalendarDay)).toList();
+
+      // Day 12 is inside the window — hasPrediction must be true.
+      final day12 = days.firstWhere((d) => d.date.day == 12);
+      expect(day12.hasPrediction, isTrue);
+
+      // Day 1 is outside the window — hasPrediction must be false.
+      final day1 = days.firstWhere((d) => d.date.day == 1);
+      expect(day1.hasPrediction, isFalse);
+    });
+
+    testWidgets('days outside prediction window have hasPrediction false',
+        (tester) async {
+      final prediction = CyclePrediction(
+        windowStart: DateTime.utc(2026, 1, 12),
+        windowEnd: DateTime.utc(2026, 1, 16),
+        expectedStart: DateTime.utc(2026, 1, 14),
+        cyclesUsed: 3,
+      );
+
+      await tester.pumpWidget(
+        _wrapWithRouter(
+          [
+            calendarMonthProvider.overrideWith(
+              () => _StubCalendarMonthNotifierForYear(year: 2026, month: 1),
+            ),
+          ],
+          prediction: prediction,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final days =
+          tester.widgetList<CalendarDay>(find.byType(CalendarDay)).toList();
+
+      // All days outside 12–16 must have hasPrediction false.
+      for (final day in days) {
+        if (day.date.day < 12 || day.date.day > 16) {
+          expect(
+            day.hasPrediction,
+            isFalse,
+            reason: 'day ${day.date.day} should not be in prediction window',
+          );
+        }
+      }
+    });
+
+    testWidgets('when prediction is null no day has hasPrediction true',
+        (tester) async {
+      await tester.pumpWidget(
+        _wrapWithRouter([
+          calendarMonthProvider.overrideWith(
+            () => _StubCalendarMonthNotifierForYear(year: 2026, month: 1),
+          ),
+        ]),
+      );
+      await tester.pumpAndSettle();
+
+      final days =
+          tester.widgetList<CalendarDay>(find.byType(CalendarDay)).toList();
+
+      for (final day in days) {
+        expect(
+          day.hasPrediction,
+          isFalse,
+          reason: 'no prediction set — day ${day.date.day} must be false',
+        );
+      }
     });
   });
 }
