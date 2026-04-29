@@ -167,6 +167,11 @@
     "description": "Snackbar text shown for stub/not-yet-implemented settings rows"
   },
 
+  "settings_delete_all_done": "Data deleted",
+  "@settings_delete_all_done": {
+    "description": "Snackbar shown after delete-all data completes successfully"
+  },
+
   "a11y_calendar_day_no_flow": "No data, {date}",
   "@a11y_calendar_day_no_flow": {
     "placeholders": {

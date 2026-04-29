@@ -246,6 +246,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get settings_coming_soon => 'Prossimamente';
 
   @override
+  String get settings_delete_all_done => 'Dati eliminati';
+
+  @override
   String a11y_calendar_day_no_flow(String date) {
     return 'Nessun dato, $date';
   }
