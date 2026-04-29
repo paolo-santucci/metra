@@ -16,7 +16,7 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:metra/data/services/cycle_prediction_service.dart';
+import 'package:metra/domain/services/cycle_prediction_service.dart';
 import 'package:metra/domain/entities/cycle_entry_entity.dart';
 import 'package:metra/domain/entities/cycle_prediction.dart';
 
