@@ -72,7 +72,12 @@ class TableView extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                         vertical: MetraSpacing.s2,
                       ),
-                      child: Text(label, style: headerStyle),
+                      child: Text(
+                        label,
+                        style: headerStyle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                 )
@@ -97,7 +102,12 @@ class TableView extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                         vertical: MetraSpacing.s3,
                       ),
-                      child: Text(text, style: cellStyle),
+                      child: Text(
+                        text,
+                        style: cellStyle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   )
                   .toList(),
