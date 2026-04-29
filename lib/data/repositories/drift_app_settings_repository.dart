@@ -38,6 +38,7 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
         notificationsEnabled: row.notificationsEnabled,
         dropboxEmail: row.dropboxEmail,
         lastBackupAt: row.lastBackupAt,
+        onboardingCompleted: row.onboardingCompleted,
       );
 
   static AppSettingsCompanion _toCompanion(AppSettingsData data) =>
@@ -65,6 +66,12 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
   @override
   Future<void> updateSettings(AppSettingsData settings) =>
       _dao.updateSettings(_toCompanion(settings));
+
+  @override
+  Future<void> markOnboardingComplete() =>
+      _dao.updateSettings(
+        const AppSettingsCompanion(onboardingCompleted: Value(true)),
+      );
 
   @override
   Future<void> updateBackupState({

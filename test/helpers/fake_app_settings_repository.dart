@@ -50,6 +50,23 @@ class FakeAppSettingsRepository implements AppSettingsRepository {
       notificationsEnabled: current.notificationsEnabled,
       dropboxEmail: dropboxEmail,
       lastBackupAt: lastBackupAt,
+      onboardingCompleted: current.onboardingCompleted,
+    );
+  }
+
+  @override
+  Future<void> markOnboardingComplete() async {
+    final current = storedSettings ?? const AppSettingsData.defaults();
+    storedSettings = AppSettingsData(
+      languageCode: current.languageCode,
+      darkMode: current.darkMode,
+      painEnabled: current.painEnabled,
+      notesEnabled: current.notesEnabled,
+      notificationDaysBefore: current.notificationDaysBefore,
+      notificationsEnabled: current.notificationsEnabled,
+      dropboxEmail: current.dropboxEmail,
+      lastBackupAt: current.lastBackupAt,
+      onboardingCompleted: true,
     );
   }
 }

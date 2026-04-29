@@ -89,6 +89,8 @@ class AppSettings extends Table {
       boolean().withDefault(const Constant(false))();
   TextColumn get dropboxEmail => text().nullable()();
   DateTimeColumn get lastBackupAt => dateTime().nullable()();
+  BoolColumn get onboardingCompleted =>
+      boolean().withDefault(const Constant(false))();
 }
 
 /// Local-only audit trail of cloud backup/restore operations.
@@ -122,7 +124,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -131,6 +133,12 @@ class AppDatabase extends _$AppDatabase {
           if (from < 2) {
             await m.addColumn(appSettings, appSettings.dropboxEmail);
             await m.addColumn(appSettings, appSettings.lastBackupAt);
+          }
+          if (from < 3) {
+            await m.addColumn(
+              appSettings,
+              appSettings.onboardingCompleted,
+            );
           }
         },
       );

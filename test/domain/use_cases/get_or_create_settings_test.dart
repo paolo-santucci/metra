@@ -42,6 +42,7 @@ void main() {
       notesEnabled: true,
       notificationDaysBefore: 1,
       notificationsEnabled: true,
+      onboardingCompleted: false,
     );
     repo.storedSettings = custom;
 
