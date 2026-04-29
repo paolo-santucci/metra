@@ -55,9 +55,10 @@ class PainIntensitySlider extends StatelessWidget {
         return l10n.daily_entry_pain_moderate;
       case 3:
         return l10n.daily_entry_pain_severe;
-      default:
-        return l10n.daily_entry_pain_none;
     }
+    // Input is clamped to 0–3 at call site; this path is unreachable.
+    assert(false, 'unreachable: v=$v outside clamped 0–3 range');
+    return l10n.daily_entry_pain_none;
   }
 
   @override

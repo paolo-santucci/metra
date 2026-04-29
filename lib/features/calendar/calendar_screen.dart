@@ -48,21 +48,22 @@ class CalendarScreen extends ConsumerStatefulWidget {
 }
 
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
-  // Italian short day-of-week header: Monday first.
-  static const List<String> _dayHeaders = [
-    'L',
-    'M',
-    'M',
-    'G',
-    'V',
-    'S',
-    'D',
-  ];
+  /// Builds locale-aware single-character day-of-week headers, Monday first.
+  ///
+  /// 2024-01-01 is a Monday, so iterating i=0..6 over that week gives Mon→Sun.
+  List<String> _buildDayHeaders(String locale) {
+    final fmt = intl.DateFormat.E(locale);
+    return List.generate(7, (i) {
+      final d = DateTime(2024, 1, i + 1);
+      return fmt.format(d).substring(0, 1).toUpperCase();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     // safe: delegates registered in MetraApp
     final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).toString();
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor =
         isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
@@ -101,7 +102,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 monthState.year == now.year && monthState.month == now.month;
 
             // intl.DateFormat.MMMM uses locale-aware month name.
-            final monthName = intl.DateFormat.MMMM('it').format(
+            final monthName = intl.DateFormat.MMMM(locale).format(
               DateTime(monthState.year, monthState.month),
             );
             final title = l10n.calendar_month_title(
@@ -123,7 +124,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 ),
                 // Day-of-week header row.
                 _DayOfWeekHeader(
-                  labels: _dayHeaders,
+                  labels: _buildDayHeaders(locale),
                   isDark: isDark,
                   textColor: textColor,
                 ),
@@ -134,6 +135,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     logs: monthState.logs,
                     today: now,
                     l10n: l10n,
+                    locale: locale,
                     prediction: prediction,
                   ),
                 ),
@@ -202,6 +204,7 @@ class _CalendarGrid extends StatelessWidget {
     required this.logs,
     required this.today,
     required this.l10n,
+    required this.locale,
     this.prediction,
   });
 
@@ -210,6 +213,7 @@ class _CalendarGrid extends StatelessWidget {
   final Map<DateTime, DailyLogEntity> logs;
   final DateTime today;
   final AppLocalizations l10n;
+  final String locale;
   final CyclePrediction? prediction;
 
   /// Number of blank leading cells before day 1.
@@ -228,7 +232,7 @@ class _CalendarGrid extends StatelessWidget {
     bool hasPrediction,
     AppLocalizations l10n,
   ) {
-    final dateStr = intl.DateFormat.yMMMMd('it').format(date);
+    final dateStr = intl.DateFormat.yMMMMd(locale).format(date);
     if (isToday) return l10n.a11y_calendar_day_today(dateStr);
     if (hasPrediction && log == null) {
       return l10n.a11y_calendar_day_prediction(dateStr);

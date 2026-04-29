@@ -64,6 +64,7 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
   // Form fields mirroring DailyLogEntity.
   FlowIntensity? _selectedFlow;
   bool _isSpotting = false;
+  bool _otherDischarge = false;
   bool _painEnabled = false;
   int _painIntensity = 0;
   bool _notesEnabled = false;
@@ -75,6 +76,16 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
   void initState() {
     super.initState();
     _notesController = TextEditingController();
+    ref.listenManual<AsyncValue<DailyLogEntity?>>(
+      dailyEntryProvider(widget.date),
+      (_, next) => next.whenData(_initFromLog),
+      fireImmediately: true,
+    );
+    ref.listenManual<AsyncValue<List<PainSymptomData>>>(
+      painSymptomsProvider(widget.date),
+      (_, next) => next.whenData(_initSymptoms),
+      fireImmediately: true,
+    );
   }
 
   @override
@@ -94,6 +105,7 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
     // Do not log entity contents — security requirement.
     _selectedFlow = log.flowIntensity;
     _isSpotting = log.spotting;
+    _otherDischarge = log.otherDischarge;
     _painEnabled = log.painEnabled;
     _painIntensity = log.painIntensity ?? 0;
     _notesEnabled = log.notesEnabled;
@@ -114,6 +126,7 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
         date: widget.date,
         flowIntensity: _selectedFlow,
         spotting: _isSpotting,
+        otherDischarge: _otherDischarge,
         painEnabled: _painEnabled,
         painIntensity: _painEnabled ? _painIntensity : null,
         notesEnabled: _notesEnabled,
@@ -201,12 +214,8 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
         isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
 
     final logAsync = ref.watch(dailyEntryProvider(widget.date));
-    // Seed form on first data; no-op after initialization.
-    logAsync.whenData(_initFromLog);
-
-    // One-shot symptom load — FutureProvider resolves once, never re-fires.
-    // _initSymptoms guards against double-seeding.
-    ref.watch(painSymptomsProvider(widget.date)).whenData(_initSymptoms);
+    // Symptoms watched for UI reactivity only; seeding happens in initState.
+    ref.watch(painSymptomsProvider(widget.date));
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -235,7 +244,12 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
             child: const CircularProgressIndicator(),
           ),
         ),
-        error: (_, __) => Center(child: Text(l10n.common_error_generic)),
+        error: (_, __) => Center(
+          child: Semantics(
+            liveRegion: true,
+            child: Text(l10n.common_error_generic),
+          ),
+        ),
         data: (_) => _buildForm(context, l10n),
       ),
     );

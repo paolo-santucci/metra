@@ -69,12 +69,12 @@ class RecomputeCycleEntries {
     for (var i = 1; i < flowDays.length; i++) {
       final gap = flowDays[i].date.difference(groupEnd).inDays;
       if (gap >= _kNewCycleGapDays) {
-        groups.add(_CycleGroup(start: groupStart, end: groupEnd));
+        groups.add((start: groupStart, end: groupEnd));
         groupStart = flowDays[i].date;
       }
       groupEnd = flowDays[i].date;
     }
-    groups.add(_CycleGroup(start: groupStart, end: groupEnd));
+    groups.add((start: groupStart, end: groupEnd));
 
     // Build CycleEntryEntity list; IDs are placeholder (replaceAll ignores them).
     return List.generate(groups.length, (i) {
@@ -94,8 +94,4 @@ class RecomputeCycleEntries {
   }
 }
 
-class _CycleGroup {
-  const _CycleGroup({required this.start, required this.end});
-  final DateTime start;
-  final DateTime end;
-}
+typedef _CycleGroup = ({DateTime start, DateTime end});

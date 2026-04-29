@@ -82,17 +82,8 @@ class DriftCycleEntryRepository implements CycleEntryRepository {
   Future<void> delete(int id) => _dao.deleteCycleEntry(id);
 
   @override
-  Future<void> replaceAll(List<CycleEntryEntity> entries) async {
-    final db = _dao.attachedDatabase;
-    await db.transaction(() async {
-      // Delete all existing rows.
-      await db.delete(db.cycleEntries).go();
-      // Insert replacements; IDs are auto-assigned.
-      for (final entry in entries) {
-        await db.into(db.cycleEntries).insert(_toInsertCompanion(entry));
-      }
-    });
-  }
+  Future<void> replaceAll(List<CycleEntryEntity> entries) =>
+      _dao.replaceAll(entries.map(_toInsertCompanion).toList());
 
   @override
   Future<void> deleteAll() => _dao.deleteAllCycles();

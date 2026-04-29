@@ -84,9 +84,10 @@ class CalendarMonthNotifier extends AsyncNotifier<CalendarMonthState> {
       year -= 1;
     }
     state = AsyncData(CalendarMonthState(year: year, month: month));
-    _subscribeToMonth(year, month).then((s) {
-      state = AsyncData(s);
-    });
+    _subscribeToMonth(year, month).then(
+      (s) => state = AsyncData(s),
+      onError: (Object e, StackTrace st) => state = AsyncError(e, st),
+    );
   }
 
   void goToNextMonth() {
@@ -104,8 +105,9 @@ class CalendarMonthNotifier extends AsyncNotifier<CalendarMonthState> {
       year += 1;
     }
     state = AsyncData(CalendarMonthState(year: year, month: month));
-    _subscribeToMonth(year, month).then((s) {
-      state = AsyncData(s);
-    });
+    _subscribeToMonth(year, month).then(
+      (s) => state = AsyncData(s),
+      onError: (Object e, StackTrace st) => state = AsyncError(e, st),
+    );
   }
 }
