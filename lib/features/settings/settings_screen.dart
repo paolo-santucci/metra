@@ -406,15 +406,24 @@ class SettingsScreen extends ConsumerWidget {
             ),
             onPressed: () {
               Navigator.of(dialogCtx).pop(true);
-              ref.read(deleteAllDataProvider.future).then(
-                    (uc) => uc.execute().then(
-                          (_) => messenger.showSnackBar(
-                            SnackBar(
-                              content: Text(l10n.settings_delete_all_done),
-                            ),
+              ref
+                    .read(deleteAllDataProvider.future)
+                    .then(
+                      (uc) => uc.execute().then(
+                        (_) => messenger.showSnackBar(
+                          SnackBar(
+                            content: Text(l10n.settings_delete_all_done),
                           ),
                         ),
-                  );
+                      ),
+                    )
+                    .catchError(
+                      (_) => messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(l10n.common_error_generic),
+                        ),
+                      ),
+                    );
             },
             child: Text(l10n.common_delete),
           ),
