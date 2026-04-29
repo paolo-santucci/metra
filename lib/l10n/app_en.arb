@@ -392,5 +392,12 @@
   "onboarding_cycle_length_question": "How long is your cycle usually?",
   "onboarding_get_started": "Get started",
   "onboarding_start": "Start",
-  "onboarding_days_unit": "days"
+  "onboarding_days_unit": "days",
+
+  "settings_section_about": "About",
+  "@settings_section_about": {
+    "description": "Settings group header: about section"
+  },
+
+  "settings_privacy_policy": "Privacy policy"
 }

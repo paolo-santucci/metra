@@ -24,6 +24,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/metra_colors.dart';
@@ -221,6 +222,24 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   trailing: null,
                   onTap: () => _showDeleteConfirmation(context, ref, l10n),
+                ),
+              ],
+            ),
+
+            // ── Informazioni ─────────────────────────────────────────────────
+            _SectionHeader(l10n.settings_section_about),
+            _GroupCard(
+              children: [
+                ListRowMetra(
+                  title: l10n.settings_privacy_policy,
+                  semanticsLabel: l10n.settings_privacy_policy,
+                  trailing: const Icon(Icons.open_in_new, size: 16),
+                  onTap: () => launchUrl(
+                    Uri.parse(
+                      'https://paolosantucci.github.io/metra/privacy',
+                    ),
+                    mode: LaunchMode.externalApplication,
+                  ),
                 ),
               ],
             ),

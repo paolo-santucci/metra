@@ -979,6 +979,18 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'giorni'**
   String get onboarding_days_unit;
+
+  /// Settings group header: about section
+  ///
+  /// In it, this message translates to:
+  /// **'Informazioni'**
+  String get settings_section_about;
+
+  /// Settings row label: link to the privacy policy
+  ///
+  /// In it, this message translates to:
+  /// **'Informativa sulla privacy'**
+  String get settings_privacy_policy;
 }
 
 class _AppLocalizationsDelegate

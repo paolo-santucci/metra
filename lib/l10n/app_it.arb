@@ -792,5 +792,15 @@
   "onboarding_days_unit": "giorni",
   "@onboarding_days_unit": {
     "description": "Unit label for cycle length stepper"
+  },
+
+  "settings_section_about": "Informazioni",
+  "@settings_section_about": {
+    "description": "Settings group header: about section"
+  },
+
+  "settings_privacy_policy": "Informativa sulla privacy",
+  "@settings_privacy_policy": {
+    "description": "Settings row label: link to the privacy policy"
   }
 }
