@@ -86,6 +86,8 @@ class AppSettings extends Table {
       integer().withDefault(const Constant(2))();
   BoolColumn get notificationsEnabled =>
       boolean().withDefault(const Constant(false))();
+  TextColumn get dropboxEmail => text().nullable()();
+  DateTimeColumn get lastBackupAt => dateTime().nullable()();
 }
 
 /// Local-only audit trail of cloud backup/restore operations.
@@ -119,11 +121,18 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
-  MigrationStrategy get migration =>
-      MigrationStrategy(onCreate: (m) => m.createAll());
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) => m.createAll(),
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            await m.addColumn(appSettings, appSettings.dropboxEmail);
+            await m.addColumn(appSettings, appSettings.lastBackupAt);
+          }
+        },
+      );
 
   /// Must be called once at app startup, before any database is opened.
   ///

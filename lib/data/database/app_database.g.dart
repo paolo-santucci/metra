@@ -1333,6 +1333,18 @@ class $AppSettingsTable extends AppSettings
       defaultConstraints: GeneratedColumn.constraintIsAlways(
           'CHECK ("notifications_enabled" IN (0, 1))'),
       defaultValue: const Constant(false));
+  static const VerificationMeta _dropboxEmailMeta =
+      const VerificationMeta('dropboxEmail');
+  @override
+  late final GeneratedColumn<String> dropboxEmail = GeneratedColumn<String>(
+      'dropbox_email', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _lastBackupAtMeta =
+      const VerificationMeta('lastBackupAt');
+  @override
+  late final GeneratedColumn<DateTime> lastBackupAt = GeneratedColumn<DateTime>(
+      'last_backup_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -1341,7 +1353,9 @@ class $AppSettingsTable extends AppSettings
         painEnabled,
         notesEnabled,
         notificationDaysBefore,
-        notificationsEnabled
+        notificationsEnabled,
+        dropboxEmail,
+        lastBackupAt
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1390,6 +1404,18 @@ class $AppSettingsTable extends AppSettings
           notificationsEnabled.isAcceptableOrUnknown(
               data['notifications_enabled']!, _notificationsEnabledMeta));
     }
+    if (data.containsKey('dropbox_email')) {
+      context.handle(
+          _dropboxEmailMeta,
+          dropboxEmail.isAcceptableOrUnknown(
+              data['dropbox_email']!, _dropboxEmailMeta));
+    }
+    if (data.containsKey('last_backup_at')) {
+      context.handle(
+          _lastBackupAtMeta,
+          lastBackupAt.isAcceptableOrUnknown(
+              data['last_backup_at']!, _lastBackupAtMeta));
+    }
     return context;
   }
 
@@ -1414,6 +1440,10 @@ class $AppSettingsTable extends AppSettings
           data['${effectivePrefix}notification_days_before'])!,
       notificationsEnabled: attachedDatabase.typeMapping.read(
           DriftSqlType.bool, data['${effectivePrefix}notifications_enabled'])!,
+      dropboxEmail: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}dropbox_email']),
+      lastBackupAt: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}last_backup_at']),
     );
   }
 
@@ -1431,6 +1461,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
   final bool notesEnabled;
   final int notificationDaysBefore;
   final bool notificationsEnabled;
+  final String? dropboxEmail;
+  final DateTime? lastBackupAt;
   const AppSetting(
       {required this.id,
       required this.languageCode,
@@ -1438,7 +1470,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       required this.painEnabled,
       required this.notesEnabled,
       required this.notificationDaysBefore,
-      required this.notificationsEnabled});
+      required this.notificationsEnabled,
+      this.dropboxEmail,
+      this.lastBackupAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -1451,6 +1485,12 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     map['notes_enabled'] = Variable<bool>(notesEnabled);
     map['notification_days_before'] = Variable<int>(notificationDaysBefore);
     map['notifications_enabled'] = Variable<bool>(notificationsEnabled);
+    if (!nullToAbsent || dropboxEmail != null) {
+      map['dropbox_email'] = Variable<String>(dropboxEmail);
+    }
+    if (!nullToAbsent || lastBackupAt != null) {
+      map['last_backup_at'] = Variable<DateTime>(lastBackupAt);
+    }
     return map;
   }
 
@@ -1465,6 +1505,12 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       notesEnabled: Value(notesEnabled),
       notificationDaysBefore: Value(notificationDaysBefore),
       notificationsEnabled: Value(notificationsEnabled),
+      dropboxEmail: dropboxEmail == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dropboxEmail),
+      lastBackupAt: lastBackupAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastBackupAt),
     );
   }
 
@@ -1481,6 +1527,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           serializer.fromJson<int>(json['notificationDaysBefore']),
       notificationsEnabled:
           serializer.fromJson<bool>(json['notificationsEnabled']),
+      dropboxEmail: serializer.fromJson<String?>(json['dropboxEmail']),
+      lastBackupAt: serializer.fromJson<DateTime?>(json['lastBackupAt']),
     );
   }
   @override
@@ -1494,6 +1542,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       'notesEnabled': serializer.toJson<bool>(notesEnabled),
       'notificationDaysBefore': serializer.toJson<int>(notificationDaysBefore),
       'notificationsEnabled': serializer.toJson<bool>(notificationsEnabled),
+      'dropboxEmail': serializer.toJson<String?>(dropboxEmail),
+      'lastBackupAt': serializer.toJson<DateTime?>(lastBackupAt),
     };
   }
 
@@ -1504,7 +1554,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           bool? painEnabled,
           bool? notesEnabled,
           int? notificationDaysBefore,
-          bool? notificationsEnabled}) =>
+          bool? notificationsEnabled,
+          Value<String?> dropboxEmail = const Value.absent(),
+          Value<DateTime?> lastBackupAt = const Value.absent()}) =>
       AppSetting(
         id: id ?? this.id,
         languageCode: languageCode ?? this.languageCode,
@@ -1514,6 +1566,10 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
         notificationDaysBefore:
             notificationDaysBefore ?? this.notificationDaysBefore,
         notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
+        dropboxEmail:
+            dropboxEmail.present ? dropboxEmail.value : this.dropboxEmail,
+        lastBackupAt:
+            lastBackupAt.present ? lastBackupAt.value : this.lastBackupAt,
       );
   AppSetting copyWithCompanion(AppSettingsCompanion data) {
     return AppSetting(
@@ -1533,6 +1589,12 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       notificationsEnabled: data.notificationsEnabled.present
           ? data.notificationsEnabled.value
           : this.notificationsEnabled,
+      dropboxEmail: data.dropboxEmail.present
+          ? data.dropboxEmail.value
+          : this.dropboxEmail,
+      lastBackupAt: data.lastBackupAt.present
+          ? data.lastBackupAt.value
+          : this.lastBackupAt,
     );
   }
 
@@ -1545,14 +1607,24 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           ..write('painEnabled: $painEnabled, ')
           ..write('notesEnabled: $notesEnabled, ')
           ..write('notificationDaysBefore: $notificationDaysBefore, ')
-          ..write('notificationsEnabled: $notificationsEnabled')
+          ..write('notificationsEnabled: $notificationsEnabled, ')
+          ..write('dropboxEmail: $dropboxEmail, ')
+          ..write('lastBackupAt: $lastBackupAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, languageCode, darkMode, painEnabled,
-      notesEnabled, notificationDaysBefore, notificationsEnabled);
+  int get hashCode => Object.hash(
+      id,
+      languageCode,
+      darkMode,
+      painEnabled,
+      notesEnabled,
+      notificationDaysBefore,
+      notificationsEnabled,
+      dropboxEmail,
+      lastBackupAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1563,7 +1635,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           other.painEnabled == this.painEnabled &&
           other.notesEnabled == this.notesEnabled &&
           other.notificationDaysBefore == this.notificationDaysBefore &&
-          other.notificationsEnabled == this.notificationsEnabled);
+          other.notificationsEnabled == this.notificationsEnabled &&
+          other.dropboxEmail == this.dropboxEmail &&
+          other.lastBackupAt == this.lastBackupAt);
 }
 
 class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
@@ -1574,6 +1648,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
   final Value<bool> notesEnabled;
   final Value<int> notificationDaysBefore;
   final Value<bool> notificationsEnabled;
+  final Value<String?> dropboxEmail;
+  final Value<DateTime?> lastBackupAt;
   const AppSettingsCompanion({
     this.id = const Value.absent(),
     this.languageCode = const Value.absent(),
@@ -1582,6 +1658,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     this.notesEnabled = const Value.absent(),
     this.notificationDaysBefore = const Value.absent(),
     this.notificationsEnabled = const Value.absent(),
+    this.dropboxEmail = const Value.absent(),
+    this.lastBackupAt = const Value.absent(),
   });
   AppSettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -1591,6 +1669,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     this.notesEnabled = const Value.absent(),
     this.notificationDaysBefore = const Value.absent(),
     this.notificationsEnabled = const Value.absent(),
+    this.dropboxEmail = const Value.absent(),
+    this.lastBackupAt = const Value.absent(),
   });
   static Insertable<AppSetting> custom({
     Expression<int>? id,
@@ -1600,6 +1680,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     Expression<bool>? notesEnabled,
     Expression<int>? notificationDaysBefore,
     Expression<bool>? notificationsEnabled,
+    Expression<String>? dropboxEmail,
+    Expression<DateTime>? lastBackupAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1611,6 +1693,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
         'notification_days_before': notificationDaysBefore,
       if (notificationsEnabled != null)
         'notifications_enabled': notificationsEnabled,
+      if (dropboxEmail != null) 'dropbox_email': dropboxEmail,
+      if (lastBackupAt != null) 'last_backup_at': lastBackupAt,
     });
   }
 
@@ -1621,7 +1705,9 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
       Value<bool>? painEnabled,
       Value<bool>? notesEnabled,
       Value<int>? notificationDaysBefore,
-      Value<bool>? notificationsEnabled}) {
+      Value<bool>? notificationsEnabled,
+      Value<String?>? dropboxEmail,
+      Value<DateTime?>? lastBackupAt}) {
     return AppSettingsCompanion(
       id: id ?? this.id,
       languageCode: languageCode ?? this.languageCode,
@@ -1631,6 +1717,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
       notificationDaysBefore:
           notificationDaysBefore ?? this.notificationDaysBefore,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
+      dropboxEmail: dropboxEmail ?? this.dropboxEmail,
+      lastBackupAt: lastBackupAt ?? this.lastBackupAt,
     );
   }
 
@@ -1659,6 +1747,12 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     if (notificationsEnabled.present) {
       map['notifications_enabled'] = Variable<bool>(notificationsEnabled.value);
     }
+    if (dropboxEmail.present) {
+      map['dropbox_email'] = Variable<String>(dropboxEmail.value);
+    }
+    if (lastBackupAt.present) {
+      map['last_backup_at'] = Variable<DateTime>(lastBackupAt.value);
+    }
     return map;
   }
 
@@ -1671,7 +1765,9 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
           ..write('painEnabled: $painEnabled, ')
           ..write('notesEnabled: $notesEnabled, ')
           ..write('notificationDaysBefore: $notificationDaysBefore, ')
-          ..write('notificationsEnabled: $notificationsEnabled')
+          ..write('notificationsEnabled: $notificationsEnabled, ')
+          ..write('dropboxEmail: $dropboxEmail, ')
+          ..write('lastBackupAt: $lastBackupAt')
           ..write(')'))
         .toString();
   }
@@ -2930,6 +3026,8 @@ typedef $$AppSettingsTableCreateCompanionBuilder = AppSettingsCompanion
   Value<bool> notesEnabled,
   Value<int> notificationDaysBefore,
   Value<bool> notificationsEnabled,
+  Value<String?> dropboxEmail,
+  Value<DateTime?> lastBackupAt,
 });
 typedef $$AppSettingsTableUpdateCompanionBuilder = AppSettingsCompanion
     Function({
@@ -2940,6 +3038,8 @@ typedef $$AppSettingsTableUpdateCompanionBuilder = AppSettingsCompanion
   Value<bool> notesEnabled,
   Value<int> notificationDaysBefore,
   Value<bool> notificationsEnabled,
+  Value<String?> dropboxEmail,
+  Value<DateTime?> lastBackupAt,
 });
 
 class $$AppSettingsTableFilterComposer
@@ -2973,6 +3073,12 @@ class $$AppSettingsTableFilterComposer
   ColumnFilters<bool> get notificationsEnabled => $composableBuilder(
       column: $table.notificationsEnabled,
       builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get dropboxEmail => $composableBuilder(
+      column: $table.dropboxEmail, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get lastBackupAt => $composableBuilder(
+      column: $table.lastBackupAt, builder: (column) => ColumnFilters(column));
 }
 
 class $$AppSettingsTableOrderingComposer
@@ -3008,6 +3114,14 @@ class $$AppSettingsTableOrderingComposer
   ColumnOrderings<bool> get notificationsEnabled => $composableBuilder(
       column: $table.notificationsEnabled,
       builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get dropboxEmail => $composableBuilder(
+      column: $table.dropboxEmail,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get lastBackupAt => $composableBuilder(
+      column: $table.lastBackupAt,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$AppSettingsTableAnnotationComposer
@@ -3039,6 +3153,12 @@ class $$AppSettingsTableAnnotationComposer
 
   GeneratedColumn<bool> get notificationsEnabled => $composableBuilder(
       column: $table.notificationsEnabled, builder: (column) => column);
+
+  GeneratedColumn<String> get dropboxEmail => $composableBuilder(
+      column: $table.dropboxEmail, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastBackupAt => $composableBuilder(
+      column: $table.lastBackupAt, builder: (column) => column);
 }
 
 class $$AppSettingsTableTableManager extends RootTableManager<
@@ -3071,6 +3191,8 @@ class $$AppSettingsTableTableManager extends RootTableManager<
             Value<bool> notesEnabled = const Value.absent(),
             Value<int> notificationDaysBefore = const Value.absent(),
             Value<bool> notificationsEnabled = const Value.absent(),
+            Value<String?> dropboxEmail = const Value.absent(),
+            Value<DateTime?> lastBackupAt = const Value.absent(),
           }) =>
               AppSettingsCompanion(
             id: id,
@@ -3080,6 +3202,8 @@ class $$AppSettingsTableTableManager extends RootTableManager<
             notesEnabled: notesEnabled,
             notificationDaysBefore: notificationDaysBefore,
             notificationsEnabled: notificationsEnabled,
+            dropboxEmail: dropboxEmail,
+            lastBackupAt: lastBackupAt,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -3089,6 +3213,8 @@ class $$AppSettingsTableTableManager extends RootTableManager<
             Value<bool> notesEnabled = const Value.absent(),
             Value<int> notificationDaysBefore = const Value.absent(),
             Value<bool> notificationsEnabled = const Value.absent(),
+            Value<String?> dropboxEmail = const Value.absent(),
+            Value<DateTime?> lastBackupAt = const Value.absent(),
           }) =>
               AppSettingsCompanion.insert(
             id: id,
@@ -3098,6 +3224,8 @@ class $$AppSettingsTableTableManager extends RootTableManager<
             notesEnabled: notesEnabled,
             notificationDaysBefore: notificationDaysBefore,
             notificationsEnabled: notificationsEnabled,
+            dropboxEmail: dropboxEmail,
+            lastBackupAt: lastBackupAt,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
