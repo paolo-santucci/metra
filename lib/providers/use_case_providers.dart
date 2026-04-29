@@ -17,11 +17,16 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/services/notification_service.dart';
+import '../domain/services/cycle_prediction_service.dart';
+import '../domain/services/notification_service.dart';
 import '../domain/use_cases/compute_cycle_stats.dart';
 import '../domain/use_cases/get_cycle_summaries.dart';
 import '../domain/use_cases/get_month_logs.dart';
 import '../domain/use_cases/recompute_cycle_entries.dart';
 import '../domain/use_cases/save_daily_log.dart';
+import '../domain/use_cases/schedule_prediction_notification.dart';
+import '../domain/use_cases/watch_cycle_prediction.dart';
 import 'repository_providers.dart';
 
 final saveDailyLogProvider = FutureProvider<SaveDailyLog>((ref) async {
@@ -56,3 +61,29 @@ final computeCycleStatsProvider = FutureProvider<ComputeCycleStats>((
   final getCycleSummaries = await ref.watch(getCycleSummariesProvider.future);
   return ComputeCycleStats(getCycleSummaries);
 });
+
+// ── P-3 prediction ──
+
+final cyclePredictionServiceProvider = Provider<CyclePredictionService>(
+  (_) => const CyclePredictionService(),
+);
+
+final watchCyclePredictionProvider = FutureProvider<WatchCyclePrediction>(
+  (ref) async {
+    final cycleRepo = await ref.watch(cycleEntryRepositoryProvider.future);
+    final service = ref.watch(cyclePredictionServiceProvider);
+    return WatchCyclePrediction(cycleRepo, service);
+  },
+);
+
+final notificationServiceProvider = Provider<NotificationService>(
+  (_) => FlutterNotificationService(),
+);
+
+final schedulePredictionNotificationProvider =
+    FutureProvider<SchedulePredictionNotification>(
+  (ref) async {
+    final notifService = ref.watch(notificationServiceProvider);
+    return SchedulePredictionNotification(notifService);
+  },
+);
