@@ -17,6 +17,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../features/backup/backup_screen.dart';
 import '../features/calendar/calendar_screen.dart';
 import '../features/daily_entry/historical_entry_screen.dart';
 import '../features/daily_entry/quick_entry_modal.dart';
@@ -35,6 +36,10 @@ final GoRouter appRouter = GoRouter(
   routes: [
     // Daily-entry routes are top-level (outside the ShellRoute) so the
     // bottom navigation bar is hidden when they are active.
+    GoRoute(
+      path: '/backup',
+      builder: (context, state) => const BackupScreen(),
+    ),
     GoRoute(
       path: '/daily-entry/today',
       builder: (context, state) => const QuickEntryModal(),
