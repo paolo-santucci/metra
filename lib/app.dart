@@ -24,6 +24,9 @@ import 'domain/entities/cycle_prediction.dart';
 import 'features/calendar/state/prediction_controller.dart';
 import 'features/settings/state/settings_notifier.dart';
 import 'l10n/app_localizations.dart';
+import 'providers/backup_providers.dart';
+import 'providers/encryption_provider.dart';
+import 'providers/repository_providers.dart';
 import 'providers/use_case_providers.dart';
 import 'router/app_router.dart';
 
@@ -62,6 +65,24 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
         .read(notificationServiceProvider)
         .initialize()
         .catchError((Object _) {});
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _autoSyncIfConfigured();
+    });
+  }
+
+  Future<void> _autoSyncIfConfigured() async {
+    try {
+      final settingsRepo = await ref.read(appSettingsRepositoryProvider.future);
+      final data = await settingsRepo.getOrCreate();
+      if (data.dropboxEmail == null) return; // not connected
+      final storage = ref.read(secureStorageProvider);
+      final pass = await storage.read(key: 'metra_backup_passphrase_v1');
+      if (pass == null) return; // first backup not done yet
+      final uc = await ref.read(backupDataProvider.future);
+      await uc();
+    } catch (_) {
+      // Silent — user can retry from BackupScreen.
+    }
   }
 
   @override
