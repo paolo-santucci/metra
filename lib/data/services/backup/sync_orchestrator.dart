@@ -14,13 +14,14 @@ import '../../../domain/entities/sync_log_entity.dart';
 import '../../../domain/repositories/app_settings_repository.dart';
 import '../../../domain/repositories/daily_log_repository.dart';
 import '../../../domain/repositories/sync_log_repository.dart';
+import '../../../domain/use_cases/backup_data.dart';
 import '../encryption_service.dart';
 import 'backup_service.dart';
 import 'dropbox_provider.dart';
 
 typedef RecomputeFn = Future<dynamic> Function();
 
-class SyncOrchestrator {
+class SyncOrchestrator implements BackupRunner {
   SyncOrchestrator({
     required BackupService backupService,
     required EncryptionService encryptionService,
@@ -55,6 +56,7 @@ class SyncOrchestrator {
   final FlutterSecureStorage _secureStorage;
   final DateTime Function() _now;
 
+  @override
   Future<void> backup() async {
     final ts = _now();
     try {
@@ -108,6 +110,7 @@ class SyncOrchestrator {
     }
   }
 
+  @override
   Future<void> restore() async {
     final ts = _now();
     try {
