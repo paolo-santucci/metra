@@ -24,6 +24,7 @@ import '../domain/services/notification_service.dart';
 import '../domain/use_cases/compute_cycle_stats.dart';
 import '../domain/use_cases/get_cycle_summaries.dart';
 import '../domain/use_cases/get_month_logs.dart';
+import '../domain/use_cases/delete_all_data.dart';
 import '../domain/use_cases/recompute_cycle_entries.dart';
 import '../domain/use_cases/save_daily_log.dart';
 import '../domain/use_cases/schedule_prediction_notification.dart';
@@ -94,4 +95,10 @@ final getOrCreateSettingsProvider = FutureProvider<AppSettingsData>((
 ) async {
   final repo = await ref.watch(appSettingsRepositoryProvider.future);
   return repo.getOrCreate();
+});
+
+final deleteAllDataProvider = FutureProvider<DeleteAllData>((ref) async {
+  final logRepo = await ref.watch(dailyLogRepositoryProvider.future);
+  final cycleRepo = await ref.watch(cycleEntryRepositoryProvider.future);
+  return DeleteAllData(logRepo, cycleRepo);
 });
