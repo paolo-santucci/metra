@@ -276,5 +276,75 @@
     }
   },
   "timeline_view_toggle": "Timeline",
-  "table_view_toggle": "Table"
+  "table_view_toggle": "Table",
+
+  "settings_import_csv": "Import CSV",
+  "@settings_import_csv": {
+    "description": "Settings action to import data from a CSV file"
+  },
+
+  "csv_export_privacy_warning": "This file contains your health data in plain text. Only share with apps or people you trust.",
+  "@csv_export_privacy_warning": {
+    "description": "Privacy warning shown before sharing the CSV export"
+  },
+
+  "csv_export_privacy_confirm": "Continue",
+  "@csv_export_privacy_confirm": {
+    "description": "Confirm button on the CSV export privacy warning"
+  },
+
+  "csv_import_errors_dialog": "Found {count} rows with invalid data.",
+  "@csv_import_errors_dialog": {
+    "description": "Body of the dialog shown when the CSV has parse errors",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "csv_import_abort": "Abort",
+  "@csv_import_abort": {
+    "description": "Button to abort the import when parse errors are found"
+  },
+
+  "csv_import_skip_continue": "Skip & Continue",
+  "@csv_import_skip_continue": {
+    "description": "Button to skip invalid rows and continue the import"
+  },
+
+  "csv_import_mode_title": "Import mode",
+  "@csv_import_mode_title": {
+    "description": "Title of the import mode picker dialog"
+  },
+
+  "csv_import_mode_delete": "Delete all data and import",
+  "@csv_import_mode_delete": {
+    "description": "Import mode: delete all existing data, then import"
+  },
+
+  "csv_import_mode_overwrite": "Import and overwrite",
+  "@csv_import_mode_overwrite": {
+    "description": "Import mode: upsert CSV rows, DB-only rows untouched"
+  },
+
+  "csv_import_mode_keep": "Import, keep existing",
+  "@csv_import_mode_keep": {
+    "description": "Import mode: insert only dates absent from DB"
+  },
+
+  "csv_import_success": "Imported {count} rows",
+  "@csv_import_success": {
+    "description": "Snackbar shown after a successful import with no skips",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "csv_import_success_skipped": "Imported {count} rows, skipped {skipped}",
+  "@csv_import_success_skipped": {
+    "description": "Snackbar shown after a successful import where some rows were skipped",
+    "placeholders": {
+      "count": { "type": "int" },
+      "skipped": { "type": "int" }
+    }
+  }
 }

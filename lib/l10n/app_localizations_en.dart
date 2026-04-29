@@ -349,4 +349,47 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get table_view_toggle => 'Table';
+
+  @override
+  String get settings_import_csv => 'Import CSV';
+
+  @override
+  String get csv_export_privacy_warning =>
+      'This file contains your health data in plain text. Only share with apps or people you trust.';
+
+  @override
+  String get csv_export_privacy_confirm => 'Continue';
+
+  @override
+  String csv_import_errors_dialog(int count) {
+    return 'Found $count rows with invalid data.';
+  }
+
+  @override
+  String get csv_import_abort => 'Abort';
+
+  @override
+  String get csv_import_skip_continue => 'Skip & Continue';
+
+  @override
+  String get csv_import_mode_title => 'Import mode';
+
+  @override
+  String get csv_import_mode_delete => 'Delete all data and import';
+
+  @override
+  String get csv_import_mode_overwrite => 'Import and overwrite';
+
+  @override
+  String get csv_import_mode_keep => 'Import, keep existing';
+
+  @override
+  String csv_import_success(int count) {
+    return 'Imported $count rows';
+  }
+
+  @override
+  String csv_import_success_skipped(int count, int skipped) {
+    return 'Imported $count rows, skipped $skipped';
+  }
 }

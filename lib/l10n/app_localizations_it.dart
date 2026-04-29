@@ -350,4 +350,47 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get table_view_toggle => 'Tabella';
+
+  @override
+  String get settings_import_csv => 'Importa CSV';
+
+  @override
+  String get csv_export_privacy_warning =>
+      'Questo file contiene dati sanitari in chiaro. Condividilo solo con app o persone di cui ti fidi.';
+
+  @override
+  String get csv_export_privacy_confirm => 'Continua';
+
+  @override
+  String csv_import_errors_dialog(int count) {
+    return 'Trovate $count righe con dati non validi.';
+  }
+
+  @override
+  String get csv_import_abort => 'Annulla importazione';
+
+  @override
+  String get csv_import_skip_continue => 'Salta e continua';
+
+  @override
+  String get csv_import_mode_title => 'Modalità importazione';
+
+  @override
+  String get csv_import_mode_delete => 'Elimina tutto e importa';
+
+  @override
+  String get csv_import_mode_overwrite => 'Importa e sovrascrivi';
+
+  @override
+  String get csv_import_mode_keep => 'Importa, mantieni esistenti';
+
+  @override
+  String csv_import_success(int count) {
+    return 'Importate $count righe';
+  }
+
+  @override
+  String csv_import_success_skipped(int count, int skipped) {
+    return 'Importate $count righe, saltate $skipped';
+  }
 }
