@@ -68,5 +68,18 @@
 	</array>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>Métra uses notifications to remind you when your predicted cycle window is approaching.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.paolosantucci.metra.oauth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>metra</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
