@@ -757,5 +757,40 @@
   "backup_disconnect_confirm_button": "Disconnetti",
   "@backup_disconnect_confirm_button": {
     "description": "Confirm button in the Dropbox disconnect confirmation dialog"
+  },
+
+  "onboarding_tagline": "Il tuo ciclo, i tuoi dati, il tuo dispositivo.",
+  "@onboarding_tagline": {
+    "description": "Tagline shown on the onboarding welcome screen"
+  },
+
+  "onboarding_privacy_line": "Tutto rimane sul tuo telefono — nessun account, nessun cloud richiesto.",
+  "@onboarding_privacy_line": {
+    "description": "Privacy reassurance on the onboarding welcome screen"
+  },
+
+  "onboarding_last_period_question": "Quando è iniziato il tuo ultimo ciclo?",
+  "@onboarding_last_period_question": {
+    "description": "Label for the last period date picker on onboarding"
+  },
+
+  "onboarding_cycle_length_question": "Quanto dura di solito il tuo ciclo?",
+  "@onboarding_cycle_length_question": {
+    "description": "Label for the cycle length stepper on onboarding"
+  },
+
+  "onboarding_get_started": "Inizia",
+  "@onboarding_get_started": {
+    "description": "CTA button on the onboarding welcome screen"
+  },
+
+  "onboarding_start": "Inizia",
+  "@onboarding_start": {
+    "description": "Submit button on the onboarding data entry screen"
+  },
+
+  "onboarding_days_unit": "giorni",
+  "@onboarding_days_unit": {
+    "description": "Unit label for cycle length stepper"
   }
 }
