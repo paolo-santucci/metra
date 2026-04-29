@@ -32,4 +32,24 @@ class FakeAppSettingsRepository implements AppSettingsRepository {
   Future<void> updateSettings(AppSettingsData settings) async {
     storedSettings = settings;
   }
+
+  @override
+  Future<void> updateBackupState({
+    required String? dropboxEmail,
+    required DateTime? lastBackupAt,
+  }) async {
+    final current = storedSettings ?? const AppSettingsData.defaults();
+    // Full constructor used intentionally — copyWith cannot clear nullable
+    // fields to null, which is exactly what callers of updateBackupState need.
+    storedSettings = AppSettingsData(
+      languageCode: current.languageCode,
+      darkMode: current.darkMode,
+      painEnabled: current.painEnabled,
+      notesEnabled: current.notesEnabled,
+      notificationDaysBefore: current.notificationDaysBefore,
+      notificationsEnabled: current.notificationsEnabled,
+      dropboxEmail: dropboxEmail,
+      lastBackupAt: lastBackupAt,
+    );
+  }
 }

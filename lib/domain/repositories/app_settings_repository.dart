@@ -23,4 +23,14 @@ abstract class AppSettingsRepository {
   Future<AppSettingsData> getOrCreate();
 
   Future<void> updateSettings(AppSettingsData settings);
+
+  /// Persists Dropbox backup state after a successful backup or sign-out.
+  ///
+  /// Pass explicit nulls to clear either field — callers must not use
+  /// [updateSettings] for this because [AppSettingsData.copyWith] cannot
+  /// reset nullable fields to null.
+  Future<void> updateBackupState({
+    required String? dropboxEmail,
+    required DateTime? lastBackupAt,
+  });
 }

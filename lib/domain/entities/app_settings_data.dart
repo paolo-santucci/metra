@@ -23,6 +23,8 @@ class AppSettingsData {
     required this.notesEnabled,
     required this.notificationDaysBefore,
     required this.notificationsEnabled,
+    this.dropboxEmail,
+    this.lastBackupAt,
   });
 
   /// Factory returning the defaults that match DB column defaults.
@@ -38,6 +40,12 @@ class AppSettingsData {
   final int notificationDaysBefore;
   final bool notificationsEnabled;
 
+  /// Dropbox account email linked to this device, or null if not connected.
+  final String? dropboxEmail;
+
+  /// Timestamp of the last successful backup, or null if no backup has run.
+  final DateTime? lastBackupAt;
+
   AppSettingsData copyWith({
     String? languageCode,
     bool? darkMode,
@@ -45,6 +53,8 @@ class AppSettingsData {
     bool? notesEnabled,
     int? notificationDaysBefore,
     bool? notificationsEnabled,
+    String? dropboxEmail,
+    DateTime? lastBackupAt,
   }) {
     return AppSettingsData(
       languageCode: languageCode ?? this.languageCode,
@@ -54,6 +64,8 @@ class AppSettingsData {
       notificationDaysBefore:
           notificationDaysBefore ?? this.notificationDaysBefore,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
+      dropboxEmail: dropboxEmail ?? this.dropboxEmail,
+      lastBackupAt: lastBackupAt ?? this.lastBackupAt,
     );
   }
 
@@ -67,7 +79,9 @@ class AppSettingsData {
           painEnabled == other.painEnabled &&
           notesEnabled == other.notesEnabled &&
           notificationDaysBefore == other.notificationDaysBefore &&
-          notificationsEnabled == other.notificationsEnabled;
+          notificationsEnabled == other.notificationsEnabled &&
+          dropboxEmail == other.dropboxEmail &&
+          lastBackupAt == other.lastBackupAt;
 
   @override
   int get hashCode =>
@@ -76,7 +90,9 @@ class AppSettingsData {
       painEnabled.hashCode ^
       notesEnabled.hashCode ^
       notificationDaysBefore.hashCode ^
-      notificationsEnabled.hashCode;
+      notificationsEnabled.hashCode ^
+      dropboxEmail.hashCode ^
+      lastBackupAt.hashCode;
 }
 
 class _AppSettingsDataDefaults extends AppSettingsData {

@@ -36,6 +36,8 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
         notesEnabled: row.notesEnabled,
         notificationDaysBefore: row.notificationDaysBefore,
         notificationsEnabled: row.notificationsEnabled,
+        dropboxEmail: row.dropboxEmail,
+        lastBackupAt: row.lastBackupAt,
       );
 
   static AppSettingsCompanion _toCompanion(AppSettingsData data) =>
@@ -63,4 +65,18 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
   @override
   Future<void> updateSettings(AppSettingsData settings) =>
       _dao.updateSettings(_toCompanion(settings));
+
+  @override
+  Future<void> updateBackupState({
+    required String? dropboxEmail,
+    required DateTime? lastBackupAt,
+  }) =>
+      _dao.updateSettings(
+        AppSettingsCompanion(
+          // Value(...) with an explicit null writes NULL to the column,
+          // unlike Value.absent() which leaves the column untouched.
+          dropboxEmail: Value(dropboxEmail),
+          lastBackupAt: Value(lastBackupAt),
+        ),
+      );
 }
