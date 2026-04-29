@@ -415,6 +415,36 @@ void main() {
       }
     });
 
+    testWidgets(
+        'prediction window day with no log emits prediction semantics label',
+        (tester) async {
+      final prediction = CyclePrediction(
+        windowStart: DateTime.utc(2026, 1, 12),
+        windowEnd: DateTime.utc(2026, 1, 16),
+        expectedStart: DateTime.utc(2026, 1, 14),
+        cyclesUsed: 3,
+      );
+
+      await tester.pumpWidget(
+        _wrapWithRouter(
+          [
+            calendarMonthProvider.overrideWith(
+              () => _StubCalendarMonthNotifierForYear(year: 2026, month: 1),
+            ),
+          ],
+          prediction: prediction,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Days 12–16 have no log and hasPrediction = true → semantics label
+      // must start with "Ciclo previsto,".
+      expect(
+        find.bySemanticsLabel(RegExp(r'^Ciclo previsto,')),
+        findsWidgets,
+      );
+    });
+
     testWidgets('when prediction is null no day has hasPrediction true',
         (tester) async {
       await tester.pumpWidget(
