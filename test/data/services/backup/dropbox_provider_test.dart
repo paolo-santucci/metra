@@ -46,7 +46,7 @@ void main() {
     expect(calls.single.headers['Authorization'], 'Bearer tok');
     final arg = jsonDecode(calls.single.headers['Dropbox-API-Arg']!)
         as Map<String, dynamic>;
-    expect(arg['path'], '/Apps/Metra/metra_backup_x.enc');
+    expect(arg['path'], '/metra_backup_x.enc');
     expect(calls.single.bodyBytes, [1, 2, 3]);
   });
 
