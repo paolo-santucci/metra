@@ -146,5 +146,38 @@ void main() {
       expect(entry.title, equals('Test title'));
       expect(entry.body, equals('Test body'));
     });
+
+    test(
+        'notificationDaysBefore=0 is clamped to 1 — notification still scheduled',
+        () async {
+      final notifService = FakeNotificationService();
+      final uc = SchedulePredictionNotification(notifService);
+      final prediction = CyclePrediction(
+        expectedStart: DateTime.utc(2026, 6, 1),
+        windowStart: DateTime.utc(2026, 5, 30),
+        windowEnd: DateTime.utc(2026, 6, 3),
+        cyclesUsed: 3,
+      );
+      const settings = AppSettingsData(
+        languageCode: 'it',
+        painEnabled: true,
+        notesEnabled: true,
+        notificationsEnabled: true,
+        notificationDaysBefore: 0, // invalid: below 1
+      );
+
+      await uc.execute(
+        prediction: prediction,
+        settings: settings,
+        title: 't',
+        body: 'b',
+      );
+
+      // Clamped to 1: notifyAt = windowStart - 1 day = 2026-05-29
+      expect(
+        notifService.scheduled.first.notifyAt,
+        equals(DateTime.utc(2026, 5, 29)),
+      );
+    });
   });
 }
