@@ -937,6 +937,48 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Disconnetti'**
   String get backup_disconnect_confirm_button;
+
+  /// Tagline shown on the onboarding welcome screen
+  ///
+  /// In it, this message translates to:
+  /// **'Il tuo ciclo, i tuoi dati, il tuo dispositivo.'**
+  String get onboarding_tagline;
+
+  /// Privacy reassurance on the onboarding welcome screen
+  ///
+  /// In it, this message translates to:
+  /// **'Tutto rimane sul tuo telefono — nessun account, nessun cloud richiesto.'**
+  String get onboarding_privacy_line;
+
+  /// Label for the last period date picker on onboarding
+  ///
+  /// In it, this message translates to:
+  /// **'Quando è iniziato il tuo ultimo ciclo?'**
+  String get onboarding_last_period_question;
+
+  /// Label for the cycle length stepper on onboarding
+  ///
+  /// In it, this message translates to:
+  /// **'Quanto dura di solito il tuo ciclo?'**
+  String get onboarding_cycle_length_question;
+
+  /// CTA button on the onboarding welcome screen
+  ///
+  /// In it, this message translates to:
+  /// **'Inizia'**
+  String get onboarding_get_started;
+
+  /// Submit button on the onboarding data entry screen
+  ///
+  /// In it, this message translates to:
+  /// **'Inizia'**
+  String get onboarding_start;
+
+  /// Unit label for cycle length stepper
+  ///
+  /// In it, this message translates to:
+  /// **'giorni'**
+  String get onboarding_days_unit;
 }
 
 class _AppLocalizationsDelegate

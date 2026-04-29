@@ -484,4 +484,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backup_disconnect_confirm_button => 'Disconnect';
+
+  @override
+  String get onboarding_tagline => 'Your cycle, your data, your device.';
+
+  @override
+  String get onboarding_privacy_line =>
+      'Everything stays on your phone — no account, no cloud required.';
+
+  @override
+  String get onboarding_last_period_question =>
+      'When did your last period start?';
+
+  @override
+  String get onboarding_cycle_length_question =>
+      'How long is your cycle usually?';
+
+  @override
+  String get onboarding_get_started => 'Get started';
+
+  @override
+  String get onboarding_start => 'Start';
+
+  @override
+  String get onboarding_days_unit => 'days';
 }
