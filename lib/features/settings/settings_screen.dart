@@ -16,15 +16,496 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// → SettingsScreen: full implementation in P-4.
-class SettingsScreen extends StatelessWidget {
+import '../../core/constants/app_constants.dart';
+import '../../core/theme/metra_colors.dart';
+import '../../core/theme/metra_spacing.dart';
+import '../../core/theme/metra_typography.dart';
+import '../../core/widgets/button_ghost.dart';
+import '../../core/widgets/list_row_metra.dart';
+import '../../domain/entities/app_settings_data.dart';
+import '../../l10n/app_localizations.dart';
+import '../../providers/use_case_providers.dart';
+import 'state/settings_notifier.dart';
+
+class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgPrimary =
+        isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
+    final textPrimary =
+        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
+    final textSecondary = isDark
+        ? MetraColors.dark.textSecondary
+        : MetraColors.light.textSecondary;
+    final stateError =
+        isDark ? MetraColors.dark.stateError : MetraColors.light.stateError;
+    final settings = ref.watch(settingsNotifierProvider).valueOrNull ??
+        const AppSettingsData.defaults();
+
+    return Scaffold(
+      backgroundColor: bgPrimary,
+      body: SafeArea(
+        child: ListView(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                MetraSpacing.s4,
+                MetraSpacing.s6,
+                MetraSpacing.s4,
+                MetraSpacing.s2,
+              ),
+              child: Semantics(
+                header: true,
+                child: Text(
+                  l10n.settings_screen_title,
+                  style: MetraTypography.titleLg.copyWith(
+                    color: textPrimary,
+                  ),
+                ),
+              ),
+            ),
+
+            // ── Preferenze ──────────────────────────────────────────────────
+            _SectionHeader(l10n.settings_section_preferences),
+            _GroupCard(
+              children: [
+                ListRowMetra(
+                  title: l10n.settings_language_label,
+                  semanticsLabel:
+                      '${l10n.settings_language_label}: ${_languageName(l10n, settings.languageCode)}',
+                  trailing: _ChevronTrailing(
+                    _languageName(l10n, settings.languageCode),
+                  ),
+                  onTap: () =>
+                      _showLanguagePicker(context, ref, settings, l10n),
+                ),
+                ListRowMetra(
+                  title: l10n.settings_theme_label,
+                  semanticsLabel:
+                      '${l10n.settings_theme_label}: ${_themeName(l10n, settings.darkMode)}',
+                  trailing: _ChevronTrailing(
+                    _themeName(l10n, settings.darkMode),
+                  ),
+                  onTap: () => _showThemePicker(context, ref, settings, l10n),
+                ),
+              ],
+            ),
+
+            // ── Registro ────────────────────────────────────────────────────
+            _SectionHeader(l10n.settings_section_log),
+            _GroupCard(
+              children: [
+                SwitchListTile.adaptive(
+                  value: settings.painEnabled,
+                  onChanged: (v) =>
+                      _save(ref, settings.copyWith(painEnabled: v)),
+                  title: Text(
+                    l10n.settings_pain_label,
+                    style: MetraTypography.body.copyWith(
+                      color: textPrimary,
+                    ),
+                  ),
+                ),
+                SwitchListTile.adaptive(
+                  value: settings.notesEnabled,
+                  onChanged: (v) =>
+                      _save(ref, settings.copyWith(notesEnabled: v)),
+                  title: Text(
+                    l10n.settings_notes_label,
+                    style: MetraTypography.body.copyWith(
+                      color: textPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            // ── Notifiche ───────────────────────────────────────────────────
+            _SectionHeader(l10n.settings_section_notifications),
+            _GroupCard(
+              children: [
+                SwitchListTile.adaptive(
+                  value: settings.notificationsEnabled,
+                  onChanged: (v) => _save(
+                    ref,
+                    settings.copyWith(notificationsEnabled: v),
+                  ),
+                  title: Text(
+                    l10n.settings_notifications_label,
+                    style: MetraTypography.body.copyWith(
+                      color: textPrimary,
+                    ),
+                  ),
+                ),
+                ListRowMetra(
+                  title: l10n.settings_advance_label,
+                  semanticsLabel:
+                      '${l10n.settings_advance_label}: ${l10n.settings_advance_value(settings.notificationDaysBefore)}',
+                  trailing: _ChevronTrailing(
+                    l10n.settings_advance_value(
+                        settings.notificationDaysBefore),
+                  ),
+                  onTap: () => _showAdvancePicker(context, ref, settings, l10n),
+                ),
+              ],
+            ),
+
+            // ── Privacy e dati ───────────────────────────────────────────────
+            _SectionHeader(l10n.settings_section_privacy),
+            _GroupCard(
+              children: [
+                ListRowMetra(
+                  title: l10n.settings_backup_label,
+                  semanticsLabel:
+                      '${l10n.settings_backup_label}: ${l10n.settings_backup_not_configured}',
+                  trailing: _ChevronTrailing(
+                    l10n.settings_backup_not_configured,
+                  ),
+                  onTap: () => _showComingSoon(context, l10n),
+                ),
+              ],
+            ),
+
+            // ── CSV export ───────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: MetraSpacing.s4,
+                vertical: MetraSpacing.s3,
+              ),
+              child: ButtonGhost(
+                label: l10n.settings_export_csv,
+                semanticsLabel: l10n.settings_export_csv,
+                onPressed: () => _showComingSoon(context, l10n),
+              ),
+            ),
+
+            // ── Zona pericolosa ──────────────────────────────────────────────
+            _SectionHeader(l10n.settings_section_danger),
+            _GroupCard(
+              children: [
+                ListRowMetra(
+                  title: l10n.settings_delete_all,
+                  semanticsLabel:
+                      '${l10n.settings_delete_all} — ${l10n.settings_delete_all_confirm_body}',
+                  leading: Icon(
+                    Icons.delete_outline,
+                    color: stateError,
+                    size: 20,
+                  ),
+                  trailing: null,
+                  onTap: () => _showDeleteConfirmation(context, ref, l10n),
+                ),
+              ],
+            ),
+
+            // ── Footer ───────────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                vertical: MetraSpacing.s6,
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    '${MetraTypography.wordmark} ${AppConstants.kAppVersion}',
+                    style: MetraTypography.caption.copyWith(
+                      color: textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: MetraSpacing.s2),
+                  Text(
+                    'GPL-3.0',
+                    style: MetraTypography.caption.copyWith(
+                      color: textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  static void _save(WidgetRef ref, AppSettingsData settings) {
+    ref.read(settingsNotifierProvider.notifier).save(settings);
+  }
+
+  static String _languageName(AppLocalizations l10n, String code) =>
+      code == 'it' ? l10n.settings_language_it : l10n.settings_language_en;
+
+  static String _themeName(AppLocalizations l10n, bool? darkMode) =>
+      switch (darkMode) {
+        null => l10n.settings_theme_system,
+        false => l10n.settings_theme_light,
+        true => l10n.settings_theme_dark,
+      };
+
+  static void _showComingSoon(BuildContext context, AppLocalizations l10n) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.settings_coming_soon)),
+    );
+  }
+
+  static void _showLanguagePicker(
+    BuildContext context,
+    WidgetRef ref,
+    AppSettingsData settings,
+    AppLocalizations l10n,
+  ) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetCtx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: Text(l10n.settings_language_it),
+              trailing: settings.languageCode == 'it'
+                  ? const Icon(Icons.check)
+                  : null,
+              onTap: () {
+                Navigator.of(sheetCtx).pop();
+                _save(ref, settings.copyWith(languageCode: 'it'));
+              },
+            ),
+            ListTile(
+              title: Text(l10n.settings_language_en),
+              trailing: settings.languageCode == 'en'
+                  ? const Icon(Icons.check)
+                  : null,
+              onTap: () {
+                Navigator.of(sheetCtx).pop();
+                _save(ref, settings.copyWith(languageCode: 'en'));
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static void _showThemePicker(
+    BuildContext context,
+    WidgetRef ref,
+    AppSettingsData settings,
+    AppLocalizations l10n,
+  ) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetCtx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: Text(l10n.settings_theme_system),
+              trailing:
+                  settings.darkMode == null ? const Icon(Icons.check) : null,
+              onTap: () {
+                Navigator.of(sheetCtx).pop();
+                // Full constructor needed: copyWith cannot set darkMode to null.
+                _save(
+                  ref,
+                  AppSettingsData(
+                    languageCode: settings.languageCode,
+                    darkMode: null,
+                    painEnabled: settings.painEnabled,
+                    notesEnabled: settings.notesEnabled,
+                    notificationDaysBefore: settings.notificationDaysBefore,
+                    notificationsEnabled: settings.notificationsEnabled,
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              title: Text(l10n.settings_theme_light),
+              trailing:
+                  settings.darkMode == false ? const Icon(Icons.check) : null,
+              onTap: () {
+                Navigator.of(sheetCtx).pop();
+                _save(ref, settings.copyWith(darkMode: false));
+              },
+            ),
+            ListTile(
+              title: Text(l10n.settings_theme_dark),
+              trailing:
+                  settings.darkMode == true ? const Icon(Icons.check) : null,
+              onTap: () {
+                Navigator.of(sheetCtx).pop();
+                _save(ref, settings.copyWith(darkMode: true));
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static void _showAdvancePicker(
+    BuildContext context,
+    WidgetRef ref,
+    AppSettingsData settings,
+    AppLocalizations l10n,
+  ) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetCtx) => SafeArea(
+        child: ListView.builder(
+          shrinkWrap: true,
+          itemCount: 7,
+          itemBuilder: (_, i) {
+            final days = i + 1;
+            return ListTile(
+              title: Text(l10n.settings_advance_value(days)),
+              trailing: settings.notificationDaysBefore == days
+                  ? const Icon(Icons.check)
+                  : null,
+              onTap: () {
+                Navigator.of(sheetCtx).pop();
+                _save(
+                  ref,
+                  settings.copyWith(notificationDaysBefore: days),
+                );
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  static void _showDeleteConfirmation(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) {
+    // Capture ScaffoldMessenger before async gap.
+    final messenger = ScaffoldMessenger.of(context);
+    showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: Text(l10n.settings_delete_all_confirm_title),
+        content: Text(l10n.settings_delete_all_confirm_body),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(false),
+            child: Text(l10n.common_cancel),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(dialogCtx).colorScheme.error,
+            ),
+            onPressed: () {
+              Navigator.of(dialogCtx).pop(true);
+              ref.read(deleteAllDataProvider.future).then(
+                    (uc) => uc.execute().then(
+                          (_) => messenger.showSnackBar(
+                            SnackBar(
+                                content: Text(l10n.settings_delete_all_done)),
+                          ),
+                        ),
+                  );
+            },
+            child: Text(l10n.common_delete),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Private sub-widgets
+// ---------------------------------------------------------------------------
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader(this.text);
+
+  final String text;
+
+  @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('Settings')),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textSecondary = isDark
+        ? MetraColors.dark.textSecondary
+        : MetraColors.light.textSecondary;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        MetraSpacing.s4,
+        MetraSpacing.s5,
+        MetraSpacing.s4,
+        MetraSpacing.s2,
+      ),
+      child: Semantics(
+        header: true,
+        child: Text(
+          text,
+          style: MetraTypography.caption.copyWith(
+            color: textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GroupCard extends StatelessWidget {
+  const _GroupCard({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgSurface =
+        isDark ? MetraColors.dark.bgSurface : MetraColors.light.bgSurface;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: MetraSpacing.s4),
+      decoration: BoxDecoration(
+        color: bgSurface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(children: children),
+    );
+  }
+}
+
+class _ChevronTrailing extends StatelessWidget {
+  const _ChevronTrailing(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textSecondary = isDark
+        ? MetraColors.dark.textSecondary
+        : MetraColors.light.textSecondary;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: MetraTypography.body.copyWith(
+            color: textSecondary,
+          ),
+        ),
+        const SizedBox(width: MetraSpacing.s2),
+        Icon(
+          Icons.chevron_right,
+          size: 16,
+          color: textSecondary,
+        ),
+      ],
     );
   }
 }

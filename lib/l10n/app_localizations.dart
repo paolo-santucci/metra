@@ -542,6 +542,12 @@ abstract class AppLocalizations {
   /// **'Prossimamente'**
   String get settings_coming_soon;
 
+  /// Snackbar shown after delete-all data completes successfully
+  ///
+  /// In it, this message translates to:
+  /// **'Dati eliminati'**
+  String get settings_delete_all_done;
+
   /// Accessibility label for a calendar day with no logged data
   ///
   /// In it, this message translates to:

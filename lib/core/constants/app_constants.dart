@@ -18,6 +18,7 @@
 class AppConstants {
   AppConstants._();
 
+  static const String kAppVersion = '0.1.0';
   static const double tapTargetMin = 44.0;
   static const double tapTargetMd = 48.0;
   static const double contentPad = 24.0;

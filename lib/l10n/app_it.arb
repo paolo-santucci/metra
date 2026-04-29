@@ -388,6 +388,11 @@
     "description": "Snackbar text shown for stub/not-yet-implemented settings rows"
   },
 
+  "settings_delete_all_done": "Dati eliminati",
+  "@settings_delete_all_done": {
+    "description": "Snackbar shown after delete-all data completes successfully"
+  },
+
   "a11y_calendar_day_no_flow": "Nessun dato, {date}",
   "@a11y_calendar_day_no_flow": {
     "description": "Accessibility label for a calendar day with no logged data",
