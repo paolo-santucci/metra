@@ -16,14 +16,17 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../features/backup/backup_screen.dart';
 import '../features/calendar/calendar_screen.dart';
 import '../features/daily_entry/historical_entry_screen.dart';
 import '../features/daily_entry/quick_entry_modal.dart';
+import '../features/onboarding/onboarding_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/stats/stats_screen.dart';
 import '../features/timeline/timeline_screen.dart';
+import '../providers/repository_providers.dart';
 
 // Tab indices match the NavigationBar destination order:
 //   0 = Calendar, 1 = Timeline, 2 = Stats, 3 = Settings.
@@ -31,57 +34,71 @@ import '../features/timeline/timeline_screen.dart';
 const int _tabCalendar = 0;
 const int _tabSettings = 3;
 
-final GoRouter appRouter = GoRouter(
-  initialLocation: '/calendar',
-  routes: [
-    // Daily-entry routes are top-level (outside the ShellRoute) so the
-    // bottom navigation bar is hidden when they are active.
-    GoRoute(
-      path: '/backup',
-      builder: (context, state) => const BackupScreen(),
-    ),
-    GoRoute(
-      path: '/daily-entry/today',
-      builder: (context, state) => const QuickEntryModal(),
-    ),
-    GoRoute(
-      path: '/daily-entry/:date',
-      builder: (context, state) {
-        final dateStr =
-            state.pathParameters['date']!; // safe: required path param
-        // Parse as UTC midnight to match DailyLogEntity.date storage format.
-        final parts = dateStr.split('-');
-        final date = DateTime.utc(
-          int.parse(parts[0]),
-          int.parse(parts[1]),
-          int.parse(parts[2]),
-        );
-        return HistoricalEntryScreen(date: date);
-      },
-    ),
-    ShellRoute(
-      builder: (context, state, child) => _ScaffoldWithNav(child: child),
-      routes: [
-        GoRoute(
-          path: '/calendar',
-          builder: (context, state) => const CalendarScreen(),
-        ),
-        GoRoute(
-          path: '/timeline',
-          builder: (context, state) => const TimelineScreen(),
-        ),
-        GoRoute(
-          path: '/stats',
-          builder: (context, state) => const StatsScreen(),
-        ),
-        GoRoute(
-          path: '/settings',
-          builder: (context, state) => const SettingsScreen(),
-        ),
-      ],
-    ),
-  ],
-);
+final appRouterProvider = Provider<GoRouter>((ref) {
+  return GoRouter(
+    initialLocation: '/calendar',
+    redirect: (context, state) async {
+      if (state.uri.path == '/onboarding') return null;
+      final settingsRepo =
+          await ref.read(appSettingsRepositoryProvider.future);
+      final settings = await settingsRepo.getOrCreate();
+      if (!settings.onboardingCompleted) return '/onboarding';
+      return null;
+    },
+    routes: [
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, state) => const OnboardingScreen(),
+      ),
+      // Daily-entry routes are top-level (outside the ShellRoute) so the
+      // bottom navigation bar is hidden when they are active.
+      GoRoute(
+        path: '/backup',
+        builder: (context, state) => const BackupScreen(),
+      ),
+      GoRoute(
+        path: '/daily-entry/today',
+        builder: (context, state) => const QuickEntryModal(),
+      ),
+      GoRoute(
+        path: '/daily-entry/:date',
+        builder: (context, state) {
+          final dateStr =
+              state.pathParameters['date']!; // safe: required path param
+          // Parse as UTC midnight to match DailyLogEntity.date storage format.
+          final parts = dateStr.split('-');
+          final date = DateTime.utc(
+            int.parse(parts[0]),
+            int.parse(parts[1]),
+            int.parse(parts[2]),
+          );
+          return HistoricalEntryScreen(date: date);
+        },
+      ),
+      ShellRoute(
+        builder: (context, state, child) => _ScaffoldWithNav(child: child),
+        routes: [
+          GoRoute(
+            path: '/calendar',
+            builder: (context, state) => const CalendarScreen(),
+          ),
+          GoRoute(
+            path: '/timeline',
+            builder: (context, state) => const TimelineScreen(),
+          ),
+          GoRoute(
+            path: '/stats',
+            builder: (context, state) => const StatsScreen(),
+          ),
+          GoRoute(
+            path: '/settings',
+            builder: (context, state) => const SettingsScreen(),
+          ),
+        ],
+      ),
+    ],
+  );
+});
 
 class _ScaffoldWithNav extends StatelessWidget {
   const _ScaffoldWithNav({required this.child});

@@ -154,7 +154,7 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
       locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      routerConfig: appRouter,
+      routerConfig: ref.watch(appRouterProvider),
       debugShowCheckedModeBanner: false,
     );
   }
