@@ -546,5 +546,75 @@
   "@timeline_view_toggle": { "description": "Segmented control label for timeline view" },
 
   "table_view_toggle": "Tabella",
-  "@table_view_toggle": { "description": "Segmented control label for table view" }
+  "@table_view_toggle": { "description": "Segmented control label for table view" },
+
+  "settings_import_csv": "Importa CSV",
+  "@settings_import_csv": {
+    "description": "Settings action to import data from a CSV file"
+  },
+
+  "csv_export_privacy_warning": "Questo file contiene dati sanitari in chiaro. Condividilo solo con app o persone di cui ti fidi.",
+  "@csv_export_privacy_warning": {
+    "description": "Privacy warning shown before sharing the CSV export"
+  },
+
+  "csv_export_privacy_confirm": "Continua",
+  "@csv_export_privacy_confirm": {
+    "description": "Confirm button on the CSV export privacy warning"
+  },
+
+  "csv_import_errors_dialog": "Trovate {count} righe con dati non validi.",
+  "@csv_import_errors_dialog": {
+    "description": "Body of the dialog shown when the CSV has parse errors",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "csv_import_abort": "Annulla importazione",
+  "@csv_import_abort": {
+    "description": "Button to abort the import when parse errors are found"
+  },
+
+  "csv_import_skip_continue": "Salta e continua",
+  "@csv_import_skip_continue": {
+    "description": "Button to skip invalid rows and continue the import"
+  },
+
+  "csv_import_mode_title": "Modalità importazione",
+  "@csv_import_mode_title": {
+    "description": "Title of the import mode picker dialog"
+  },
+
+  "csv_import_mode_delete": "Elimina tutto e importa",
+  "@csv_import_mode_delete": {
+    "description": "Import mode: delete all existing data, then import"
+  },
+
+  "csv_import_mode_overwrite": "Importa e sovrascrivi",
+  "@csv_import_mode_overwrite": {
+    "description": "Import mode: upsert CSV rows, DB-only rows untouched"
+  },
+
+  "csv_import_mode_keep": "Importa, mantieni esistenti",
+  "@csv_import_mode_keep": {
+    "description": "Import mode: insert only dates absent from DB"
+  },
+
+  "csv_import_success": "Importate {count} righe",
+  "@csv_import_success": {
+    "description": "Snackbar shown after a successful import with no skips",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "csv_import_success_skipped": "Importate {count} righe, saltate {skipped}",
+  "@csv_import_success_skipped": {
+    "description": "Snackbar shown after a successful import where some rows were skipped",
+    "placeholders": {
+      "count": { "type": "int" },
+      "skipped": { "type": "int" }
+    }
+  }
 }

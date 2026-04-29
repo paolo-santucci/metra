@@ -703,6 +703,78 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Tabella'**
   String get table_view_toggle;
+
+  /// Settings action to import data from a CSV file
+  ///
+  /// In it, this message translates to:
+  /// **'Importa CSV'**
+  String get settings_import_csv;
+
+  /// Privacy warning shown before sharing the CSV export
+  ///
+  /// In it, this message translates to:
+  /// **'Questo file contiene dati sanitari in chiaro. Condividilo solo con app o persone di cui ti fidi.'**
+  String get csv_export_privacy_warning;
+
+  /// Confirm button on the CSV export privacy warning
+  ///
+  /// In it, this message translates to:
+  /// **'Continua'**
+  String get csv_export_privacy_confirm;
+
+  /// Body of the dialog shown when the CSV has parse errors
+  ///
+  /// In it, this message translates to:
+  /// **'Trovate {count} righe con dati non validi.'**
+  String csv_import_errors_dialog(int count);
+
+  /// Button to abort the import when parse errors are found
+  ///
+  /// In it, this message translates to:
+  /// **'Annulla importazione'**
+  String get csv_import_abort;
+
+  /// Button to skip invalid rows and continue the import
+  ///
+  /// In it, this message translates to:
+  /// **'Salta e continua'**
+  String get csv_import_skip_continue;
+
+  /// Title of the import mode picker dialog
+  ///
+  /// In it, this message translates to:
+  /// **'Modalità importazione'**
+  String get csv_import_mode_title;
+
+  /// Import mode: delete all existing data, then import
+  ///
+  /// In it, this message translates to:
+  /// **'Elimina tutto e importa'**
+  String get csv_import_mode_delete;
+
+  /// Import mode: upsert CSV rows, DB-only rows untouched
+  ///
+  /// In it, this message translates to:
+  /// **'Importa e sovrascrivi'**
+  String get csv_import_mode_overwrite;
+
+  /// Import mode: insert only dates absent from DB
+  ///
+  /// In it, this message translates to:
+  /// **'Importa, mantieni esistenti'**
+  String get csv_import_mode_keep;
+
+  /// Snackbar shown after a successful import with no skips
+  ///
+  /// In it, this message translates to:
+  /// **'Importate {count} righe'**
+  String csv_import_success(int count);
+
+  /// Snackbar shown after a successful import where some rows were skipped
+  ///
+  /// In it, this message translates to:
+  /// **'Importate {count} righe, saltate {skipped}'**
+  String csv_import_success_skipped(int count, int skipped);
 }
 
 class _AppLocalizationsDelegate
