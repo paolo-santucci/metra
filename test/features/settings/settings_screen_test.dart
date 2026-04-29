@@ -222,4 +222,97 @@ void main() {
       expect(fakeCycleRepo.deleteAllCalled, isTrue);
     });
   });
+
+  group('SettingsScreen — CSV export button', () {
+    testWidgets('Export CSV button is visible', (tester) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final stub = _StubSettingsNotifier(defaults);
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Esporta CSV'), findsOneWidget);
+    });
+
+    testWidgets('tapping Export CSV shows privacy warning bottom sheet',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final stub = _StubSettingsNotifier(defaults);
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Esporta CSV'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('Questo file contiene dati sanitari'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('tapping Cancel on privacy warning dismisses sheet',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final stub = _StubSettingsNotifier(defaults);
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Esporta CSV'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Annulla'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('Questo file contiene dati sanitari'),
+        findsNothing,
+      );
+    });
+  });
+
+  group('SettingsScreen — CSV import button', () {
+    testWidgets('Import CSV button is visible', (tester) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final stub = _StubSettingsNotifier(defaults);
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Importa CSV'), findsOneWidget);
+    });
+
+    testWidgets('Import CSV button is tappable (does not throw)',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final stub = _StubSettingsNotifier(defaults);
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap does not throw even though FilePicker returns null in test env.
+      await tester.tap(find.text('Importa CSV'));
+      await tester.pump();
+    });
+  });
 }
