@@ -24,6 +24,8 @@ import '../domain/use_cases/compute_cycle_stats.dart';
 import '../domain/use_cases/get_cycle_summaries.dart';
 import '../domain/use_cases/get_month_logs.dart';
 import '../domain/use_cases/delete_all_data.dart';
+import '../domain/use_cases/export_daily_logs.dart';
+import '../domain/use_cases/import_daily_logs.dart';
 import '../domain/use_cases/recompute_cycle_entries.dart';
 import '../domain/use_cases/save_daily_log.dart';
 import '../domain/use_cases/schedule_prediction_notification.dart';
@@ -93,4 +95,17 @@ final deleteAllDataProvider = FutureProvider<DeleteAllData>((ref) async {
   final logRepo = await ref.watch(dailyLogRepositoryProvider.future);
   final cycleRepo = await ref.watch(cycleEntryRepositoryProvider.future);
   return DeleteAllData(logRepo, cycleRepo);
+});
+
+// ── P-5a CSV export / import ──
+
+final exportDailyLogsProvider = FutureProvider<ExportDailyLogs>((ref) async {
+  final logRepo = await ref.watch(dailyLogRepositoryProvider.future);
+  return ExportDailyLogs(logRepo);
+});
+
+final importDailyLogsProvider = FutureProvider<ImportDailyLogs>((ref) async {
+  final logRepo = await ref.watch(dailyLogRepositoryProvider.future);
+  final recompute = await ref.watch(recomputeCycleEntriesProvider.future);
+  return ImportDailyLogs(logRepo, recompute);
 });
