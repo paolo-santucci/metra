@@ -21,14 +21,14 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../data/services/encryption_service.dart';
 import '../data/services/key_management_service.dart';
 
-final _secureStorageProvider = Provider<FlutterSecureStorage>(
+final secureStorageProvider = Provider<FlutterSecureStorage>(
   (_) => const FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   ),
 );
 
 final keyManagementServiceProvider = Provider<KeyManagementService>(
-  (ref) => KeyManagementService(ref.read(_secureStorageProvider)),
+  (ref) => KeyManagementService(ref.read(secureStorageProvider)),
 );
 
 final encryptionServiceProvider = Provider<EncryptionService>(
