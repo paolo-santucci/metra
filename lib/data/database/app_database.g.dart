@@ -2036,6 +2036,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final CycleEntryDao cycleEntryDao = CycleEntryDao(this as AppDatabase);
   late final AppSettingsDao appSettingsDao =
       AppSettingsDao(this as AppDatabase);
+  late final SyncLogDao syncLogDao = SyncLogDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
