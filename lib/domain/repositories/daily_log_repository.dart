@@ -37,4 +37,12 @@ abstract class DailyLogRepository {
   );
 
   Future<void> deleteAll();
+
+  /// Atomically deletes all daily logs (cascade-deletes pain_symptoms via FK)
+  /// and inserts [logs] with their [symptoms]. Used by ImportDailyLogs in
+  /// deleteAndImport mode to guarantee no partial-state on write failure.
+  Future<void> deleteAllAndReplace(
+    List<DailyLogEntity> logs,
+    Map<DateTime, List<PainSymptomData>> symptoms,
+  );
 }
