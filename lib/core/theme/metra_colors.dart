@@ -51,6 +51,8 @@ final class _LightPalette {
   Color get textOnAccent => sand;
   Color get accentFlow => terracotta;
   Color get accentFlowStrong => terracottaDeep;
+  // AA-compliant terracotta for normal-size text on sand background (4.68:1).
+  Color get accentFlowText => terracottaDeep;
   Color get accentPrediction => nightLavender;
   Color get accentWarmth => dustyOchre;
   Color get accentWarmthStrong => dustyOchreDeep;
@@ -96,6 +98,8 @@ final class _DarkPalette {
   Color get textOnAccent => deepNight;
   Color get accentFlow => mutedTerracotta;
   Color get accentFlowStrong => mutedTerracottaSoft;
+  // AA-compliant terracotta for normal-size text on deepNight background (6.81:1).
+  Color get accentFlowText => mutedTerracottaSoft;
   Color get accentPrediction => lightLavender;
   Color get accentWarmth => warmOchreDark;
   Color get accentWarmthStrong => warmOchreDark;

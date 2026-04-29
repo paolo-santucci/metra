@@ -23,7 +23,8 @@ import '../../../core/theme/metra_typography.dart';
 /// Single calendar day circle.
 ///
 /// Visual size of the circle: 36×36 logical pixels.
-/// Total widget minimum tap target: 44×44 (GestureDetector + SizedBox).
+/// Total widget minimum tap target: 48×48 dp (GestureDetector + SizedBox),
+/// meeting the Android 48dp floor from CLAUDE.md §10.
 ///
 /// States can coexist. Z-order (bottom to top):
 /// 1. Transparent background.
@@ -65,7 +66,8 @@ class CalendarDay extends StatelessWidget {
   static const double _circleDiameter = 36.0;
 
   // Full tap-target size (circle + margin for outer rings + hit area).
-  static const double _tapTargetSize = 44.0;
+  // 48 dp meets the Android minimum (CLAUDE.md §10); iOS minimum is 44 pt.
+  static const double _tapTargetSize = 48.0;
 
   @override
   Widget build(BuildContext context) {
