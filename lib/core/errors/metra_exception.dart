@@ -43,3 +43,7 @@ final class DatabaseException extends MetraException {
 final class ValidationException extends MetraException {
   const ValidationException(super.message);
 }
+
+final class BackupFormatException extends MetraException {
+  const BackupFormatException(super.message);
+}
