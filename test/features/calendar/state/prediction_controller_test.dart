@@ -117,7 +117,7 @@ class _FakeWatchCyclePrediction implements WatchCyclePrediction {
 
 /// Fake backed by a broadcast StreamController for multi-emission tests.
 class _StreamingWatchCyclePrediction implements WatchCyclePrediction {
-  final _controller = StreamController<CyclePrediction?>.broadcast();
+  final _controller = StreamController<CyclePrediction?>();
 
   void add(CyclePrediction? p) => _controller.add(p);
 
