@@ -510,4 +510,10 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get onboarding_days_unit => 'giorni';
+
+  @override
+  String get settings_section_about => 'Informazioni';
+
+  @override
+  String get settings_privacy_policy => 'Informativa sulla privacy';
 }
