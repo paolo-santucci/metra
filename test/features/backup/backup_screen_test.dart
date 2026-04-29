@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/theme/metra_theme.dart';
@@ -68,9 +67,9 @@ void main() {
       tester.view.physicalSize = const Size(800, 4000);
       addTearDown(() => tester.view.resetPhysicalSize());
 
-      await tester.pumpWidget(_wrap(
-        const BackupConnected(email: 'user@example.com'),
-      ));
+      await tester.pumpWidget(
+        _wrap(const BackupConnected(email: 'user@example.com')),
+      );
       await tester.pumpAndSettle();
 
       expect(find.textContaining('user@example.com'), findsOneWidget);
@@ -82,9 +81,9 @@ void main() {
       tester.view.physicalSize = const Size(800, 4000);
       addTearDown(() => tester.view.resetPhysicalSize());
 
-      await tester.pumpWidget(_wrap(
-        const BackupConnected(email: 'a@b.com'),
-      ));
+      await tester.pumpWidget(
+        _wrap(const BackupConnected(email: 'a@b.com')),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Restore from backup'));
@@ -97,9 +96,9 @@ void main() {
       tester.view.physicalSize = const Size(800, 4000);
       addTearDown(() => tester.view.resetPhysicalSize());
 
-      await tester.pumpWidget(_wrap(
-        const BackupConnected(email: 'a@b.com'),
-      ));
+      await tester.pumpWidget(
+        _wrap(const BackupConnected(email: 'a@b.com')),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Disconnect'));
@@ -111,9 +110,9 @@ void main() {
 
   group('BackupScreen — running', () {
     testWidgets('shows loading indicator when backing up', (tester) async {
-      await tester.pumpWidget(_wrap(
-        const BackupRunning(BackupOperation.backingUp),
-      ));
+      await tester.pumpWidget(
+        _wrap(const BackupRunning(BackupOperation.backingUp)),
+      );
       await tester.pump();
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -129,7 +128,10 @@ void main() {
       await tester.pumpAndSettle();
 
       final semantics = tester.getSemantics(find.text('Upload failed'));
-      expect(semantics.hasFlag(SemanticsFlag.isLiveRegion), isTrue);
+      expect(
+        semantics.flagsCollection.isLiveRegion,
+        isTrue,
+      );
     });
   });
 
@@ -138,20 +140,18 @@ void main() {
       tester.view.physicalSize = const Size(800, 4000);
       addTearDown(() => tester.view.resetPhysicalSize());
 
-      await tester.pumpWidget(_wrap(
-        const BackupConnected(email: 'a@b.com'),
-      ));
+      await tester.pumpWidget(
+        _wrap(const BackupConnected(email: 'a@b.com')),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Back up now'));
       await tester.pumpAndSettle();
 
-      // Enter ≥8 chars in passphrase field.
       await tester.enterText(
         find.widgetWithText(TextField, 'Passphrase').first,
         'password1',
       );
-      // Enter different value in confirm field.
       await tester.enterText(
         find.widgetWithText(TextField, 'Confirm passphrase').first,
         'password2',
@@ -165,9 +165,9 @@ void main() {
       tester.view.physicalSize = const Size(800, 4000);
       addTearDown(() => tester.view.resetPhysicalSize());
 
-      await tester.pumpWidget(_wrap(
-        const BackupConnected(email: 'a@b.com'),
-      ));
+      await tester.pumpWidget(
+        _wrap(const BackupConnected(email: 'a@b.com')),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Back up now'));
@@ -190,9 +190,9 @@ void main() {
       tester.view.physicalSize = const Size(800, 4000);
       addTearDown(() => tester.view.resetPhysicalSize());
 
-      await tester.pumpWidget(_wrap(
-        const BackupConnected(email: 'a@b.com'),
-      ));
+      await tester.pumpWidget(
+        _wrap(const BackupConnected(email: 'a@b.com')),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Back up now'));
