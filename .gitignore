@@ -1,9 +1,8 @@
 # Project-specific
+CLAUDE.md
 .obsidian/
 per_riprendere.txt
-.claude/worktrees/
-.claude/experiences/
-.claude/settings.local.json
+.claude/
 .worktrees/
 
 # Flutter / Dart
