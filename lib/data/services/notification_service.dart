@@ -47,8 +47,14 @@ class FlutterNotificationService implements NotificationService {
   @override
   Future<void> initialize() async {
     tz.initializeTimeZones();
-    final timeZoneName = await FlutterTimezone.getLocalTimezone();
-    tz.setLocalLocation(tz.getLocation(timeZoneName));
+    try {
+      final timeZoneName = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(timeZoneName));
+    } on Exception {
+      // Fall back to UTC if timezone detection fails (unsupported platform,
+      // unknown IANA name, or method channel not registered in tests).
+      tz.setLocalLocation(tz.UTC);
+    }
 
     const androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
