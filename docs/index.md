@@ -1,6 +1,8 @@
 <div markdown="1" align="center">
 
-*An app for listening to your own rhythm.*
+  # Mētra
+
+  *An app for listening to your own rhythm.*
 
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-2B2521?style=flat-square)](https://www.gnu.org/licenses/gpl-3.0)
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-2B2521?style=flat-square&logo=flutter&logoColor=C87456)](https://flutter.dev)
@@ -104,7 +106,7 @@ In the meantime, if you want to follow development or suggest an idea, open an [
 Métra is distributed under the **GPL-3.0** license.  
 Forks must keep the code open under the same license.
 
-The privacy policy is published on [GitHub Pages](privacy).
+The privacy policy is published on [GitHub Pages](./privacy).
 
 -----
 
