@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../core/theme/metra_colors.dart';
 import '../../../core/theme/metra_typography.dart';
@@ -28,13 +27,14 @@ import '../../../core/theme/metra_typography.dart';
 ///
 /// States can coexist. Z-order (bottom to top):
 /// 1. Transparent background.
-/// 2. Prediction dashed lavender outline.
+/// 2. Prediction solid lavender outline.
 /// 3. Flow solid terracotta fill.
 /// 4. Spotting semi-transparent terracotta fill (if !isFlow).
 /// 5. Today thin Ink ring (1.5pt).
 /// 6. Selected thick terracotta ring (2.5pt).
 /// 7. Day number (DM Serif Display, white on flow, ink otherwise).
 /// 8. Note dot: 4pt ochre circle, ~20pt below circle center.
+/// 9. Indicator row: small icons (prediction, pain) centered at bottom.
 ///
 /// Accessibility: caller provides the full [semanticsLabel] string
 /// (e.g. "Flusso medio, 15 aprile 2026"). Widget never constructs it.
@@ -47,6 +47,7 @@ class CalendarDay extends StatelessWidget {
     this.isSpotting = false,
     this.hasPrediction = false,
     this.hasNote = false,
+    this.hasPain = false,
     this.isToday = false,
     this.isSelected = false,
     this.onTap,
@@ -57,6 +58,7 @@ class CalendarDay extends StatelessWidget {
   final bool isSpotting;
   final bool hasPrediction;
   final bool hasNote;
+  final bool hasPain;
   final bool isToday;
   final bool isSelected;
   final VoidCallback? onTap;
@@ -108,6 +110,7 @@ class CalendarDay extends StatelessWidget {
               isSpotting: isSpotting,
               hasPrediction: hasPrediction,
               hasNote: hasNote,
+              hasPain: hasPain,
               isToday: isToday,
               isSelected: isSelected,
               flowFill: flowFill,
@@ -118,6 +121,20 @@ class CalendarDay extends StatelessWidget {
               noteColor: noteColor,
               dayNumberColor: dayNumberColor,
               isDark: isDark,
+            ),
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: _IndicatorRow(
+                  hasPrediction: hasPrediction,
+                  hasPain: hasPain,
+                  predictionColor: predictionOutline,
+                  painColor: isDark
+                      ? MetraColors.dark.accentPain
+                      : MetraColors.light.accentPain,
+                ),
+              ),
             ),
           ),
         ),
@@ -133,6 +150,7 @@ class _CalendarDayPainter extends CustomPainter {
     required this.isSpotting,
     required this.hasPrediction,
     required this.hasNote,
+    required this.hasPain,
     required this.isToday,
     required this.isSelected,
     required this.flowFill,
@@ -150,6 +168,7 @@ class _CalendarDayPainter extends CustomPainter {
   final bool isSpotting;
   final bool hasPrediction;
   final bool hasNote;
+  final bool hasPain;
   final bool isToday;
   final bool isSelected;
   final Color flowFill;
@@ -172,34 +191,21 @@ class _CalendarDayPainter extends CustomPainter {
   static const double _dotRadius = 2.0; // 4pt diameter
   static const double _dotOffsetY = 20.0; // below circle center
 
-  // Dashed prediction outline
-  static const int _dashCount = 14;
-  static const double _dashAngle = (2 * math.pi) / (_dashCount * 2);
-
   @override
   void paint(Canvas canvas, Size size) {
     // Center of the widget — the circle lives here.
     final center = Offset(size.width / 2, size.height / 2);
 
-    // 1. Prediction dashed lavender outline (drawn first, behind everything).
+    // 1. Prediction solid lavender outline (drawn first, behind everything).
     if (hasPrediction) {
-      final paint = Paint()
-        ..color = predictionOutline
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5
-        ..strokeCap = StrokeCap.round;
-
-      // Draw arc segments to simulate dashed circle.
-      for (int i = 0; i < _dashCount; i++) {
-        final startAngle = i * 2 * _dashAngle - math.pi / 2;
-        canvas.drawArc(
-          Rect.fromCircle(center: center, radius: _circleRadius - 1),
-          startAngle,
-          _dashAngle,
-          false,
-          paint,
-        );
-      }
+      canvas.drawCircle(
+        center,
+        _circleRadius - 1,
+        Paint()
+          ..color = predictionOutline.withValues(alpha: 0.4)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5,
+      );
     }
 
     // 2. Flow: solid terracotta fill.
@@ -291,6 +297,7 @@ class _CalendarDayPainter extends CustomPainter {
       oldDelegate.isSpotting != isSpotting ||
       oldDelegate.hasPrediction != hasPrediction ||
       oldDelegate.hasNote != hasNote ||
+      oldDelegate.hasPain != hasPain ||
       oldDelegate.isToday != isToday ||
       oldDelegate.isSelected != isSelected ||
       oldDelegate.flowFill != flowFill ||
@@ -300,4 +307,32 @@ class _CalendarDayPainter extends CustomPainter {
       oldDelegate.selectedRing != selectedRing ||
       oldDelegate.noteColor != noteColor ||
       oldDelegate.dayNumberColor != dayNumberColor;
+}
+
+class _IndicatorRow extends StatelessWidget {
+  const _IndicatorRow({
+    required this.hasPrediction,
+    required this.hasPain,
+    required this.predictionColor,
+    required this.painColor,
+  });
+
+  final bool hasPrediction;
+  final bool hasPain;
+  final Color predictionColor;
+  final Color painColor;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!hasPrediction && !hasPain) return const SizedBox.shrink();
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (hasPrediction)
+          Icon(Icons.water_drop_outlined, size: 9, color: predictionColor),
+        if (hasPrediction && hasPain) const SizedBox(width: 2),
+        if (hasPain) Icon(Icons.bolt, size: 9, color: painColor),
+      ],
+    );
+  }
 }

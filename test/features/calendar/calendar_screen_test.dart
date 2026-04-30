@@ -275,7 +275,7 @@ void main() {
       expect(find.text('oggi-stub'), findsOneWidget);
     });
 
-    testWidgets('tapping a day cell navigates to /daily-entry/:date',
+    testWidgets('tapping a day cell shows the day-detail card',
         (tester) async {
       await tester.pumpWidget(
         _wrapWithRouter([
@@ -284,9 +284,34 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Tap the first CalendarDay in the grid (any visible day cell).
+      // Tap the first CalendarDay in the grid — selects it and shows the card.
       final firstDay = find.byType(CalendarDay).first;
       await tester.tap(firstDay);
+      await tester.pumpAndSettle();
+
+      // Detail card is visible: the stub has no logs so "Nessun dato registrato"
+      // and the "Modifica giornata" edit button must both appear.
+      expect(find.text('Nessun dato registrato'), findsOneWidget);
+      expect(find.text('Modifica giornata'), findsOneWidget);
+    });
+
+    testWidgets(
+        'tapping "Modifica giornata" in the day-detail card navigates to /daily-entry/:date',
+        (tester) async {
+      await tester.pumpWidget(
+        _wrapWithRouter([
+          calendarMonthProvider.overrideWith(_StubCalendarMonthNotifier.new),
+        ]),
+      );
+      await tester.pumpAndSettle();
+
+      // First tap: select a day to reveal the detail card.
+      final firstDay = find.byType(CalendarDay).first;
+      await tester.tap(firstDay);
+      await tester.pumpAndSettle();
+
+      // Second tap: tap the edit button inside the detail card.
+      await tester.tap(find.text('Modifica giornata'));
       await tester.pumpAndSettle();
 
       expect(find.text('daily-entry-stub'), findsOneWidget);

@@ -31,6 +31,7 @@ import '../../l10n/app_localizations.dart';
 import 'state/calendar_month_controller.dart';
 import 'state/prediction_controller.dart';
 import 'widgets/calendar_day.dart';
+import 'widgets/calendar_legend.dart';
 import 'widgets/month_navigator.dart';
 
 /// The main calendar screen (tab 1).
@@ -49,6 +50,8 @@ class CalendarScreen extends ConsumerStatefulWidget {
 }
 
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
+  DateTime? _selectedDate;
+
   /// Builds locale-aware single-character day-of-week headers, Monday first.
   ///
   /// 2024-01-01 is a Monday, so iterating i=0..6 over that week gives Mon→Sun.
@@ -138,8 +141,20 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     l10n: l10n,
                     locale: locale,
                     prediction: prediction,
+                    selectedDate: _selectedDate,
+                    onDaySelected: (date) =>
+                        setState(() => _selectedDate = date),
                   ),
                 ),
+                const CalendarLegend(),
+                if (_selectedDate != null)
+                  _DayDetailCard(
+                    selectedDate: _selectedDate!,
+                    log: monthState.logs[_selectedDate],
+                    l10n: l10n,
+                    locale: locale,
+                    isDark: isDark,
+                  ),
               ],
             );
           },
@@ -206,7 +221,9 @@ class _CalendarGrid extends StatelessWidget {
     required this.today,
     required this.l10n,
     required this.locale,
+    required this.onDaySelected,
     this.prediction,
+    this.selectedDate,
   });
 
   final int year;
@@ -216,6 +233,8 @@ class _CalendarGrid extends StatelessWidget {
   final AppLocalizations l10n;
   final String locale;
   final CyclePrediction? prediction;
+  final DateTime? selectedDate;
+  final ValueChanged<DateTime> onDaySelected;
 
   /// Number of blank leading cells before day 1.
   /// Dart's DateTime.weekday: 1=Monday…7=Sunday. We want Monday first → offset = weekday - 1.
@@ -307,11 +326,155 @@ class _CalendarGrid extends StatelessWidget {
           hasPrediction: hasPrediction,
           hasNote: hasNote,
           isToday: isToday,
-          onTap: () => context.push(
-            '/daily-entry/${date.toIso8601String().substring(0, 10)}',
-          ),
+          isSelected: selectedDate == date,
+          onTap: () => onDaySelected(date),
         );
       },
+    );
+  }
+}
+
+class _DayDetailCard extends StatelessWidget {
+  const _DayDetailCard({
+    required this.selectedDate,
+    required this.l10n,
+    required this.locale,
+    required this.isDark,
+    this.log,
+  });
+
+  final DateTime selectedDate;
+  final DailyLogEntity? log;
+  final AppLocalizations l10n;
+  final String locale;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final bgSurface =
+        isDark ? MetraColors.dark.bgSurface : MetraColors.light.bgSurface;
+    final textPrimary =
+        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
+    final textSecondary = isDark
+        ? MetraColors.dark.textSecondary
+        : MetraColors.light.textSecondary;
+    final accentFlow =
+        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
+    final borderColor = isDark ? Colors.white12 : Colors.black12;
+
+    final hasData = log != null;
+    final weekday = intl.DateFormat.EEEE(locale).format(selectedDate);
+    final dayMonth = intl.DateFormat('d MMMM', locale).format(selectedDate);
+    final dateLabel =
+        '${weekday.substring(0, 1).toUpperCase()}${weekday.substring(1)} $dayMonth';
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: bgSurface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                dateLabel,
+                style: MetraTypography.titleMd.copyWith(color: textPrimary),
+              ),
+              if (!hasData)
+                Text(
+                  l10n.calendar_day_detail_no_data,
+                  style: MetraTypography.caption.copyWith(
+                    color: textSecondary,
+                    fontStyle: FontStyle.italic,
+                  ),
+                )
+              else
+                _FlowBadge(log: log!, isDark: isDark),
+            ],
+          ),
+          const SizedBox(height: 12),
+          GestureDetector(
+            onTap: () => context.push(
+              '/daily-entry/${selectedDate.toIso8601String().substring(0, 10)}',
+            ),
+            child: Container(
+              height: 44,
+              decoration: BoxDecoration(
+                color: accentFlow.withValues(alpha: 0.06),
+                border: Border.all(color: accentFlow.withValues(alpha: 0.13)),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.edit_outlined, size: 16, color: accentFlow),
+                  const SizedBox(width: 6),
+                  Text(
+                    l10n.calendar_day_detail_edit,
+                    style: MetraTypography.body.copyWith(
+                      color: textPrimary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FlowBadge extends StatelessWidget {
+  const _FlowBadge({required this.log, required this.isDark});
+
+  final DailyLogEntity log;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final accentFlow =
+        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
+
+    String? label;
+    if (log.flowType == FlowType.mestruazioni && log.flowIntensity != null) {
+      label = switch (log.flowIntensity!) {
+        FlowIntensity.light => l10n.daily_entry_flow_light,
+        FlowIntensity.medium => l10n.daily_entry_flow_medium,
+        FlowIntensity.heavy => l10n.daily_entry_flow_heavy,
+        FlowIntensity.veryHeavy => l10n.daily_entry_flow_veryHeavy,
+      };
+    } else if (log.flowType == FlowType.spotting) {
+      label = l10n.daily_entry_flow_chip_spotting;
+    } else if (log.flowType == FlowType.assente) {
+      label = l10n.daily_entry_flow_chip_assente;
+    }
+
+    if (label == null) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: accentFlow.withValues(alpha: 0.09),
+        border: Border.all(color: accentFlow.withValues(alpha: 0.27)),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        label,
+        style: MetraTypography.caption.copyWith(
+          fontWeight: FontWeight.w500,
+          color: accentFlow,
+        ),
+      ),
     );
   }
 }

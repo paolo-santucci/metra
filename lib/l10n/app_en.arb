@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "@@last_modified": "2026-04-28",
+  "@@last_modified": "2026-04-30",
 
   "common_appName": "Mētra",
   "common_loading": "Loading…",
@@ -469,5 +469,35 @@
   "nav_oggi": "Today",
   "@nav_oggi": {"description": "Bottom nav tab: today entry"},
   "nav_archivio": "Archive",
-  "@nav_archivio": {"description": "Bottom nav tab: archive/timeline"}
+  "@nav_archivio": {"description": "Bottom nav tab: archive/timeline"},
+
+  "calendar_legend_mestruazioni": "Menstruation",
+  "@calendar_legend_mestruazioni": {
+    "description": "Calendar legend: flow/mestruazioni chip label"
+  },
+  "calendar_legend_sintomi": "Symptoms",
+  "@calendar_legend_sintomi": {
+    "description": "Calendar legend: symptoms chip label"
+  },
+  "calendar_legend_dolore": "Pain",
+  "@calendar_legend_dolore": {
+    "description": "Calendar legend: pain chip label"
+  },
+  "calendar_day_detail_no_data": "No data logged",
+  "@calendar_day_detail_no_data": {
+    "description": "Calendar day detail card: empty state when no log exists"
+  },
+  "calendar_day_detail_edit": "Edit day",
+  "@calendar_day_detail_edit": {
+    "description": "Calendar day detail card: button to open historical entry screen"
+  },
+  "calendar_day_detail_cycle_day": "Cycle day {day}",
+  "@calendar_day_detail_cycle_day": {
+    "description": "Calendar day detail card: cycle day number",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  }
 }
