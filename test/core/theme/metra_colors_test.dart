@@ -21,42 +21,58 @@ import 'package:metra/core/theme/metra_colors.dart';
 
 void main() {
   group('MetraColors light palette', () {
-    test('terracotta matches tokens.json', () {
+    test('terracotta matches design HTML', () {
       expect(MetraColors.light.terracotta, const Color(0xFFC87456));
     });
 
-    test('terracottaDeep matches tokens.json', () {
+    test('terracottaDeep matches design HTML', () {
       expect(MetraColors.light.terracottaDeep, const Color(0xFF9B4E32));
     });
 
-    test('sand matches tokens.json', () {
+    test('sand matches design HTML', () {
       expect(MetraColors.light.sand, const Color(0xFFF4EDE2));
     });
 
-    test('ink matches tokens.json', () {
+    test('ink matches design HTML', () {
       expect(MetraColors.light.ink, const Color(0xFF2B2521));
     });
 
-    test('nightLavender matches tokens.json', () {
+    test('nightLavender matches design HTML', () {
       expect(MetraColors.light.nightLavender, const Color(0xFF5B4E7A));
+    });
+
+    test('malva matches design HTML (pain accent)', () {
+      expect(MetraColors.light.malva, const Color(0xFF9E7488));
+    });
+
+    test('accentPain semantic alias maps to malva', () {
+      expect(MetraColors.light.accentPain, MetraColors.light.malva);
     });
   });
 
   group('MetraColors dark palette', () {
-    test('deepNight matches tokens.json', () {
+    test('deepNight matches design HTML', () {
       expect(MetraColors.dark.deepNight, const Color(0xFF1A1410));
     });
 
-    test('ivory matches tokens.json', () {
+    test('ivory matches design HTML', () {
       expect(MetraColors.dark.ivory, const Color(0xFFEDE4D3));
     });
 
-    test('mutedTerracotta matches tokens.json', () {
+    test('mutedTerracotta matches design HTML', () {
       expect(MetraColors.dark.mutedTerracotta, const Color(0xFFB86848));
     });
 
-    test('lightLavender matches tokens.json', () {
+    test('lightLavender matches design HTML', () {
       expect(MetraColors.dark.lightLavender, const Color(0xFF9B8FBF));
+    });
+
+    test('malvaLight matches design HTML (pain accent, dark)', () {
+      expect(MetraColors.dark.malvaLight, const Color(0xFFC4A0B4));
+    });
+
+    test('accentPain semantic alias maps to malvaLight', () {
+      expect(MetraColors.dark.accentPain, MetraColors.dark.malvaLight);
     });
   });
 

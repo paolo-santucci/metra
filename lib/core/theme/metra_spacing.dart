@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
-// Spacing, radius, and motion tokens sourced from mockup/tokens.json.
+// Spacing, radius, and motion tokens sourced from design/Métra Screens Light.html.
 abstract final class MetraSpacing {
   static const double s0 = 0;
   static const double s1 = 4;

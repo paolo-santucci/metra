@@ -18,7 +18,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// Typography sourced from mockup/tokens.json §typography.
+// Typography sourced from design/Métra Screens Light.html (DM Serif Display + Inter).
 // Wordmark: 'Mētra' — literal ē (U+0113), never a Unicode escape.
 abstract final class MetraTypography {
   // Scale entries map 1:1 to tokens.json §typography.scale.

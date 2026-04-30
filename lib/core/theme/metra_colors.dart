@@ -17,8 +17,10 @@
 
 import 'package:flutter/material.dart';
 
-// Design tokens sourced from mockup/tokens.json §colors.
-// Field names mirror JSON keys. Never add a color here that is not in tokens.json.
+// Design tokens sourced from design/Métra Screens Light.html and Dark.html
+// (the live design system; was mockup/tokens.json before P-A reconciliation).
+// Field names mirror the C palette in the design HTML files.
+// Never add a color here that is not in the design HTML.
 @immutable
 final class _LightPalette {
   const _LightPalette();
@@ -30,6 +32,7 @@ final class _LightPalette {
   final Color dustyOchre = const Color(0xFFD4A26A);
   final Color dustyOchreDeep = const Color(0xFF8A6332);
   final Color nightLavender = const Color(0xFF5B4E7A);
+  final Color malva = const Color(0xFF9E7488);
   final Color moss = const Color(0xFF7A8471);
   final Color mossDeep = const Color(0xFF4F5A47);
   final Color ink = const Color(0xFF2B2521);
@@ -56,6 +59,7 @@ final class _LightPalette {
   Color get accentPrediction => nightLavender;
   Color get accentWarmth => dustyOchre;
   Color get accentWarmthStrong => dustyOchreDeep;
+  Color get accentPain => malva;
   Color get accentConfirmation => moss;
   Color get accentConfirmationStrong => mossDeep;
   Color get borderSubtle => divider;
@@ -79,6 +83,7 @@ final class _DarkPalette {
   final Color mutedTerracotta = const Color(0xFFB86848);
   final Color mutedTerracottaSoft = const Color(0xFFD88B6E);
   final Color lightLavender = const Color(0xFF9B8FBF);
+  final Color malvaLight = const Color(0xFFC4A0B4);
   final Color warmOchreDark = const Color(0xFFC09060);
   final Color mossDark = const Color(0xFF8A9580);
   final Color ivory = const Color(0xFFEDE4D3);
@@ -103,6 +108,7 @@ final class _DarkPalette {
   Color get accentPrediction => lightLavender;
   Color get accentWarmth => warmOchreDark;
   Color get accentWarmthStrong => warmOchreDark;
+  Color get accentPain => malvaLight;
   Color get accentConfirmation => mossDark;
   Color get accentConfirmationStrong => mossDark;
   Color get borderSubtle => dividerDark;
