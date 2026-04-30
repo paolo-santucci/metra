@@ -1,17 +1,12 @@
 ---
 layout: page
+title: Mētra
+subtitle: An app for listening to your own rhythm.
 ---
 
 <div markdown="1" align="center">
   
-# Mētra
-
-*An app for listening to your own rhythm.*
-
-[![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-2B2521?style=flat-square)](https://www.gnu.org/licenses/gpl-3.0)
-[![Flutter](https://img.shields.io/badge/Flutter-3.x-2B2521?style=flat-square&logo=flutter&logoColor=C87456)](https://flutter.dev)
-[![Status](https://img.shields.io/badge/Status-In%20development-C87456?style=flat-square)]()
-[![Privacy](https://img.shields.io/badge/Data-Local--first-7A8471?style=flat-square)]()
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-2B2521?style=flat-square)](https://www.gnu.org/licenses/gpl-3.0) [![Flutter](https://img.shields.io/badge/Flutter-3.x-2B2521?style=flat-square&logo=flutter&logoColor=C87456)](https://flutter.dev) [![Status](https://img.shields.io/badge/Status-In%20development-C87456?style=flat-square)]() [![Privacy](https://img.shields.io/badge/Data-Local--first-7A8471?style=flat-square)]()
 
 </div>
 
@@ -73,26 +68,6 @@ It is an intimate digital notebook — closer to a Moleskine than a fitness app.
 | -------- | -------------- |
 | Android  | In development |
 | iOS      | In development |
-
-
------
-
-## Roadmap
-
-```
-Phase 0  [weeks 1–2]    Setup + encrypted database
-Phase 1  [weeks 3–4]    Daily log + base calendar
-Phase 2  [weeks 5–6]    Timeline, Table, Statistics
-Phase 3  [week 7]       WMA prediction + notifications
-Phase 4  [week 8]       Settings, IT/EN localization, dark mode
-Phase 5  [weeks 9–10]   CSV export/import
-Phase 6  [weeks 11–14]  E2E cloud sync
-Phase 7  [weeks 15–16]  Accessibility, onboarding, store submission
-```
-
-The repository is in its early stages. Code will be added as development progresses.
-
------
 
 
 -----
