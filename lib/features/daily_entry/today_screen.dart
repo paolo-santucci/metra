@@ -51,7 +51,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
   FlowType? _flowType;
   FlowIntensity? _flowIntensity;
   FlowIntensity? _lastMensIntensity;
-  PainLevel _painLevel = PainLevel.none;
+  int? _painIntensity;
   Set<PainSymptomType> _selectedSymptoms = {};
   late final TextEditingController _notesController;
 
@@ -86,7 +86,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
     setState(() {
       _flowType = log.flowType;
       _flowIntensity = log.flowIntensity;
-      _painLevel = _toPainLevel(log);
+      _painIntensity = log.painEnabled ? log.painIntensity : null;
       if (log.notes != null) _notesController.text = log.notes!;
     });
   }
@@ -99,27 +99,9 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
     });
   }
 
-  PainLevel _toPainLevel(DailyLogEntity entity) {
-    if (!entity.painEnabled || entity.painIntensity == null) {
-      return PainLevel.none;
-    }
-    final p = entity.painIntensity!;
-    if (p <= 3) return PainLevel.mild;
-    if (p <= 6) return PainLevel.moderate;
-    return PainLevel.intense;
-  }
-
-  int? _painLevelToIntensity(PainLevel level) => switch (level) {
-        PainLevel.none => null,
-        PainLevel.mild => 3,
-        PainLevel.moderate => 6,
-        PainLevel.intense => 9,
-      };
-
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context)!;
     final notifier = ref.read(dailyEntryProvider(_today).notifier);
-    final intensity = _painLevelToIntensity(_painLevel);
     final notesText = _notesController.text.trim();
 
     await notifier.save(
@@ -127,8 +109,8 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
         date: _today,
         flowType: _flowType,
         flowIntensity: _flowType == FlowType.mestruazioni ? _flowIntensity : null,
-        painEnabled: _painLevel != PainLevel.none,
-        painIntensity: intensity,
+        painEnabled: _painIntensity != null,
+        painIntensity: _painIntensity,
         notesEnabled: notesText.isNotEmpty,
         notes: notesText.isNotEmpty ? notesText : null,
       ),
@@ -307,8 +289,8 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                     ),
                     const SizedBox(height: MetraSpacing.s4),
                     CirclePainPicker(
-                      level: _painLevel,
-                      onChanged: (l) => setState(() => _painLevel = l),
+                      selected: _painIntensity,
+                      onChanged: (v) => setState(() => _painIntensity = v),
                     ),
                     const SizedBox(height: MetraSpacing.s6),
                     Divider(color: dividerColor, thickness: 1, height: 1),

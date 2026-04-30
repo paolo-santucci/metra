@@ -20,27 +20,25 @@ import '../../../core/theme/metra_colors.dart';
 import '../../../core/theme/metra_typography.dart';
 import '../../../l10n/app_localizations.dart';
 
-enum PainLevel { none, mild, moderate, intense }
-
-/// Four equal lavender circles (56 dp each) for quick pain level selection.
-/// none=white-outlined, mild/moderate/intense=increasing lavender fill.
+/// Four malva circles (36 dp) for quick pain level selection.
+/// null = not logged (no ring); 0=Nessuno (outlined); 1–3 = increasing fill.
+/// Tapping the already-selected circle calls onChanged(null) to deselect.
 class CirclePainPicker extends StatelessWidget {
   const CirclePainPicker({
     super.key,
-    required this.level,
+    required this.selected,
     required this.onChanged,
   });
 
-  final PainLevel level;
-  final ValueChanged<PainLevel> onChanged;
+  final int? selected;
+  final ValueChanged<int?> onChanged;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accent = isDark
-        ? MetraColors.dark.accentPrediction
-        : MetraColors.light.accentPrediction;
+    final accent =
+        isDark ? MetraColors.dark.accentPain : MetraColors.light.accentPain;
     final bgPrimary =
         isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
     final textPrimary =
@@ -59,38 +57,42 @@ class CirclePainPicker extends StatelessWidget {
           fillColor: bgPrimary,
           showBorder: true,
           borderColor: borderColor,
-          selected: level == PainLevel.none,
+          value: 0,
+          selected: selected,
           accent: accent,
           textPrimary: textPrimary,
           textSecondary: textSecondary,
-          onTap: () => onChanged(PainLevel.none),
+          onTap: () => onChanged(selected == 0 ? null : 0),
         ),
         _PainCircle(
           label: l10n.daily_entry_pain_mild,
           fillColor: accent.withValues(alpha: 0.25),
-          selected: level == PainLevel.mild,
+          value: 1,
+          selected: selected,
           accent: accent,
           textPrimary: textPrimary,
           textSecondary: textSecondary,
-          onTap: () => onChanged(PainLevel.mild),
+          onTap: () => onChanged(selected == 1 ? null : 1),
         ),
         _PainCircle(
           label: l10n.daily_entry_pain_moderate,
           fillColor: accent.withValues(alpha: 0.55),
-          selected: level == PainLevel.moderate,
+          value: 2,
+          selected: selected,
           accent: accent,
           textPrimary: textPrimary,
           textSecondary: textSecondary,
-          onTap: () => onChanged(PainLevel.moderate),
+          onTap: () => onChanged(selected == 2 ? null : 2),
         ),
         _PainCircle(
           label: l10n.daily_entry_pain_severe,
           fillColor: accent.withValues(alpha: 0.90),
-          selected: level == PainLevel.intense,
+          value: 3,
+          selected: selected,
           accent: accent,
           textPrimary: textPrimary,
           textSecondary: textSecondary,
-          onTap: () => onChanged(PainLevel.intense),
+          onTap: () => onChanged(selected == 3 ? null : 3),
         ),
       ],
     );
@@ -101,6 +103,7 @@ class _PainCircle extends StatelessWidget {
   const _PainCircle({
     required this.label,
     required this.fillColor,
+    required this.value,
     required this.selected,
     required this.accent,
     required this.textPrimary,
@@ -112,7 +115,8 @@ class _PainCircle extends StatelessWidget {
 
   final String label;
   final Color fillColor;
-  final bool selected;
+  final int value;
+  final int? selected;
   final Color accent;
   final Color textPrimary;
   final Color textSecondary;
@@ -122,7 +126,8 @@ class _PainCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final BorderSide side = selected
+    final isSelected = selected == value;
+    final BorderSide side = isSelected
         ? BorderSide(color: accent, width: 2.5)
         : (showBorder && borderColor != null
             ? BorderSide(color: borderColor!, width: 1.5)
@@ -137,12 +142,12 @@ class _PainCircle extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
-              width: 72,
-              height: 72,
+              width: 48,
+              height: 48,
               child: Center(
                 child: Container(
-                  width: 56,
-                  height: 56,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: fillColor,
@@ -155,8 +160,8 @@ class _PainCircle extends StatelessWidget {
               label,
               textAlign: TextAlign.center,
               style: MetraTypography.tiny.copyWith(
-                color: selected ? textPrimary : textSecondary,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                color: isSelected ? textPrimary : textSecondary,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
               ),
             ),
           ],
