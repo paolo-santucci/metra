@@ -1,5 +1,5 @@
 ---
-layout: home
+layout: page
 title: Mētra
 subtitle: An app for listening to your own rhythm.
 ---
