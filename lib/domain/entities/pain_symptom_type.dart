@@ -15,4 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
-enum PainSymptomType { cramps, backPain, headache, migraine, bloating, custom }
+enum PainSymptomType {
+  cramps,
+  backPain,
+  headache,
+  migraine,
+  bloating,
+  custom,
+  fatigue,
+  nausea,
+  breastTenderness,
+}

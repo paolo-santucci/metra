@@ -90,6 +90,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get daily_entry_symptom_custom => 'Custom';
 
   @override
+  String get daily_entry_symptom_fatigue => 'Fatigue';
+
+  @override
+  String get daily_entry_symptom_nausea => 'Nausea';
+
+  @override
+  String get daily_entry_symptom_breastTenderness => 'Breast tenderness';
+
+  @override
   String get daily_entry_symptom_custom_placeholder => 'Symptom name…';
 
   @override

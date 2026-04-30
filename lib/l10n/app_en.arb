@@ -30,6 +30,18 @@
   "daily_entry_symptom_migraine": "Migraine",
   "daily_entry_symptom_bloating": "Bloating",
   "daily_entry_symptom_custom": "Custom",
+  "daily_entry_symptom_fatigue": "Fatigue",
+  "@daily_entry_symptom_fatigue": {
+    "description": "Symptom chip: fatigue"
+  },
+  "daily_entry_symptom_nausea": "Nausea",
+  "@daily_entry_symptom_nausea": {
+    "description": "Symptom chip: nausea"
+  },
+  "daily_entry_symptom_breastTenderness": "Breast tenderness",
+  "@daily_entry_symptom_breastTenderness": {
+    "description": "Symptom chip: breast tenderness"
+  },
   "daily_entry_symptom_custom_placeholder": "Symptom name…",
   "daily_entry_notes_label": "Notes",
   "daily_entry_notes_placeholder": "Add a note…",

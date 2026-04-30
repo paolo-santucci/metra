@@ -24,8 +24,8 @@ import '../../../l10n/app_localizations.dart';
 
 /// Multi-select row of chips for fixed pain symptom types.
 ///
-/// Supported types: cramps, backPain, headache, migraine, bloating.
-/// The custom type is omitted from this row (handled separately if needed).
+/// Supported types: cramps, headache, fatigue, backPain, nausea, bloating,
+/// breastTenderness. The custom type is omitted from this row.
 class SymptomChipsRow extends StatelessWidget {
   const SymptomChipsRow({
     super.key,
@@ -38,10 +38,12 @@ class SymptomChipsRow extends StatelessWidget {
 
   static const List<PainSymptomType> _fixedTypes = [
     PainSymptomType.cramps,
-    PainSymptomType.backPain,
     PainSymptomType.headache,
-    PainSymptomType.migraine,
+    PainSymptomType.fatigue,
+    PainSymptomType.backPain,
+    PainSymptomType.nausea,
     PainSymptomType.bloating,
+    PainSymptomType.breastTenderness,
   ];
 
   String _label(PainSymptomType type, AppLocalizations l10n) {
@@ -58,6 +60,12 @@ class SymptomChipsRow extends StatelessWidget {
         return l10n.daily_entry_symptom_bloating;
       case PainSymptomType.custom:
         return l10n.daily_entry_symptom_custom;
+      case PainSymptomType.fatigue:
+        return l10n.daily_entry_symptom_fatigue;
+      case PainSymptomType.nausea:
+        return l10n.daily_entry_symptom_nausea;
+      case PainSymptomType.breastTenderness:
+        return l10n.daily_entry_symptom_breastTenderness;
     }
   }
 

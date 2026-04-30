@@ -260,6 +260,24 @@ abstract class AppLocalizations {
   /// **'Personalizzato'**
   String get daily_entry_symptom_custom;
 
+  /// Symptom chip: fatigue
+  ///
+  /// In it, this message translates to:
+  /// **'Stanchezza'**
+  String get daily_entry_symptom_fatigue;
+
+  /// Symptom chip: nausea
+  ///
+  /// In it, this message translates to:
+  /// **'Nausea'**
+  String get daily_entry_symptom_nausea;
+
+  /// Symptom chip: breast tenderness
+  ///
+  /// In it, this message translates to:
+  /// **'Tensione mammaria'**
+  String get daily_entry_symptom_breastTenderness;
+
   /// Placeholder text for the custom symptom name input field
   ///
   /// In it, this message translates to:

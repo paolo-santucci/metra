@@ -131,7 +131,7 @@ void main() {
       expect(result!.points, hasLength(1));
     });
 
-    test('symptomFrequencies contains all 5 fixed types', () async {
+    test('symptomFrequencies contains all 8 fixed types', () async {
       final uc = ComputeCycleStats(
         _makeGetCycleSummaries(
           cycles: [
@@ -154,6 +154,9 @@ void main() {
           PainSymptomType.headache,
           PainSymptomType.migraine,
           PainSymptomType.bloating,
+          PainSymptomType.fatigue,
+          PainSymptomType.nausea,
+          PainSymptomType.breastTenderness,
         ]),
       );
       expect(

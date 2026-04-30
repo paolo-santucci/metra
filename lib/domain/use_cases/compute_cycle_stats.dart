@@ -51,6 +51,9 @@ class ComputeCycleStats {
       PainSymptomType.headache,
       PainSymptomType.migraine,
       PainSymptomType.bloating,
+      PainSymptomType.fatigue,
+      PainSymptomType.nausea,
+      PainSymptomType.breastTenderness,
     ];
     final frequencies = <PainSymptomType, double>{
       for (final type in fixedTypes)

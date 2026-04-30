@@ -66,12 +66,14 @@ void main() {
       await tester.pumpWidget(_wrap());
       await tester.pumpAndSettle();
 
-      // SymptomChipsRow shows 5 fixed types (custom is excluded).
+      // SymptomChipsRow shows 7 fixed types (migraine and custom are excluded).
       expect(find.text('Crampi'), findsOneWidget);
-      expect(find.text('Mal di schiena'), findsOneWidget);
       expect(find.text('Mal di testa'), findsOneWidget);
-      expect(find.text('Emicrania'), findsOneWidget);
+      expect(find.text('Stanchezza'), findsOneWidget);
+      expect(find.text('Mal di schiena'), findsOneWidget);
+      expect(find.text('Nausea'), findsOneWidget);
       expect(find.text('Gonfiore'), findsOneWidget);
+      expect(find.text('Tensione mammaria'), findsOneWidget);
     });
 
     testWidgets('tapping a chip adds it to the selection', (tester) async {
@@ -133,7 +135,7 @@ void main() {
 
       await tester.tap(find.text('Crampi'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Emicrania'));
+      await tester.tap(find.text('Nausea'));
       await tester.pumpAndSettle();
 
       // Verify both ChoiceChipMetra widgets report selected=true.
@@ -144,14 +146,14 @@ void main() {
           matching: find.byType(ChoiceChipMetra),
         ),
       );
-      final migraineChip = tester.widget<ChoiceChipMetra>(
+      final nauseaChip = tester.widget<ChoiceChipMetra>(
         find.ancestor(
-          of: find.text('Emicrania'),
+          of: find.text('Nausea'),
           matching: find.byType(ChoiceChipMetra),
         ),
       );
       expect(crampsChip.selected, isTrue);
-      expect(migraineChip.selected, isTrue);
+      expect(nauseaChip.selected, isTrue);
     });
   });
 }

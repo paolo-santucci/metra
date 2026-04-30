@@ -49,8 +49,8 @@ class CycleStatsData {
   /// Chronologically ordered data points (oldest first).
   final List<CycleDataPoint> points;
 
-  /// Fraction [0.0–1.0] for each of the 5 fixed [PainSymptomType] values
+  /// Fraction [0.0–1.0] for each of the 8 fixed [PainSymptomType] values
   /// (i.e. all values except [PainSymptomType.custom]).
-  /// All 5 types are always present in the map.
+  /// All 8 types are always present in the map.
   final Map<PainSymptomType, double> symptomFrequencies;
 }

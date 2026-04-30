@@ -151,9 +151,11 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
   static const List<PainSymptomType> _symptomTypes = [
     PainSymptomType.cramps,
     PainSymptomType.headache,
-    PainSymptomType.bloating,
+    PainSymptomType.fatigue,
     PainSymptomType.backPain,
-    PainSymptomType.migraine,
+    PainSymptomType.nausea,
+    PainSymptomType.bloating,
+    PainSymptomType.breastTenderness,
   ];
 
   String _symptomLabel(PainSymptomType type, AppLocalizations l10n) =>
@@ -164,6 +166,10 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
         PainSymptomType.backPain => l10n.daily_entry_symptom_backPain,
         PainSymptomType.migraine => l10n.daily_entry_symptom_migraine,
         PainSymptomType.custom => l10n.daily_entry_symptom_custom,
+        PainSymptomType.fatigue => l10n.daily_entry_symptom_fatigue,
+        PainSymptomType.nausea => l10n.daily_entry_symptom_nausea,
+        PainSymptomType.breastTenderness =>
+          l10n.daily_entry_symptom_breastTenderness,
       };
 
   @override

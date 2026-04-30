@@ -244,6 +244,12 @@ class TimelineCard extends StatelessWidget {
         return l10n.daily_entry_symptom_migraine;
       case PainSymptomType.bloating:
         return l10n.daily_entry_symptom_bloating;
+      case PainSymptomType.fatigue:
+        return l10n.daily_entry_symptom_fatigue;
+      case PainSymptomType.nausea:
+        return l10n.daily_entry_symptom_nausea;
+      case PainSymptomType.breastTenderness:
+        return l10n.daily_entry_symptom_breastTenderness;
       case PainSymptomType.custom:
         // custom symptoms carry no fixed label; caller filters empty strings.
         return '';

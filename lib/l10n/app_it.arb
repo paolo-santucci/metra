@@ -137,6 +137,21 @@
     "description": "Symptom chip: custom user-defined symptom"
   },
 
+  "daily_entry_symptom_fatigue": "Stanchezza",
+  "@daily_entry_symptom_fatigue": {
+    "description": "Symptom chip: fatigue"
+  },
+
+  "daily_entry_symptom_nausea": "Nausea",
+  "@daily_entry_symptom_nausea": {
+    "description": "Symptom chip: nausea"
+  },
+
+  "daily_entry_symptom_breastTenderness": "Tensione mammaria",
+  "@daily_entry_symptom_breastTenderness": {
+    "description": "Symptom chip: breast tenderness"
+  },
+
   "daily_entry_symptom_custom_placeholder": "Nome del sintomo…",
   "@daily_entry_symptom_custom_placeholder": {
     "description": "Placeholder text for the custom symptom name input field"
