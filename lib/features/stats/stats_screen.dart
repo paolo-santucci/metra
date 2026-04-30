@@ -64,19 +64,19 @@ class StatsScreen extends ConsumerWidget {
               children: [
                 StatCard(
                   title: l10n.stats_cycle_length_title,
-                  child: statsData == null
+                  child: statsData == null || statsData.points.length < 3
                       ? _InsufficientData(l10n: l10n)
                       : CycleLengthChart(points: statsData.points),
                 ),
                 StatCard(
                   title: l10n.stats_period_length_title,
-                  child: statsData == null
+                  child: statsData == null || statsData.points.length < 3
                       ? _InsufficientData(l10n: l10n)
                       : PeriodLengthChart(points: statsData.points),
                 ),
                 StatCard(
                   title: l10n.stats_symptoms_title,
-                  child: statsData == null
+                  child: statsData == null || statsData.points.length < 3
                       ? _InsufficientData(l10n: l10n)
                       : SymptomFrequencyChart(
                           frequencies: statsData.symptomFrequencies,
@@ -84,7 +84,7 @@ class StatsScreen extends ConsumerWidget {
                 ),
                 StatCard(
                   title: l10n.stats_flow_title,
-                  child: statsData == null
+                  child: statsData == null || statsData.points.length < 3
                       ? _InsufficientData(l10n: l10n)
                       : FlowIntensityChart(points: statsData.points),
                 ),

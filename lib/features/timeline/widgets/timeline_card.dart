@@ -22,6 +22,7 @@ import 'package:intl/intl.dart' as intl;
 import '../../../core/theme/metra_colors.dart';
 import '../../../core/theme/metra_spacing.dart';
 import '../../../domain/entities/cycle_summary.dart';
+import '../../../domain/entities/flow_intensity.dart';
 import '../../../domain/entities/pain_symptom_type.dart';
 import '../../../l10n/app_localizations.dart';
 
@@ -80,22 +81,12 @@ class TimelineCard extends StatelessWidget {
 
     final String dateRangeText = inProgress ? startStr : '$startStr – $endStr';
 
-    // Comma-joined symptom labels; custom is intentionally skipped (returns '').
-    final List<String> symptomLabels = summary.symptoms
-        .map((t) => _symptomLabel(l10n, t))
-        .where((s) => s.isNotEmpty)
-        .toList();
-    final String symptomsText = symptomLabels.join(', ');
-
     final Color cardColor =
         isDark ? MetraColors.dark.bgSurface : MetraColors.light.bgSurface;
     final Color borderColor =
         isDark ? MetraColors.dark.borderSubtle : MetraColors.light.borderSubtle;
     final Color textPrimary =
         isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
-    final Color textSecondary = isDark
-        ? MetraColors.dark.textSecondary
-        : MetraColors.light.textSecondary;
     final Color barBg =
         isDark ? MetraColors.dark.bgSunken : MetraColors.light.bgSunken;
     final Color barFill =
@@ -183,17 +174,56 @@ class TimelineCard extends StatelessWidget {
                     );
                   },
                 ),
-                // Symptom row (only rendered when there are symptoms to show).
-                if (symptomsText.isNotEmpty) ...[
-                  const SizedBox(height: MetraSpacing.s2),
-                  Text(
-                    symptomsText,
-                    style: TextStyle(
-                      color: textSecondary,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
+                // Chip row: flow chip + up to 2 symptom chips.
+                Builder(
+                  builder: (context) {
+                    final flowChip = summary.dominantFlow != null;
+                    final symptomChips = summary.symptoms
+                        .where((t) => _symptomLabel(l10n, t).isNotEmpty)
+                        .take(2)
+                        .toList();
+                    if (!flowChip && symptomChips.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: MetraSpacing.s3),
+                        Wrap(
+                          spacing: MetraSpacing.s2,
+                          runSpacing: MetraSpacing.s2,
+                          children: [
+                            if (summary.dominantFlow != null)
+                              _TimelineChip(
+                                icon: Icons.water_drop,
+                                iconColor: isDark
+                                    ? MetraColors.dark.accentFlowStrong
+                                    : MetraColors.light.accentFlowStrong,
+                                label: _flowLabel(l10n, summary.dominantFlow!),
+                                bgColor: (isDark
+                                        ? MetraColors.dark.accentFlow
+                                        : MetraColors.light.accentFlow)
+                                    .withValues(alpha: 0.08),
+                              ),
+                            ...symptomChips.map(
+                              (type) => _TimelineChip(
+                                icon: Icons.star_border,
+                                iconColor: isDark
+                                    ? MetraColors.dark.accentWarmth
+                                    : MetraColors.light.accentWarmth,
+                                label: _symptomLabel(l10n, type),
+                                bgColor: (isDark
+                                        ? MetraColors.dark.accentWarmth
+                                        : MetraColors.light.accentWarmth)
+                                    .withValues(alpha: 0.10),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ],
             ),
           ),
@@ -218,5 +248,54 @@ class TimelineCard extends StatelessWidget {
         // custom symptoms carry no fixed label; caller filters empty strings.
         return '';
     }
+  }
+
+  String _flowLabel(AppLocalizations l10n, FlowIntensity intensity) {
+    return switch (intensity) {
+      FlowIntensity.light => l10n.daily_entry_flow_light,
+      FlowIntensity.medium => l10n.daily_entry_flow_medium,
+      FlowIntensity.heavy => l10n.daily_entry_flow_heavy,
+      FlowIntensity.veryHeavy => l10n.daily_entry_flow_veryHeavy,
+    };
+  }
+}
+
+class _TimelineChip extends StatelessWidget {
+  const _TimelineChip({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.bgColor,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final Color bgColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark
+        ? MetraColors.dark.textSecondary
+        : MetraColors.light.textSecondary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: iconColor),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(fontSize: 11, color: textColor),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -66,7 +66,32 @@ Widget _wrap(List<Override> overrides) {
   );
 }
 
-// Minimal CycleStatsData with 2 data points
+// Minimal CycleStatsData with 2 data points (below the 3-cycle gate)
+CycleStatsData _makeTwoPointData() => CycleStatsData(
+      points: [
+        CycleDataPoint(
+          startDate: DateTime.utc(2026, 1, 10),
+          cycleLength: 28,
+          periodLength: 5,
+          dominantFlow: FlowIntensity.medium,
+        ),
+        CycleDataPoint(
+          startDate: DateTime.utc(2026, 2, 7),
+          cycleLength: 30,
+          periodLength: 6,
+          dominantFlow: FlowIntensity.light,
+        ),
+      ],
+      symptomFrequencies: {
+        PainSymptomType.cramps: 0.8,
+        PainSymptomType.backPain: 0.4,
+        PainSymptomType.headache: 0.2,
+        PainSymptomType.migraine: 0.1,
+        PainSymptomType.bloating: 0.5,
+      },
+    );
+
+// CycleStatsData with 3 data points (meets the 3-cycle gate)
 CycleStatsData _makeStatsData() => CycleStatsData(
       points: [
         CycleDataPoint(
@@ -80,6 +105,12 @@ CycleStatsData _makeStatsData() => CycleStatsData(
           cycleLength: 30,
           periodLength: 6,
           dominantFlow: FlowIntensity.light,
+        ),
+        CycleDataPoint(
+          startDate: DateTime.utc(2026, 3, 9),
+          cycleLength: 29,
+          periodLength: 5,
+          dominantFlow: FlowIntensity.heavy,
         ),
       ],
       symptomFrequencies: {
@@ -117,6 +148,19 @@ void main() {
         (tester) async {
       await tester.pumpWidget(
         _wrap([statsProvider.overrideWith(() => _DataNotifier(null))]),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Dati insufficienti'), findsNWidgets(4));
+    });
+  });
+
+  group('StatsScreen — fewer than 3 cycles', () {
+    testWidgets('shows insufficient data text in all four stat cards',
+        (tester) async {
+      await tester.pumpWidget(
+        _wrap([
+          statsProvider.overrideWith(() => _DataNotifier(_makeTwoPointData())),
+        ]),
       );
       await tester.pumpAndSettle();
       expect(find.text('Dati insufficienti'), findsNWidgets(4));
