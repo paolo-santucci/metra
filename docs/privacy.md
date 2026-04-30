@@ -25,4 +25,4 @@ Métra can schedule a local notification when your predicted cycle window approa
 ## Contact
 
 Questions: paolo@paolosantucci.com  
-Source code: https://github.com/paolosantucci/metra
+Source code: https://github.com/paolo-santucci/metra
