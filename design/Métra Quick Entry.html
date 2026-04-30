@@ -117,94 +117,68 @@
       );
     }
 
-    /* ─── FLOW DOTS (riga unificata: Assente · Spotting ‖ Mestruazioni: Leggero · Moderato · Abbondante) ─── */
-    function FlowDots({ value = -2, onChange }) {
-      const [infoOpen, setInfoOpen] = useState(value === 0);
-      const accent = C.terracotta;
-      const accentDark = C.tc_scura;
-
-      const leftOpts = [
-        { id: -1, label: 'Assente',  size: 24, fillOp: 0, dashed: true  },
-        { id: 0,  label: 'Spotting', size: 24, fillOp: 0, dashed: false, dot: true, info: true },
+    /* ─── FLOW TYPE CHIPS ─── */
+    function FlowTypeChips({ value, onChange }) {
+      const types = [
+        { id: 'assente',      label: 'Assente',      variant: 'neutral' },
+        { id: 'mestruazioni', label: 'Mestruazioni', variant: 'flow'    },
+        { id: 'spotting',     label: 'Spotting',     variant: 'spot'    },
       ];
-      const rightOpts = [
-        { id: 1, label: 'Leggero',    size: 33, fillOp: 0.38 },
-        { id: 2, label: 'Moderato',   size: 43, fillOp: 0.68 },
-        { id: 3, label: 'Abbondante', size: 52, fillOp: 0.94 },
-      ];
-
-      const renderOpt = (opt) => {
-        const sel = value === opt.id;
-        const bx = Math.max(opt.size + 14, 44);
-        const cx = bx / 2;
-        const r  = opt.size / 2;
-        return (
-          <div key={opt.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7 }}>
-            <div onClick={() => onChange && onChange(sel ? -2 : opt.id)} style={{ cursor: 'pointer' }}>
-              <svg width={bx} height={bx} viewBox={`0 0 ${bx} ${bx}`} overflow="visible">
-                {sel && <circle cx={cx} cy={cx} r={r + 5.5}
-                  fill="none" stroke={accent} strokeWidth="1.2" opacity="0.32"
-                  strokeDasharray={opt.dashed ? '3 2' : undefined} />}
-                <circle cx={cx} cy={cx} r={r}
-                  fill={accent} fillOpacity={opt.fillOp}
-                  stroke={accent} strokeWidth={opt.dashed ? 0 : 1.4} />
-                {opt.dashed && <circle cx={cx} cy={cx} r={r}
-                  fill="none" stroke={accent} strokeWidth="1.4" strokeDasharray="3.5 2.5" />}
-                {opt.dot && <circle cx={cx} cy={cx} r={2.5}
-                  fill={accent} fillOpacity={0.65} />}
-              </svg>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-              <span onClick={() => onChange && onChange(sel ? -2 : opt.id)} style={{
-                fontFamily: 'Inter', fontSize: 10,
-                color: sel ? accentDark : 'rgba(43,37,33,0.4)',
-                fontWeight: sel ? 600 : 400, transition: 'color 0.15s', cursor: 'pointer'
-              }}>{opt.label}</span>
-              {opt.info && (
-                <span onClick={e => { e.stopPropagation(); setInfoOpen(v => !v); }}
-                  style={{ fontFamily: 'Inter', fontSize: 10, color: infoOpen ? C.terracotta : 'rgba(43,37,33,0.28)', cursor: 'pointer', lineHeight: 1, marginTop: 1 }}>ⓘ</span>
-              )}
-            </div>
-          </div>
-        );
-      };
-
       return (
-        <div style={{ userSelect: 'none' }}>
-          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
-            {/* Left cluster — unlabeled */}
-            {leftOpts.map(renderOpt)}
-
-            {/* Separator */}
-            <div style={{ width: 1, height: 40, alignSelf: 'center', flexShrink: 0, background: 'rgba(43,37,33,0.12)' }} />
-
-            {/* Right cluster — labeled "Mestruazioni" */}
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <div style={{
-                fontFamily: 'Inter', fontSize: 9, fontWeight: 600,
-                letterSpacing: '0.07em', textTransform: 'uppercase',
-                color: 'rgba(43,37,33,0.3)', marginBottom: 6, paddingLeft: 2
-              }}>Mestruazioni</div>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
-                {rightOpts.map(renderOpt)}
+        <div style={{ display: 'flex', gap: 8 }}>
+          {types.map(t => {
+            const sel = value === t.id;
+            const bg = !sel ? 'rgba(43,37,33,0.04)' :
+              t.variant === 'neutral' ? 'rgba(43,37,33,0.08)' :
+              t.variant === 'flow'    ? `${C.terracotta}22` :
+              `${C.terracotta}14`;
+            const border = !sel ? '1px solid rgba(43,37,33,0.1)' :
+              t.variant === 'neutral' ? '1.5px dashed rgba(43,37,33,0.32)' :
+              t.variant === 'flow'    ? `1.5px solid ${C.terracotta}BB` :
+              `1.5px solid ${C.terracotta}66`;
+            const textColor = !sel ? 'rgba(43,37,33,0.42)' :
+              t.variant === 'neutral' ? C.inchiostro : C.tc_scura;
+            return (
+              <div key={t.id} onClick={() => onChange(sel ? null : t.id)} style={{
+                flex: 1, height: 44, borderRadius: 12,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: bg, border, cursor: 'pointer', transition: 'all 0.15s'
+              }}>
+                <span style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: sel ? 500 : 400, color: textColor }}>
+                  {t.label}
+                </span>
               </div>
-            </div>
-          </div>
+            );
+          })}
+        </div>
+      );
+    }
 
-          {/* Spotting info panel */}
-          {infoOpen && (
-            <div style={{
-              marginTop: 12, padding: '10px 14px', borderRadius: 10,
-              background: `${C.terracotta}0D`, border: `1px solid ${C.terracotta}30`,
-              display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8
-            }}>
-              <span style={{ fontFamily: 'Inter', fontSize: 12, color: 'rgba(43,37,33,0.7)', lineHeight: 1.6, flex: 1 }}>
-                Perdite che <strong>non richiedono protezione assorbente</strong>. Se usi un assorbente seleziona <strong>Leggero</strong> o superiore.
-              </span>
-              <span onClick={() => setInfoOpen(false)}
-                style={{ fontFamily: 'Inter', fontSize: 16, color: 'rgba(43,37,33,0.3)', cursor: 'pointer', flexShrink: 0, lineHeight: 1, marginTop: 1 }}>×</span>
-            </div>
-          )}
+    /* ─── FLOW INTENSITY DOTS ─── */
+    function FlowIntensityDots({ value, onChange }) {
+      const R = 19, bx = (R + 7) * 2, cx = bx / 2;
+      const opts = [
+        { id: 1, label: 'Leggero',    fillOp: 0.30 },
+        { id: 2, label: 'Moderato',   fillOp: 0.65 },
+        { id: 3, label: 'Abbondante', fillOp: 0.94 },
+      ];
+      return (
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'center', paddingTop: 16, paddingBottom: 2 }}>
+          {opts.map(opt => {
+            const sel = value === opt.id;
+            return (
+              <div key={opt.id} onClick={() => onChange(sel ? null : opt.id)}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, cursor: 'pointer' }}>
+                <svg width={bx} height={bx} viewBox={`0 0 ${bx} ${bx}`}>
+                  {sel && <circle cx={cx} cy={cx} r={R + 5} fill="none" stroke={C.terracotta} strokeWidth="1.2" opacity="0.3" />}
+                  <circle cx={cx} cy={cx} r={R} fill={C.terracotta} fillOpacity={opt.fillOp} stroke={C.terracotta} strokeWidth="1.4" />
+                </svg>
+                <span style={{ fontFamily: 'Inter', fontSize: 10, color: sel ? C.tc_scura : 'rgba(43,37,33,0.4)', fontWeight: sel ? 600 : 400 }}>
+                  {opt.label}
+                </span>
+              </div>
+            );
+          })}
         </div>
       );
     }
@@ -262,13 +236,18 @@
     }
 
     /* ─── REGISTRATION SCREEN ─── */
-    function ScreenRegistrazione({ initFlow = -2, initPain = 0, initSymptoms = [] }) {
-      const [flow, setFlow] = useState(initFlow);
+    function ScreenRegistrazione({ initType = null, initIntensity = null, initPain = 0, initSymptoms = [] }) {
+      const [flowType, setFlowType] = useState(initType);
+      const [flowIntensity, setFlowIntensity] = useState(initIntensity);
       const [pain, setPain] = useState(initPain);
       const [symptoms, setSymptoms] = useState(new Set(initSymptoms));
 
       const SYMPTOMS = ['Crampi', 'Mal di testa', 'Stanchezza', 'Mal di schiena', 'Nausea'];
       const toggleSym = s => setSymptoms(prev => { const n = new Set(prev); n.has(s) ? n.delete(s) : n.add(s); return n; });
+      const handleFlowType = t => {
+        setFlowType(t);
+        setFlowIntensity(t === 'mestruazioni' ? 2 : null);
+      };
 
       return (
         <div style={{ background: C.sabbia, minHeight: '100%', paddingBottom: 110 }}>
@@ -284,16 +263,29 @@
             <div style={{ background: C.surface, borderTop: '1px solid rgba(43,37,33,0.07)', borderBottom: '1px solid rgba(43,37,33,0.07)', padding: '18px 24px' }}>
               <SectionLabel>Flusso</SectionLabel>
 
-              {/* Unified row */}
-              <FlowDots value={flow} onChange={setFlow} />
+              <FlowTypeChips value={flowType} onChange={handleFlowType} />
+
+              {/* Mestruazioni → intensity dots */}
+              {flowType === 'mestruazioni' && (
+                <FlowIntensityDots value={flowIntensity} onChange={setFlowIntensity} />
+              )}
+
+              {/* Spotting → helper note */}
+              {flowType === 'spotting' && (
+                <div style={{ marginTop: 14, padding: '11px 14px', borderRadius: 10, background: `${C.terracotta}0D`, border: `1px solid ${C.terracotta}28` }}>
+                  <span style={{ fontFamily: 'Inter', fontSize: 12, color: 'rgba(43,37,33,0.65)', lineHeight: 1.55 }}>
+                    Piccola perdita fuori dal flusso mestruale. Non è necessariamente l'inizio del ciclo.
+                  </span>
+                </div>
+              )}
 
               {/* Assente → soft confirmation */}
-              {flow === -1 && (
+              {flowType === 'assente' && (
                 <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <path d="M5 12l5 5 9-9" stroke="rgba(43,37,33,0.35)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
-                  <span style={{ fontFamily: 'Inter', fontSize: 12, color: 'rgba(43,37,33,0.45)' }}>Nessun sanguinamento oggi</span>
+                  <span style={{ fontFamily: 'Inter', fontSize: 12, color: 'rgba(43,37,33,0.45)' }}>Nessun flusso oggi</span>
                 </div>
               )}
             </div>
@@ -336,7 +328,7 @@
             Mētra — Quick Entry
           </div>
           <div style={{ fontFamily: 'Inter', fontSize: 13, color: 'rgba(43,37,33,0.5)', marginTop: 6 }}>
-            Proposta: riga unificata con forma-goccia per Spotting — quattro stati interattivi
+            Proposta: chip tipo + intensità flusso — quattro stati interattivi
           </div>
         </div>
       );
@@ -467,21 +459,22 @@
               </Phone>
             </div>
             <div className="state-col">
-              <div className="state-label">② Spotting</div>
+              <div className="state-label">② Mestruazioni · Moderato</div>
               <Phone>
                 <ScreenRegistrazione
-                  initFlow={0}
-                  initPain={1}
+                  initType="mestruazioni"
+                  initIntensity={2}
+                  initPain={2}
+                  initSymptoms={['Crampi']}
                 />
               </Phone>
             </div>
             <div className="state-col">
-              <div className="state-label">③ Mestruazioni · Moderato</div>
+              <div className="state-label">③ Spotting</div>
               <Phone>
                 <ScreenRegistrazione
-                  initFlow={2}
-                  initPain={2}
-                  initSymptoms={['Crampi']}
+                  initType="spotting"
+                  initPain={1}
                 />
               </Phone>
             </div>
@@ -489,7 +482,7 @@
               <div className="state-label">④ Assente</div>
               <Phone>
                 <ScreenRegistrazione
-                  initFlow={-1}
+                  initType="assente"
                 />
               </Phone>
             </div>
@@ -498,7 +491,7 @@
           <Annotation />
 
           <div style={{ fontFamily: 'Inter', fontSize: 11, color: 'rgba(43,37,33,0.35)' }}>
-            Métra Design System · Quick Entry · Riga unificata FlowDots · Aprile 2026 · Tutti gli stati sono interattivi
+            Métra Design System · Quick Entry · Chip tipo + intensità flusso · Aprile 2026 · Tutti gli stati sono interattivi
           </div>
         </div>
       );
