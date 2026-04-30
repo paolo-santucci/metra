@@ -1,5 +1,6 @@
 ---
 title: Privacy Policy
+layout: page
 ---
 
 # Métra — Privacy Policy
