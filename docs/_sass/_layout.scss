@@ -84,7 +84,8 @@
   border-bottom: 1px solid $border-l;
   margin-bottom: 48px;
   text-align: center;
-
+  align-items: center;
+  
   &__eyebrow {
     font-size: $text-xs;
     font-weight: 600;
@@ -103,7 +104,6 @@
   &__subtitle {
     font-size: $text-lg;
     font-style: italic;
-    text-align: center;
     color: rgba($inchiostro, 0.55);
     max-width: 560px;
     margin: 0;
