@@ -13,8 +13,8 @@
 | P-A | Foundation reconciliation (theme tokens, wordmark) | ✅ done | `214d2ad` |
 | P-B | Flow domain migration (FlowType enum, schema v4) | ✅ done | `0f5b8b1` |
 | P-C | Daily entry widget overhaul (FlowTypeChips + FlowIntensityDots) | ✅ done | `c4f86de` |
-| P-D | Pain picker null state | 🔲 next | — |
-| P-E | Calendar visual + navigation | 🔲 pending | — |
+| P-D | Pain picker null state | ✅ done | `4fc46d8` |
+| P-E | Calendar visual + navigation | 🔲 next | — |
 | P-F | Archive timeline + Stats label fix | 🔲 pending | — |
 | P-G | Onboarding fixes | 🔲 pending | — |
 | P-H | Symptom defaults + l10n | 🔲 pending | — |
@@ -22,47 +22,7 @@
 
 ---
 
-## P-D — Pain picker null state (next task)
-
-**Goal**: Pain field distinguishes `null` (not logged) from `0` (Nessuno, explicit). Align color from lavanda → malva.
-
-### What's already true in the domain
-- `DailyLogEntity` has `painEnabled: bool` and `painIntensity: int?` (0–3).
-- Null-state semantics: `painEnabled=false, painIntensity=null` = not logged; `painEnabled=true, painIntensity=0` = Nessuno (explicit).
-
-### `CirclePainPicker` changes needed (`lib/features/daily_entry/widgets/circle_pain_picker.dart`)
-- Delete the `PainLevel` enum.
-- Change signature to `int? selected` + `ValueChanged<int?> onChanged`.
-- 4 circles: 0=Nessuno, 1=Lieve, 2=Moderato, 3=Intenso. Null = nothing selected (no ring).
-- Tap-to-deselect: tapping already-selected circle calls `onChanged(null)`.
-- Color: change `accentPrediction` → `accentPain` (malva token already exists in `MetraColors`).
-- Dot size: reduce from 56dp to 36dp diameter (R=18, matching `FlowIntensityDots`).
-- Fill opacities: Nessuno = white/outlined only, Lieve ≈ 0.25, Moderato ≈ 0.55, Intenso ≈ 0.90.
-
-### `today_screen.dart` changes needed (`lib/features/daily_entry/today_screen.dart`)
-- Remove `PainLevel _painLevel = PainLevel.none`.
-- Add `int? _painIntensity;` (null = not logged).
-- Remove `_toPainLevel()` / `_painLevelToIntensity()` helper methods.
-- In `_initFromLog(log)`: `_painIntensity = log.painEnabled ? log.painIntensity : null`.
-- In `_buildEntity()`: `painEnabled: _painIntensity != null, painIntensity: _painIntensity`.
-- Wire `CirclePainPicker(selected: _painIntensity, onChanged: (v) => setState(() => _painIntensity = v))`.
-
-### `historical_entry_screen.dart` — no widget change needed
-- Already uses `PainIntensitySlider` (0–3 slider) with `_painEnabled` toggle.
-- The `_painEnabled=false` path correctly saves `painEnabled: false, painIntensity: null`.
-- No regression expected; verify `_initFromLog` reads `log.painEnabled` correctly (line 112–113).
-
-### Tests to add/update
-- `test/features/daily_entry/widgets/circle_pain_picker_test.dart` (new):
-  - null state: no circle has selection ring.
-  - Tap circle 2: `onChanged(2)` called.
-  - Tap already-selected circle 2 again: `onChanged(null)` called.
-  - Circle 0 (Nessuno) tap: `onChanged(0)`.
-- Update `today_screen` widget test if it existed (check: `test/features/daily_entry/`).
-
----
-
-## P-E — Calendar visual + navigation (after P-D)
+## P-E — Calendar visual + navigation (next task)
 
 - Replace dashed prediction outline with solid 1.5px lavanda border + lavanda `drop_outline` icon.
 - Add calendar legend row (4 chips).
@@ -102,8 +62,8 @@
 | `lib/domain/entities/daily_log_entity.dart` | Main log entity (flowType, flowIntensity, painEnabled, painIntensity) |
 | `lib/features/daily_entry/widgets/flow_type_chips.dart` | New P-C widget |
 | `lib/features/daily_entry/widgets/flow_intensity_dots.dart` | New P-C widget |
-| `lib/features/daily_entry/widgets/circle_pain_picker.dart` | P-D target — needs null state + color fix |
-| `lib/features/daily_entry/today_screen.dart` | P-D target — remove PainLevel, use int? |
+| `lib/features/daily_entry/widgets/circle_pain_picker.dart` | P-D done — int? selected, malva, 36dp, tap-to-deselect |
+| `lib/features/daily_entry/today_screen.dart` | P-D done — int? _painIntensity replaces PainLevel |
 | `lib/features/calendar/widgets/calendar_day.dart` | P-E target — prediction visual |
 | `lib/core/theme/metra_colors.dart` | Token source — `accentPain` = malva |
 | `lib/l10n/app_it.arb` | All Italian copy |
