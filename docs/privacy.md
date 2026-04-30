@@ -1,3 +1,7 @@
+---
+title: Privacy Policy
+---
+
 # Métra — Privacy Policy
 
 **Last updated: 2026-04-29**
