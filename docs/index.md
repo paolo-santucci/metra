@@ -1,4 +1,4 @@
-# Mētra
+<div markdown="1" align="center">
 
 *An app for listening to your own rhythm.*
 
@@ -6,6 +6,8 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-2B2521?style=flat-square&logo=flutter&logoColor=C87456)](https://flutter.dev)
 [![Status](https://img.shields.io/badge/Status-In%20development-C87456?style=flat-square)]()
 [![Privacy](https://img.shields.io/badge/Data-Local--first-7A8471?style=flat-square)]()
+
+</div>
 
 -----
 
@@ -106,7 +108,7 @@ The privacy policy is published on [GitHub Pages](../../).
 
 -----
 
-<div align="center">
+<div markdown="1" align="center">
 
 *From Ancient Greek μήτρα — womb, measure, origin.*  
 *The same root as mother. The same root as matrix.*
