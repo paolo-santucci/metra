@@ -1004,6 +1004,12 @@ abstract class AppLocalizations {
   /// **'giorni'**
   String get onboarding_days_unit;
 
+  /// Step counter shown on onboarding data page
+  ///
+  /// In it, this message translates to:
+  /// **'Passo {current} di {total}'**
+  String onboarding_step_label(int current, int total);
+
   /// Settings group header: about section
   ///
   /// In it, this message translates to:

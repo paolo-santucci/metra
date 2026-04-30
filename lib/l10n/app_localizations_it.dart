@@ -524,6 +524,11 @@ class AppLocalizationsIt extends AppLocalizations {
   String get onboarding_days_unit => 'giorni';
 
   @override
+  String onboarding_step_label(int current, int total) {
+    return 'Passo $current di $total';
+  }
+
+  @override
   String get settings_section_about => 'Informazioni';
 
   @override

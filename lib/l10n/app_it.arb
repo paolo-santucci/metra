@@ -814,6 +814,15 @@
     "description": "Unit label for cycle length stepper"
   },
 
+  "onboarding_step_label": "Passo {current} di {total}",
+  "@onboarding_step_label": {
+    "description": "Step counter shown on onboarding data page",
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+
   "settings_section_about": "Informazioni",
   "@settings_section_about": {
     "description": "Settings group header: about section"

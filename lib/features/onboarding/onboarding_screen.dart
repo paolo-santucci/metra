@@ -147,7 +147,17 @@ class _DataPage extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: MetraSpacing.s12),
+            const SizedBox(height: MetraSpacing.s6),
+            _StepProgressBar(
+              current: 2,
+              total: 2,
+              label: l10n.onboarding_step_label(2, 2),
+              accentColor: isDark
+                  ? MetraColors.dark.accentFlow
+                  : MetraColors.light.accentFlow,
+              textColor: textSecondary,
+            ),
+            const SizedBox(height: MetraSpacing.s6),
             Text(
               l10n.onboarding_last_period_question,
               style: MetraTypography.titleMd.copyWith(color: textPrimary),
@@ -314,6 +324,52 @@ class _PeriodDurationPicker extends StatelessWidget {
           ),
         );
       }),
+    );
+  }
+}
+
+// ── Step progress bar ─────────────────────────────────────────────────────────
+
+class _StepProgressBar extends StatelessWidget {
+  const _StepProgressBar({
+    required this.current,
+    required this.total,
+    required this.label,
+    required this.accentColor,
+    required this.textColor,
+  });
+
+  final int current;
+  final int total;
+  final String label;
+  final Color accentColor;
+  final Color textColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: List.generate(total, (i) {
+            return Expanded(
+              child: Container(
+                height: 3,
+                margin: EdgeInsets.only(right: i < total - 1 ? 4 : 0),
+                decoration: BoxDecoration(
+                  color: i < current ? accentColor : accentColor.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            );
+          }),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: MetraTypography.caption.copyWith(color: textColor),
+        ),
+      ],
     );
   }
 }
