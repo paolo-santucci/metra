@@ -5,16 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% if page.title %}{{ page.title }} · {{ site.title }}{% else %}{{ site.title }}{% endif %}</title>
   <meta name="description" content="{{ page.excerpt | default: site.description | strip_html | strip_newlines | truncate: 160 }}">
-  <link rel="stylesheet" href="{{ 'assets/css/main.css' | relative_url }}">
+  <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
+  <link rel="icon" type="image/svg+xml" href="{{ '/assets/favicon.svg' | relative_url }}">
   {% feed_meta %}
   {% seo %}
 </head>
 <body>
 
-  <header class="site-header" text-align="center">
+  <header class="site-header">
     <div class="site-header__inner">
       <a href="{{ '/' | relative_url }}" class="site-logo">
-        
+        M<span class="macron-accent">ē</span>tra
       </a>
       <nav class="site-nav">
         {% for item in site.navigation %}
