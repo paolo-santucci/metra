@@ -151,7 +151,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         builder: (context, scale, child) =>
             Transform.scale(scale: scale, child: child),
         child: FloatingActionButton(
-          onPressed: () => context.push('/daily-entry/today'),
+          onPressed: () => context.go('/oggi'),
           tooltip: l10n.calendar_fab_label,
           child: Semantics(
             label: l10n.calendar_fab_label,

@@ -514,4 +514,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settings_privacy_policy => 'Privacy policy';
+
+  @override
+  String get today_how_are_you => 'How are you today?';
+
+  @override
+  String get today_pain_intensity_label => 'Pain intensity';
+
+  @override
+  String get today_notes_label => 'Free note';
+
+  @override
+  String get today_notes_hint => 'Write something...';
+
+  @override
+  String get today_save_day => 'Save day';
+
+  @override
+  String get today_add_symptom => '+ Add';
+
+  @override
+  String get today_flow_lieve => 'Light';
+
+  @override
+  String get today_flow_moderato => 'Moderate';
+
+  @override
+  String get today_flow_intenso => 'Heavy';
+
+  @override
+  String get today_pain_none => 'None';
+
+  @override
+  String get nav_oggi => 'Today';
+
+  @override
+  String get nav_archivio => 'Archive';
 }

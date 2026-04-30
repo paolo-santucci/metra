@@ -802,5 +802,30 @@
   "settings_privacy_policy": "Informativa sulla privacy",
   "@settings_privacy_policy": {
     "description": "Settings row label: link to the privacy policy"
-  }
+  },
+
+  "today_how_are_you": "Come stai oggi?",
+  "@today_how_are_you": {"description": "Today screen main heading"},
+  "today_pain_intensity_label": "Intensità dolore",
+  "@today_pain_intensity_label": {"description": "Pain intensity section heading"},
+  "today_notes_label": "Nota libera",
+  "@today_notes_label": {"description": "Free notes section heading"},
+  "today_notes_hint": "Scrivi qualcosa...",
+  "@today_notes_hint": {"description": "Notes text field placeholder"},
+  "today_save_day": "Salva giornata",
+  "@today_save_day": {"description": "Save button label"},
+  "today_add_symptom": "+ Aggiungi",
+  "@today_add_symptom": {"description": "Add symptom chip label"},
+  "today_flow_lieve": "Lieve",
+  "@today_flow_lieve": {"description": "Flow circle label: light"},
+  "today_flow_moderato": "Moderato",
+  "@today_flow_moderato": {"description": "Flow circle label: medium"},
+  "today_flow_intenso": "Intenso",
+  "@today_flow_intenso": {"description": "Flow circle label: heavy"},
+  "today_pain_none": "Nessuno",
+  "@today_pain_none": {"description": "Pain circle label: no pain"},
+  "nav_oggi": "Oggi",
+  "@nav_oggi": {"description": "Bottom nav tab: today entry"},
+  "nav_archivio": "Archivio",
+  "@nav_archivio": {"description": "Bottom nav tab: archive/timeline"}
 }

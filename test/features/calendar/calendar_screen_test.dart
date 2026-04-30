@@ -133,9 +133,9 @@ Widget _wrapWithRouter(
         builder: (_, __) => const CalendarScreen(),
       ),
       GoRoute(
-        path: '/daily-entry/today',
+        path: '/oggi',
         builder: (_, __) => const Scaffold(
-          body: Center(child: Text('daily-entry-today-stub')),
+          body: Center(child: Text('oggi-stub')),
         ),
       ),
       GoRoute(
@@ -259,7 +259,7 @@ void main() {
       );
     });
 
-    testWidgets('tapping FAB navigates to /daily-entry/today', (tester) async {
+    testWidgets('tapping FAB navigates to /oggi', (tester) async {
       await tester.pumpWidget(
         _wrapWithRouter([
           calendarMonthProvider.overrideWith(_StubCalendarMonthNotifier.new),
@@ -270,7 +270,7 @@ void main() {
       await tester.tap(find.byType(FloatingActionButton));
       await tester.pumpAndSettle();
 
-      expect(find.text('daily-entry-today-stub'), findsOneWidget);
+      expect(find.text('oggi-stub'), findsOneWidget);
     });
 
     testWidgets('tapping a day cell navigates to /daily-entry/:date',

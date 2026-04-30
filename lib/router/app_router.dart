@@ -22,6 +22,7 @@ import '../features/backup/backup_screen.dart';
 import '../features/calendar/calendar_screen.dart';
 import '../features/daily_entry/historical_entry_screen.dart';
 import '../features/daily_entry/quick_entry_modal.dart';
+import '../features/daily_entry/today_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/stats/stats_screen.dart';
@@ -29,10 +30,10 @@ import '../features/timeline/timeline_screen.dart';
 import '../providers/repository_providers.dart';
 
 // Tab indices match the NavigationBar destination order:
-//   0 = Calendar, 1 = Timeline, 2 = Stats, 3 = Settings.
+//   0 = Calendar, 1 = Oggi, 2 = Archivio (Timeline), 3 = Stats, 4 = Settings.
 // Do NOT reorder without updating _destinations and _paths below.
 const int _tabCalendar = 0;
-const int _tabSettings = 3;
+const int _tabSettings = 4;
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -82,6 +83,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const CalendarScreen(),
           ),
           GoRoute(
+            path: '/oggi',
+            builder: (context, state) => const TodayScreen(),
+          ),
+          GoRoute(
             path: '/timeline',
             builder: (context, state) => const TimelineScreen(),
           ),
@@ -111,8 +116,12 @@ class _ScaffoldWithNav extends StatelessWidget {
       label: 'Calendario',
     ),
     NavigationDestination(
+      icon: Icon(Icons.edit_note_outlined),
+      label: 'Oggi',
+    ),
+    NavigationDestination(
       icon: Icon(Icons.view_timeline_outlined),
-      label: 'Timeline',
+      label: 'Archivio',
     ),
     NavigationDestination(
       icon: Icon(Icons.bar_chart_outlined),
@@ -126,6 +135,7 @@ class _ScaffoldWithNav extends StatelessWidget {
 
   static const _paths = <String>[
     '/calendar',
+    '/oggi',
     '/timeline',
     '/stats',
     '/settings',

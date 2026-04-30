@@ -107,7 +107,7 @@ final _settingsOverride = appSettingsRepositoryProvider.overrideWith(
 
 void main() {
   group('Bottom navigation shell', () {
-    testWidgets('renders 4 navigation destinations', (tester) async {
+    testWidgets('renders 5 navigation destinations', (tester) async {
       await tester.pumpWidget(
         MetraApp(
           overrides: [
@@ -120,9 +120,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // NavigationBar has 4 items: Calendar, Timeline, Stats, Settings.
+      // NavigationBar has 5 items: Calendar, Oggi, Archivio, Stats, Settings.
       expect(find.byType(NavigationBar), findsOneWidget);
-      expect(find.byType(NavigationDestination), findsNWidgets(4));
+      expect(find.byType(NavigationDestination), findsNWidgets(5));
     });
 
     testWidgets('Calendar is the initial route', (tester) async {
@@ -144,7 +144,7 @@ void main() {
       expect(find.byType(CalendarScreen), findsOneWidget);
     });
 
-    testWidgets('tapping Timeline tab shows timeline screen', (tester) async {
+    testWidgets('tapping Archivio tab shows timeline screen', (tester) async {
       await tester.pumpWidget(
         MetraApp(
           overrides: [
@@ -157,9 +157,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Tap the 2nd navigation destination (index 1 = Timeline).
+      // Tap the 3rd navigation destination (index 2 = Archivio / Timeline).
       final destinations = find.byType(NavigationDestination);
-      await tester.tap(destinations.at(1));
+      await tester.tap(destinations.at(2));
       await tester.pumpAndSettle();
 
       expect(find.byType(TimelineScreen), findsOneWidget);
@@ -178,8 +178,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      // Tap the 4th navigation destination (index 3 = Stats).
       final destinations = find.byType(NavigationDestination);
-      await tester.tap(destinations.at(2));
+      await tester.tap(destinations.at(3));
       await tester.pumpAndSettle();
 
       expect(find.byType(StatsScreen), findsOneWidget);
@@ -198,8 +199,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      // Tap the 5th navigation destination (index 4 = Settings).
       final destinations = find.byType(NavigationDestination);
-      await tester.tap(destinations.at(3));
+      await tester.tap(destinations.at(4));
       await tester.pumpAndSettle();
 
       expect(find.byType(SettingsScreen), findsOneWidget);

@@ -991,6 +991,78 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Informativa sulla privacy'**
   String get settings_privacy_policy;
+
+  /// Today screen main heading
+  ///
+  /// In it, this message translates to:
+  /// **'Come stai oggi?'**
+  String get today_how_are_you;
+
+  /// Pain intensity section heading
+  ///
+  /// In it, this message translates to:
+  /// **'Intensità dolore'**
+  String get today_pain_intensity_label;
+
+  /// Free notes section heading
+  ///
+  /// In it, this message translates to:
+  /// **'Nota libera'**
+  String get today_notes_label;
+
+  /// Notes text field placeholder
+  ///
+  /// In it, this message translates to:
+  /// **'Scrivi qualcosa...'**
+  String get today_notes_hint;
+
+  /// Save button label
+  ///
+  /// In it, this message translates to:
+  /// **'Salva giornata'**
+  String get today_save_day;
+
+  /// Add symptom chip label
+  ///
+  /// In it, this message translates to:
+  /// **'+ Aggiungi'**
+  String get today_add_symptom;
+
+  /// Flow circle label: light
+  ///
+  /// In it, this message translates to:
+  /// **'Lieve'**
+  String get today_flow_lieve;
+
+  /// Flow circle label: medium
+  ///
+  /// In it, this message translates to:
+  /// **'Moderato'**
+  String get today_flow_moderato;
+
+  /// Flow circle label: heavy
+  ///
+  /// In it, this message translates to:
+  /// **'Intenso'**
+  String get today_flow_intenso;
+
+  /// Pain circle label: no pain
+  ///
+  /// In it, this message translates to:
+  /// **'Nessuno'**
+  String get today_pain_none;
+
+  /// Bottom nav tab: today entry
+  ///
+  /// In it, this message translates to:
+  /// **'Oggi'**
+  String get nav_oggi;
+
+  /// Bottom nav tab: archive/timeline
+  ///
+  /// In it, this message translates to:
+  /// **'Archivio'**
+  String get nav_archivio;
 }
 
 class _AppLocalizationsDelegate
