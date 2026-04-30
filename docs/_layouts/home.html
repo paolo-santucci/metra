@@ -1,0 +1,33 @@
+---
+layout: default
+---
+
+<div class="page-wrapper">
+  <header class="page-header">
+    {% if page.eyebrow %}
+    <p class="page-header__eyebrow">{{ page.eyebrow }}</p>
+    {% endif %}
+    <h1 class="page-header__title">{{ page.title | default: site.title }}</h1>
+    {% if page.subtitle or site.description %}
+    <p class="page-header__subtitle">{{ page.subtitle | default: site.description }}</p>
+    {% endif %}
+  </header>
+
+  <div class="post-grid">
+    {% for post in site.posts %}
+    <a href="{{ post.url | relative_url }}" class="post-card">
+      {% if post.tags.first %}
+      <span class="post-card__tag">{{ post.tags.first }}</span>
+      {% endif %}
+      <h2 class="post-card__title">{{ post.title }}</h2>
+      {% if post.excerpt %}
+      <p class="post-card__excerpt">{{ post.excerpt | strip_html | truncate: 120 }}</p>
+      {% endif %}
+      <div class="post-card__meta">
+        <span class="post-card__date">{{ post.date | date: "%d %b %Y" }}</span>
+        <span class="post-card__arrow">→</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>

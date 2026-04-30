@@ -1,0 +1,188 @@
+@import 'tokens';
+
+// ─── Reset & Base ──────────────────────────────────────────────
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  font-size: $text-base;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: $font-body;
+  background: $sabbia;
+  color: $inchiostro;
+  line-height: 1.6;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// ─── Typography ────────────────────────────────────────────────
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: $font-display;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: $inchiostro;
+  margin: 0 0 $space-4;
+  text-wrap: pretty;
+}
+
+h1 { font-size: clamp(28px, 5vw, $text-4xl); }
+h2 { font-size: clamp(22px, 4vw, $text-3xl); }
+h3 { font-size: $text-2xl; }
+h4 { font-size: $text-xl; }
+h5 { font-size: $text-lg; }
+h6 { font-size: $text-base; font-weight: 600; font-family: $font-body; }
+
+p {
+  margin: 0 0 $space-5;
+  color: rgba($inchiostro, 0.8);
+  text-wrap: pretty;
+}
+
+a {
+  color: $tc-scura;
+  text-decoration: underline;
+  text-decoration-color: rgba($terracotta, 0.4);
+  text-underline-offset: 3px;
+  transition: color 0.15s, text-decoration-color 0.15s;
+
+  &:hover {
+    color: $terracotta;
+    text-decoration-color: $terracotta;
+  }
+}
+
+strong, b { font-weight: 600; }
+em, i { font-style: italic; }
+
+small {
+  font-size: $text-xs;
+  color: rgba($inchiostro, 0.5);
+}
+
+// ─── Lists ─────────────────────────────────────────────────────
+
+ul, ol {
+  padding-left: $space-6;
+  margin: 0 0 $space-5;
+}
+
+li {
+  margin-bottom: $space-2;
+  color: rgba($inchiostro, 0.8);
+}
+
+// ─── Blockquote ────────────────────────────────────────────────
+
+blockquote {
+  margin: $space-8 0;
+  padding: $space-5 $space-6;
+  border-left: 3px solid $terracotta;
+  background: rgba($terracotta, 0.06);
+  border-radius: 0 $radius-md $radius-md 0;
+
+  p {
+    font-family: $font-display;
+    font-size: $text-lg;
+    color: $inchiostro;
+    margin: 0;
+    font-style: italic;
+  }
+
+  cite {
+    display: block;
+    margin-top: $space-3;
+    font-size: $text-sm;
+    color: rgba($inchiostro, 0.5);
+    font-style: normal;
+  }
+}
+
+// ─── Code ──────────────────────────────────────────────────────
+
+code {
+  font-family: $font-mono;
+  font-size: 0.875em;
+  background: rgba($inchiostro, 0.07);
+  color: $tc-scura;
+  padding: 2px 6px;
+  border-radius: $radius-sm;
+}
+
+pre {
+  background: $inchiostro;
+  border-radius: $radius-lg;
+  padding: $space-6;
+  overflow-x: auto;
+  margin: 0 0 $space-6;
+
+  code {
+    background: none;
+    color: $avorio;
+    padding: 0;
+    font-size: $text-sm;
+  }
+}
+
+// ─── HR ────────────────────────────────────────────────────────
+
+hr {
+  border: none;
+  border-top: 1px solid $border-l;
+  margin: $space-10 0;
+}
+
+// ─── Images ────────────────────────────────────────────────────
+
+img {
+  max-width: 100%;
+  height: auto;
+  border-radius: $radius-lg;
+  display: block;
+}
+
+figure {
+  margin: $space-8 0;
+
+  figcaption {
+    margin-top: $space-3;
+    font-size: $text-sm;
+    color: rgba($inchiostro, 0.5);
+    text-align: center;
+  }
+}
+
+// ─── Tables ────────────────────────────────────────────────────
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 $space-6;
+  font-size: $text-sm;
+}
+
+th {
+  font-weight: 600;
+  font-size: $text-xs;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba($inchiostro, 0.5);
+  background: rgba($inchiostro, 0.04);
+  padding: $space-3 $space-4;
+  text-align: left;
+  border-bottom: 1px solid $border-l;
+}
+
+td {
+  padding: $space-3 $space-4;
+  border-bottom: 1px solid rgba($inchiostro, 0.06);
+  color: rgba($inchiostro, 0.8);
+}
+
+tr:last-child td { border-bottom: none; }
