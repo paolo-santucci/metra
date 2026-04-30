@@ -156,7 +156,7 @@
 
     /* ─── FLOW INTENSITY DOTS ─── */
     function FlowIntensityDots({ value, onChange }) {
-      const R = 19, bx = (R + 7) * 2, cx = bx / 2;
+      const R = 18, bx = (R + 7) * 2, cx = bx / 2;
       const opts = [
         { id: 1, label: 'Leggero',    fillOp: 0.30 },
         { id: 2, label: 'Moderato',   fillOp: 0.65 },
@@ -191,13 +191,13 @@
         { id: 2, label: 'Moderato', fillOp: 0.6  },
         { id: 3, label: 'Intenso',  fillOp: 0.92 },
       ];
-      const R = 19, boxSize = (R + 7) * 2, cx = boxSize / 2;
+      const R = 18, boxSize = (R + 7) * 2, cx = boxSize / 2;
       return (
         <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
           {levels.map(lv => {
             const sel = value === lv.id;
             return (
-              <div key={lv.id} onClick={() => onChange(lv.id)}
+              <div key={lv.id} onClick={() => onChange(value === lv.id ? null : lv.id)}
                 style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
                 <svg width={boxSize} height={boxSize} viewBox={`0 0 ${boxSize} ${boxSize}`}>
                   {sel && <circle cx={cx} cy={cx} r={R + 5} stroke={C.malva} strokeWidth="1.2" fill="none" opacity="0.28" />}
@@ -236,17 +236,23 @@
     }
 
     /* ─── REGISTRATION SCREEN ─── */
-    function ScreenRegistrazione({ initType = null, initIntensity = null, initPain = 0, initSymptoms = [] }) {
+    function ScreenRegistrazione({ initType = null, initIntensity = null, initPain = null, initSymptoms = [] }) {
       const [flowType, setFlowType] = useState(initType);
       const [flowIntensity, setFlowIntensity] = useState(initIntensity);
       const [pain, setPain] = useState(initPain);
       const [symptoms, setSymptoms] = useState(new Set(initSymptoms));
 
-      const SYMPTOMS = ['Crampi', 'Mal di testa', 'Stanchezza', 'Mal di schiena', 'Nausea'];
+      const SYMPTOMS = ['Crampi', 'Mal di testa', 'Stanchezza', 'Mal di schiena', 'Nausea', 'Gonfiore', 'Tensione mammaria'];
       const toggleSym = s => setSymptoms(prev => { const n = new Set(prev); n.has(s) ? n.delete(s) : n.add(s); return n; });
+      const lastMensIntensityRef = React.useRef(2); // persists across renders without triggering re-render
       const handleFlowType = t => {
+        if (t === 'mestruazioni') {
+          setFlowIntensity(lastMensIntensityRef.current);
+        } else {
+          if (flowIntensity !== null) lastMensIntensityRef.current = flowIntensity;
+          setFlowIntensity(null);
+        }
         setFlowType(t);
-        setFlowIntensity(t === 'mestruazioni' ? 2 : null);
       };
 
       return (
@@ -300,10 +306,16 @@
             <div style={{ background: C.surface, borderBottom: '1px solid rgba(43,37,33,0.07)', padding: '18px 24px' }}>
               <SectionLabel>Sintomi</SectionLabel>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {SYMPTOMS.map(s => <Chip key={s} label={s} selected={symptoms.has(s)} onToggle={() => toggleSym(s)} />)}
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, paddingInline: 14, height: 36, borderRadius: 18, border: '1px dashed rgba(43,37,33,0.25)', cursor: 'pointer' }}>
-                  <span style={{ fontFamily: 'Inter', fontSize: 20, color: 'rgba(43,37,33,0.35)', lineHeight: 1, marginTop: -1 }}>+</span>
-                  <span style={{ fontFamily: 'Inter', fontSize: 13, color: 'rgba(43,37,33,0.4)' }}>Aggiungi</span>
+                {SYMPTOMS.map(s => (
+                  <div key={s} style={{ minHeight: 44, display: 'flex', alignItems: 'center' }}>
+                    <Chip label={s} selected={symptoms.has(s)} onToggle={() => toggleSym(s)} />
+                  </div>
+                ))}
+                <div style={{ minHeight: 44, display: 'flex', alignItems: 'center' }}>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, paddingInline: 14, height: 36, borderRadius: 18, border: '1px dashed rgba(43,37,33,0.25)', cursor: 'pointer' }}>
+                    <span style={{ fontFamily: 'Inter', fontSize: 20, color: 'rgba(43,37,33,0.35)', lineHeight: 1, marginTop: -1 }}>+</span>
+                    <span style={{ fontFamily: 'Inter', fontSize: 13, color: 'rgba(43,37,33,0.4)' }}>Aggiungi</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -313,7 +325,7 @@
           {/* CTA */}
           <div style={{ padding: '20px 24px' }}>
             <div style={{ height: 56, background: C.inchiostro, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-              <span style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 500, color: C.sabbia }}>Salva — Tutto ok →</span>
+              <span style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 500, color: C.sabbia }}>Salva giornata</span>
             </div>
           </div>
         </div>

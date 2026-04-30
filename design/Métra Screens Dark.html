@@ -41,8 +41,8 @@ body { background: #0E0B09; font-family: 'Inter', sans-serif; min-height: 100vh;
 
 /* Phone shell */
 .phone {
-  width: 393px; height: 852px;
-  border-radius: 54px;
+  width: 393px; height: 760px;
+  border-radius: 44px;
   overflow: hidden;
   position: relative;
   box-shadow:
@@ -186,14 +186,12 @@ function Phone({ children, bg = C.sabbia }) {
     <div className="phone" style={{ background: bg }}>
       <div className="sb">
         <span style={{ fontFamily: 'Inter', fontSize: 15, fontWeight: 600, color: C.inchiostro, letterSpacing: '-0.02em' }}>20:14</span>
-        <div className="di" />
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <Icon name="wifi" size={15} color={C.inchiostro} stroke={1.8} />
           <Icon name="battery" size={19} color={C.inchiostro} stroke={1.4} />
         </div>
       </div>
       <div className="sc">{children}</div>
-      <div className="hi" />
     </div>);
 
 }
@@ -271,7 +269,7 @@ function FlowIntensityDots({ value, onChange }) {
   const T = useT();
   const accent = T.accent || C.terracotta;
   const accentDark = T.accentDark || C.tc_scura;
-  const R = 19, bx = (R + 7) * 2, cx = bx / 2;
+  const R = 18, bx = (R + 7) * 2, cx = bx / 2;
   const opts = [
     { id: 1, label: 'Leggero',    fillOp: 0.30 },
     { id: 2, label: 'Moderato',   fillOp: 0.65 },
@@ -306,14 +304,14 @@ function PainDots({ value = 0, onChange }) {
   { id: 1, label: 'Lieve', fillOp: 0.28 },
   { id: 2, label: 'Moderato', fillOp: 0.6 },
   { id: 3, label: 'Intenso', fillOp: 0.92 }];
-  const R = 19,boxSize = (R + 7) * 2,cx = boxSize / 2;
+  const R = 18,boxSize = (R + 7) * 2,cx = boxSize / 2;
 
   return (
     <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
       {levels.map((lv) => {
         const sel = value === lv.id;
         return (
-          <div key={lv.id} onClick={() => onChange && onChange(lv.id)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+          <div key={lv.id} onClick={() => onChange && onChange(value === lv.id ? null : lv.id)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
             <svg width={boxSize} height={boxSize} viewBox={`0 0 ${boxSize} ${boxSize}`}>
               {sel && <circle cx={cx} cy={cx} r={R + 5} stroke={lav} strokeWidth="1.2" fill="none" opacity="0.28" />}
               <circle cx={cx} cy={cx} r={R} stroke={lav} strokeWidth="1.5" fill={lav} fillOpacity={lv.fillOp} />
@@ -357,11 +355,11 @@ function ScreenOnboarding1() {
       <div style={{ height: '100%', background: C.sabbia, display: 'flex', flexDirection: 'column' }}>
         {/* App name hero */}
         <div style={{ flex: '0 0 380px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 90% 60% at 50% 30%, rgba(200,116,86,0.05) 0%, transparent 80%)' }} />
+          <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse 90% 60% at 50% 30%, ${C.terracotta}0D 0%, transparent 80%)` }} />
           <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
             {/* Alone terracotta */}
-            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(200,116,86,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
-            <div style={{ fontFamily: font, fontSize: 56, color: C.inchiostro, letterSpacing: '-0.02em', whiteSpace: 'nowrap', position: 'relative' }}>M<span style={{ position: 'relative', display: 'inline-block' }}>e<span style={{ position: 'absolute', top: '0.28em', left: '0.08em', right: '0.08em', height: '0.055em', background: C.terracotta, borderRadius: '1px' }}></span></span>tra</div>
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 220, height: 220, borderRadius: '50%', background: `radial-gradient(ellipse, ${C.terracotta}1F 0%, transparent 70%)`, pointerEvents: 'none' }} />
+            <div style={{ fontFamily: font, fontSize: 56, color: C.inchiostro, letterSpacing: '-0.02em', whiteSpace: 'nowrap', position: 'relative' }}>Mētra</div>
           </div>
         </div>
 
@@ -431,7 +429,7 @@ function ScreenOnboarding2() {
             padding: '18px 18px',
             display: 'flex', gap: 14, alignItems: 'flex-start'
           }}>
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(200,116,86,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: `${C.terracotta}1A`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <Icon name={item.icon} size={20} color={C.terracotta} />
               </div>
               <div style={{ flex: 1 }}>
@@ -468,7 +466,7 @@ function ScreenOnboarding3() {
       <div style={{ height: '100%', background: C.sabbia, padding: '20px 28px', display: 'flex', flexDirection: 'column' }}>
         {/* Progress */}
         <div style={{ display: 'flex', gap: 6, marginBottom: 24 }}>
-          {[1, 2, 3].map((i) => <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: C.terracotta }} />)}
+          {[1, 2].map((i) => <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: C.terracotta }} />)}
         </div>
 
         <div style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'rgba(237,228,211,0.38)', marginBottom: 8 }}>Passo 2 di 2</div>
@@ -477,7 +475,7 @@ function ScreenOnboarding3() {
 
         {/* Last period */}
         <div style={{ marginBottom: 24 }}>
-          <div style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(237,228,211,0.38)', marginBottom: 10 }}>Quando è iniziato l'ultimo ciclo?</div>
+          <div style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(237,228,211,0.38)', marginBottom: 10 }}>Primo giorno dell'ultima mestruazione</div>
           <div style={{
             height: 52, background: C.surface, border: '1.5px solid rgba(237,228,211,0.12)', borderRadius: 12,
             display: 'flex', alignItems: 'center', paddingInline: 16, justifyContent: 'space-between'
@@ -515,7 +513,7 @@ function ScreenOnboarding3() {
         <div style={{ marginBottom: 28 }}>
           <div style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(237,228,211,0.38)', marginBottom: 10 }}>Durata mestruazioni</div>
           <div style={{ display: 'flex', gap: 8 }}>
-            {[3, 4, 5, 6, 7].map((d) =>
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((d) =>
             <div key={d} onClick={() => setFlow(d)} style={{
               flex: 1, height: 44, borderRadius: 10,
               background: flow === d ? C.terracotta : 'rgba(237,228,211,0.07)',
@@ -575,7 +573,7 @@ function CalDay({ day, offset, monthData, selected, onSelect }) {
         borderRadius: 12,
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1,
         background: isSel ? C.inchiostro : isFlow ? `${C.terracotta}22` : 'transparent',
-        border: isSel ? 'none' : isFlow ? `1px solid ${C.terracotta}44` : isPred ? '2px dashed rgba(155,143,191,0.53)' : '1px solid transparent',
+        border: isSel ? 'none' : isFlow ? `1px solid ${C.terracotta}44` : isPred ? `1.5px solid ${C.ocra}99` : '1px solid transparent',
         cursor: 'pointer'
       }}>
       <span style={{ fontFamily: 'Inter', fontSize: 15, fontWeight: isSel ? 600 : 400, color: isSel ? C.sabbia : C.inchiostro }}>{day}</span>
@@ -630,16 +628,21 @@ function ScreenCalendario() {
         {/* Legend */}
         <div style={{ display: 'flex', gap: 16, padding: '10px 24px', borderTop: '1px solid rgba(237,228,211,0.1)' }}>
           {[
-          { icon: 'drop',          color: C.tc_scura, label: 'Mestruazioni' },
-          { icon: 'moon_crescent', color: C.lavanda,  label: 'Previsione' },
-          { icon: 'star_small',    color: C.ocra,     label: 'Sintomi' },
-          { icon: 'zap',           color: C.malva,    label: 'Dolore' }].
+          { icon: 'drop',       color: C.tc_scura, label: 'Mestruazioni' },
+          { icon: 'star_small', color: C.ocra,     label: 'Sintomi' },
+          { icon: 'zap',        color: C.malva,    label: 'Dolore' }].
           map((l) =>
           <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <DataIcon name={l.icon} size={14} color={l.color} />
               <span style={{ fontFamily: 'Inter', fontSize: 11, color: 'rgba(237,228,211,0.68)' }}>{l.label}</span>
             </div>
           )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <svg width="14" height="14" viewBox="0 0 14 14">
+              <circle cx="7" cy="7" r="5" fill="none" stroke={C.ocra} strokeWidth="1.5" />
+            </svg>
+            <span style={{ fontFamily: 'Inter', fontSize: 11, color: 'rgba(237,228,211,0.68)' }}>Previsione</span>
+          </div>
         </div>
 
         {/* Day detail card */}
@@ -691,13 +694,24 @@ function ScreenRegistrazione() {
   const { fontDisplay: font = "'DM Serif Display', serif" } = useT();
   const [flowType, setFlowType] = useState('mestruazioni');
   const [flowIntensity, setFlowIntensity] = useState(2);
-  const handleFlowType = t => { setFlowType(t); setFlowIntensity(t === 'mestruazioni' ? 2 : null); };
-  const [pain, setPain] = useState(0);
+  const lastMensIntensityRef = React.useRef(2);
+
+  const handleFlowType = t => {
+    const next = t === flowType ? null : t;
+    if (next === 'mestruazioni') {
+      setFlowIntensity(lastMensIntensityRef.current);
+    } else {
+      if (flowIntensity !== null) lastMensIntensityRef.current = flowIntensity;
+      setFlowIntensity(null);
+    }
+    setFlowType(next);
+  };
+  const [pain, setPain] = useState(null);
   const [symptoms, setSymptoms] = useState(new Set(['Crampi']));
   const [customSymptoms, setCustomSymptoms] = useState([]);
   const [addingSymptom, setAddingSymptom] = useState(false);
   const [newSymptomText, setNewSymptomText] = useState('');
-  const SYMPTOMS = ['Crampi', 'Mal di testa', 'Stanchezza', 'Schiena', 'Nausea'];
+  const SYMPTOMS = ['Crampi', 'Mal di testa', 'Stanchezza', 'Mal di schiena', 'Nausea', 'Gonfiore', 'Tensione mammaria'];
   const allSymptoms = [...SYMPTOMS, ...customSymptoms];
   const toggleSym = (s) => setSymptoms((prev) => {
     const n = new Set(prev);
@@ -718,7 +732,7 @@ function ScreenRegistrazione() {
       <div style={{ height: '100%', background: C.sabbia, overflowY: 'auto', paddingBottom: 100 }}>
         {/* Header */}
         <div style={{ padding: '12px 24px 16px' }}>
-          <div style={{ fontFamily: 'Inter', fontSize: 13, color: 'rgba(237,228,211,0.68)', marginBottom: 2 }}>Martedì 23 aprile</div>
+          <div style={{ fontFamily: 'Inter', fontSize: 13, color: 'rgba(237,228,211,0.68)', marginBottom: 2 }}>Mercoledì 23 aprile</div>
           <div style={{ fontFamily: font, fontSize: 26, color: C.inchiostro }}>Come stai oggi?</div>
         </div>
 
@@ -759,7 +773,11 @@ function ScreenRegistrazione() {
           <div style={{ background: C.surface, borderBottom: '1px solid rgba(237,228,211,0.07)', padding: '18px 24px' }}>
             <div style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(237,228,211,0.38)', marginBottom: 14 }}>Sintomi</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {allSymptoms.map((s) => <Chip key={s} label={s} selected={symptoms.has(s)} onToggle={() => toggleSym(s)} />)}
+              {allSymptoms.map((s) => (
+                <div key={s} style={{ minHeight: 44, display: 'flex', alignItems: 'center' }}>
+                  <Chip label={s} selected={symptoms.has(s)} onToggle={() => toggleSym(s)} />
+                </div>
+              ))}
 
               {/* Inline add */}
               {addingSymptom ?
@@ -828,7 +846,7 @@ function ScreenRegistrazione() {
 const ARCHIVIO_DATA = [
 { month: 'Apr 2025', day: 10, len: 28, dur: 5, flow: 'Abbondante', pain: 3, symptoms: ['Crampi', 'Stanchezza'] },
 { month: 'Mar 2025', day: 11, len: 27, dur: 4, flow: 'Moderato',   pain: 2, symptoms: ['Mal di testa'] },
-{ month: 'Feb 2025', day: 12, len: 29, dur: 5, flow: 'Moderato',   pain: 3, symptoms: ['Crampi', 'Schiena'] },
+{ month: 'Feb 2025', day: 12, len: 29, dur: 5, flow: 'Moderato',   pain: 3, symptoms: ['Crampi', 'Mal di schiena'] },
 { month: 'Gen 2025', day: 14, len: 28, dur: 4, flow: 'Leggero',    pain: 1, symptoms: [] },
 { month: 'Dic 2024', day: 17, len: 30, dur: 6, flow: 'Abbondante', pain: 3, symptoms: ['Crampi', 'Nausea'] }];
 
@@ -848,7 +866,7 @@ function ScreenArchivio() {
             <div key={v} onClick={() => setView(v)} style={{
               paddingInline: 18, height: 34,
               borderRadius: 8, cursor: 'pointer',
-              background: view === v ? C.sabbia : 'transparent',
+              background: view === v ? 'rgba(237,228,211,0.1)' : 'transparent',
               boxShadow: view === v ? '0 1px 4px rgba(237,228,211,0.1)' : 'none',
               display: 'flex', alignItems: 'center', transition: 'all 0.15s'
             }}>
@@ -883,8 +901,8 @@ function ScreenArchivio() {
                         <span style={{ fontFamily: 'Inter', fontSize: 11, color: C.tc_scura }}>{item.flow}</span>
                       </div>
                       {item.pain > 0 &&
-                  <div style={{ paddingInline: 8, height: 24, borderRadius: 6, background: 'rgba(196,160,180,0.15)', display: 'flex', alignItems: 'center' }}>
-                          <span style={{ fontFamily: 'Inter', fontSize: 11, color: '#C4A0B4' }}>{['', 'Lieve', 'Moderato', 'Intenso'][item.pain]}</span>
+                  <div style={{ paddingInline: 8, height: 24, borderRadius: 6, background: `${C.malva}26`, border: `1px solid ${C.malva}`, display: 'flex', alignItems: 'center' }}>
+                          <span style={{ fontFamily: 'Inter', fontSize: 11, color: C.malva }}>{['', 'Lieve', 'Moderato', 'Intenso'][item.pain]}</span>
                         </div>
                   }
                       {item.symptoms.slice(0, 2).map((s) =>
@@ -993,7 +1011,7 @@ function ScreenStatistiche() {
 
           {/* Bar chart: pain */}
           <div style={{ background: C.surface, borderRadius: 16, border: '1px solid rgba(237,228,211,0.07)', padding: '18px 16px', marginBottom: 12 }}>
-            <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 500, color: C.inchiostro, marginBottom: 16 }}>Intensità dolore (1–5)</div>
+            <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 500, color: C.inchiostro, marginBottom: 16 }}>Intensità dolore (0–3)</div>
             <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end' }}>
               {[3, 2, 3, 1, 4, 2].map((v, i) => <MiniBar key={i} value={v} max={5} color={C.malva} label={['A', 'M', 'F', 'G', 'D', 'N'][i]} />)}
             </div>
@@ -1006,7 +1024,7 @@ function ScreenStatistiche() {
             { label: 'Crampi', count: 5, max: 6 },
             { label: 'Stanchezza', count: 4, max: 6 },
             { label: 'Mal di testa', count: 3, max: 6 },
-            { label: 'Schiena', count: 2, max: 6 }].
+            { label: 'Mal di schiena', count: 2, max: 6 }].
             map((s) =>
             <div key={s.label} style={{ marginBottom: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
