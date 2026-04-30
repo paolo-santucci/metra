@@ -439,23 +439,39 @@ function SegControl({ options, dark = false }) {
 // Flow Circles (registrazione flusso)
 function FlowCircles({ dark = false }) {
   const [sel, setSel] = useState(2);
-  const levels = ['Nessuno','Spotting','Leggero','Moderato','Abbondante'];
-  const fills = [0, 0.14, 0.38, 0.68, 1];
   const text = dark ? C.avorio : C.inchiostro;
   const tc = dark ? C.tc_spenta : C.terracotta;
+  const items = [
+    { label: 'Assente',    size: 24, fillOp: 0,    dashed: true  },
+    { label: 'Spotting',   size: 24, fillOp: 0,    dashed: false },
+    null,
+    { label: 'Leggero',    size: 30, fillOp: 0.38 },
+    { label: 'Moderato',   size: 38, fillOp: 0.68 },
+    { label: 'Abbondante', size: 44, fillOp: 1    },
+  ];
   return (
     <div>
       <div style={{ fontFamily:'Inter', fontSize:12, color: dark ? 'rgba(237,228,211,0.5)' : 'rgba(43,37,33,0.68)', marginBottom:12, letterSpacing:'0.05em', textTransform:'uppercase' }}>Flusso</div>
       <div style={{ display:'flex', gap:12, alignItems:'center' }}>
-        {levels.map((l,i) => (
-          <div key={i} onClick={() => setSel(i)} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:8, cursor:'pointer' }}>
-            <svg width={44} height={44} viewBox="0 0 44 44">
-              <circle cx="22" cy="22" r="18" stroke={tc} strokeWidth="1.5" strokeDasharray={i === 0 ? "3 2" : undefined} fill={tc} fillOpacity={fills[i]}/>
-              {sel===i && <circle cx="22" cy="22" r="20" stroke={tc} strokeWidth="1.5" fill="none" opacity="0.4"/>}
-            </svg>
-            <span style={{ fontFamily:'Inter', fontSize:10, color: sel===i ? tc : `${text}50` }}>{l}</span>
-          </div>
-        ))}
+        {items.map((it, i) => {
+          if (!it) return <div key="sep" style={{ width:1, height:40, alignSelf:'center', background: tc + '30' }} />;
+          const isSel = sel === i;
+          const boxSize = Math.max(it.size + 14, 44);
+          const cx = boxSize / 2;
+          const r = it.size / 2;
+          return (
+            <div key={i} onClick={() => setSel(i)} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:8, cursor:'pointer' }}>
+              <svg width={boxSize} height={boxSize} viewBox={`0 0 ${boxSize} ${boxSize}`} overflow="visible">
+                {isSel && <circle cx={cx} cy={cx} r={r + 5} stroke={tc} strokeWidth="1.2" fill="none" opacity="0.35"
+                  strokeDasharray={it.dashed ? '3 2' : undefined} />}
+                <circle cx={cx} cy={cx} r={r} fill={tc} fillOpacity={it.fillOp}
+                  stroke={tc} strokeWidth={it.dashed ? 0 : 1.5} />
+                {it.dashed && <circle cx={cx} cy={cx} r={r} fill="none" stroke={tc} strokeWidth="1.5" strokeDasharray="3.5 2.5" />}
+              </svg>
+              <span style={{ fontFamily:'Inter', fontSize:10, color: isSel ? tc : `${text}50` }}>{it.label}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

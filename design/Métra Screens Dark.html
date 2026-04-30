@@ -236,54 +236,49 @@ function FlowDots({ value = -1, onChange }) {
   const accentDark = T.accentDark || C.tc_scura;
 
   const options = [
-  { id: -1, label: 'Nessuno',   size: 24, fillOp: 0,    color: accent, dashed: true  },
-  { id: 0,  label: 'Spotting',  size: 24, fillOp: 0.14, color: accent, dashed: false },
-  { id: 1,  label: 'Leggero',   size: 33, fillOp: 0.38, color: accent, dashed: false },
-  { id: 2,  label: 'Moderato',  size: 43, fillOp: 0.68, color: accent, dashed: false },
-  { id: 3,  label: 'Abbondante',size: 52, fillOp: 0.94, color: accent, dashed: false }];
-
+  { id: -1, label: 'Assente',    size: 24, fillOp: 0,    color: accent, dashed: true  },
+  { id: 0,  label: 'Spotting',   size: 24, fillOp: 0,    color: accent, dashed: false },
+  { separator: true },
+  { id: 1,  label: 'Leggero',    size: 33, fillOp: 0.38, color: accent },
+  { id: 2,  label: 'Moderato',   size: 43, fillOp: 0.68, color: accent },
+  { id: 3,  label: 'Abbondante', size: 52, fillOp: 0.94, color: accent }];
 
   return (
     <div style={{ userSelect: 'none' }}>
       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
-        {options.map((opt) => {
+        {options.map((opt, idx) => {
+          if (opt.separator) {
+            return <div key="sep" style={{
+              width: 1, height: 40, alignSelf: 'center', flexShrink: 0,
+              background: 'rgba(237,228,211,0.15)'
+            }} />;
+          }
           const sel = value === opt.id;
           const cx = Math.max(opt.size + 14, 44) / 2;
           const r = opt.size / 2;
           return (
-            <div
-              key={opt.id}
-              onClick={() => onChange && onChange(sel ? -1 : opt.id)}
+            <div key={opt.id}
+              onClick={() => onChange && onChange(sel ? -2 : opt.id)}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, cursor: 'pointer' }}>
-              
-              <svg width={Math.max(opt.size + 14, 44)} height={Math.max(opt.size + 14, 44)} viewBox={`0 0 ${Math.max(opt.size + 14, 44)} ${Math.max(opt.size + 14, 44)}`} overflow="visible">
-                {/* Selection ring */}
-                {sel &&
-                <circle cx={cx} cy={cx} r={r + 5.5}
-                fill="none" stroke={opt.color} strokeWidth="1.2" opacity="0.32"
-                strokeDasharray={opt.dashed ? '3 2' : undefined} />
-                }
-                {/* Main dot */}
+              <svg width={Math.max(opt.size + 14, 44)} height={Math.max(opt.size + 14, 44)}
+                viewBox={`0 0 ${Math.max(opt.size + 14, 44)} ${Math.max(opt.size + 14, 44)}`}
+                overflow="visible">
+                {sel && <circle cx={cx} cy={cx} r={r + 5.5}
+                  fill="none" stroke={opt.color} strokeWidth="1.2" opacity="0.32"
+                  strokeDasharray={opt.dashed ? '3 2' : undefined} />}
                 <circle cx={cx} cy={cx} r={r}
-                fill={opt.color} fillOpacity={opt.fillOp}
-                stroke={opt.color} strokeWidth={opt.dashed ? 0 : 1.4}
-                strokeDasharray={opt.dashed ? undefined : undefined} />
-                
-                {/* Dashed border for "Altri" */}
-                {opt.dashed &&
-                <circle cx={cx} cy={cx} r={r}
-                fill="none" stroke={opt.color} strokeWidth="1.4"
-                strokeDasharray="3.5 2.5" />
-                }
+                  fill={opt.color} fillOpacity={opt.fillOp}
+                  stroke={opt.color} strokeWidth={opt.dashed ? 0 : 1.4} />
+                {opt.dashed && <circle cx={cx} cy={cx} r={r}
+                  fill="none" stroke={opt.color} strokeWidth="1.4"
+                  strokeDasharray="3.5 2.5" />}
               </svg>
               <span style={{
                 fontFamily: 'Inter', fontSize: 10, textAlign: 'center',
                 color: sel ? accentDark : 'rgba(237,228,211,0.38)',
-                fontWeight: sel ? 600 : 400,
-                transition: 'color 0.15s'
+                fontWeight: sel ? 600 : 400, transition: 'color 0.15s'
               }}>{opt.label}</span>
             </div>);
-
         })}
       </div>
     </div>);
@@ -670,7 +665,7 @@ function ScreenCalendario() {
               border: `1px solid ${C.terracotta}44`, borderRadius: 10,
               display: 'flex', alignItems: 'center'
             }}>
-              <span style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 500, color: C.tc_scura }}>Flusso Intenso</span>
+              <span style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 500, color: C.tc_scura }}>Abbondante</span>
             </div>
           </div>
           {isSelSymptom &&
@@ -819,11 +814,11 @@ function ScreenRegistrazione() {
    ARCHIVIO — Timeline & Tabella
 ══════════════════════════════════════ */
 const ARCHIVIO_DATA = [
-{ month: 'Apr 2025', day: 10, len: 28, dur: 5, flow: 'Intenso', pain: 3, symptoms: ['Crampi', 'Stanchezza'] },
-{ month: 'Mar 2025', day: 11, len: 27, dur: 4, flow: 'Moderato', pain: 2, symptoms: ['Mal di testa'] },
-{ month: 'Feb 2025', day: 12, len: 29, dur: 5, flow: 'Moderato', pain: 3, symptoms: ['Crampi', 'Schiena'] },
-{ month: 'Gen 2025', day: 14, len: 28, dur: 4, flow: 'Lieve', pain: 1, symptoms: [] },
-{ month: 'Dic 2024', day: 17, len: 30, dur: 6, flow: 'Intenso', pain: 3, symptoms: ['Crampi', 'Nausea'] }];
+{ month: 'Apr 2025', day: 10, len: 28, dur: 5, flow: 'Abbondante', pain: 3, symptoms: ['Crampi', 'Stanchezza'] },
+{ month: 'Mar 2025', day: 11, len: 27, dur: 4, flow: 'Moderato',   pain: 2, symptoms: ['Mal di testa'] },
+{ month: 'Feb 2025', day: 12, len: 29, dur: 5, flow: 'Moderato',   pain: 3, symptoms: ['Crampi', 'Schiena'] },
+{ month: 'Gen 2025', day: 14, len: 28, dur: 4, flow: 'Leggero',    pain: 1, symptoms: [] },
+{ month: 'Dic 2024', day: 17, len: 30, dur: 6, flow: 'Abbondante', pain: 3, symptoms: ['Crampi', 'Nausea'] }];
 
 
 function ScreenArchivio() {
