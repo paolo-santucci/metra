@@ -20,10 +20,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/data/database/app_database.dart';
 
 void main() {
-  test('schema version is 3', () {
+  test('schema version is 4', () {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
-    expect(db.schemaVersion, 3);
+    expect(db.schemaVersion, 4);
   });
 
   test('AppSettings has dropboxEmail and lastBackupAt columns', () async {

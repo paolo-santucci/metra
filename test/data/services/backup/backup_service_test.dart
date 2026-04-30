@@ -16,7 +16,7 @@ void main() {
     final repo = FakeDailyLogRepository();
     final svc = BackupService(repo);
     final snap = await svc.buildSnapshot();
-    expect(snap.version, 1);
+    expect(snap.version, 2);
     expect(snap.logsWithSymptoms, isEmpty);
   });
 
@@ -36,7 +36,7 @@ void main() {
     final svc = BackupService(repo);
     final snap = await svc.buildSnapshot();
 
-    expect(snap.version, 1);
+    expect(snap.version, 2);
     expect(snap.logsWithSymptoms, hasLength(2));
     expect(snap.logsWithSymptoms[0].log, log1);
     expect(snap.logsWithSymptoms[0].symptoms, isEmpty);

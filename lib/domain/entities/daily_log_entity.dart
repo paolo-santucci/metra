@@ -16,12 +16,13 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'flow_intensity.dart';
+import 'flow_type.dart';
 
 class DailyLogEntity {
   const DailyLogEntity({
     required this.date,
+    this.flowType,
     this.flowIntensity,
-    this.spotting = false,
     this.otherDischarge = false,
     this.painEnabled = false,
     this.painIntensity,
@@ -30,33 +31,54 @@ class DailyLogEntity {
   });
 
   final DateTime date;
+
+  /// Categorical type of flow for the day. `null` = not logged.
+  /// `FlowType.mestruazioni` is the only value for which `flowIntensity`
+  /// is meaningful; for `assente`/`spotting` the intensity must be `null`.
+  final FlowType? flowType;
+
+  /// Ordinal menstrual flow intensity. Only meaningful when
+  /// `flowType == FlowType.mestruazioni`.
   final FlowIntensity? flowIntensity;
-  final bool spotting;
+
   final bool otherDischarge;
   final bool painEnabled;
   final int? painIntensity;
   final bool notesEnabled;
   final String? notes;
 
+  /// True iff the day is logged as spotting. Derived from `flowType`
+  /// for backward compatibility with code that previously read `.spotting`
+  /// from a separate boolean field.
+  bool get spotting => flowType == FlowType.spotting;
+
   DailyLogEntity copyWith({
     DateTime? date,
+    FlowType? flowType,
+    bool clearFlowType = false,
     FlowIntensity? flowIntensity,
-    bool? spotting,
+    bool clearFlowIntensity = false,
     bool? otherDischarge,
     bool? painEnabled,
     int? painIntensity,
+    bool clearPainIntensity = false,
     bool? notesEnabled,
     String? notes,
+    bool clearNotes = false,
   }) {
     return DailyLogEntity(
       date: date ?? this.date,
-      flowIntensity: flowIntensity ?? this.flowIntensity,
-      spotting: spotting ?? this.spotting,
+      flowType: clearFlowType ? null : (flowType ?? this.flowType),
+      flowIntensity: clearFlowIntensity
+          ? null
+          : (flowIntensity ?? this.flowIntensity),
       otherDischarge: otherDischarge ?? this.otherDischarge,
       painEnabled: painEnabled ?? this.painEnabled,
-      painIntensity: painIntensity ?? this.painIntensity,
+      painIntensity: clearPainIntensity
+          ? null
+          : (painIntensity ?? this.painIntensity),
       notesEnabled: notesEnabled ?? this.notesEnabled,
-      notes: notes ?? this.notes,
+      notes: clearNotes ? null : (notes ?? this.notes),
     );
   }
 
@@ -66,8 +88,8 @@ class DailyLogEntity {
       other is DailyLogEntity &&
           runtimeType == other.runtimeType &&
           date == other.date &&
+          flowType == other.flowType &&
           flowIntensity == other.flowIntensity &&
-          spotting == other.spotting &&
           otherDischarge == other.otherDischarge &&
           painEnabled == other.painEnabled &&
           painIntensity == other.painIntensity &&
@@ -77,8 +99,8 @@ class DailyLogEntity {
   @override
   int get hashCode =>
       date.hashCode ^
+      flowType.hashCode ^
       flowIntensity.hashCode ^
-      spotting.hashCode ^
       otherDischarge.hashCode ^
       painEnabled.hashCode ^
       painIntensity.hashCode ^

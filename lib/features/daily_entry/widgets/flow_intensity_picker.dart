@@ -96,24 +96,6 @@ class FlowIntensityPicker extends StatelessWidget {
             },
           ),
         ),
-        // None chip
-        _animatedChip(
-          context: context,
-          selected: selectedFlow == FlowIntensity.none && !isSpotting,
-          chip: ChoiceChipMetra(
-            label: l10n.daily_entry_flow_none,
-            selected: selectedFlow == FlowIntensity.none && !isSpotting,
-            semanticsLabel: l10n.daily_entry_flow_none,
-            onSelected: (selected) {
-              onSpottingChanged(false);
-              onFlowChanged(
-                (selected && selectedFlow != FlowIntensity.none)
-                    ? FlowIntensity.none
-                    : null,
-              );
-            },
-          ),
-        ),
         // Light chip
         _animatedChip(
           context: context,

@@ -50,7 +50,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Spotting'), findsOneWidget);
-      expect(find.text('Nessun flusso'), findsOneWidget);
       expect(find.text('Flusso leggero'), findsOneWidget);
       expect(find.text('Flusso moderato'), findsOneWidget);
       expect(find.text('Flusso intenso'), findsOneWidget);

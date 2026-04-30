@@ -22,6 +22,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/errors/metra_exception.dart';
 import 'package:metra/domain/entities/daily_log_entity.dart';
 import 'package:metra/domain/entities/flow_intensity.dart';
+import 'package:metra/domain/entities/flow_type.dart';
 import 'package:metra/domain/use_cases/recompute_cycle_entries.dart';
 import 'package:metra/domain/use_cases/save_daily_log.dart';
 import 'package:metra/features/daily_entry/state/daily_entry_controller.dart';
@@ -131,6 +132,7 @@ void main() {
 
       final log = DailyLogEntity(
         date: kDate,
+        flowType: FlowType.mestruazioni,
         flowIntensity: FlowIntensity.heavy,
       );
       await container.read(dailyEntryProvider(kDate).notifier).save(log);
@@ -152,6 +154,7 @@ void main() {
 
       final log = DailyLogEntity(
         date: kDate,
+        flowType: FlowType.mestruazioni,
         flowIntensity: FlowIntensity.medium,
       );
       await container.read(dailyEntryProvider(kDate).notifier).save(log);

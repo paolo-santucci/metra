@@ -18,6 +18,7 @@
 import '../entities/cycle_entry_entity.dart';
 import '../entities/cycle_summary.dart';
 import '../entities/flow_intensity.dart';
+import '../entities/flow_type.dart';
 import '../entities/pain_symptom_type.dart';
 import '../repositories/cycle_entry_repository.dart';
 import '../repositories/daily_log_repository.dart';
@@ -63,11 +64,12 @@ class GetCycleSummaries {
         }
 
         // Compute dominant flow: mode with highest ordinal winning ties.
-        // FlowIntensity.none (index 0) is excluded — it means no flow logged.
+        // Only menstruation days contribute (assente/spotting/null excluded).
         final flowCounts = <FlowIntensity, int>{};
         for (final log in logsInRange) {
+          if (log.flowType != FlowType.mestruazioni) continue;
           final fi = log.flowIntensity;
-          if (fi != null && fi != FlowIntensity.none) {
+          if (fi != null) {
             flowCounts[fi] = (flowCounts[fi] ?? 0) + 1;
           }
         }

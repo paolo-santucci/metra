@@ -34,8 +34,15 @@ part 'app_database.g.dart';
 // ---------------------------------------------------------------------------
 
 /// One row per calendar day. The primary key is the date (UTC midnight).
+///
+/// Schema v4 (P-B): added `flowType` column (FlowType.index: 0=assente,
+/// 1=mestruazioni, 2=spotting). The legacy `spotting` boolean column is
+/// retained for migration provenance but is no longer authoritative — the
+/// application reads `flowType` instead. `flowIntensity` is meaningful only
+/// when `flowType == FlowType.mestruazioni`.
 class DailyLogs extends Table {
   DateTimeColumn get date => dateTime()();
+  IntColumn get flowType => integer().nullable()(); // FlowType.index
   IntColumn get flowIntensity => integer().nullable()(); // FlowIntensity.index
   BoolColumn get spotting => boolean().withDefault(const Constant(false))();
   BoolColumn get otherDischarge =>
@@ -124,7 +131,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -138,6 +145,47 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(
               appSettings,
               appSettings.onboardingCompleted,
+            );
+          }
+          if (from < 4) {
+            // P-B Flow domain migration
+            //
+            // Adds `flow_type` column to daily_logs and reshapes existing data:
+            //
+            // FlowIntensity index changes (drop `none`):
+            //   v3: none(0), light(1), medium(2), heavy(3), veryHeavy(4)
+            //   v4: light(0), medium(1), heavy(2), veryHeavy(3)
+            //
+            // FlowType derivation (new column):
+            //   spotting=1                       → flowType=2 (spotting)
+            //   flow_intensity v3=0 (none)       → flowType=0 (assente)
+            //   flow_intensity v3 in [1..4]      → flowType=1 (mestruazioni)
+            //   neither                          → flowType=NULL (not logged)
+            //
+            // Order matters: read from old fields, write new ones. We do this
+            // in raw SQL to avoid any dependence on the (already-evolved) Drift
+            // generated columns.
+            await m.addColumn(dailyLogs, dailyLogs.flowType);
+
+            // Spotting → flowType=2; clear intensity (mutually exclusive).
+            await customStatement(
+              "UPDATE daily_logs SET flow_type = 2, flow_intensity = NULL "
+              "WHERE spotting = 1",
+            );
+
+            // FlowIntensity v3=0 (none) AND not spotting → flowType=0 (assente),
+            // clear intensity (no longer a valid value in v4).
+            await customStatement(
+              "UPDATE daily_logs SET flow_type = 0, flow_intensity = NULL "
+              "WHERE spotting = 0 AND flow_intensity = 0",
+            );
+
+            // FlowIntensity v3 in [1..4] AND not spotting → flowType=1
+            // (mestruazioni), shift intensity index down by 1.
+            await customStatement(
+              "UPDATE daily_logs "
+              "SET flow_type = 1, flow_intensity = flow_intensity - 1 "
+              "WHERE spotting = 0 AND flow_intensity BETWEEN 1 AND 4",
             );
           }
         },

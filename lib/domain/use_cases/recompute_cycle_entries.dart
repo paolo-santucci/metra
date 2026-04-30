@@ -19,7 +19,7 @@ import '../../core/errors/metra_exception.dart';
 import '../../core/utils/result.dart';
 import '../entities/cycle_entry_entity.dart';
 import '../entities/daily_log_entity.dart';
-import '../entities/flow_intensity.dart';
+import '../entities/flow_type.dart';
 import '../repositories/cycle_entry_repository.dart';
 import '../repositories/daily_log_repository.dart';
 
@@ -51,13 +51,10 @@ class RecomputeCycleEntries {
       _compute(logs);
 
   static List<CycleEntryEntity> _compute(List<DailyLogEntity> logs) {
-    // Only actual flow days (not spotting-only) define cycle boundaries.
-    final flowDays = logs
-        .where(
-          (l) =>
-              l.flowIntensity != null && l.flowIntensity != FlowIntensity.none,
-        )
-        .toList();
+    // Only menstruation days define cycle boundaries
+    // (spotting / assente / unlogged are excluded).
+    final flowDays =
+        logs.where((l) => l.flowType == FlowType.mestruazioni).toList();
 
     if (flowDays.isEmpty) return const [];
 

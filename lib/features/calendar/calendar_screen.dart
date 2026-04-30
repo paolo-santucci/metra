@@ -26,6 +26,7 @@ import '../../core/theme/metra_typography.dart';
 import '../../domain/entities/cycle_prediction.dart';
 import '../../domain/entities/daily_log_entity.dart';
 import '../../domain/entities/flow_intensity.dart';
+import '../../domain/entities/flow_type.dart';
 import '../../l10n/app_localizations.dart';
 import 'state/calendar_month_controller.dart';
 import 'state/prediction_controller.dart';
@@ -239,7 +240,7 @@ class _CalendarGrid extends StatelessWidget {
     }
     if (log == null) return l10n.a11y_calendar_day_no_flow(dateStr);
     if (log.spotting) return l10n.a11y_calendar_day_spotting(dateStr);
-    if (log.flowIntensity != null && log.flowIntensity != FlowIntensity.none) {
+    if (log.flowType == FlowType.mestruazioni) {
       final flowLabel = _flowLabel(log.flowIntensity!, l10n);
       return l10n.a11y_calendar_day_flow(flowLabel, dateStr);
     }
@@ -251,8 +252,6 @@ class _CalendarGrid extends StatelessWidget {
 
   String _flowLabel(FlowIntensity intensity, AppLocalizations l10n) {
     switch (intensity) {
-      case FlowIntensity.none:
-        return l10n.daily_entry_flow_none;
       case FlowIntensity.light:
         return l10n.daily_entry_flow_light;
       case FlowIntensity.medium:
@@ -294,8 +293,7 @@ class _CalendarGrid extends StatelessWidget {
         final isToday = today.year == year &&
             today.month == month &&
             today.day == dayNumber;
-        final isFlow = log?.flowIntensity != null &&
-            log!.flowIntensity != FlowIntensity.none;
+        final isFlow = log?.flowType == FlowType.mestruazioni;
         final isSpotting = log?.spotting ?? false;
         final hasNote = log?.notes != null && log!.notes!.isNotEmpty;
         final hasPrediction = prediction?.containsDate(date) ?? false;

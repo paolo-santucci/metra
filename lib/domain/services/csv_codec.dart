@@ -19,6 +19,7 @@ import 'package:csv/csv.dart';
 
 import '../entities/daily_log_entity.dart';
 import '../entities/flow_intensity.dart';
+import '../entities/flow_type.dart';
 import '../entities/pain_symptom_data.dart';
 import '../entities/pain_symptom_type.dart';
 
@@ -58,10 +59,12 @@ class CsvDecodeResult {
   final List<CsvParseError> errors;
 }
 
+// New format (schema v4): flow_type is FlowType index (0-2); flow is
+// FlowIntensity index (0-3), only meaningful when flowType==mestruazioni.
 const _kHeaders = [
   'date',
+  'flow_type',
   'flow',
-  'spotting',
   'other_discharge',
   'pain_intensity',
   'symptoms',
@@ -69,10 +72,10 @@ const _kHeaders = [
   'cycle_start',
 ];
 
+// flow_type and flow are excluded from required headers so legacy CSVs
+// (which have a `spotting` column instead) still decode without error.
 const _kRequiredHeaders = [
   'date',
-  'flow',
-  'spotting',
   'other_discharge',
   'pain_intensity',
   'symptoms',
@@ -90,8 +93,8 @@ class CsvCodec {
       for (final r in rows)
         [
           _fmtDate(r.log.date),
-          r.log.flowIntensity != null ? r.log.flowIntensity!.index : '',
-          r.log.spotting ? 1 : 0,
+          r.log.flowType?.index ?? '',      // flow_type column
+          r.log.flowIntensity?.index ?? '', // flow column
           r.log.otherDischarge ? 1 : 0,
           r.log.painIntensity ?? '',
           _encodeSymptoms(r.symptoms),
@@ -163,6 +166,11 @@ class CsvCodec {
       return CsvDecodeResult(rows: const [], errors: errors);
     }
 
+    // Determine which flow format this CSV uses.
+    // Prefer new format (flow_type) over legacy (spotting).
+    final hasFlowType = header.contains('flow_type');
+    final hasSpotting = header.contains('spotting');
+
     String cell(List<dynamic> rawRow, String col) {
       final idx = header.indexOf(col);
       if (idx < 0 || idx >= rawRow.length) return '';
@@ -212,35 +220,99 @@ class CsvCodec {
         continue;
       }
 
-      // flow
+      // flow_type / spotting + flow — branch on CSV format.
+      FlowType? flowType;
       FlowIntensity? flowIntensity;
-      final flowStr = cell(rawRow, 'flow');
-      if (flowStr.isNotEmpty) {
-        final idx = int.tryParse(flowStr);
-        if (idx == null || idx < 0 || idx >= FlowIntensity.values.length) {
+
+      if (hasFlowType) {
+        // New format: flow_type is FlowType index (0-2).
+        final ftStr = cell(rawRow, 'flow_type');
+        if (ftStr.isNotEmpty) {
+          final idx = int.tryParse(ftStr);
+          if (idx == null || idx < 0 || idx >= FlowType.values.length) {
+            errors.add(
+              CsvParseError(
+                rowNumber: rowNum,
+                column: 'flow_type',
+                rawValue: ftStr,
+                reason: 'Expected 0–${FlowType.values.length - 1} or empty',
+              ),
+            );
+            continue;
+          }
+          flowType = FlowType.values[idx];
+        }
+
+        // flow is FlowIntensity v4 index (0-3).
+        final flowStr = cell(rawRow, 'flow');
+        if (flowStr.isNotEmpty) {
+          final idx = int.tryParse(flowStr);
+          if (idx == null || idx < 0 || idx >= FlowIntensity.values.length) {
+            errors.add(
+              CsvParseError(
+                rowNumber: rowNum,
+                column: 'flow',
+                rawValue: flowStr,
+                reason: 'Expected 0–${FlowIntensity.values.length - 1} or empty',
+              ),
+            );
+            continue;
+          }
+          flowIntensity = FlowIntensity.values[idx];
+        }
+      } else if (hasSpotting) {
+        // Legacy format: spotting is 0/1; flow is v3 index (0-4 where 0=none).
+        final spStr = cell(rawRow, 'spotting');
+        final spVal = int.tryParse(spStr);
+        if (spVal == null || (spVal != 0 && spVal != 1)) {
           errors.add(
             CsvParseError(
               rowNumber: rowNum,
-              column: 'flow',
-              rawValue: flowStr,
-              reason: 'Expected 0–${FlowIntensity.values.length - 1} or empty',
+              column: 'spotting',
+              rawValue: spStr,
+              reason: 'Expected 0 or 1',
             ),
           );
           continue;
         }
-        flowIntensity = FlowIntensity.values[idx];
-      }
 
-      // spotting
-      final spStr = cell(rawRow, 'spotting');
-      final spVal = int.tryParse(spStr);
-      if (spVal == null || (spVal != 0 && spVal != 1)) {
+        // v3 flow: 0=none, 1=light, 2=medium, 3=heavy, 4=veryHeavy.
+        final flowStr = cell(rawRow, 'flow');
+        int flowV3 = 0;
+        if (flowStr.isNotEmpty) {
+          final idx = int.tryParse(flowStr);
+          if (idx == null || idx < 0 || idx > 4) {
+            errors.add(
+              CsvParseError(
+                rowNumber: rowNum,
+                column: 'flow',
+                rawValue: flowStr,
+                reason: 'Expected 0–4 or empty',
+              ),
+            );
+            continue;
+          }
+          flowV3 = idx;
+        }
+
+        // Derive flowType and flowIntensity from legacy values.
+        if (spVal == 1) {
+          flowType = FlowType.spotting;
+        } else if (flowV3 == 0) {
+          flowType = FlowType.assente;
+        } else {
+          flowType = FlowType.mestruazioni;
+          // v3 index 1-4 → v4 index 0-3 (subtract 1).
+          flowIntensity = FlowIntensity.values[flowV3 - 1];
+        }
+      } else {
+        // Neither flow_type nor spotting column present — critical data missing.
         errors.add(
           CsvParseError(
             rowNumber: rowNum,
-            column: 'spotting',
-            rawValue: spStr,
-            reason: 'Expected 0 or 1',
+            column: 'flow_type',
+            rawValue: '',
+            reason: 'Required column "flow_type" or legacy "spotting" missing from header',
           ),
         );
         continue;
@@ -324,8 +396,8 @@ class CsvCodec {
         DailyLogRow(
           log: DailyLogEntity(
             date: utcDate,
+            flowType: flowType,
             flowIntensity: flowIntensity,
-            spotting: spVal == 1,
             otherDischarge: odVal == 1,
             painEnabled: painEnabled,
             painIntensity: painIntensity,

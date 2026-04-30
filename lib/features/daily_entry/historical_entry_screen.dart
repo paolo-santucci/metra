@@ -27,6 +27,7 @@ import '../../core/widgets/section_title_metra.dart';
 import '../../core/widgets/text_field_metra.dart';
 import '../../domain/entities/daily_log_entity.dart';
 import '../../domain/entities/flow_intensity.dart';
+import '../../domain/entities/flow_type.dart';
 import '../../domain/entities/pain_symptom_data.dart';
 import '../../domain/entities/pain_symptom_type.dart';
 import '../../l10n/app_localizations.dart';
@@ -122,18 +123,24 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
     _selectedSymptoms = symptoms.map((s) => s.symptomType).toSet();
   }
 
-  DailyLogEntity _buildEntity() => DailyLogEntity(
-        date: widget.date,
-        flowIntensity: _selectedFlow,
-        spotting: _isSpotting,
-        otherDischarge: _otherDischarge,
-        painEnabled: _painEnabled,
-        painIntensity: _painEnabled ? _painIntensity : null,
-        notesEnabled: _notesEnabled,
-        notes: _notesEnabled && _notesController.text.trim().isNotEmpty
-            ? _notesController.text.trim()
-            : null,
-      );
+  DailyLogEntity _buildEntity() {
+    final flowType = _isSpotting
+        ? FlowType.spotting
+        : (_selectedFlow != null ? FlowType.mestruazioni : null);
+    final flowIntensity = flowType == FlowType.mestruazioni ? _selectedFlow : null;
+    return DailyLogEntity(
+      date: widget.date,
+      flowType: flowType,
+      flowIntensity: flowIntensity,
+      otherDischarge: _otherDischarge,
+      painEnabled: _painEnabled,
+      painIntensity: _painEnabled ? _painIntensity : null,
+      notesEnabled: _notesEnabled,
+      notes: _notesEnabled && _notesController.text.trim().isNotEmpty
+          ? _notesController.text.trim()
+          : null,
+    );
+  }
 
   Future<void> _save() async {
     // safe: delegates registered in MetraApp

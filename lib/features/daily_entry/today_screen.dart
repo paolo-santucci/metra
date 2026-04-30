@@ -25,6 +25,7 @@ import '../../core/theme/metra_typography.dart';
 import '../../core/widgets/choice_chip_metra.dart';
 import '../../domain/entities/daily_log_entity.dart';
 import '../../domain/entities/flow_intensity.dart';
+import '../../domain/entities/flow_type.dart';
 import '../../domain/entities/pain_symptom_data.dart';
 import '../../domain/entities/pain_symptom_type.dart';
 import '../../l10n/app_localizations.dart';
@@ -119,11 +120,16 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
     final intensity = _painLevelToIntensity(_painLevel);
     final notesText = _notesController.text.trim();
 
+    final flowType = _isSpotting
+        ? FlowType.spotting
+        : (_selectedFlow != null ? FlowType.mestruazioni : null);
+    final flowIntensity = flowType == FlowType.mestruazioni ? _selectedFlow : null;
+
     await notifier.save(
       DailyLogEntity(
         date: _today,
-        flowIntensity: _selectedFlow,
-        spotting: _isSpotting,
+        flowType: flowType,
+        flowIntensity: flowIntensity,
         painEnabled: _painLevel != PainLevel.none,
         painIntensity: intensity,
         notesEnabled: notesText.isNotEmpty,

@@ -114,8 +114,6 @@ class FlowIntensityChart extends StatelessWidget {
 
   String _flowLabel(AppLocalizations l10n, FlowIntensity? fi) {
     switch (fi) {
-      case FlowIntensity.none:
-        return l10n.daily_entry_flow_none;
       case FlowIntensity.light:
         return l10n.daily_entry_flow_light;
       case FlowIntensity.medium:

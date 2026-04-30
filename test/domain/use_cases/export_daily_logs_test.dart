@@ -18,6 +18,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/domain/entities/daily_log_entity.dart';
 import 'package:metra/domain/entities/flow_intensity.dart';
+import 'package:metra/domain/entities/flow_type.dart';
 import 'package:metra/domain/entities/pain_symptom_data.dart';
 import 'package:metra/domain/entities/pain_symptom_type.dart';
 import 'package:metra/domain/use_cases/export_daily_logs.dart';
@@ -39,7 +40,7 @@ void main() {
     expect(lines, hasLength(1));
     expect(
       lines.first,
-      'date,flow,spotting,other_discharge,pain_intensity,symptoms,notes,cycle_start',
+      'date,flow_type,flow,other_discharge,pain_intensity,symptoms,notes,cycle_start',
     );
   });
 
@@ -47,12 +48,14 @@ void main() {
     await fakeRepo.saveDailyLog(
       DailyLogEntity(
         date: DateTime.utc(2026, 1, 1),
+        flowType: FlowType.mestruazioni,
         flowIntensity: FlowIntensity.heavy,
       ),
     );
     await fakeRepo.saveDailyLog(
       DailyLogEntity(
         date: DateTime.utc(2026, 2, 1),
+        flowType: FlowType.mestruazioni,
         flowIntensity: FlowIntensity.light,
       ),
     );
@@ -76,12 +79,14 @@ void main() {
     await fakeRepo.saveDailyLog(
       DailyLogEntity(
         date: DateTime.utc(2026, 1, 1),
+        flowType: FlowType.mestruazioni,
         flowIntensity: FlowIntensity.medium,
       ),
     );
     await fakeRepo.saveDailyLog(
       DailyLogEntity(
         date: DateTime.utc(2026, 2, 5),
+        flowType: FlowType.mestruazioni,
         flowIntensity: FlowIntensity.medium,
       ),
     );

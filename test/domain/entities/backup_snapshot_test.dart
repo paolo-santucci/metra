@@ -9,6 +9,7 @@ import 'package:metra/domain/entities/backup_snapshot.dart';
 import 'package:metra/domain/entities/daily_log_entity.dart';
 import 'package:metra/domain/entities/daily_log_with_symptoms.dart';
 import 'package:metra/domain/entities/flow_intensity.dart';
+import 'package:metra/domain/entities/flow_type.dart';
 import 'package:metra/domain/entities/pain_symptom_data.dart';
 import 'package:metra/domain/entities/pain_symptom_type.dart';
 
@@ -29,6 +30,7 @@ void main() {
     test('snapshot with log and symptoms survives round-trip', () {
       final log = DailyLogEntity(
         date: DateTime.utc(2026, 4, 29),
+        flowType: FlowType.mestruazioni,
         flowIntensity: FlowIntensity.medium,
         painEnabled: true,
         painIntensity: 2,
@@ -41,7 +43,7 @@ void main() {
         ),
       ];
       final s = BackupSnapshot(
-        version: 1,
+        version: BackupSnapshot.currentVersion,
         exportedAt: DateTime.utc(2026, 4, 29),
         logsWithSymptoms: [DailyLogWithSymptoms(log: log, symptoms: symptoms)],
       );

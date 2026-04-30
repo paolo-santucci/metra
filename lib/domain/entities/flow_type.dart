@@ -15,13 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
-// Ordinal flow intensity for menstruation (Italian: Leggero / Moderato /
-// Abbondante).
+// Categorical flow type (FIGO PALM-COEIN).
 //
-// Valid only when the parent DailyLogEntity has `flowType == FlowType.mestruazioni`.
-// `veryHeavy` is retained for backward-compatibility with v3 schema rows; new
-// entries should not use it (the design HTML exposes only 3 levels).
+// The three values are mutually exclusive — a day cannot be both
+// `mestruazioni` and `spotting`. `assente` means the user explicitly
+// confirmed no bleeding for the day; `null` (absence of FlowType) means
+// the user hasn't logged anything yet.
 //
-// `none` (logged but no flow) was removed in schema v4 — that semantics is
-// now expressed by `flowType == FlowType.assente`.
-enum FlowIntensity { light, medium, heavy, veryHeavy }
+// See design/Métra Quick Entry.html `FlowTypeChips` for the UI contract.
+enum FlowType { assente, mestruazioni, spotting }

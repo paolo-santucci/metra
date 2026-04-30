@@ -9,9 +9,19 @@ import '../../core/errors/metra_exception.dart';
 import 'daily_log_entity.dart';
 import 'daily_log_with_symptoms.dart';
 import 'flow_intensity.dart';
+import 'flow_type.dart';
 import 'pain_symptom_data.dart';
 import 'pain_symptom_type.dart';
 
+/// Snapshot format versions:
+///   1 — Original format. `flow_intensity` is the v3 enum (none/light/medium/
+///       heavy/veryHeavy, indices 0..4). `spotting` is a separate boolean.
+///   2 — Post-P-B format. `flow_type` (FlowType index) is authoritative;
+///       `flow_intensity` is the v4 enum (light/medium/heavy/veryHeavy,
+///       indices 0..3) and is meaningful only when flow_type ==
+///       FlowType.mestruazioni. The `spotting` boolean is omitted.
+///
+/// Reads accept both v1 and v2; writes always emit v2.
 class BackupSnapshot {
   const BackupSnapshot({
     required this.version,
@@ -19,7 +29,8 @@ class BackupSnapshot {
     required this.logsWithSymptoms,
   });
 
-  static const int currentVersion = 1;
+  static const int currentVersion = 2;
+  static const int _minSupportedVersion = 1;
 
   final int version;
   final DateTime exportedAt;
@@ -31,8 +42,8 @@ class BackupSnapshot {
         'daily_logs': logsWithSymptoms.map((lws) {
           return {
             'date': lws.log.date.toUtc().toIso8601String(),
+            'flow_type': lws.log.flowType?.index,
             'flow_intensity': lws.log.flowIntensity?.index,
-            'spotting': lws.log.spotting,
             'other_discharge': lws.log.otherDischarge,
             'pain_enabled': lws.log.painEnabled,
             'pain_intensity': lws.log.painIntensity,
@@ -66,7 +77,7 @@ class BackupSnapshot {
     if (version is! int) {
       throw const BackupFormatException('Missing or invalid version');
     }
-    if (version != currentVersion) {
+    if (version < _minSupportedVersion || version > currentVersion) {
       throw BackupFormatException('Unsupported snapshot version $version');
     }
     final exportedAtStr = raw['exported_at'];
@@ -81,7 +92,7 @@ class BackupSnapshot {
     if (logsRaw is! List) {
       throw const BackupFormatException('daily_logs must be a list');
     }
-    final logs = logsRaw.map(_parseLog).toList();
+    final logs = logsRaw.map((e) => _parseLog(e, version)).toList();
     return BackupSnapshot(
       version: version,
       exportedAt: exportedAt,
@@ -89,7 +100,7 @@ class BackupSnapshot {
     );
   }
 
-  static DailyLogWithSymptoms _parseLog(dynamic e) {
+  static DailyLogWithSymptoms _parseLog(dynamic e, int snapshotVersion) {
     if (e is! Map<String, dynamic>) {
       throw const BackupFormatException('Each log must be an object');
     }
@@ -97,14 +108,7 @@ class BackupSnapshot {
     if (date == null) {
       throw const BackupFormatException('log.date missing or invalid');
     }
-    final flowIdx = e['flow_intensity'] as int?;
-    final flow = flowIdx == null
-        ? null
-        : (flowIdx >= 0 && flowIdx < FlowIntensity.values.length
-            ? FlowIntensity.values[flowIdx]
-            : throw const BackupFormatException(
-                'Invalid flow_intensity index',
-              ));
+
     final symptomsRaw = e['pain_symptoms'];
     if (symptomsRaw is! List) {
       throw const BackupFormatException('pain_symptoms must be a list');
@@ -124,10 +128,54 @@ class BackupSnapshot {
         customLabel: s['custom_label'] as String?,
       );
     }).toList();
+
+    final flowIdxRaw = e['flow_intensity'] as int?;
+    FlowType? flowType;
+    FlowIntensity? flow;
+
+    if (snapshotVersion >= 2) {
+      // v2: flow_type is authoritative; flow_intensity uses the v4 enum.
+      final ftIdx = e['flow_type'] as int?;
+      if (ftIdx != null) {
+        if (ftIdx < 0 || ftIdx >= FlowType.values.length) {
+          throw const BackupFormatException('Invalid flow_type index');
+        }
+        flowType = FlowType.values[ftIdx];
+      }
+      if (flowIdxRaw != null) {
+        if (flowIdxRaw < 0 || flowIdxRaw >= FlowIntensity.values.length) {
+          throw const BackupFormatException('Invalid flow_intensity index');
+        }
+        flow = FlowIntensity.values[flowIdxRaw];
+      }
+    } else {
+      // v1 → derive new fields from legacy {spotting, flow_intensity v3-enum}.
+      final spotting = e['spotting'] as bool? ?? false;
+      if (spotting) {
+        flowType = FlowType.spotting;
+        flow = null;
+      } else if (flowIdxRaw != null) {
+        // v3 enum: 0=none, 1=light, 2=medium, 3=heavy, 4=veryHeavy
+        if (flowIdxRaw < 0 || flowIdxRaw > 4) {
+          throw const BackupFormatException(
+            'Invalid v1 flow_intensity index',
+          );
+        }
+        if (flowIdxRaw == 0) {
+          flowType = FlowType.assente;
+          flow = null;
+        } else {
+          flowType = FlowType.mestruazioni;
+          // Shift v3 index → v4 index (drop `none`).
+          flow = FlowIntensity.values[flowIdxRaw - 1];
+        }
+      }
+    }
+
     final log = DailyLogEntity(
       date: date,
+      flowType: flowType,
       flowIntensity: flow,
-      spotting: e['spotting'] as bool? ?? false,
       otherDischarge: e['other_discharge'] as bool? ?? false,
       painEnabled: e['pain_enabled'] as bool? ?? false,
       painIntensity: e['pain_intensity'] as int?,

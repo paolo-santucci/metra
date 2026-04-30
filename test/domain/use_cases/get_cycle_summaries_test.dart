@@ -19,6 +19,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/domain/entities/cycle_entry_entity.dart';
 import 'package:metra/domain/entities/daily_log_entity.dart';
 import 'package:metra/domain/entities/flow_intensity.dart';
+import 'package:metra/domain/entities/flow_type.dart';
 import 'package:metra/domain/entities/pain_symptom_data.dart';
 import 'package:metra/domain/entities/pain_symptom_type.dart';
 import 'package:metra/domain/use_cases/get_cycle_summaries.dart';
@@ -119,10 +120,10 @@ void main() {
       );
       // 2 × light, 2 × medium → tie → medium wins (higher ordinal)
       logRepo.savedLogs.addAll([
-        DailyLogEntity(date: jan15, flowIntensity: FlowIntensity.light),
-        DailyLogEntity(date: jan16, flowIntensity: FlowIntensity.light),
-        DailyLogEntity(date: jan17, flowIntensity: FlowIntensity.medium),
-        DailyLogEntity(date: jan18, flowIntensity: FlowIntensity.medium),
+        DailyLogEntity(date: jan15, flowType: FlowType.mestruazioni, flowIntensity: FlowIntensity.light),
+        DailyLogEntity(date: jan16, flowType: FlowType.mestruazioni, flowIntensity: FlowIntensity.light),
+        DailyLogEntity(date: jan17, flowType: FlowType.mestruazioni, flowIntensity: FlowIntensity.medium),
+        DailyLogEntity(date: jan18, flowType: FlowType.mestruazioni, flowIntensity: FlowIntensity.medium),
       ]);
 
       final uc = GetCycleSummaries(logRepo, cycleRepo);
@@ -170,7 +171,7 @@ void main() {
         ),
       );
       logRepo.savedLogs.add(
-        DailyLogEntity(date: todayNorm, flowIntensity: FlowIntensity.heavy),
+        DailyLogEntity(date: todayNorm, flowType: FlowType.mestruazioni, flowIntensity: FlowIntensity.heavy),
       );
 
       final uc = GetCycleSummaries(logRepo, cycleRepo);

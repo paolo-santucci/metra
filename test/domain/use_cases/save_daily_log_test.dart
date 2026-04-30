@@ -20,6 +20,7 @@ import 'package:metra/core/errors/metra_exception.dart';
 import 'package:metra/core/utils/result.dart';
 import 'package:metra/domain/entities/daily_log_entity.dart';
 import 'package:metra/domain/entities/flow_intensity.dart';
+import 'package:metra/domain/entities/flow_type.dart';
 import 'package:metra/domain/use_cases/save_daily_log.dart';
 
 import '../../helpers/fake_daily_log_repository.dart';
@@ -35,22 +36,23 @@ void main() {
 
   DailyLogEntity makeLog({
     DateTime? date,
+    FlowType? flowType,
     FlowIntensity? flow,
-    bool spotting = false,
     int? painIntensity,
   }) =>
       DailyLogEntity(
         date: date ?? DateTime.utc(2026, 1, 15),
+        flowType: flowType,
         flowIntensity: flow,
-        spotting: spotting,
         painEnabled: painIntensity != null,
         painIntensity: painIntensity,
       );
 
-  group('flow + spotting mutual exclusivity', () {
-    test('flow and spotting=true → Err(ValidationException)', () async {
+  group('flowIntensity + flowType validation (DM-02)', () {
+    test('flowIntensity set with non-mestruazioni flowType → Err(ValidationException)',
+        () async {
       final result = await useCase(
-        makeLog(flow: FlowIntensity.medium, spotting: true),
+        makeLog(flowType: FlowType.spotting, flow: FlowIntensity.medium),
       );
       expect(result, isA<Err<DailyLogEntity>>());
       expect(
@@ -59,20 +61,37 @@ void main() {
       );
     });
 
-    test('FlowIntensity.none + spotting=true → Ok', () async {
+    test('flowIntensity set with null flowType → Err(ValidationException)',
+        () async {
       final result = await useCase(
-        makeLog(flow: FlowIntensity.none, spotting: true),
+        makeLog(flow: FlowIntensity.light),
+      );
+      expect(result, isA<Err<DailyLogEntity>>());
+      expect(
+        (result as Err<DailyLogEntity>).error,
+        isA<ValidationException>(),
+      );
+    });
+
+    test('flowIntensity set with flowType=mestruazioni → Ok', () async {
+      final result = await useCase(
+        makeLog(flowType: FlowType.mestruazioni, flow: FlowIntensity.heavy),
       );
       expect(result, isA<Ok<DailyLogEntity>>());
     });
 
-    test('flow only (no spotting) → Ok', () async {
-      final result = await useCase(makeLog(flow: FlowIntensity.heavy));
+    test('flowType=spotting without intensity → Ok', () async {
+      final result = await useCase(makeLog(flowType: FlowType.spotting));
       expect(result, isA<Ok<DailyLogEntity>>());
     });
 
-    test('spotting only (no flow) → Ok', () async {
-      final result = await useCase(makeLog(spotting: true));
+    test('flowType=assente without intensity → Ok', () async {
+      final result = await useCase(makeLog(flowType: FlowType.assente));
+      expect(result, isA<Ok<DailyLogEntity>>());
+    });
+
+    test('null flowType and null intensity → Ok', () async {
+      final result = await useCase(makeLog());
       expect(result, isA<Ok<DailyLogEntity>>());
     });
   });
@@ -150,7 +169,7 @@ void main() {
   });
 
   test('valid log is persisted to repository', () async {
-    final log = makeLog(flow: FlowIntensity.medium);
+    final log = makeLog(flowType: FlowType.mestruazioni, flow: FlowIntensity.medium);
     await useCase(log);
     expect(repo.savedLogs, hasLength(1));
   });

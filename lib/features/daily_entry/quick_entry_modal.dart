@@ -26,6 +26,7 @@ import '../../core/widgets/button_primary.dart';
 import '../../core/widgets/section_title_metra.dart';
 import '../../domain/entities/daily_log_entity.dart';
 import '../../domain/entities/flow_intensity.dart';
+import '../../domain/entities/flow_type.dart';
 import '../../l10n/app_localizations.dart';
 import 'state/daily_entry_controller.dart';
 import 'widgets/flow_intensity_picker.dart';
@@ -77,14 +78,22 @@ class _QuickEntryModalState extends ConsumerState<QuickEntryModal> {
 
     // Merge flow/spotting changes onto the existing entity so pain, notes, and
     // other fields set via HistoricalEntryScreen are not silently destroyed.
+    final derivedFlowType = _isSpotting
+        ? FlowType.spotting
+        : (_selectedFlow != null ? FlowType.mestruazioni : null);
+    final derivedFlowIntensity =
+        derivedFlowType == FlowType.mestruazioni ? _selectedFlow : null;
+
     final log = _existingLog?.copyWith(
-          flowIntensity: _selectedFlow,
-          spotting: _isSpotting,
+          flowType: derivedFlowType,
+          clearFlowType: derivedFlowType == null,
+          flowIntensity: derivedFlowIntensity,
+          clearFlowIntensity: derivedFlowIntensity == null,
         ) ??
         DailyLogEntity(
           date: _today,
-          flowIntensity: _selectedFlow,
-          spotting: _isSpotting,
+          flowType: derivedFlowType,
+          flowIntensity: derivedFlowIntensity,
         );
 
     await notifier.save(log);

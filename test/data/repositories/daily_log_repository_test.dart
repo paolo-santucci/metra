@@ -22,6 +22,7 @@ import 'package:metra/data/database/daos/daily_log_dao.dart';
 import 'package:metra/data/repositories/drift_daily_log_repository.dart';
 import 'package:metra/domain/entities/daily_log_entity.dart';
 import 'package:metra/domain/entities/flow_intensity.dart';
+import 'package:metra/domain/entities/flow_type.dart';
 import 'package:metra/domain/entities/pain_symptom_data.dart';
 import 'package:metra/domain/entities/pain_symptom_type.dart';
 
@@ -43,15 +44,17 @@ void main() {
   final day1 = DateTime.utc(2026, 1, 15);
   final day2 = DateTime.utc(2026, 1, 20);
 
-  DailyLogEntity makeEntity(DateTime date, {FlowIntensity? flow}) =>
-      DailyLogEntity(
-        date: date,
-        flowIntensity: flow ?? FlowIntensity.medium,
-        spotting: false,
-        otherDischarge: false,
-        painEnabled: false,
-        notesEnabled: false,
-      );
+  DailyLogEntity makeEntity(DateTime date, {FlowIntensity? flow}) {
+    final fi = flow ?? FlowIntensity.medium;
+    return DailyLogEntity(
+      date: date,
+      flowType: FlowType.mestruazioni,
+      flowIntensity: fi,
+      otherDischarge: false,
+      painEnabled: false,
+      notesEnabled: false,
+    );
+  }
 
   test('saveDailyLog + watchDay round-trip', () async {
     final entity = makeEntity(day1);

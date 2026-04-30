@@ -14,6 +14,12 @@ class $DailyLogsTable extends DailyLogs
   late final GeneratedColumn<DateTime> date = GeneratedColumn<DateTime>(
       'date', aliasedName, false,
       type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _flowTypeMeta =
+      const VerificationMeta('flowType');
+  @override
+  late final GeneratedColumn<int> flowType = GeneratedColumn<int>(
+      'flow_type', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
   static const VerificationMeta _flowIntensityMeta =
       const VerificationMeta('flowIntensity');
   @override
@@ -74,6 +80,7 @@ class $DailyLogsTable extends DailyLogs
   @override
   List<GeneratedColumn> get $columns => [
         date,
+        flowType,
         flowIntensity,
         spotting,
         otherDischarge,
@@ -97,6 +104,10 @@ class $DailyLogsTable extends DailyLogs
           _dateMeta, date.isAcceptableOrUnknown(data['date']!, _dateMeta));
     } else if (isInserting) {
       context.missing(_dateMeta);
+    }
+    if (data.containsKey('flow_type')) {
+      context.handle(_flowTypeMeta,
+          flowType.isAcceptableOrUnknown(data['flow_type']!, _flowTypeMeta));
     }
     if (data.containsKey('flow_intensity')) {
       context.handle(
@@ -147,6 +158,8 @@ class $DailyLogsTable extends DailyLogs
     return DailyLog(
       date: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}date'])!,
+      flowType: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}flow_type']),
       flowIntensity: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}flow_intensity']),
       spotting: attachedDatabase.typeMapping
@@ -172,6 +185,7 @@ class $DailyLogsTable extends DailyLogs
 
 class DailyLog extends DataClass implements Insertable<DailyLog> {
   final DateTime date;
+  final int? flowType;
   final int? flowIntensity;
   final bool spotting;
   final bool otherDischarge;
@@ -181,6 +195,7 @@ class DailyLog extends DataClass implements Insertable<DailyLog> {
   final String? notes;
   const DailyLog(
       {required this.date,
+      this.flowType,
       this.flowIntensity,
       required this.spotting,
       required this.otherDischarge,
@@ -192,6 +207,9 @@ class DailyLog extends DataClass implements Insertable<DailyLog> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['date'] = Variable<DateTime>(date);
+    if (!nullToAbsent || flowType != null) {
+      map['flow_type'] = Variable<int>(flowType);
+    }
     if (!nullToAbsent || flowIntensity != null) {
       map['flow_intensity'] = Variable<int>(flowIntensity);
     }
@@ -211,6 +229,9 @@ class DailyLog extends DataClass implements Insertable<DailyLog> {
   DailyLogsCompanion toCompanion(bool nullToAbsent) {
     return DailyLogsCompanion(
       date: Value(date),
+      flowType: flowType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(flowType),
       flowIntensity: flowIntensity == null && nullToAbsent
           ? const Value.absent()
           : Value(flowIntensity),
@@ -231,6 +252,7 @@ class DailyLog extends DataClass implements Insertable<DailyLog> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return DailyLog(
       date: serializer.fromJson<DateTime>(json['date']),
+      flowType: serializer.fromJson<int?>(json['flowType']),
       flowIntensity: serializer.fromJson<int?>(json['flowIntensity']),
       spotting: serializer.fromJson<bool>(json['spotting']),
       otherDischarge: serializer.fromJson<bool>(json['otherDischarge']),
@@ -245,6 +267,7 @@ class DailyLog extends DataClass implements Insertable<DailyLog> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'date': serializer.toJson<DateTime>(date),
+      'flowType': serializer.toJson<int?>(flowType),
       'flowIntensity': serializer.toJson<int?>(flowIntensity),
       'spotting': serializer.toJson<bool>(spotting),
       'otherDischarge': serializer.toJson<bool>(otherDischarge),
@@ -257,6 +280,7 @@ class DailyLog extends DataClass implements Insertable<DailyLog> {
 
   DailyLog copyWith(
           {DateTime? date,
+          Value<int?> flowType = const Value.absent(),
           Value<int?> flowIntensity = const Value.absent(),
           bool? spotting,
           bool? otherDischarge,
@@ -266,6 +290,7 @@ class DailyLog extends DataClass implements Insertable<DailyLog> {
           Value<String?> notes = const Value.absent()}) =>
       DailyLog(
         date: date ?? this.date,
+        flowType: flowType.present ? flowType.value : this.flowType,
         flowIntensity:
             flowIntensity.present ? flowIntensity.value : this.flowIntensity,
         spotting: spotting ?? this.spotting,
@@ -279,6 +304,7 @@ class DailyLog extends DataClass implements Insertable<DailyLog> {
   DailyLog copyWithCompanion(DailyLogsCompanion data) {
     return DailyLog(
       date: data.date.present ? data.date.value : this.date,
+      flowType: data.flowType.present ? data.flowType.value : this.flowType,
       flowIntensity: data.flowIntensity.present
           ? data.flowIntensity.value
           : this.flowIntensity,
@@ -302,6 +328,7 @@ class DailyLog extends DataClass implements Insertable<DailyLog> {
   String toString() {
     return (StringBuffer('DailyLog(')
           ..write('date: $date, ')
+          ..write('flowType: $flowType, ')
           ..write('flowIntensity: $flowIntensity, ')
           ..write('spotting: $spotting, ')
           ..write('otherDischarge: $otherDischarge, ')
@@ -314,13 +341,14 @@ class DailyLog extends DataClass implements Insertable<DailyLog> {
   }
 
   @override
-  int get hashCode => Object.hash(date, flowIntensity, spotting, otherDischarge,
-      painEnabled, painIntensity, notesEnabled, notes);
+  int get hashCode => Object.hash(date, flowType, flowIntensity, spotting,
+      otherDischarge, painEnabled, painIntensity, notesEnabled, notes);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is DailyLog &&
           other.date == this.date &&
+          other.flowType == this.flowType &&
           other.flowIntensity == this.flowIntensity &&
           other.spotting == this.spotting &&
           other.otherDischarge == this.otherDischarge &&
@@ -332,6 +360,7 @@ class DailyLog extends DataClass implements Insertable<DailyLog> {
 
 class DailyLogsCompanion extends UpdateCompanion<DailyLog> {
   final Value<DateTime> date;
+  final Value<int?> flowType;
   final Value<int?> flowIntensity;
   final Value<bool> spotting;
   final Value<bool> otherDischarge;
@@ -342,6 +371,7 @@ class DailyLogsCompanion extends UpdateCompanion<DailyLog> {
   final Value<int> rowid;
   const DailyLogsCompanion({
     this.date = const Value.absent(),
+    this.flowType = const Value.absent(),
     this.flowIntensity = const Value.absent(),
     this.spotting = const Value.absent(),
     this.otherDischarge = const Value.absent(),
@@ -353,6 +383,7 @@ class DailyLogsCompanion extends UpdateCompanion<DailyLog> {
   });
   DailyLogsCompanion.insert({
     required DateTime date,
+    this.flowType = const Value.absent(),
     this.flowIntensity = const Value.absent(),
     this.spotting = const Value.absent(),
     this.otherDischarge = const Value.absent(),
@@ -364,6 +395,7 @@ class DailyLogsCompanion extends UpdateCompanion<DailyLog> {
   }) : date = Value(date);
   static Insertable<DailyLog> custom({
     Expression<DateTime>? date,
+    Expression<int>? flowType,
     Expression<int>? flowIntensity,
     Expression<bool>? spotting,
     Expression<bool>? otherDischarge,
@@ -375,6 +407,7 @@ class DailyLogsCompanion extends UpdateCompanion<DailyLog> {
   }) {
     return RawValuesInsertable({
       if (date != null) 'date': date,
+      if (flowType != null) 'flow_type': flowType,
       if (flowIntensity != null) 'flow_intensity': flowIntensity,
       if (spotting != null) 'spotting': spotting,
       if (otherDischarge != null) 'other_discharge': otherDischarge,
@@ -388,6 +421,7 @@ class DailyLogsCompanion extends UpdateCompanion<DailyLog> {
 
   DailyLogsCompanion copyWith(
       {Value<DateTime>? date,
+      Value<int?>? flowType,
       Value<int?>? flowIntensity,
       Value<bool>? spotting,
       Value<bool>? otherDischarge,
@@ -398,6 +432,7 @@ class DailyLogsCompanion extends UpdateCompanion<DailyLog> {
       Value<int>? rowid}) {
     return DailyLogsCompanion(
       date: date ?? this.date,
+      flowType: flowType ?? this.flowType,
       flowIntensity: flowIntensity ?? this.flowIntensity,
       spotting: spotting ?? this.spotting,
       otherDischarge: otherDischarge ?? this.otherDischarge,
@@ -414,6 +449,9 @@ class DailyLogsCompanion extends UpdateCompanion<DailyLog> {
     final map = <String, Expression>{};
     if (date.present) {
       map['date'] = Variable<DateTime>(date.value);
+    }
+    if (flowType.present) {
+      map['flow_type'] = Variable<int>(flowType.value);
     }
     if (flowIntensity.present) {
       map['flow_intensity'] = Variable<int>(flowIntensity.value);
@@ -446,6 +484,7 @@ class DailyLogsCompanion extends UpdateCompanion<DailyLog> {
   String toString() {
     return (StringBuffer('DailyLogsCompanion(')
           ..write('date: $date, ')
+          ..write('flowType: $flowType, ')
           ..write('flowIntensity: $flowIntensity, ')
           ..write('spotting: $spotting, ')
           ..write('otherDischarge: $otherDischarge, ')
@@ -2207,6 +2246,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
 
 typedef $$DailyLogsTableCreateCompanionBuilder = DailyLogsCompanion Function({
   required DateTime date,
+  Value<int?> flowType,
   Value<int?> flowIntensity,
   Value<bool> spotting,
   Value<bool> otherDischarge,
@@ -2218,6 +2258,7 @@ typedef $$DailyLogsTableCreateCompanionBuilder = DailyLogsCompanion Function({
 });
 typedef $$DailyLogsTableUpdateCompanionBuilder = DailyLogsCompanion Function({
   Value<DateTime> date,
+  Value<int?> flowType,
   Value<int?> flowIntensity,
   Value<bool> spotting,
   Value<bool> otherDischarge,
@@ -2260,6 +2301,9 @@ class $$DailyLogsTableFilterComposer
   });
   ColumnFilters<DateTime> get date => $composableBuilder(
       column: $table.date, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get flowType => $composableBuilder(
+      column: $table.flowType, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get flowIntensity => $composableBuilder(
       column: $table.flowIntensity, builder: (column) => ColumnFilters(column));
@@ -2317,6 +2361,9 @@ class $$DailyLogsTableOrderingComposer
   ColumnOrderings<DateTime> get date => $composableBuilder(
       column: $table.date, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<int> get flowType => $composableBuilder(
+      column: $table.flowType, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<int> get flowIntensity => $composableBuilder(
       column: $table.flowIntensity,
       builder: (column) => ColumnOrderings(column));
@@ -2354,6 +2401,9 @@ class $$DailyLogsTableAnnotationComposer
   });
   GeneratedColumn<DateTime> get date =>
       $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<int> get flowType =>
+      $composableBuilder(column: $table.flowType, builder: (column) => column);
 
   GeneratedColumn<int> get flowIntensity => $composableBuilder(
       column: $table.flowIntensity, builder: (column) => column);
@@ -2422,6 +2472,7 @@ class $$DailyLogsTableTableManager extends RootTableManager<
               $$DailyLogsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<DateTime> date = const Value.absent(),
+            Value<int?> flowType = const Value.absent(),
             Value<int?> flowIntensity = const Value.absent(),
             Value<bool> spotting = const Value.absent(),
             Value<bool> otherDischarge = const Value.absent(),
@@ -2433,6 +2484,7 @@ class $$DailyLogsTableTableManager extends RootTableManager<
           }) =>
               DailyLogsCompanion(
             date: date,
+            flowType: flowType,
             flowIntensity: flowIntensity,
             spotting: spotting,
             otherDischarge: otherDischarge,
@@ -2444,6 +2496,7 @@ class $$DailyLogsTableTableManager extends RootTableManager<
           ),
           createCompanionCallback: ({
             required DateTime date,
+            Value<int?> flowType = const Value.absent(),
             Value<int?> flowIntensity = const Value.absent(),
             Value<bool> spotting = const Value.absent(),
             Value<bool> otherDischarge = const Value.absent(),
@@ -2455,6 +2508,7 @@ class $$DailyLogsTableTableManager extends RootTableManager<
           }) =>
               DailyLogsCompanion.insert(
             date: date,
+            flowType: flowType,
             flowIntensity: flowIntensity,
             spotting: spotting,
             otherDischarge: otherDischarge,

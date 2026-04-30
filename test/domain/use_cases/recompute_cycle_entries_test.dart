@@ -20,6 +20,7 @@ import 'package:metra/core/utils/result.dart';
 import 'package:metra/domain/entities/cycle_entry_entity.dart';
 import 'package:metra/domain/entities/daily_log_entity.dart';
 import 'package:metra/domain/entities/flow_intensity.dart';
+import 'package:metra/domain/entities/flow_type.dart';
 import 'package:metra/domain/use_cases/recompute_cycle_entries.dart';
 
 import '../../helpers/fake_cycle_entry_repository.dart';
@@ -29,10 +30,14 @@ DailyLogEntity _flowDay(
   DateTime date, [
   FlowIntensity flow = FlowIntensity.medium,
 ]) =>
-    DailyLogEntity(date: date, flowIntensity: flow);
+    DailyLogEntity(
+      date: date,
+      flowType: FlowType.mestruazioni,
+      flowIntensity: flow,
+    );
 
 DailyLogEntity _spottingDay(DateTime date) =>
-    DailyLogEntity(date: date, spotting: true);
+    DailyLogEntity(date: date, flowType: FlowType.spotting);
 
 void main() {
   late FakeDailyLogRepository logRepo;
@@ -105,9 +110,9 @@ void main() {
       expect(RecomputeCycleEntries.compute(logs), hasLength(1));
     });
 
-    test('FlowIntensity.none is ignored for cycle detection', () {
+    test('spotting days are excluded from cycle detection', () {
       final logs = [
-        _flowDay(DateTime.utc(2026, 1, 1), FlowIntensity.none),
+        _spottingDay(DateTime.utc(2026, 1, 1)),
         _flowDay(DateTime.utc(2026, 1, 2), FlowIntensity.light),
       ];
       final entries = RecomputeCycleEntries.compute(logs);

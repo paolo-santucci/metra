@@ -25,6 +25,7 @@ import 'package:metra/core/theme/metra_theme.dart';
 import 'package:metra/domain/entities/cycle_prediction.dart';
 import 'package:metra/domain/entities/daily_log_entity.dart';
 import 'package:metra/domain/entities/flow_intensity.dart';
+import 'package:metra/domain/entities/flow_type.dart';
 import 'package:metra/features/calendar/calendar_screen.dart';
 import 'package:metra/features/calendar/state/calendar_month_controller.dart';
 import 'package:metra/features/calendar/state/prediction_controller.dart';
@@ -57,6 +58,7 @@ class _StubCalendarWithFlowNotifier extends CalendarMonthNotifier {
     final logDate = DateTime.utc(now.year, now.month, 5);
     final log = DailyLogEntity(
       date: logDate,
+      flowType: FlowType.mestruazioni,
       flowIntensity: FlowIntensity.medium,
     );
     return CalendarMonthState(

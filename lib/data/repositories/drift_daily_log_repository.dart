@@ -22,6 +22,7 @@ import '../../data/database/app_database.dart';
 import '../../data/database/daos/daily_log_dao.dart';
 import '../../domain/entities/daily_log_entity.dart';
 import '../../domain/entities/flow_intensity.dart';
+import '../../domain/entities/flow_type.dart';
 import '../../domain/entities/pain_symptom_data.dart';
 import '../../domain/entities/pain_symptom_type.dart';
 import '../../domain/repositories/daily_log_repository.dart';
@@ -37,6 +38,22 @@ class DriftDailyLogRepository implements DailyLogRepository {
       DateTime.utc(date.year, date.month, date.day);
 
   static DailyLogEntity _fromRow(DailyLog row) {
+    // FlowType: prefer the v4 column. If absent (legacy row written before
+    // the migration ran for that connection — defensive only), derive from
+    // the legacy `spotting` boolean.
+    FlowType? flowType;
+    final ftIdx = row.flowType;
+    if (ftIdx != null) {
+      if (ftIdx < 0 || ftIdx >= FlowType.values.length) {
+        throw const DatabaseException(
+          'Stored flowType index is out of range',
+        );
+      }
+      flowType = FlowType.values[ftIdx];
+    } else if (row.spotting) {
+      flowType = FlowType.spotting;
+    }
+
     final flowIdx = row.flowIntensity;
     FlowIntensity? flow;
     if (flowIdx != null) {
@@ -47,10 +64,17 @@ class DriftDailyLogRepository implements DailyLogRepository {
       }
       flow = FlowIntensity.values[flowIdx];
     }
+
+    // Domain invariant: intensity is meaningful only for mestruazioni.
+    // Drop it on read for assente/spotting rather than surfacing a stale value.
+    if (flowType != FlowType.mestruazioni) {
+      flow = null;
+    }
+
     return DailyLogEntity(
       date: row.date.toUtc(),
+      flowType: flowType,
       flowIntensity: flow,
-      spotting: row.spotting,
       otherDischarge: row.otherDischarge,
       painEnabled: row.painEnabled,
       painIntensity: row.painIntensity,
@@ -60,10 +84,17 @@ class DriftDailyLogRepository implements DailyLogRepository {
   }
 
   static DailyLogsCompanion _toCompanion(DailyLogEntity entity) {
+    // Enforce: intensity persisted only when flowType == mestruazioni (DM-02).
+    final intensityForRow = entity.flowType == FlowType.mestruazioni
+        ? entity.flowIntensity?.index
+        : null;
     return DailyLogsCompanion(
       date: Value(_utcDay(entity.date)),
-      flowIntensity: Value(entity.flowIntensity?.index),
-      spotting: Value(entity.spotting),
+      flowType: Value(entity.flowType?.index),
+      flowIntensity: Value(intensityForRow),
+      // Keep the legacy `spotting` column in sync for any reader/exporter
+      // that hasn't been migrated yet (CSV codec, backup blob).
+      spotting: Value(entity.flowType == FlowType.spotting),
       otherDischarge: Value(entity.otherDischarge),
       painEnabled: Value(entity.painEnabled),
       painIntensity: Value(entity.painIntensity),

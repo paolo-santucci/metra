@@ -18,7 +18,7 @@
 import '../../core/errors/metra_exception.dart';
 import '../../core/utils/result.dart';
 import '../entities/daily_log_entity.dart';
-import '../entities/flow_intensity.dart';
+import '../entities/flow_type.dart';
 import '../repositories/daily_log_repository.dart';
 
 class SaveDailyLog {
@@ -30,11 +30,14 @@ class SaveDailyLog {
   static const int _maxPainIntensity = 3;
 
   Future<Result<DailyLogEntity>> call(DailyLogEntity log) async {
-    final hasFlow =
-        log.flowIntensity != null && log.flowIntensity != FlowIntensity.none;
-    if (hasFlow && log.spotting) {
+    // Domain invariant (DM-02): intensity is meaningful only when
+    // flowType == mestruazioni. Persisting a value alongside any other
+    // flowType silently corrupts the model.
+    if (log.flowType != FlowType.mestruazioni && log.flowIntensity != null) {
       return const Err(
-        ValidationException('A day cannot have both flow and spotting'),
+        ValidationException(
+          'flowIntensity must be null unless flowType == FlowType.mestruazioni',
+        ),
       );
     }
 
@@ -54,8 +57,8 @@ class SaveDailyLog {
 
     final normalized = DailyLogEntity(
       date: logDay,
+      flowType: log.flowType,
       flowIntensity: log.flowIntensity,
-      spotting: log.spotting,
       otherDischarge: log.otherDischarge,
       painEnabled: log.painEnabled,
       painIntensity: log.painIntensity,
