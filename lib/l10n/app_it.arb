@@ -769,7 +769,7 @@
     "description": "Privacy reassurance on the onboarding welcome screen"
   },
 
-  "onboarding_last_period_question": "Quando è iniziato il tuo ultimo ciclo?",
+  "onboarding_last_period_question": "Primo giorno dell'ultima mestruazione",
   "@onboarding_last_period_question": {
     "description": "Label for the last period date picker on onboarding"
   },
@@ -777,6 +777,11 @@
   "onboarding_cycle_length_question": "Quanto dura di solito il tuo ciclo?",
   "@onboarding_cycle_length_question": {
     "description": "Label for the cycle length stepper on onboarding"
+  },
+
+  "onboarding_period_duration_label": "Durata mestruazioni",
+  "@onboarding_period_duration_label": {
+    "description": "Label for the period duration picker on onboarding screen"
   },
 
   "onboarding_get_started": "Inizia",

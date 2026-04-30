@@ -135,6 +135,9 @@ class _DataPage extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textPrimary =
         isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
+    final textSecondary = isDark
+        ? MetraColors.dark.textSecondary
+        : MetraColors.light.textSecondary;
     final state = ref.watch(onboardingNotifierProvider);
     final notifier = ref.read(onboardingNotifierProvider.notifier);
 
@@ -166,6 +169,20 @@ class _DataPage extends ConsumerWidget {
               onIncrement: notifier.incrementCycleLength,
               onDecrement: notifier.decrementCycleLength,
             ),
+            const SizedBox(height: MetraSpacing.s8),
+            Text(
+              l10n.onboarding_period_duration_label.toUpperCase(),
+              style: MetraTypography.caption.copyWith(
+                color: textSecondary,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.1,
+              ),
+            ),
+            const SizedBox(height: MetraSpacing.s3),
+            _PeriodDurationPicker(
+              selected: state.periodLength,
+              onChanged: notifier.setPeriodLength,
+            ),
             const Spacer(),
             FilledButton(
               onPressed:
@@ -188,6 +205,7 @@ class _DataPage extends ConsumerWidget {
     await uc.execute(
       lastPeriodDate: state.lastPeriodDate!,
       cycleLength: state.cycleLength,
+      periodLength: state.periodLength,
     );
     if (context.mounted) {
       context.go('/calendar');
@@ -239,6 +257,64 @@ class _DatePickerField extends StatelessWidget {
     if (picked != null) {
       onDateSelected(DateTime.utc(picked.year, picked.month, picked.day));
     }
+  }
+}
+
+// ── Period duration picker ────────────────────────────────────────────────────
+
+class _PeriodDurationPicker extends StatelessWidget {
+  const _PeriodDurationPicker({
+    required this.selected,
+    required this.onChanged,
+  });
+
+  final int selected;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accentFlow =
+        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
+    final bgSurface =
+        isDark ? MetraColors.dark.bgSurface : MetraColors.light.bgSurface;
+    final textPrimary =
+        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
+
+    return Row(
+      children: List.generate(8, (i) {
+        final day = i + 1;
+        final isSelected = selected == day;
+        return Expanded(
+          child: GestureDetector(
+            onTap: () => onChanged(day),
+            child: Container(
+              height: 44,
+              margin: EdgeInsets.only(right: i < 7 ? 4 : 0),
+              decoration: BoxDecoration(
+                color: isSelected ? accentFlow : bgSurface,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isSelected
+                      ? Colors.transparent
+                      : (isDark ? Colors.white12 : Colors.black12),
+                ),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                '$day',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: isSelected ? Colors.white : textPrimary,
+                ),
+              ),
+            ),
+          ),
+        );
+      }),
+    );
   }
 }
 

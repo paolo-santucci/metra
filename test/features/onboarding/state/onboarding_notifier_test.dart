@@ -61,7 +61,7 @@ void main() {
     expect(state.cycleLength, 27);
   });
 
-  test('incrementCycleLength clamps at 60', () {
+  test('incrementCycleLength clamps at 45', () {
     final container = makeContainer();
     addTearDown(container.dispose);
     for (var i = 0; i < 40; i++) {
@@ -70,10 +70,10 @@ void main() {
           .incrementCycleLength();
     }
     final state = container.read(onboardingNotifierProvider);
-    expect(state.cycleLength, 60);
+    expect(state.cycleLength, 45);
   });
 
-  test('decrementCycleLength clamps at 10', () {
+  test('decrementCycleLength clamps at 21', () {
     final container = makeContainer();
     addTearDown(container.dispose);
     for (var i = 0; i < 30; i++) {
@@ -82,7 +82,38 @@ void main() {
           .decrementCycleLength();
     }
     final state = container.read(onboardingNotifierProvider);
-    expect(state.cycleLength, 10);
+    expect(state.cycleLength, 21);
+  });
+
+  test('initial periodLength is 3', () {
+    final container = makeContainer();
+    addTearDown(container.dispose);
+    final state = container.read(onboardingNotifierProvider);
+    expect(state.periodLength, 3);
+  });
+
+  test('setPeriodLength updates periodLength', () {
+    final container = makeContainer();
+    addTearDown(container.dispose);
+    container.read(onboardingNotifierProvider.notifier).setPeriodLength(5);
+    final state = container.read(onboardingNotifierProvider);
+    expect(state.periodLength, 5);
+  });
+
+  test('setPeriodLength clamps at 1', () {
+    final container = makeContainer();
+    addTearDown(container.dispose);
+    container.read(onboardingNotifierProvider.notifier).setPeriodLength(0);
+    final state = container.read(onboardingNotifierProvider);
+    expect(state.periodLength, 1);
+  });
+
+  test('setPeriodLength clamps at 8', () {
+    final container = makeContainer();
+    addTearDown(container.dispose);
+    container.read(onboardingNotifierProvider.notifier).setPeriodLength(9);
+    final state = container.read(onboardingNotifierProvider);
+    expect(state.periodLength, 8);
   });
 
   test('canSubmit is false when lastPeriodDate is null', () {

@@ -21,17 +21,24 @@ class OnboardingState {
   const OnboardingState({
     this.lastPeriodDate,
     this.cycleLength = 28,
+    this.periodLength = 3,
   });
 
   final DateTime? lastPeriodDate;
   final int cycleLength;
+  final int periodLength;
 
   bool get canSubmit => lastPeriodDate != null;
 
-  OnboardingState copyWith({DateTime? lastPeriodDate, int? cycleLength}) =>
+  OnboardingState copyWith({
+    DateTime? lastPeriodDate,
+    int? cycleLength,
+    int? periodLength,
+  }) =>
       OnboardingState(
         lastPeriodDate: lastPeriodDate ?? this.lastPeriodDate,
         cycleLength: cycleLength ?? this.cycleLength,
+        periodLength: periodLength ?? this.periodLength,
       );
 }
 
@@ -42,11 +49,15 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
   void setDate(DateTime date) => state = state.copyWith(lastPeriodDate: date);
 
   void incrementCycleLength() => state = state.copyWith(
-        cycleLength: (state.cycleLength + 1).clamp(10, 60),
+        cycleLength: (state.cycleLength + 1).clamp(21, 45),
       );
 
   void decrementCycleLength() => state = state.copyWith(
-        cycleLength: (state.cycleLength - 1).clamp(10, 60),
+        cycleLength: (state.cycleLength - 1).clamp(21, 45),
+      );
+
+  void setPeriodLength(int value) => state = state.copyWith(
+        periodLength: value.clamp(1, 8),
       );
 }
 

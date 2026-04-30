@@ -494,11 +494,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboarding_last_period_question =>
-      'When did your last period start?';
+      'First day of your last menstruation';
 
   @override
   String get onboarding_cycle_length_question =>
       'How long is your cycle usually?';
+
+  @override
+  String get onboarding_period_duration_label => 'Menstruation duration';
 
   @override
   String get onboarding_get_started => 'Get started';
@@ -578,4 +581,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nav_archivio => 'Archive';
+
+  @override
+  String get calendar_legend_mestruazioni => 'Menstruation';
+
+  @override
+  String get calendar_legend_sintomi => 'Symptoms';
+
+  @override
+  String get calendar_legend_dolore => 'Pain';
+
+  @override
+  String get calendar_day_detail_no_data => 'No data logged';
+
+  @override
+  String get calendar_day_detail_edit => 'Edit day';
+
+  @override
+  String calendar_day_detail_cycle_day(int day) {
+    return 'Cycle day $day';
+  }
 }

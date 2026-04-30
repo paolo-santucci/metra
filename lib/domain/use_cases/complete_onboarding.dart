@@ -28,6 +28,7 @@ class CompleteOnboarding {
   Future<void> execute({
     required DateTime lastPeriodDate,
     required int cycleLength,
+    required int periodLength,
   }) async {
     await _cycleRepo.insert(
       CycleEntryEntity(
@@ -35,7 +36,7 @@ class CompleteOnboarding {
         startDate: lastPeriodDate,
         endDate: null,
         cycleLength: cycleLength,
-        periodLength: null,
+        periodLength: periodLength,
       ),
     );
     await _settingsRepo.markOnboardingComplete();

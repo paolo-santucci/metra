@@ -34,27 +34,49 @@ void main() {
 
   final lastPeriod = DateTime.utc(2026, 4, 1);
 
-  test('inserts seed CycleEntry with given startDate and cycleLength',
+  test('inserts seed CycleEntry with given startDate, cycleLength, and periodLength',
       () async {
-    await useCase.execute(lastPeriodDate: lastPeriod, cycleLength: 28);
+    await useCase.execute(
+      lastPeriodDate: lastPeriod,
+      cycleLength: 28,
+      periodLength: 3,
+    );
 
     expect(cycleRepo.entries, hasLength(1));
     expect(cycleRepo.entries.first.startDate, lastPeriod);
     expect(cycleRepo.entries.first.cycleLength, 28);
     expect(cycleRepo.entries.first.endDate, isNull);
-    expect(cycleRepo.entries.first.periodLength, isNull);
+    expect(cycleRepo.entries.first.periodLength, 3);
   });
 
   test('marks onboarding complete in settings', () async {
-    await useCase.execute(lastPeriodDate: lastPeriod, cycleLength: 28);
+    await useCase.execute(
+      lastPeriodDate: lastPeriod,
+      cycleLength: 28,
+      periodLength: 3,
+    );
 
     final settings = await settingsRepo.getOrCreate();
     expect(settings.onboardingCompleted, isTrue);
   });
 
   test('uses provided cycleLength, not a hardcoded default', () async {
-    await useCase.execute(lastPeriodDate: lastPeriod, cycleLength: 35);
+    await useCase.execute(
+      lastPeriodDate: lastPeriod,
+      cycleLength: 35,
+      periodLength: 3,
+    );
 
     expect(cycleRepo.entries.first.cycleLength, 35);
+  });
+
+  test('uses provided periodLength, not a hardcoded default', () async {
+    await useCase.execute(
+      lastPeriodDate: lastPeriod,
+      cycleLength: 28,
+      periodLength: 5,
+    );
+
+    expect(cycleRepo.entries.first.periodLength, 5);
   });
 }

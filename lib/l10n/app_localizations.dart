@@ -953,7 +953,7 @@ abstract class AppLocalizations {
   /// Label for the last period date picker on onboarding
   ///
   /// In it, this message translates to:
-  /// **'Quando è iniziato il tuo ultimo ciclo?'**
+  /// **'Primo giorno dell\'ultima mestruazione'**
   String get onboarding_last_period_question;
 
   /// Label for the cycle length stepper on onboarding
@@ -961,6 +961,12 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Quanto dura di solito il tuo ciclo?'**
   String get onboarding_cycle_length_question;
+
+  /// Label for the period duration picker on onboarding screen
+  ///
+  /// In it, this message translates to:
+  /// **'Durata mestruazioni'**
+  String get onboarding_period_duration_label;
 
   /// CTA button on the onboarding welcome screen
   ///
@@ -1117,6 +1123,42 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Archivio'**
   String get nav_archivio;
+
+  /// Calendar legend: flow/mestruazioni chip label
+  ///
+  /// In it, this message translates to:
+  /// **'Mestruazioni'**
+  String get calendar_legend_mestruazioni;
+
+  /// Calendar legend: symptoms chip label
+  ///
+  /// In it, this message translates to:
+  /// **'Sintomi'**
+  String get calendar_legend_sintomi;
+
+  /// Calendar legend: pain chip label
+  ///
+  /// In it, this message translates to:
+  /// **'Dolore'**
+  String get calendar_legend_dolore;
+
+  /// Calendar day detail card: empty state when no log exists
+  ///
+  /// In it, this message translates to:
+  /// **'Nessun dato registrato'**
+  String get calendar_day_detail_no_data;
+
+  /// Calendar day detail card: button to open historical entry screen
+  ///
+  /// In it, this message translates to:
+  /// **'Modifica giornata'**
+  String get calendar_day_detail_edit;
+
+  /// Calendar day detail card: cycle day number
+  ///
+  /// In it, this message translates to:
+  /// **'Giorno {day} del ciclo'**
+  String calendar_day_detail_cycle_day(int day);
 }
 
 class _AppLocalizationsDelegate

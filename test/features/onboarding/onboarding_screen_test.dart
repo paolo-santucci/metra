@@ -53,14 +53,14 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.textContaining('When did your last period start'),
+        find.textContaining('First day of your last menstruation'),
         findsOneWidget,
       );
     });
 
     testWidgets('Start button is disabled with no date selected',
         (tester) async {
-      tester.view.physicalSize = const Size(800, 1400);
+      tester.view.physicalSize = const Size(800, 1800);
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(_wrap());
@@ -75,7 +75,7 @@ void main() {
     });
 
     testWidgets('cycle length defaults to 28', (tester) async {
-      tester.view.physicalSize = const Size(800, 1400);
+      tester.view.physicalSize = const Size(800, 1800);
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(_wrap());
@@ -87,7 +87,7 @@ void main() {
     });
 
     testWidgets('+ button increments cycle length', (tester) async {
-      tester.view.physicalSize = const Size(800, 1400);
+      tester.view.physicalSize = const Size(800, 1800);
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(_wrap());

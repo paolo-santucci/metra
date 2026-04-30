@@ -388,8 +388,9 @@
 
   "onboarding_tagline": "Your cycle, your data, your device.",
   "onboarding_privacy_line": "Everything stays on your phone — no account, no cloud required.",
-  "onboarding_last_period_question": "When did your last period start?",
+  "onboarding_last_period_question": "First day of your last menstruation",
   "onboarding_cycle_length_question": "How long is your cycle usually?",
+  "onboarding_period_duration_label": "Menstruation duration",
   "onboarding_get_started": "Get started",
   "onboarding_start": "Start",
   "onboarding_days_unit": "days",
