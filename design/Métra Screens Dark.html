@@ -897,16 +897,19 @@ function ScreenArchivio() {
                       <div style={{ fontFamily: 'Inter', fontSize: 12, color: 'rgba(237,228,211,0.38)' }}>Durata {item.dur}g</div>
                     </div>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <div style={{ paddingInline: 8, height: 24, borderRadius: 6, background: `${C.terracotta}15`, display: 'flex', alignItems: 'center' }}>
+                      <div style={{ paddingInline: 8, height: 24, borderRadius: 6, background: `${C.terracotta}15`, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <DataIcon name="drop" size={11} color={C.tc_scura} />
                         <span style={{ fontFamily: 'Inter', fontSize: 11, color: C.tc_scura }}>{item.flow}</span>
                       </div>
                       {item.pain > 0 &&
-                  <div style={{ paddingInline: 8, height: 24, borderRadius: 6, background: `${C.malva}26`, border: `1px solid ${C.malva}`, display: 'flex', alignItems: 'center' }}>
+                  <div style={{ paddingInline: 8, height: 24, borderRadius: 6, background: `${C.malva}26`, border: `1px solid ${C.malva}`, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <DataIcon name="zap" size={11} color={C.malva} />
                           <span style={{ fontFamily: 'Inter', fontSize: 11, color: C.malva }}>{['', 'Lieve', 'Moderato', 'Intenso'][item.pain]}</span>
                         </div>
                   }
                       {item.symptoms.slice(0, 2).map((s) =>
-                  <div key={s} style={{ paddingInline: 8, height: 24, borderRadius: 6, background: `${C.ocra}18`, display: 'flex', alignItems: 'center' }}>
+                  <div key={s} style={{ paddingInline: 8, height: 24, borderRadius: 6, background: `${C.ocra}18`, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <DataIcon name="star_small" size={11} color={C.ocra} />
                           <span style={{ fontFamily: 'Inter', fontSize: 11, color: 'rgba(237,228,211,0.55)' }}>{s}</span>
                         </div>
                   )}
