@@ -1,6 +1,6 @@
 # Métra — UI Alignment Sprint Status
 
-**Last updated**: 2026-04-30  
+**Last updated**: 2026-04-30 (P-I complete — all 9 phases done)  
 **Active plan**: Flutter UI Alignment to Design HTML Mockups (9-phase)  
 **Plan location**: `.claude/docs/plans/2026-04-30-ui-alignment-design-mockups.md`
 
@@ -14,17 +14,18 @@
 | P-B | Flow domain migration (FlowType enum, schema v4) | ✅ done | `0f5b8b1` |
 | P-C | Daily entry widget overhaul (FlowTypeChips + FlowIntensityDots) | ✅ done | `c4f86de` |
 | P-D | Pain picker null state | ✅ done | `4fc46d8` |
-| P-E | Calendar visual + navigation | 🔲 next | — |
-| P-F | Archive timeline + Stats label fix | 🔲 pending | — |
-| P-G | Onboarding fixes | 🔲 pending | — |
-| P-H | Symptom defaults + l10n | 🔲 pending | — |
-| P-I | Final visual QA pass | 🔲 pending | — |
+| P-E | Calendar visual + navigation | ✅ done | `d4a0e29` |
+| P-F | Archive timeline + Stats label fix | ✅ done | `3d197c1` |
+| P-G | Onboarding fixes | ✅ done | `c974baf` |
+| P-H | Symptom defaults + l10n | ✅ done | — |
+| P-I | Final visual QA pass | ✅ done | `5ecd523` |
 
 ---
 
-## P-E — Calendar visual + navigation (next task)
+## P-H — Symptom defaults + l10n (next task)
 
-- Replace dashed prediction outline with solid 1.5px lavanda border + lavanda `drop_outline` icon.
+- Default list (in order): Crampi, Mal di testa, Stanchezza, Mal di schiena, Nausea, Gonfiore, Tensione mammaria.
+- Rename `Schiena` → `Mal di schiena`. Add `Gonfiore`, `Tensione mammaria`.
 - Add calendar legend row (4 chips).
 - Fix "Modifica giornata" to pass selected date.
 - Files: `lib/features/calendar/widgets/calendar_day.dart`, `lib/features/calendar/calendar_screen.dart`.
