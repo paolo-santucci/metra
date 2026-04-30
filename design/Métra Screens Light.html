@@ -154,6 +154,7 @@ function Icon({ name, size = 24, color = C.inchiostro, stroke = 1.5 }) {
 function DataIcon({ name, size = 12, color }) {
   const paths = {
     drop: <path d="M12 3C12 3 5 10 5 15a7 7 0 0 0 14 0c0-5-7-12-7-12z" fill={color} />,
+    drop_outline: <path d="M12 3C12 3 5 10 5 15a7 7 0 0 0 14 0c0-5-7-12-7-12z" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />,
     moon_crescent: <path d="M12 3a9 9 0 1 0 9 9 6.5 6.5 0 0 1-9-9z" fill={color} />,
     star_small: <path d="M12 4l1.5 4.5H18l-3.75 2.75 1.5 4.5L12 13l-3.75 2.75 1.5-4.5L6 8.5h4.5z" fill={color} />,
     zap: <path d="M13 3L5 14L11 14L9 21L19 11L13 11Z" fill={color} />
@@ -558,6 +559,7 @@ function CalDay({ day, offset, monthData, selected, onSelect }) {
   const ic = isSel ? C.sabbia : null;
   const indicators = [
     isFlow       && { name: 'drop',          color: ic || C.tc_scura },
+    isPred       && { name: 'drop_outline',  color: ic || C.lavanda  },
     hasSymptom   && { name: 'star_small',    color: ic || C.ocra     },
     hasPain      && { name: 'zap',           color: ic || C.malva    },
   ].filter(Boolean);
@@ -569,7 +571,7 @@ function CalDay({ day, offset, monthData, selected, onSelect }) {
         borderRadius: 12,
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1,
         background: isSel ? C.inchiostro : isFlow ? `${C.terracotta}22` : 'transparent',
-        border: isSel ? 'none' : isFlow ? `1px solid ${C.terracotta}44` : isPred ? `1.5px solid ${C.ocra}99` : '1px solid transparent',
+        border: isSel ? 'none' : isFlow ? `1px solid ${C.terracotta}44` : isPred ? `1.5px solid ${C.lavanda}66` : '1px solid transparent',
         cursor: 'pointer'
       }}>
       <span style={{ fontFamily: 'Inter', fontSize: 15, fontWeight: isSel ? 600 : 400, color: isSel ? C.sabbia : C.inchiostro }}>{day}</span>
@@ -640,9 +642,7 @@ function ScreenCalendario() {
             </div>
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <svg width="14" height="14" viewBox="0 0 14 14">
-              <circle cx="7" cy="7" r="5" fill="none" stroke={C.ocra} strokeWidth="1.5" />
-            </svg>
+            <DataIcon name="drop_outline" size={14} color={C.lavanda} />
             <span style={{ fontFamily: 'Inter', fontSize: 11, color: 'rgba(43,37,33,0.68)' }}>Previsione</span>
           </div>
         </div>
