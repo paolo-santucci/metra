@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Métra — Prototipo Interattivo</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: #1A1410;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  overflow: hidden;
+}
+/* Phone shell */
+.phone-shell {
+  width: 393px;
+  height: 852px;
+  border-radius: 54px;
+  overflow: hidden;
+  position: relative;
+  box-shadow:
+    0 0 0 1.5px rgba(255,255,255,0.12),
+    0 0 0 8px rgba(0,0,0,0.6),
+    0 0 0 9px rgba(255,255,255,0.08),
+    0 32px 80px rgba(0,0,0,0.7);
+  background: #000;
+  flex-shrink: 0;
+}
+/* Dynamic island */
+.dynamic-island {
+  position: absolute;
+  top: 12px; left: 50%;
+  transform: translateX(-50%);
+  width: 120px; height: 36px;
+  background: #000;
+  border-radius: 20px;
+  z-index: 100;
+}
+/* Status bar */
+.status-bar {
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 54px;
+  display: flex; align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 28px 8px;
+  z-index: 50;
+  pointer-events: none;
+}
+/* Home indicator */
+.home-bar {
+  position: absolute;
+  bottom: 8px; left: 50%;
+  transform: translateX(-50%);
+  width: 134px; height: 5px;
+  border-radius: 3px;
+  z-index: 50;
+  pointer-events: none;
+}
+/* Screen area */
+.screen {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  overflow: hidden;
+}
+/* Transition */
+.screen-enter { animation: slideIn 0.28s cubic-bezier(0.4,0,0.2,1) forwards; }
+.screen-exit { animation: slideOut 0.28s cubic-bezier(0.4,0,0.2,1) forwards; }
+.screen-back { animation: slideBack 0.28s cubic-bezier(0.4,0,0.2,1) forwards; }
+@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes slideOut { from { transform: translateX(0); } to { transform: translateX(-30%); opacity: 0.5; } }
+@keyframes slideBack { from { transform: translateX(-30%); opacity: 0.5; } to { transform: translateX(0); } }
+
+/* External controls */
+.controls {
+  position: fixed; top: 24px; right: 24px;
+  display: flex; flex-direction: column; gap: 10px;
+  z-index: 200;
+}
+.ctrl-btn {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 14px; border-radius: 20px; border: none; cursor: pointer;
+  background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8);
+  font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500;
+  backdrop-filter: blur(8px); transition: background 0.15s;
+}
+.ctrl-btn:hover { background: rgba(255,255,255,0.18); }
+.ctrl-btn.active { background: rgba(200,116,86,0.7); color: #fff; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+const { useState, useEffect, useCallback, createContext, useContext, useRef } = React;
+
+/* ─── THEME & LANG CONTEXT ─── */
+const AppCtx = createContext({});
+const useApp = () => useContext(AppCtx);
+
+/* ─── TOKENS ─── */
+const LIGHT = {
+  bg:       '#F4EDE2',
+  surface:  '#FAF5EE',
+  surface2: '#FFFFFF',
+  ink:      '#2B2521',
+  inkMid:   'rgba(43,37,33,0.55)',
+  inkLow:   'rgba(43,37,33,0.38)',
+  border:   'rgba(43,37,33,0.1)',
+  tc:       '#C87456',
+  tcDark:   '#9A4D32',
+  ocra:     '#D4A26A',
+  lav:      '#5B4E7A',
+  malva:    '#9E7488',
+  muschio:  '#7A8471',
+  statusColor: '#2B2521',
+  tabBg:    'rgba(244,237,226,0.96)',
+  homeBar:  'rgba(43,37,33,0.25)',
+};
+const DARK = {
+  bg:       '#1A1410',
+  surface:  '#251D18',
+  surface2: '#2F2520',
+  ink:      '#EDE4D3',
+  inkMid:   'rgba(237,228,211,0.55)',
+  inkLow:   'rgba(237,228,211,0.38)',
+  border:   'rgba(237,228,211,0.1)',
+  tc:       '#B86848',
+  tcDark:   '#D4906A',
+  ocra:     '#C4924A',
+  lav:      '#9B8FBF',
+  malva:    '#C4A0B4',
+  muschio:  '#9FA896',
+  statusColor: '#EDE4D3',
+  tabBg:    'rgba(26,20,16,0.96)',
+  homeBar:  'rgba(237,228,211,0.22)',
+};
+
+/* ─── STRINGS ─── */
+const STR = {
+  it: {
+    tagline: 'Il tuo ritmo,\ncustodito.',
+    desc: 'Métra è un quaderno silenzioso per conoscerti, ciclo dopo ciclo.',
+    desc2: 'Tutto rimane sul tuo telefono: nessun account, nessun cloud richiesto.',
+    start: 'Inizia',
+    step2: 'Passo 2 di 2',
+    setupTitle: 'Raccontami\nil tuo ciclo.',
+    setupSub: 'Puoi sempre modificarlo dopo. Non servono risposte precise.',
+    lastPeriod: "Quando è iniziato l'ultimo ciclo?",
+    cycleLen: 'Durata media ciclo',
+    periodDur: 'Durata mestruazioni',
+    days: 'giorni',
+    ready: 'Tutto pronto →',
+    cal: 'Calendario',
+    today: 'Oggi',
+    archive: 'Archivio',
+    stats: 'Statistiche',
+    settings: 'Impostazioni',
+    day14: 'Giorno 14',
+    flow: 'Flusso',
+    pain: 'Intensità dolore',
+    symptoms: 'Sintomi',
+    note: 'Nota libera',
+    save: 'Salva giornata',
+    notePlaceholder: 'Scrivi qualcosa…',
+    addSym: 'Aggiungi',
+    howAreYou: 'Come stai oggi?',
+    edit: 'Modifica giornata',
+    cycleDay1: 'Giorno 1 del ciclo',
+    menstr: 'Mestruazioni',
+    ovul: 'Previsione',
+    symLabel: 'Sintomi',
+    timeline: 'Timeline',
+    table: 'Tabella',
+    avgCycle: 'Lunghezza media ciclo',
+    avgFlow: 'Durata media flusso',
+    avgPain: 'Dolore medio',
+    cycles: 'Cicli tracciati',
+    last6: 'Ultimi 6 cicli',
+    settTitle: 'Impostazioni',
+    theme: 'Tema',
+    lang: 'Lingua',
+    themeLight: 'Chiaro',
+    themeDark: 'Scuro',
+    privacy: 'Privacy',
+    notifications: 'Notifiche',
+    export: 'Esporta dati',
+    flowNone: 'Nessuno',
+    flowSpot: 'Spotting',
+    flowLight: 'Lieve',
+    flowMed: 'Moderato',
+    flowHeavy: 'Intenso',
+    painNone: 'Nessuno',
+    painLight: 'Lieve',
+    painMed: 'Moderato',
+    painHeavy: 'Intenso',
+    april: 'Aprile 2025',
+    today_date: 'Martedì 23 aprile',
+    thu10: 'Giovedì 10 aprile',
+    total: 'totali',
+  },
+  en: {
+    tagline: 'Your rhythm,\ncherished.',
+    desc: 'Métra is a quiet journal to know yourself, cycle after cycle.',
+    desc2: 'Everything stays on your phone: no account, no cloud required.',
+    start: 'Get started',
+    step2: 'Step 2 of 2',
+    setupTitle: 'Tell me about\nyour cycle.',
+    setupSub: 'You can always edit this later. No need for exact answers.',
+    lastPeriod: 'When did your last period start?',
+    cycleLen: 'Average cycle length',
+    periodDur: 'Period duration',
+    days: 'days',
+    ready: 'All set →',
+    cal: 'Calendar',
+    today: 'Today',
+    archive: 'Archive',
+    stats: 'Statistics',
+    settings: 'Settings',
+    day14: 'Day 14',
+    flow: 'Flow',
+    pain: 'Pain level',
+    symptoms: 'Symptoms',
+    note: 'Free note',
+    save: 'Save day',
+    notePlaceholder: 'Write something…',
+    addSym: 'Add',
+    howAreYou: 'How are you today?',
+    edit: 'Edit day',
+    cycleDay1: 'Day 1 of cycle',
+    menstr: 'Period',
+    ovul: 'Ovulation',
+    symLabel: 'Symptoms',
+    timeline: 'Timeline',
+    table: 'Table',
+    avgCycle: 'Average cycle length',
+    avgFlow: 'Average period duration',
+    avgPain: 'Average pain',
+    cycles: 'Tracked cycles',
+    last6: 'Last 6 cycles',
+    settTitle: 'Settings',
+    theme: 'Theme',
+    lang: 'Language',
+    themeLight: 'Light',
+    themeDark: 'Dark',
+    privacy: 'Privacy',
+    notifications: 'Notifications',
+    export: 'Export data',
+    flowNone: 'None',
+    flowSpot: 'Spotting',
+    flowLight: 'Light',
+    flowMed: 'Moderate',
+    flowHeavy: 'Heavy',
+    painNone: 'None',
+    painLight: 'Mild',
+    painMed: 'Moderate',
+    painHeavy: 'Severe',
+    april: 'April 2025',
+    today_date: 'Tuesday, April 23',
+    thu10: 'Thursday, April 10',
+    total: 'total',
+  },
+};
+
+/* ─── ICONS ─── */
+function Icon({ name, size = 24, color = '#2B2521', stroke = 1.5 }) {
+  const p = { stroke: color, strokeWidth: stroke, strokeLinecap: 'round', strokeLinejoin: 'round', fill: 'none' };
+  const icons = {
+    chevron_right: <path d="M9 6l6 6-6 6" {...p}/>,
+    chevron_left:  <path d="M15 6l-6 6 6 6" {...p}/>,
+    chevron_down:  <path d="M6 9l6 6 6-6" {...p}/>,
+    check:         <path d="M5 12l5 5 9-9" {...p}/>,
+    x:             <path d="M18 6L6 18M6 6l12 12" {...p}/>,
+    plus:          <><path d="M12 5v14M5 12h14" {...p}/></>,
+    calendar:      <><rect x="3" y="4" width="18" height="18" rx="2" {...p}/><path d="M16 2v4M8 2v4M3 10h18" {...p}/></>,
+    note:          <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" {...p}/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z" {...p}/></>,
+    wave:          <path d="M3 12 Q6 9 9 12 Q12 15 15 12 Q18 9 21 12" {...p}/>,
+    chart:         <><path d="M4 20h16" {...p}/><rect x="5" y="11" width="3" height="9" rx="1" {...p}/><rect x="10.5" y="7" width="3" height="13" rx="1" {...p}/><rect x="16" y="4" width="3" height="16" rx="1" {...p}/></>,
+    settings:      <><circle cx="12" cy="12" r="3" {...p}/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" {...p}/></>,
+    lock:          <><rect x="5" y="11" width="14" height="10" rx="2" {...p}/><path d="M8 11V7a4 4 0 0 1 8 0v4" {...p}/></>,
+    bell:          <><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" {...p}/><path d="M13.73 21a2 2 0 0 1-3.46 0" {...p}/></>,
+    export:        <><path d="M12 16V4M8 8l4-4 4 4" {...p}/><path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2" {...p}/></>,
+    wifi:          <><path d="M5 12.55a11 11 0 0 1 14.08 0" {...p}/><path d="M1.42 9a16 16 0 0 1 21.16 0" {...p}/><path d="M8.53 16.11a6 6 0 0 1 6.95 0" {...p}/><circle cx="12" cy="20" r="1" fill={color} stroke="none"/></>,
+    battery:       <><rect x="1" y="6" width="18" height="12" rx="2" {...p}/><path d="M23 13v-2" {...p}/><rect x="3" y="8" width="12" height="8" rx="1" fill={color} stroke="none" fillOpacity="0.55"/></>,
+    sun:           <><circle cx="12" cy="12" r="5" {...p}/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" {...p}/></>,
+    moon:          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" {...p}/>,
+    globe:         <><circle cx="12" cy="12" r="9" {...p}/><path d="M12 3a14.5 14.5 0 0 0 0 18M12 3a14.5 14.5 0 0 1 0 18M3 12h18" {...p}/></>,
+  };
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">{icons[name] ?? null}</svg>;
+}
+
+/* ─── STATUS BAR ─── */
+function StatusBar({ t }) {
+  return (
+    <div className="status-bar">
+      <span style={{ fontFamily:'Inter', fontSize:15, fontWeight:600, color:t.statusColor, letterSpacing:'-0.02em' }}>20:14</span>
+      <div className="dynamic-island"/>
+      <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+        <Icon name="wifi" size={15} color={t.statusColor} stroke={1.8}/>
+        <Icon name="battery" size={19} color={t.statusColor} stroke={1.4}/>
+      </div>
+    </div>
+  );
+}
+
+/* ─── HOME INDICATOR ─── */
+function HomeBar({ t }) {
+  return <div className="home-bar" style={{ background: t.homeBar }}/>;
+}
+
+/* ─── TAB BAR ─── */
+function TabBar({ active, navigate, t, s }) {
+  const tabs = [
+    { id:'calendar', icon:'calendar', label:s.cal },
+    { id:'log', icon:'note', label:s.today },
+    { id:'archive', icon:'wave', label:s.archive },
+    { id:'stats', icon:'chart', label:s.stats },
+    { id:'settings', icon:'settings', label:s.settings },
+  ];
+  return (
+    <div style={{
+      position:'absolute', bottom:0, left:0, right:0, height:84,
+      background:t.tabBg, backdropFilter:'blur(16px)',
+      borderTop:`1px solid ${t.border}`,
+      display:'flex', alignItems:'flex-start', paddingTop:10, zIndex:40,
+    }}>
+      {tabs.map(tab => {
+        const on = active === tab.id;
+        return (
+          <div key={tab.id} onClick={() => navigate(tab.id)}
+            style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:3, cursor:'pointer' }}>
+            <Icon name={tab.icon} size={24} color={on ? t.tc : t.inkLow} stroke={on?2:1.5}/>
+            <span style={{ fontFamily:'Inter', fontSize:10, fontWeight:on?600:400, color:on?t.tc:t.inkLow }}>{tab.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─── FLOW DOTS ─── */
+function FlowDots({ value, onChange, t, s }) {
+  const opts = [
+    { id:0, label:s.flowNone,  fillOp:0 },
+    { id:1, label:s.flowSpot,  fillOp:0.14 },
+    { id:2, label:s.flowLight, fillOp:0.38 },
+    { id:3, label:s.flowMed,   fillOp:0.68 },
+    { id:4, label:s.flowHeavy, fillOp:0.96 },
+  ];
+  const R = 19, box = (R+7)*2, cx = box/2;
+  return (
+    <div style={{ display:'flex', gap:12, alignItems:'center' }}>
+      {opts.map(o => {
+        const sel = value===o.id;
+        return (
+          <div key={o.id} onClick={() => onChange(o.id)}
+            style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, cursor:'pointer' }}>
+            <svg width={box} height={box} viewBox={`0 0 ${box} ${box}`}>
+              {sel && <circle cx={cx} cy={cx} r={R+5} stroke={t.tc} strokeWidth="1.2" fill="none" opacity="0.28"/>}
+              <circle cx={cx} cy={cx} r={R} stroke={t.tc} strokeWidth="1.5" fill={t.tc} fillOpacity={o.fillOp}/>
+            </svg>
+            <span style={{ fontFamily:'Inter', fontSize:10, color:sel?t.tc:t.inkLow, fontWeight:sel?600:400 }}>{o.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─── PAIN DOTS ─── */
+function PainDots({ value, onChange, t, s }) {
+  const opts = [
+    { id:0, label:s.painNone,  fillOp:0 },
+    { id:1, label:s.painLight, fillOp:0.28 },
+    { id:2, label:s.painMed,   fillOp:0.6 },
+    { id:3, label:s.painHeavy, fillOp:0.92 },
+  ];
+  const R = 19, box = (R+7)*2, cx = box/2;
+  return (
+    <div style={{ display:'flex', gap:14, alignItems:'center' }}>
+      {opts.map(o => {
+        const sel = value===o.id;
+        return (
+          <div key={o.id} onClick={() => onChange(o.id)}
+            style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, cursor:'pointer' }}>
+            <svg width={box} height={box} viewBox={`0 0 ${box} ${box}`}>
+              {sel && <circle cx={cx} cy={cx} r={R+5} stroke={t.malva} strokeWidth="1.2" fill="none" opacity="0.28"/>}
+              <circle cx={cx} cy={cx} r={R} stroke={t.malva} strokeWidth="1.5" fill={t.malva} fillOpacity={o.fillOp}/>
+            </svg>
+            <span style={{ fontFamily:'Inter', fontSize:10, color:sel?t.malva:t.inkLow, fontWeight:sel?600:400 }}>{o.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─── CHIP ─── */
+function Chip({ label, selected, onToggle, t }) {
+  return (
+    <div onClick={onToggle} style={{
+      display:'inline-flex', alignItems:'center',
+      paddingInline:14, height:36,
+      background: selected ? t.tc : `${t.ink}10`,
+      border:`1px solid ${selected ? 'transparent' : t.border}`,
+      borderRadius:18, cursor:'pointer', transition:'all 0.15s',
+    }}>
+      <span style={{ fontFamily:'Inter', fontSize:13, fontWeight:500, color:selected?t.bg:t.ink }}>{label}</span>
+    </div>
+  );
+}
+
+/* ─── MOON SVG ─── */
+function MoonIcon({ size=16, color='#2B2521' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.3"/>
+      <path d="M12 3v18a9 9 0 0 0 0-18z" fill={color} fillOpacity="0.75"/>
+    </svg>
+  );
+}
+
+/* ──────────────────────────────────────
+   SCREENS
+────────────────────────────────────── */
+
+/* ONBOARDING 1 */
+function ScreenOnboarding1({ navigate, t, s }) {
+  const font = "'DM Serif Display', serif";
+  return (
+    <div style={{ height:'100%', background:t.bg, display:'flex', flexDirection:'column' }}>
+      {/* Hero */}
+      <div style={{ flex:'0 0 380px', display:'flex', alignItems:'center', justifyContent:'center', position:'relative', overflow:'hidden' }}>
+        <div style={{ position:'absolute', inset:0, background:`radial-gradient(ellipse 90% 60% at 50% 30%, ${t.tc}0D 0%, transparent 80%)` }}/>
+        <div style={{ position:'relative', display:'flex', flexDirection:'column', alignItems:'center' }}>
+          <div style={{ fontFamily:font, fontSize:56, color:t.ink, letterSpacing:'-0.02em', whiteSpace:'nowrap' }}>
+            M<span style={{ position:'relative', display:'inline-block' }}>
+              e
+              <span style={{ position:'absolute', top:'0.28em', left:'0.08em', right:'0.08em', height:'0.055em', background:t.tc, borderRadius:'1px' }}/>
+            </span>tra
+          </div>
+        </div>
+      </div>
+
+      {/* Text + CTA */}
+      <div style={{ flex:1, padding:'0 36px 40px', display:'flex', flexDirection:'column', justifyContent:'space-between' }}>
+        <div>
+          <div style={{ fontFamily:font, fontSize:32, color:t.ink, lineHeight:1.2, marginBottom:14 }}>
+            {s.tagline.split('\n').map((l,i) => <span key={i}>{l}{i===0&&<br/>}</span>)}
+          </div>
+          <div style={{ fontFamily:'Inter', fontSize:16, color:t.inkMid, lineHeight:1.6 }}>
+            {s.desc}<br/><br/>{s.desc2}
+          </div>
+        </div>
+
+        {/* Macron + dots pagination */}
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, marginBottom:16 }}>
+          <svg width="48" height="22" viewBox="0 0 48 22">
+            <line x1="6" y1="4" x2="42" y2="4" stroke={t.tc} strokeWidth="4" strokeLinecap="round"/>
+            <circle cx="12" cy="16" r="3" fill={t.tc} fillOpacity="0.4"/>
+            <circle cx="24" cy="16" r="3" fill={t.tc} fillOpacity="0.65"/>
+            <circle cx="36" cy="16" r="3" fill={t.tc} fillOpacity="0.4"/>
+          </svg>
+        </div>
+
+        <div onClick={() => navigate('onboarding2')} style={{
+          height:56, background:t.ink, borderRadius:16,
+          display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer',
+          transition:'opacity 0.15s',
+        }}>
+          <span style={{ fontFamily:'Inter', fontSize:16, fontWeight:500, color:t.bg }}>{s.start}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ONBOARDING 2 */
+function ScreenOnboarding2({ navigate, t, s }) {
+  const font = "'DM Serif Display', serif";
+  const [dur, setDur] = useState(28);
+  const [flow, setFlow] = useState(5);
+  return (
+    <div style={{ height:'100%', background:t.bg, overflowY:'auto', padding:'20px 28px 40px' }}>
+      <div style={{ display:'flex', gap:6, marginBottom:24 }}>
+        {[1,2].map(i => <div key={i} style={{ flex:1, height:3, borderRadius:2, background:t.tc }}/>)}
+      </div>
+      <div style={{ fontFamily:'Inter', fontSize:12, fontWeight:600, letterSpacing:'0.07em', textTransform:'uppercase', color:t.inkLow, marginBottom:8 }}>{s.step2}</div>
+      <div style={{ fontFamily:font, fontSize:28, color:t.ink, lineHeight:1.25, marginBottom:8 }}>
+        {s.setupTitle.split('\n').map((l,i) => <span key={i}>{l}{i===0&&<br/>}</span>)}
+      </div>
+      <div style={{ fontFamily:'Inter', fontSize:14, color:t.inkMid, lineHeight:1.5, marginBottom:28 }}>{s.setupSub}</div>
+
+      {/* Last period */}
+      <div style={{ marginBottom:20 }}>
+        <div style={{ fontFamily:'Inter', fontSize:12, fontWeight:600, letterSpacing:'0.06em', textTransform:'uppercase', color:t.inkLow, marginBottom:10 }}>{s.lastPeriod}</div>
+        <div style={{ height:52, background:t.surface, border:`1.5px solid ${t.border}`, borderRadius:12, display:'flex', alignItems:'center', paddingInline:16, justifyContent:'space-between' }}>
+          <span style={{ fontFamily:'Inter', fontSize:16, color:t.ink }}>10 {s.lang === 'en' ? 'April' : 'aprile'} 2025</span>
+          <Icon name="calendar" size={18} color={t.inkLow}/>
+        </div>
+      </div>
+
+      {/* Cycle length */}
+      <div style={{ marginBottom:20 }}>
+        <div style={{ fontFamily:'Inter', fontSize:12, fontWeight:600, letterSpacing:'0.06em', textTransform:'uppercase', color:t.inkLow, marginBottom:10 }}>{s.cycleLen}</div>
+        <div style={{ display:'flex', alignItems:'center', gap:16 }}>
+          <div onClick={() => setDur(d => Math.max(21,d-1))} style={{ width:40,height:40,borderRadius:10,background:`${t.ink}10`,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer' }}>
+            <span style={{ fontSize:20,color:t.ink }}>−</span>
+          </div>
+          <div style={{ flex:1, textAlign:'center' }}>
+            <span style={{ fontFamily:font, fontSize:40, color:t.ink }}>{dur}</span>
+            <span style={{ fontFamily:'Inter', fontSize:16, color:t.inkLow, marginLeft:6 }}>{s.days}</span>
+          </div>
+          <div onClick={() => setDur(d => Math.min(45,d+1))} style={{ width:40,height:40,borderRadius:10,background:`${t.ink}10`,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer' }}>
+            <span style={{ fontSize:20,color:t.ink }}>+</span>
+          </div>
+        </div>
+        <div style={{ height:4, background:`${t.ink}10`, borderRadius:2, marginTop:12 }}>
+          <div style={{ height:4, borderRadius:2, background:t.tc, width:`${(dur-21)/(45-21)*100}%` }}/>
+        </div>
+      </div>
+
+      {/* Period duration */}
+      <div style={{ marginBottom:32 }}>
+        <div style={{ fontFamily:'Inter', fontSize:12, fontWeight:600, letterSpacing:'0.06em', textTransform:'uppercase', color:t.inkLow, marginBottom:10 }}>{s.periodDur}</div>
+        <div style={{ display:'flex', gap:8 }}>
+          {[3,4,5,6,7].map(d => (
+            <div key={d} onClick={() => setFlow(d)} style={{ flex:1, height:44, borderRadius:10, background:flow===d?t.tc:`${t.ink}0D`, border:`1px solid ${flow===d?'transparent':t.border}`, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+              <span style={{ fontFamily:'Inter', fontSize:15, fontWeight:500, color:flow===d?t.bg:t.ink }}>{d}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div onClick={() => navigate('calendar')} style={{ height:56, background:t.ink, borderRadius:16, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+        <span style={{ fontFamily:'Inter', fontSize:16, fontWeight:500, color:t.bg }}>{s.ready}</span>
+      </div>
+    </div>
+  );
+}
+
+/* CALENDAR */
+const FLOW_DAYS = [10,11,12,13,14];
+const OVUL_DAY = 24;
+const SYM_DAYS = [16,17,21,22];
+const DAYS_IT = ['L','M','M','G','V','S','D'];
+const DAYS_EN = ['M','T','W','T','F','S','S'];
+
+function ScreenCalendar({ navigate, t, s }) {
+  const font = "'DM Serif Display', serif";
+  const [sel, setSel] = useState(10);
+  const days = s === STR.it ? DAYS_IT : DAYS_EN;
+  const cells = [null, ...Array.from({length:30},(_,i)=>i+1)]; // April 2025 starts Tuesday
+
+  return (
+    <div style={{ height:'100%', background:t.bg, display:'flex', flexDirection:'column' }}>
+      <StatusBar t={t}/>
+      <div style={{ flex:1, overflowY:'auto', paddingTop:54, paddingBottom:84 }}>
+        {/* Month header */}
+        <div style={{ padding:'12px 24px 0', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div>
+            <div style={{ fontFamily:font, fontSize:26, color:t.ink }}>{s.april}</div>
+            <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:3 }}>
+              <MoonIcon size={14} color={t.ink}/>
+              <span style={{ fontFamily:'Inter', fontSize:13, color:t.inkMid }}>{s.day14}</span>
+            </div>
+          </div>
+          <div style={{ display:'flex', gap:10 }}>
+            <Icon name="chevron_left" size={22} color={t.inkLow}/>
+            <Icon name="chevron_right" size={22} color={t.ink}/>
+          </div>
+        </div>
+
+        {/* Day headers */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', padding:'16px 12px 4px' }}>
+          {days.map((d,i) => <div key={i} style={{ textAlign:'center', fontFamily:'Inter', fontSize:12, fontWeight:600, color:t.inkLow }}>{d}</div>)}
+        </div>
+
+        {/* Calendar grid */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', padding:'0 12px', gap:'2px 0' }}>
+          {cells.map((day,i) => {
+            if (!day) return <div key={i} style={{ height:48 }}/>;
+            const isFlow = FLOW_DAYS.includes(day);
+            const isOvul = OVUL_DAY === day;
+            const hasSym = SYM_DAYS.includes(day);
+            const isSel = sel === day;
+            return (
+              <div key={i} onClick={() => setSel(day)} style={{
+                height:48, borderRadius:12, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:2,
+                background: isSel ? t.ink : isFlow ? `${t.tc}22` : isOvul ? `${t.lav}18` : 'transparent',
+                border:`1px solid ${isSel?'transparent':isFlow?`${t.tc}44`:isOvul?`${t.lav}55`:'transparent'}`,
+                cursor:'pointer',
+              }}>
+                <span style={{ fontFamily:'Inter', fontSize:15, fontWeight:isSel?600:400, color:isSel?t.bg:t.ink }}>{day}</span>
+                <div style={{ display:'flex', gap:3 }}>
+                  {isFlow && <div style={{ width:5,height:5,borderRadius:'50%',background:isSel?t.bg:t.tc }}/>}
+                  {isOvul && <div style={{ width:5,height:5,borderRadius:'50%',background:isSel?t.bg:t.lav }}/>}
+                  {hasSym&&!isFlow&&!isOvul && <div style={{ width:5,height:5,borderRadius:'50%',background:isSel?t.bg:t.ocra }}/>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Legend */}
+        <div style={{ display:'flex', gap:16, padding:'10px 24px', borderTop:`1px solid ${t.border}` }}>
+          {[[t.tc,s.menstr],[t.lav,s.ovul],[t.ocra,s.symLabel]].map(([c,l]) => (
+            <div key={l} style={{ display:'flex', alignItems:'center', gap:5 }}>
+              <div style={{ width:8,height:8,borderRadius:'50%',background:c }}/>
+              <span style={{ fontFamily:'Inter', fontSize:11, color:t.inkMid }}>{l}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Day detail */}
+        <div style={{ margin:'4px 16px', background:t.surface, borderRadius:20, border:`1px solid ${t.border}`, padding:'16px 20px' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+            <div>
+              <div style={{ fontFamily:font, fontSize:20, color:t.ink }}>{s.thu10}</div>
+              <div style={{ fontFamily:'Inter', fontSize:13, color:t.inkMid, marginTop:2 }}>{s.cycleDay1}</div>
+            </div>
+            <div style={{ paddingInline:12,height:32,background:`${t.tc}18`,border:`1px solid ${t.tc}44`,borderRadius:10,display:'flex',alignItems:'center' }}>
+              <span style={{ fontFamily:'Inter', fontSize:12, fontWeight:500, color:t.tcDark }}>{s.flowHeavy}</span>
+            </div>
+          </div>
+          <div onClick={() => navigate('log')} style={{ height:44, background:`${t.tc}10`, border:`1px solid ${t.tc}22`, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+            <Icon name="note" size={16} color={t.tc}/>
+            <span style={{ fontFamily:'Inter', fontSize:14, fontWeight:500, color:t.tc, marginLeft:6 }}>{s.edit}</span>
+          </div>
+        </div>
+      </div>
+
+      <TabBar active="calendar" navigate={navigate} t={t} s={s}/>
+      <HomeBar t={t}/>
+    </div>
+  );
+}
+
+/* LOG */
+function ScreenLog({ navigate, t, s }) {
+  const font = "'DM Serif Display', serif";
+  const [flow, setFlow] = useState(0);
+  const [pain, setPain] = useState(0);
+  const [syms, setSyms] = useState(new Set(['Crampi']));
+  const SYMS = ['Crampi','Mal di testa','Stanchezza','Schiena','Nausea'];
+  const SYMS_EN = ['Cramps','Headache','Fatigue','Back pain','Nausea'];
+  const labels = s === STR.en ? SYMS_EN : SYMS;
+  const toggle = l => setSyms(p => { const n=new Set(p); n.has(l)?n.delete(l):n.add(l); return n; });
+  const [saved, setSaved] = useState(false);
+
+  return (
+    <div style={{ height:'100%', background:t.bg, display:'flex', flexDirection:'column' }}>
+      <StatusBar t={t}/>
+      <div style={{ flex:1, overflowY:'auto', paddingTop:54, paddingBottom:84 }}>
+        <div style={{ padding:'12px 24px 16px' }}>
+          <div style={{ fontFamily:'Inter', fontSize:13, color:t.inkMid, marginBottom:2 }}>{s.today_date}</div>
+          <div style={{ fontFamily:font, fontSize:26, color:t.ink }}>{s.howAreYou}</div>
+        </div>
+
+        <div style={{ display:'flex', flexDirection:'column', gap:1 }}>
+          {/* Flow */}
+          <div style={{ background:t.surface, borderTop:`1px solid ${t.border}`, borderBottom:`1px solid ${t.border}`, padding:'18px 24px' }}>
+            <div style={{ fontFamily:'Inter', fontSize:12, fontWeight:600, letterSpacing:'0.06em', textTransform:'uppercase', color:t.inkLow, marginBottom:14 }}>{s.flow}</div>
+            <FlowDots value={flow} onChange={setFlow} t={t} s={s}/>
+          </div>
+
+          {/* Pain */}
+          <div style={{ background:t.surface, borderBottom:`1px solid ${t.border}`, padding:'18px 24px' }}>
+            <div style={{ fontFamily:'Inter', fontSize:12, fontWeight:600, letterSpacing:'0.06em', textTransform:'uppercase', color:t.inkLow, marginBottom:14 }}>{s.pain}</div>
+            <PainDots value={pain} onChange={setPain} t={t} s={s}/>
+          </div>
+
+          {/* Symptoms */}
+          <div style={{ background:t.surface, borderBottom:`1px solid ${t.border}`, padding:'18px 24px' }}>
+            <div style={{ fontFamily:'Inter', fontSize:12, fontWeight:600, letterSpacing:'0.06em', textTransform:'uppercase', color:t.inkLow, marginBottom:14 }}>{s.symptoms}</div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+              {labels.map(l => <Chip key={l} label={l} selected={syms.has(l)} onToggle={() => toggle(l)} t={t}/>)}
+              <div style={{ display:'inline-flex',alignItems:'center',gap:5,paddingInline:14,height:36,borderRadius:18,border:`1px dashed ${t.border}`,cursor:'pointer' }}>
+                <span style={{ fontSize:18,color:t.inkLow,lineHeight:1,marginTop:-1 }}>+</span>
+                <span style={{ fontFamily:'Inter',fontSize:13,color:t.inkLow }}>{s.addSym}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Note */}
+          <div style={{ background:t.surface, borderBottom:`1px solid ${t.border}`, padding:'18px 24px' }}>
+            <div style={{ fontFamily:'Inter', fontSize:12, fontWeight:600, letterSpacing:'0.06em', textTransform:'uppercase', color:t.inkLow, marginBottom:12 }}>{s.note}</div>
+            <div style={{ minHeight:72, background:`${t.ink}07`, border:`1.5px solid ${t.border}`, borderRadius:12, padding:'12px 14px' }}>
+              <span style={{ fontFamily:'Inter', fontSize:15, color:t.inkLow }}>{s.notePlaceholder}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Save */}
+        <div style={{ padding:'20px 24px 0' }}>
+          <div onClick={() => { setSaved(true); setTimeout(()=>{ setSaved(false); navigate('calendar'); }, 900); }} style={{
+            height:56, background:saved?t.muschio:t.tc, borderRadius:16, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'background 0.3s'
+          }}>
+            {saved
+              ? <><Icon name="check" size={18} color={t.bg} stroke={2}/><span style={{ fontFamily:'Inter', fontSize:16, fontWeight:500, color:t.bg, marginLeft:8 }}>✓</span></>
+              : <><Icon name="check" size={18} color={t.bg} stroke={2}/><span style={{ fontFamily:'Inter', fontSize:16, fontWeight:500, color:t.bg, marginLeft:8 }}>{s.save}</span></>
+            }
+          </div>
+        </div>
+      </div>
+      <TabBar active="log" navigate={navigate} t={t} s={s}/>
+      <HomeBar t={t}/>
+    </div>
+  );
+}
+
+/* ARCHIVE */
+const ARCHIVE = [
+  { month:['Apr 2025','Apr 2025'], day:[10,10], len:28, dur:5, flow:[3,'Intenso','Heavy'], pain:3, syms:['Crampi','Stanchezza'] },
+  { month:['Mar 2025','Mar 2025'], day:[11,11], len:27, dur:4, flow:[2,'Moderato','Moderate'], pain:2, syms:['Mal di testa'] },
+  { month:['Feb 2025','Feb 2025'], day:[12,12], len:29, dur:5, flow:[2,'Moderato','Moderate'], pain:3, syms:['Crampi','Schiena'] },
+  { month:['Gen 2025','Jan 2025'], day:[14,14], len:28, dur:4, flow:[1,'Lieve','Light'], pain:1, syms:[] },
+  { month:['Dic 2024','Dec 2024'], day:[17,17], len:30, dur:6, flow:[3,'Intenso','Heavy'], pain:3, syms:['Crampi','Nausea'] },
+];
+const PAIN_LABELS = { it:['','Lieve','Moderato','Intenso'], en:['','Mild','Moderate','Severe'] };
+
+function ScreenArchive({ navigate, t, s }) {
+  const font = "'DM Serif Display', serif";
+  const [view, setView] = useState('timeline');
+  const isEn = s === STR.en;
+  const painLbls = isEn ? PAIN_LABELS.en : PAIN_LABELS.it;
+  return (
+    <div style={{ height:'100%', background:t.bg, display:'flex', flexDirection:'column' }}>
+      <StatusBar t={t}/>
+      <div style={{ flex:1, overflowY:'auto', paddingTop:54, paddingBottom:84 }}>
+        <div style={{ padding:'12px 24px 14px' }}>
+          <div style={{ fontFamily:font, fontSize:26, color:t.ink, marginBottom:12 }}>{s.archive}</div>
+          <div style={{ display:'inline-flex', background:`${t.ink}10`, borderRadius:10, padding:3, gap:2 }}>
+            {[['timeline',s.timeline],['table',s.table]].map(([v,l]) => (
+              <div key={v} onClick={() => setView(v)} style={{ paddingInline:18, height:34, borderRadius:8, cursor:'pointer', background:view===v?t.surface:'transparent', boxShadow:view===v?'0 1px 4px rgba(0,0,0,0.12)':'none', display:'flex', alignItems:'center', transition:'all 0.15s' }}>
+                <span style={{ fontFamily:'Inter', fontSize:14, fontWeight:view===v?500:400, color:view===v?t.ink:t.inkLow }}>{l}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {view === 'timeline' ? (
+          <div style={{ padding:'4px 20px' }}>
+            {ARCHIVE.map((item, i) => (
+              <div key={i} style={{ display:'flex', gap:16, alignItems:'stretch' }}>
+                <div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:20, flexShrink:0 }}>
+                  <div style={{ width:12,height:12,borderRadius:'50%',background:t.tc,marginTop:18,flexShrink:0 }}/>
+                  {i < ARCHIVE.length-1 && <div style={{ width:2,flex:1,background:t.border,marginTop:2 }}/>}
+                </div>
+                <div style={{ flex:1, background:t.surface, borderRadius:14, border:`1px solid ${t.border}`, padding:'14px 16px', marginBottom:12 }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:6 }}>
+                    <div style={{ fontFamily:font, fontSize:17, color:t.ink }}>{item.month[isEn?1:0]}</div>
+                    <div style={{ fontFamily:'Inter', fontSize:12, color:t.inkLow }}>{isEn?`${item.dur} days`:`Durata ${item.dur}g`}</div>
+                  </div>
+                  <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                    <div style={{ paddingInline:8,height:24,borderRadius:6,background:`${t.tc}15`,display:'flex',alignItems:'center' }}>
+                      <span style={{ fontFamily:'Inter', fontSize:11, color:t.tcDark }}>{item.flow[isEn?2:1]}</span>
+                    </div>
+                    {item.pain > 0 && (
+                      <div style={{ paddingInline:8,height:24,borderRadius:6,background:`${t.malva}15`,display:'flex',alignItems:'center' }}>
+                        <span style={{ fontFamily:'Inter', fontSize:11, color:t.malva }}>{painLbls[item.pain]}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ fontFamily:'Inter', fontSize:12, color:t.inkLow, marginTop:8 }}>
+                    {isEn ? `${item.len}-day cycle · from ${item.day[1]}` : `Ciclo ${item.len}g · dal ${item.day[0]}`}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ padding:'0 20px' }}>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 60px 50px 80px', gap:8, padding:'10px 12px', background:`${t.ink}08`, borderRadius:10, marginBottom:6 }}>
+              {[isEn?'Month':'Mese',isEn?'Cycle':'Ciclo',isEn?'Dur.':'Dur.',isEn?'Flow':'Flusso'].map(h => (
+                <span key={h} style={{ fontFamily:'Inter', fontSize:11, fontWeight:600, color:t.inkLow }}>{h}</span>
+              ))}
+            </div>
+            {ARCHIVE.map((item,i) => (
+              <div key={i} style={{ display:'grid', gridTemplateColumns:'1fr 60px 50px 80px', gap:8, padding:'14px 12px', background:t.surface, borderRadius:12, marginBottom:4, border:`1px solid ${t.border}` }}>
+                <span style={{ fontFamily:'Inter', fontSize:14, color:t.ink }}>{item.month[isEn?1:0]}</span>
+                <span style={{ fontFamily:'Inter', fontSize:14, color:t.inkMid }}>{item.len}{isEn?'d':'g'}</span>
+                <span style={{ fontFamily:'Inter', fontSize:14, color:t.inkMid }}>{item.dur}{isEn?'d':'g'}</span>
+                <span style={{ fontFamily:'Inter', fontSize:13, color:t.tcDark }}>{item.flow[isEn?2:1]}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      <TabBar active="archive" navigate={navigate} t={t} s={s}/>
+      <HomeBar t={t}/>
+    </div>
+  );
+}
+
+/* STATS */
+function ScreenStats({ navigate, t, s }) {
+  const font = "'DM Serif Display', serif";
+  const stats = [
+    { title:s.avgCycle, value:'28', unit:s.days, sub:'Range: 27–30', accent:true },
+    { title:s.avgFlow, value:'4.8', unit:s.days, sub:'Range: 4–6' },
+    { title:s.avgPain, value:'2.4', unit:'/3' },
+    { title:s.cycles, value:'6', unit:s.total },
+  ];
+  const months = ['Apr','Mar','Feb','Gen','Dic','Nov'];
+  const data = [3,2,3,1,4,2];
+  const W = 290, H = 140, cx2 = W/2, cy2 = H-8, R = 100;
+
+  return (
+    <div style={{ height:'100%', background:t.bg, display:'flex', flexDirection:'column' }}>
+      <StatusBar t={t}/>
+      <div style={{ flex:1, overflowY:'auto', paddingTop:54, paddingBottom:84 }}>
+        <div style={{ padding:'12px 24px 20px' }}>
+          <div style={{ fontFamily:font, fontSize:26, color:t.ink }}>{s.stats}</div>
+          <div style={{ fontFamily:'Inter', fontSize:13, color:t.inkMid, marginTop:4 }}>{s.last6}</div>
+        </div>
+
+        {/* Stat cards */}
+        <div style={{ display:'flex', flexWrap:'wrap', gap:12, padding:'0 16px 20px' }}>
+          {stats.map((st,i) => (
+            <div key={i} style={{ flex:'1 1 calc(50% - 6px)', background:t.surface, borderRadius:16, border:`1px solid ${st.accent?`${t.tc}44`:t.border}`, padding:'16px 18px' }}>
+              <div style={{ fontFamily:'Inter', fontSize:12, color:t.inkMid, marginBottom:6 }}>{st.title}</div>
+              <div style={{ display:'flex', alignItems:'baseline', gap:4 }}>
+                <span style={{ fontFamily:font, fontSize:32, color:st.accent?t.tc:t.ink }}>{st.value}</span>
+                <span style={{ fontFamily:'Inter', fontSize:14, color:t.inkMid }}>{st.unit}</span>
+              </div>
+              {st.sub && <div style={{ fontFamily:'Inter', fontSize:12, color:t.inkMid, marginTop:4 }}>{st.sub}</div>}
+            </div>
+          ))}
+        </div>
+
+        {/* Pain semicircle */}
+        <div style={{ background:t.surface, margin:'0 16px 16px', borderRadius:16, border:`1px solid ${t.border}`, padding:'18px 16px' }}>
+          <div style={{ fontFamily:'Inter', fontSize:13, fontWeight:500, color:t.ink, marginBottom:2 }}>{s.pain}</div>
+          <div style={{ fontFamily:'Inter', fontSize:11, color:t.inkMid, marginBottom:10 }}>{s.last6}</div>
+          <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display:'block' }}>
+            <path d={`M ${cx2-R},${cy2} A ${R},${R} 0 0,1 ${cx2+R},${cy2}`} fill="none" stroke={t.border} strokeWidth="1"/>
+            {data.map((val,i) => {
+              const angle = Math.PI - i*(Math.PI/5);
+              const x = cx2 + R*Math.cos(angle);
+              const y = cy2 - R*Math.sin(angle);
+              const r = 5 + val*5;
+              return (
+                <g key={i}>
+                  <circle cx={x} cy={y} r={r} fill={t.malva} fillOpacity={0.1+val/3*0.7}/>
+                  <circle cx={x} cy={y} r={2.5} fill={t.malva} fillOpacity="0.75"/>
+                  <text x={x} y={y-r-4} textAnchor="middle" fontFamily="Inter" fontSize="11" fill={t.malva} fillOpacity="0.75" fontWeight="600">{val}</text>
+                  <text x={x} y={y+r+12} textAnchor="middle" fontFamily="Inter" fontSize="10" fill={t.inkLow}>{months[i]}</text>
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+      </div>
+      <TabBar active="stats" navigate={navigate} t={t} s={s}/>
+      <HomeBar t={t}/>
+    </div>
+  );
+}
+
+/* SETTINGS */
+function ScreenSettings({ navigate, theme, setTheme, lang, setLang, t, s }) {
+  const font = "'DM Serif Display', serif";
+  function Row({ icon, label, right, onClick }) {
+    return (
+      <div onClick={onClick} style={{ display:'flex', alignItems:'center', gap:14, padding:'16px 20px', borderBottom:`1px solid ${t.border}`, cursor:onClick?'pointer':'default' }}>
+        <div style={{ width:36,height:36,borderRadius:10,background:`${t.ink}0A`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
+          <Icon name={icon} size={18} color={t.ink}/>
+        </div>
+        <span style={{ fontFamily:'Inter', fontSize:15, color:t.ink, flex:1 }}>{label}</span>
+        {right}
+      </div>
+    );
+  }
+
+  function Seg({ options, value, onChange }) {
+    return (
+      <div style={{ display:'inline-flex', background:`${t.ink}10`, borderRadius:8, padding:3, gap:2 }}>
+        {options.map(([v,l]) => (
+          <div key={v} onClick={() => onChange(v)} style={{ paddingInline:12, height:28, borderRadius:6, cursor:'pointer', background:value===v?t.surface:'transparent', display:'flex', alignItems:'center', transition:'all 0.15s', boxShadow:value===v?'0 1px 3px rgba(0,0,0,0.12)':'none' }}>
+            <span style={{ fontFamily:'Inter', fontSize:12, fontWeight:value===v?500:400, color:value===v?t.ink:t.inkLow }}>{l}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ height:'100%', background:t.bg, display:'flex', flexDirection:'column' }}>
+      <StatusBar t={t}/>
+      <div style={{ flex:1, overflowY:'auto', paddingTop:54, paddingBottom:84 }}>
+        <div style={{ padding:'12px 24px 20px' }}>
+          <div style={{ fontFamily:font, fontSize:26, color:t.ink }}>{s.settTitle}</div>
+        </div>
+
+        {/* Appearance */}
+        <div style={{ margin:'0 16px 16px', background:t.surface, borderRadius:16, overflow:'hidden', border:`1px solid ${t.border}` }}>
+          <div style={{ padding:'14px 20px 8px' }}>
+            <span style={{ fontFamily:'Inter', fontSize:11, fontWeight:600, letterSpacing:'0.07em', textTransform:'uppercase', color:t.inkLow }}>{s.theme}</span>
+          </div>
+          <Row icon="sun" label={s.theme}
+            right={<Seg options={[['light',s.themeLight],['dark',s.themeDark]]} value={theme} onChange={setTheme}/>}
+          />
+          <Row icon="globe" label={s.lang}
+            right={<Seg options={[['it','IT'],['en','EN']]} value={lang} onChange={setLang}/>}
+          />
+        </div>
+
+        {/* Privacy */}
+        <div style={{ margin:'0 16px 16px', background:t.surface, borderRadius:16, overflow:'hidden', border:`1px solid ${t.border}` }}>
+          <div style={{ padding:'14px 20px 8px' }}>
+            <span style={{ fontFamily:'Inter', fontSize:11, fontWeight:600, letterSpacing:'0.07em', textTransform:'uppercase', color:t.inkLow }}>{s.privacy}</span>
+          </div>
+          <Row icon="lock" label={s.privacy} right={<Icon name="chevron_right" size={16} color={t.inkLow}/>} onClick={()=>{}}/>
+          <Row icon="bell" label={s.notifications} right={<Icon name="chevron_right" size={16} color={t.inkLow}/>} onClick={()=>{}}/>
+          <Row icon="export" label={s.export} right={<Icon name="chevron_right" size={16} color={t.inkLow}/>} onClick={()=>{}} />
+        </div>
+
+        {/* App info */}
+        <div style={{ padding:'12px 32px', textAlign:'center' }}>
+          <div style={{ fontFamily:font, fontSize:18, color:t.ink, marginBottom:4 }}>
+            M<span style={{ position:'relative', display:'inline-block' }}>e<span style={{ position:'absolute', top:'0.28em', left:'0.08em', right:'0.08em', height:'0.055em', background:t.tc, borderRadius:'1px' }}/></span>tra
+          </div>
+          <div style={{ fontFamily:'Inter', fontSize:11, color:t.inkLow }}>Versione 1.0 · 2026</div>
+        </div>
+      </div>
+      <TabBar active="settings" navigate={navigate} t={t} s={s}/>
+      <HomeBar t={t}/>
+    </div>
+  );
+}
+
+/* ─── ROUTER ─── */
+const SCREENS = ['onboarding1','onboarding2','calendar','log','archive','stats','settings'];
+const TAB_SCREENS = ['calendar','log','archive','stats','settings'];
+
+function App() {
+  const [screen, setScreen] = useState('onboarding1');
+  const [prev, setPrev] = useState(null);
+  const [dir, setDir] = useState('forward');
+  const [theme, setTheme] = useState('light');
+  const [lang, setLang] = useState('it');
+
+  const t = theme === 'light' ? LIGHT : DARK;
+  const s = STR[lang];
+
+  const navigate = useCallback((to) => {
+    const fromIdx = SCREENS.indexOf(screen);
+    const toIdx = SCREENS.indexOf(to);
+    setDir(toIdx >= fromIdx ? 'forward' : 'back');
+    setPrev(screen);
+    setScreen(to);
+  }, [screen]);
+
+  const screenProps = { navigate, theme, setTheme, lang, setLang, t, s };
+
+  const renderScreen = (id) => {
+    switch(id) {
+      case 'onboarding1': return <ScreenOnboarding1 {...screenProps}/>;
+      case 'onboarding2': return <ScreenOnboarding2 {...screenProps}/>;
+      case 'calendar':    return <ScreenCalendar {...screenProps}/>;
+      case 'log':         return <ScreenLog {...screenProps}/>;
+      case 'archive':     return <ScreenArchive {...screenProps}/>;
+      case 'stats':       return <ScreenStats {...screenProps}/>;
+      case 'settings':    return <ScreenSettings {...screenProps}/>;
+      default:            return null;
+    }
+  };
+
+  return (
+    <>
+      {/* External controls */}
+      <div className="controls">
+        <button className={`ctrl-btn ${theme==='light'?'active':''}`} onClick={() => setTheme(theme==='light'?'dark':'light')}>
+          <Icon name={theme==='light'?'sun':'moon'} size={14} color="#fff"/>
+          {theme==='light'?'Light':'Dark'}
+        </button>
+        <button className={`ctrl-btn ${lang==='it'?'active':''}`} onClick={() => setLang(lang==='it'?'en':'it')}>
+          <Icon name="globe" size={14} color="#fff"/>
+          {lang==='it'?'IT · EN':'EN · IT'}
+        </button>
+      </div>
+
+      {/* Phone */}
+      <div className="phone-shell">
+        <div className="screen">
+          <div key={screen} className={`screen ${dir==='forward'?'screen-enter':'screen-back'}`}
+            style={{ position:'absolute', inset:0 }}>
+            {renderScreen(screen)}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

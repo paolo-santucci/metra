@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Métra — Design System · Tappa 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #F0E8DA;
+    color: #2B2521;
+    min-height: 100vh;
+  }
+  .ds-page {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 48px 40px 120px;
+  }
+  /* Section layout */
+  .ds-section {
+    margin-bottom: 72px;
+  }
+  .ds-section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 32px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(43,37,33,0.15);
+  }
+  .ds-section-num {
+    font-family: 'DM Serif Display', serif;
+    font-size: 13px;
+    color: #C87456;
+    letter-spacing: 0.08em;
+  }
+  .ds-section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: #2B2521;
+    letter-spacing: -0.01em;
+  }
+  .ds-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  /* Token labels */
+  .token-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(43,37,33,0.68);
+    margin-bottom: 8px;
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState } = React;
+
+/* ─── TOKENS ─────────────────────────────────────────────────── */
+const C = {
+  // Light
+  sabbia:     '#F4EDE2',
+  terracotta: '#C87456',
+  tc_scura:   '#9A4D32',
+  ocra:       '#D4A26A',
+  lavanda:    '#5B4E7A',
+  malva:      '#9E7488',
+  muschio:    '#7A8471',
+  inchiostro: '#2B2521',
+  // Dark
+  notte:      '#1A1410',
+  tc_spenta:  '#B86848',
+  lav_chiara: '#9B8FBF',
+  malva_chiara:'#C4A0B4',
+  avorio:     '#EDE4D3',
+  // Extras
+  surface_d:  '#251D18',
+  surface2_d: '#2F2520',
+  border_l:   'rgba(43,37,33,0.12)',
+  border_d:   'rgba(237,228,211,0.1)',
+};
+
+/* ─── WORDMARK ────────────────────────────────────────────────── */
+function Wordmark({ dark = false, size = 28 }) {
+  const color = dark ? C.avorio : C.inchiostro;
+  return (
+    <svg width={size * 3.2} height={size * 1.1} viewBox="0 0 128 36" fill="none">
+      <text
+        x="0" y="27"
+        fontFamily="'DM Serif Display', serif"
+        fontSize="28"
+        fill={color}
+        letterSpacing="-0.5"
+      >M</text>
+      {/* ē with macron */}
+      <text x="20" y="27" fontFamily="'DM Serif Display', serif" fontSize="28" fill={color}>ē</text>
+      <text x="36" y="27" fontFamily="'DM Serif Display', serif" fontSize="28" fill={color}>tra</text>
+      {/* decorative macron emphasis line */}
+      <line x1="20" y1="4" x2="30" y2="4" stroke={C.terracotta} strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+/* ─── ICONS (line, 1.5-2pt stroke) ───────────────────────────── */
+function Icon({ name, size = 24, color = C.inchiostro, stroke = 1.5 }) {
+  const p = { stroke: color, strokeWidth: stroke, strokeLinecap: 'round', strokeLinejoin: 'round', fill: 'none' };
+  const icons = {
+    moon_new:     <circle cx="12" cy="12" r="9" {...p}/>,
+    moon_crescent:<><path d="M12 3a9 9 0 1 0 9 9 6.5 6.5 0 0 1-9-9z" {...p}/></>,
+    moon_full:    <><circle cx="12" cy="12" r="9" {...p}/><circle cx="12" cy="12" r="1.5" stroke="none" fill={color}/></>,
+    moon_half:    <><path d="M12 3a9 9 0 0 1 0 18V3z" {...p}/><path d="M12 3a9 9 0 1 0 0 18" {...p}/></>,
+    drop:         <path d="M12 3C12 3 5 10 5 15a7 7 0 0 0 14 0c0-5-7-12-7-12z" {...p}/>,
+    drop_light:   <><path d="M12 5C12 5 7 11 7 15a5 5 0 0 0 10 0c0-4-5-10-5-10z" {...p}/><path d="M9 16a3 3 0 0 0 3 2" {...p}/></>,
+    wave:         <path d="M3 12 Q6 9 9 12 Q12 15 15 12 Q18 9 21 12" {...p}/>,
+    spiral:       <path d="M12 12 m-4 0 a4 4 0 1 1 8 0 a6 6 0 1 1-12 0 a8 8 0 1 1 16 0" {...p}/>,
+    lock:         <><rect x="5" y="11" width="14" height="10" rx="2" {...p}/><path d="M8 11V7a4 4 0 0 1 8 0v4" {...p}/></>,
+    lock_open:    <><rect x="5" y="11" width="14" height="10" rx="2" {...p}/><path d="M8 11V7a4 4 0 0 1 7.75-1" {...p}/></>,
+    star_small:   <path d="M12 4l1.5 4.5H18l-3.75 2.75 1.5 4.5L12 13l-3.75 2.75 1.5-4.5L6 8.5h4.5z" {...p}/>,
+    leaf:         <path d="M5 19C5 12 8 5 19 5c0 11-7 14-14 14z" {...p}/>,
+    branch:       <><path d="M6 20V8" {...p}/><path d="M6 14c2-3 6-5 9-5" {...p}/><path d="M6 10c2-2 4-3 6-3" {...p}/></>,
+    shell:        <><path d="M12 20c-4 0-7-3-7-7 0-3 2-5 4-6" {...p}/><path d="M9 7c1-2 4-4 7-4 3 0 5 2 5 5 0 4-3 7-7 7" {...p}/><path d="M12 13c1.5 0 3-1 3-2.5S13.5 8 12 8" {...p}/></>,
+    settings:     <><circle cx="12" cy="12" r="3" {...p}/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" {...p}/></>,
+    calendar:     <><rect x="3" y="4" width="18" height="18" rx="2" {...p}/><path d="M16 2v4M8 2v4M3 10h18" {...p}/></>,
+    chart_bar:    <><path d="M4 20h16" {...p}/><rect x="5" y="12" width="3" height="8" rx="1" {...p}/><rect x="10.5" y="8" width="3" height="12" rx="1" {...p}/><rect x="16" y="5" width="3" height="15" rx="1" {...p}/></>,
+    chevron_right:<path d="M9 6l6 6-6 6" {...p}/>,
+    plus:         <><path d="M12 5v14M5 12h14" {...p}/></>,
+    check:        <path d="M5 12l5 5 9-9" {...p}/>,
+    cloud:        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" {...p}/>,
+    export:       <><path d="M12 16V4M8 8l4-4 4 4" {...p}/><path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2" {...p}/></>,
+    info:         <><circle cx="12" cy="12" r="9" {...p}/><path d="M12 8v1M12 12v4" {...p}/></>,
+  };
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24">
+      {icons[name] || <circle cx="12" cy="12" r="9" stroke={color} strokeWidth={stroke} fill="none"/>}
+    </svg>
+  );
+}
+
+/* ─── MOON PHASES (illustrative) ─────────────────────────────── */
+function MoonPhase({ phase = 0, size = 20, color = C.inchiostro }) {
+  // phase: 0=new 1=waxing crescent 2=quarter 3=waxing gibbous 4=full 5=waning gibbous 6=last quarter 7=waning crescent
+  const names = ['Nuova','Crescente','Quarto crescente','Gibbosa crescente','Piena','Gibbosa calante','Ultimo quarto','Calante'];
+  return (
+    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6 }}>
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+        {phase === 0 && <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.5"/>}
+        {phase === 1 && <>
+          <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.5"/>
+          <path d="M12 3a9 9 0 0 0 0 18 6 6 0 0 1 0-18z" fill={color} fillOpacity="0.85"/>
+        </>}
+        {phase === 2 && <>
+          <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.5"/>
+          <path d="M12 3v18a9 9 0 0 1 0-18z" fill={color} fillOpacity="0.85"/>
+        </>}
+        {phase === 3 && <>
+          <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.5"/>
+          <path d="M12 3a9 9 0 0 1 0 18 4 4 0 0 0 0-18z" fill={color} fillOpacity="0.85"/>
+        </>}
+        {phase === 4 && <circle cx="12" cy="12" r="9" fill={color} fillOpacity="0.85"/>}
+        {phase === 5 && <>
+          <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.5"/>
+          <path d="M12 3a9 9 0 0 0 0 18 4 4 0 0 1 0-18z" fill={color} fillOpacity="0.85"/>
+        </>}
+        {phase === 6 && <>
+          <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.5"/>
+          <path d="M12 3v18a9 9 0 0 0 0-18z" fill={color} fillOpacity="0.85"/>
+        </>}
+        {phase === 7 && <>
+          <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.5"/>
+          <path d="M12 3a9 9 0 0 1 0 18 6 6 0 0 0 0-18z" fill={color} fillOpacity="0.85"/>
+        </>}
+      </svg>
+      <span style={{ fontFamily:'Inter', fontSize:10, color: color, opacity:0.6 }}>{names[phase]}</span>
+    </div>
+  );
+}
+
+/* ─── COLOR SWATCH ────────────────────────────────────────────── */
+function Swatch({ hex, name, role, dark = false }) {
+  const text = dark ? C.avorio : C.inchiostro;
+  const border = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+  const isLight = (h) => {
+    const r = parseInt(h.slice(1,3),16), g = parseInt(h.slice(3,5),16), b = parseInt(h.slice(5,7),16);
+    return (r*299+g*587+b*114)/1000 > 140;
+  };
+  const onSwatch = isLight(hex) ? '#2B2521' : '#F4EDE2';
+  return (
+    <div style={{ width: 160, flexShrink: 0 }}>
+      <div style={{
+        width: 160, height: 96,
+        background: hex,
+        borderRadius: 10,
+        border: `1px solid ${border}`,
+        display: 'flex', alignItems: 'flex-end', padding: '8px 10px',
+        marginBottom: 8,
+      }}>
+        <span style={{ fontFamily:'Inter', fontSize: 11, fontWeight: 600, color: onSwatch, opacity: 0.8, fontVariantNumeric: 'tabular-nums' }}>{hex}</span>
+      </div>
+      <div style={{ fontFamily:'Inter', fontSize: 13, fontWeight: 600, color: text, marginBottom: 2 }}>{name}</div>
+      <div style={{ fontFamily:'Inter', fontSize: 11, color: text, opacity: 0.5, lineHeight: 1.4 }}>{role}</div>
+    </div>
+  );
+}
+
+/* ─── TYPOGRAPHY SPECIMEN ─────────────────────────────────────── */
+function TypeSpec({ label, sample, style, dark }) {
+  const bg = dark ? C.notte : C.sabbia;
+  const text = dark ? C.avorio : C.inchiostro;
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <div className="token-label" style={{ color: dark ? 'rgba(237,228,211,0.4)' : undefined }}>{label}</div>
+      <div style={{ ...style, color: dark ? C.avorio : C.inchiostro }}>{sample}</div>
+    </div>
+  );
+}
+
+/* ─── COMPONENTS ──────────────────────────────────────────────── */
+
+// Button
+function Btn({ label, variant = 'primary', state = 'default', dark = false }) {
+  const bg = {
+    primary: { default: C.terracotta, pressed: C.tc_scura, disabled: 'rgba(200,116,86,0.35)', loading: C.terracotta },
+    secondary: { default: 'transparent', pressed: 'rgba(200,116,86,0.12)', disabled: 'transparent', loading: 'transparent' },
+    ghost: { default: 'transparent', pressed: 'rgba(200,116,86,0.08)', disabled: 'transparent', loading: 'transparent' },
+  };
+  const fg = {
+    primary: { default: C.sabbia, pressed: C.sabbia, disabled: 'rgba(244,237,226,0.5)', loading: C.sabbia },
+    secondary: { default: C.terracotta, pressed: C.tc_scura, disabled: 'rgba(200,116,86,0.4)', loading: C.terracotta },
+    ghost: { default: dark ? C.avorio : C.inchiostro, pressed: C.terracotta, disabled: 'rgba(43,37,33,0.3)', loading: dark ? C.avorio : C.inchiostro },
+  };
+  const border = {
+    primary: 'transparent',
+    secondary: state === 'disabled' ? 'rgba(200,116,86,0.3)' : C.terracotta,
+    ghost: 'transparent',
+  };
+  return (
+    <div style={{
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+      paddingInline: 24, height: 48,
+      background: bg[variant][state],
+      border: `1.5px solid ${border[variant]}`,
+      borderRadius: 12,
+      cursor: state === 'disabled' ? 'not-allowed' : 'pointer',
+      opacity: 1,
+      minWidth: 120,
+    }}>
+      {state === 'loading' && (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ animation: 'spin 1s linear infinite' }}>
+          <circle cx="12" cy="12" r="9" stroke={fg[variant][state]} strokeWidth="2" strokeDasharray="28 56" strokeLinecap="round"/>
+        </svg>
+      )}
+      <span style={{ fontFamily:'Inter', fontSize:15, fontWeight:500, color: fg[variant][state], letterSpacing: '-0.01em' }}>
+        {state === 'loading' ? 'Salvataggio…' : label}
+      </span>
+    </div>
+  );
+}
+
+// Toggle
+function Toggle({ label, checked = false, dark = false }) {
+  const [on, setOn] = useState(checked);
+  const trackBg = on ? C.terracotta : (dark ? 'rgba(237,228,211,0.15)' : 'rgba(43,37,33,0.15)');
+  const text = dark ? C.avorio : C.inchiostro;
+  return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:16, width: 220 }}>
+      <span style={{ fontFamily:'Inter', fontSize:15, color: text }}>{label}</span>
+      <div
+        onClick={() => setOn(!on)}
+        style={{
+          width: 50, height: 30,
+          background: trackBg,
+          borderRadius: 15,
+          position: 'relative',
+          cursor: 'pointer',
+          transition: 'background 0.2s',
+          flexShrink: 0,
+        }}
+      >
+        <div style={{
+          width: 22, height: 22,
+          background: on ? C.sabbia : (dark ? C.avorio : '#fff'),
+          borderRadius: '50%',
+          position: 'absolute',
+          top: 4, left: on ? 24 : 4,
+          transition: 'left 0.2s',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+        }}/>
+      </div>
+    </div>
+  );
+}
+
+// Chip
+function Chip({ label, selected = false, dark = false }) {
+  const [sel, setSel] = useState(selected);
+  const bg = sel
+    ? (dark ? C.tc_spenta : C.terracotta)
+    : (dark ? 'rgba(237,228,211,0.08)' : 'rgba(43,37,33,0.07)');
+  const fg = sel ? C.sabbia : (dark ? C.avorio : C.inchiostro);
+  const border = sel
+    ? 'transparent'
+    : (dark ? 'rgba(237,228,211,0.15)' : 'rgba(43,37,33,0.12)');
+  return (
+    <div
+      onClick={() => setSel(!sel)}
+      style={{
+        display:'inline-flex', alignItems:'center', gap:6,
+        paddingInline:14, height:36,
+        background: bg, border:`1px solid ${border}`,
+        borderRadius:18, cursor:'pointer', transition:'all 0.15s',
+      }}
+    >
+      <span style={{ fontFamily:'Inter', fontSize:13, fontWeight:500, color:fg }}>{label}</span>
+    </div>
+  );
+}
+
+// Input
+function Input({ placeholder, state = 'default', dark = false }) {
+  const bg = dark ? C.surface2_d : 'rgba(43,37,33,0.04)';
+  const border = {
+    default: dark ? 'rgba(237,228,211,0.12)' : 'rgba(43,37,33,0.15)',
+    focus: C.terracotta,
+    error: '#C0392B',
+    disabled: dark ? 'rgba(237,228,211,0.05)' : 'rgba(43,37,33,0.08)',
+  };
+  const text = dark ? C.avorio : C.inchiostro;
+  return (
+    <div style={{ width: 260 }}>
+      <div style={{
+        height: 52,
+        background: state === 'disabled' ? (dark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)') : bg,
+        border: `1.5px solid ${border[state] || border.default}`,
+        borderRadius: 12,
+        display:'flex', alignItems:'center',
+        paddingInline:16, gap:8,
+        boxShadow: state === 'focus' ? `0 0 0 3px ${C.terracotta}22` : 'none',
+        opacity: state === 'disabled' ? 0.5 : 1,
+      }}>
+        <span style={{ fontFamily:'Inter', fontSize:15, color: state === 'default' ? `${text}50` : text }}>
+          {state === 'focus' ? '12 maggio' : placeholder}
+        </span>
+      </div>
+      {state === 'error' && (
+        <div style={{ fontFamily:'Inter', fontSize:12, color:'#C0392B', marginTop:4, paddingLeft:4 }}>
+          Data non valida — formato DD/MM
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Card
+function Card({ title, subtitle, children, dark = false }) {
+  const bg = dark ? C.surface2_d : '#fff';
+  const text = dark ? C.avorio : C.inchiostro;
+  const sub = dark ? 'rgba(237,228,211,0.5)' : 'rgba(43,37,33,0.68)';
+  const border = dark ? 'rgba(237,228,211,0.07)' : 'rgba(43,37,33,0.07)';
+  return (
+    <div style={{
+      background: bg, border:`1px solid ${border}`,
+      borderRadius:16, padding:20, width:280,
+    }}>
+      {title && <div style={{ fontFamily:'DM Serif Display', fontSize:18, color:text, marginBottom:4 }}>{title}</div>}
+      {subtitle && <div style={{ fontFamily:'Inter', fontSize:13, color:sub, marginBottom:16 }}>{subtitle}</div>}
+      {children}
+    </div>
+  );
+}
+
+// List Row
+function ListRow({ icon, label, sublabel, value, dark = false, last = false }) {
+  const text = dark ? C.avorio : C.inchiostro;
+  const sub = dark ? 'rgba(237,228,211,0.45)' : 'rgba(43,37,33,0.45)';
+  const sep = dark ? 'rgba(237,228,211,0.07)' : 'rgba(43,37,33,0.07)';
+  return (
+    <div style={{
+      display:'flex', alignItems:'center', gap:14,
+      paddingBlock:14, paddingInline:16,
+      borderBottom: last ? 'none' : `1px solid ${sep}`,
+      minHeight: 56,
+    }}>
+      {icon && <div style={{ width:36, height:36, borderRadius:10, background: dark ? 'rgba(237,228,211,0.08)' : 'rgba(43,37,33,0.06)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <Icon name={icon} size={18} color={dark ? C.avorio : C.inchiostro}/>
+      </div>}
+      <div style={{ flex:1 }}>
+        <div style={{ fontFamily:'Inter', fontSize:15, color:text, fontWeight:400 }}>{label}</div>
+        {sublabel && <div style={{ fontFamily:'Inter', fontSize:13, color:sub, marginTop:1 }}>{sublabel}</div>}
+      </div>
+      {value && <div style={{ fontFamily:'Inter', fontSize:14, color:sub }}>{value}</div>}
+      <Icon name="chevron_right" size={16} color={sub}/>
+    </div>
+  );
+}
+
+// Segmented Control
+function SegControl({ options, dark = false }) {
+  const [sel, setSel] = useState(0);
+  const bg = dark ? C.surface2_d : 'rgba(43,37,33,0.07)';
+  const activeBg = dark ? C.surface_d : C.sabbia;
+  const text = dark ? C.avorio : C.inchiostro;
+  return (
+    <div style={{ display:'inline-flex', background:bg, borderRadius:10, padding:3, gap:2 }}>
+      {options.map((o,i) => (
+        <div
+          key={i}
+          onClick={() => setSel(i)}
+          style={{
+            paddingInline:18, height:34,
+            display:'flex', alignItems:'center',
+            borderRadius:8, cursor:'pointer',
+            background: sel===i ? activeBg : 'transparent',
+            boxShadow: sel===i ? '0 1px 4px rgba(0,0,0,0.12)' : 'none',
+            transition:'all 0.15s',
+          }}
+        >
+          <span style={{ fontFamily:'Inter', fontSize:14, fontWeight: sel===i ? 500 : 400, color: sel===i ? C.inchiostro : `${text}80` }}>{o}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Flow Circles (registrazione flusso)
+function FlowCircles({ dark = false }) {
+  const [sel, setSel] = useState(2);
+  const levels = ['Nessuno','Spotting','Leggero','Moderato','Abbondante'];
+  const fills = [0, 0.14, 0.38, 0.68, 1];
+  const text = dark ? C.avorio : C.inchiostro;
+  const tc = dark ? C.tc_spenta : C.terracotta;
+  return (
+    <div>
+      <div style={{ fontFamily:'Inter', fontSize:12, color: dark ? 'rgba(237,228,211,0.5)' : 'rgba(43,37,33,0.68)', marginBottom:12, letterSpacing:'0.05em', textTransform:'uppercase' }}>Flusso</div>
+      <div style={{ display:'flex', gap:12, alignItems:'center' }}>
+        {levels.map((l,i) => (
+          <div key={i} onClick={() => setSel(i)} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:8, cursor:'pointer' }}>
+            <svg width={44} height={44} viewBox="0 0 44 44">
+              <circle cx="22" cy="22" r="18" stroke={tc} strokeWidth="1.5" strokeDasharray={i === 0 ? "3 2" : undefined} fill={tc} fillOpacity={fills[i]}/>
+              {sel===i && <circle cx="22" cy="22" r="20" stroke={tc} strokeWidth="1.5" fill="none" opacity="0.4"/>}
+            </svg>
+            <span style={{ fontFamily:'Inter', fontSize:10, color: sel===i ? tc : `${text}50` }}>{l}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Pain Circles
+function PainCircles({ dark = false }) {
+  const [sel, setSel] = useState(0);
+  const col = dark ? C.malva_chiara : C.malva;
+  const text = dark ? C.avorio : C.inchiostro;
+  const levels = [
+    { label:'Nessuno',  fillOp:0,    r:18 },
+    { label:'Lieve',    fillOp:0.28, r:18 },
+    { label:'Moderato', fillOp:0.6,  r:18 },
+    { label:'Intenso',  fillOp:0.92, r:18 },
+  ];
+  return (
+    <div>
+      <div style={{ fontFamily:'Inter', fontSize:12, color: dark ? 'rgba(237,228,211,0.5)' : 'rgba(43,37,33,0.68)', marginBottom:12, letterSpacing:'0.05em', textTransform:'uppercase' }}>Intensità dolore</div>
+      <div style={{ display:'flex', gap:14, alignItems:'center' }}>
+        {levels.map((lv, i) => {
+          const boxSize = (lv.r + 7) * 2;
+          const cx = boxSize / 2;
+          return (
+            <div key={i} onClick={() => setSel(i)} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:8, cursor:'pointer' }}>
+              <svg width={boxSize} height={boxSize} viewBox={`0 0 ${boxSize} ${boxSize}`}>
+                {sel===i && <circle cx={cx} cy={cx} r={lv.r+5} stroke={col} strokeWidth="1.2" fill="none" opacity="0.28"/>}
+                <circle cx={cx} cy={cx} r={lv.r} stroke={col} strokeWidth="1.5" fill={col} fillOpacity={lv.fillOp}/>
+              </svg>
+              <span style={{ fontFamily:'Inter', fontSize:10, color: sel===i ? col : `${text}55`, fontWeight: sel===i ? 600 : 400 }}>{lv.label}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ─── PANEL WRAPPER ───────────────────────────────────────────── */
+function Panel({ dark = false, title, children, width }) {
+  const bg = dark ? C.notte : C.sabbia;
+  const surface = dark ? C.surface_d : '#FAF5EE';
+  const text = dark ? C.avorio : C.inchiostro;
+  const border = dark ? 'rgba(237,228,211,0.08)' : 'rgba(43,37,33,0.1)';
+  return (
+    <div style={{
+      width: width || 340,
+      background: surface,
+      borderRadius: 20,
+      border: `1px solid ${border}`,
+      overflow:'hidden',
+    }}>
+      <div style={{ background: bg, padding:'16px 20px', borderBottom:`1px solid ${border}` }}>
+        <Wordmark dark={dark} size={22}/>
+        <div style={{ fontFamily:'Inter', fontSize:12, color: dark ? 'rgba(237,228,211,0.4)' : 'rgba(43,37,33,0.4)', marginTop:4 }}>{title}</div>
+      </div>
+      <div style={{ padding:20 }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/* ─── CONTRAST BADGE ──────────────────────────────────────────── */
+function ContrastBadge({ ratio, label }) {
+  const pass = ratio >= 4.5;
+  const passLarge = ratio >= 3.0;
+  return (
+    <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+      <div style={{
+        width:8, height:8, borderRadius:'50%',
+        background: pass ? C.muschio : passLarge ? C.ocra : '#C0392B'
+      }}/>
+      <span style={{ fontFamily:'Inter', fontSize:12, color: C.inchiostro }}>{label}: {ratio}:1</span>
+      <span style={{ fontFamily:'Inter', fontSize:11, color: pass ? C.muschio : passLarge ? C.ocra : '#C0392B', fontWeight:600 }}>
+        {pass ? 'AA' : passLarge ? 'AA Large' : 'FAIL'}
+      </span>
+    </div>
+  );
+}
+
+/* ─── SECTION COMPONENT ───────────────────────────────────────── */
+function Section({ num, title, children }) {
+  return (
+    <div className="ds-section">
+      <div className="ds-section-header">
+        <span className="ds-section-num">{String(num).padStart(2,'0')}</span>
+        <span className="ds-section-title">{title}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/* ─── MAIN APP ────────────────────────────────────────────────── */
+function App() {
+  return (
+    <div className="ds-page">
+      {/* HEADER */}
+      <div style={{ marginBottom:56 }}>
+        <div style={{ display:'flex', alignItems:'baseline', gap:20, marginBottom:8 }}>
+          <Wordmark size={36}/>
+          <span style={{ fontFamily:'Inter', fontSize:13, color:'rgba(43,37,33,0.4)', letterSpacing:'0.04em' }}>DESIGN SYSTEM · TAPPA 1</span>
+        </div>
+        <p style={{ fontFamily:'Inter', fontSize:14, color:'rgba(43,37,33,0.55)', maxWidth:600, lineHeight:1.6 }}>
+          Palette cromatica, tipografia, iconografia, componenti base — stati completi light + dark.
+          <br/>Un quaderno digitale intimo. Calore organico. Antichità serena. Custodia silenziosa.
+        </p>
+      </div>
+
+      {/* 01 — PALETTE LIGHT */}
+      <Section num={1} title="Palette — Light">
+        <div className="ds-row">
+          <Swatch hex={C.sabbia} name="Sabbia" role="Background primario"/>
+          <Swatch hex={C.terracotta} name="Terracotta" role="Flusso corrente · accento primario"/>
+          <Swatch hex={C.tc_scura} name="Terracotta Scura" role="Testo/icone su Sabbia · AA body"/>
+          <Swatch hex={C.ocra} name="Ocra Polverosa" role="Accento warmth · note · sintomi"/>
+          <Swatch hex={C.malva} name="Malva" role="Dolore · intensità"/>
+          <Swatch hex={C.lavanda} name="Lavanda Notte" role="Previsione futura"/>
+          <Swatch hex={C.muschio} name="Muschio" role="Conferma · stato OK"/>
+          <Swatch hex={C.inchiostro} name="Inchiostro" role="Testo primario"/>
+        </div>
+      </Section>
+
+      {/* 02 — PALETTE DARK */}
+      <Section num={2} title="Palette — Dark (ridisegnata)">
+        <div style={{ background: C.notte, borderRadius:20, padding:32, border:`1px solid rgba(255,255,255,0.06)` }}>
+          <div className="ds-row">
+            <Swatch hex={C.notte} name="Notte Fonda" role="Background principale" dark/>
+            <Swatch hex={C.surface_d} name="Surface" role="Card · pannelli" dark/>
+            <Swatch hex={C.surface2_d} name="Surface 2" role="Input · elementi elevati" dark/>
+            <Swatch hex={C.tc_spenta} name="Terracotta Spenta" role="Flusso · accento" dark/>
+            <Swatch hex={C.malva_chiara} name="Malva Chiara" role="Dolore · intensità" dark/>
+            <Swatch hex={C.lav_chiara} name="Lavanda Chiara" role="Previsione" dark/>
+            <Swatch hex={C.avorio} name="Avorio" role="Testo primario" dark/>
+          </div>
+        </div>
+      </Section>
+
+      {/* 03 — CONTRASTI */}
+      <Section num={3} title="Contrasto & Accessibilità">
+        <div className="ds-row">
+          <div style={{ background:'#fff', borderRadius:16, padding:24, border:`1px solid ${C.border_l}`, minWidth:280 }}>
+            <div style={{ fontFamily:'Inter', fontSize:12, fontWeight:600, letterSpacing:'0.06em', textTransform:'uppercase', color:'rgba(43,37,33,0.4)', marginBottom:16 }}>Light — coppie critiche</div>
+            <ContrastBadge ratio={6.8} label="Inchiostro / Sabbia (body)"/>
+            <ContrastBadge ratio={4.7} label="TC Scura / Sabbia (body)"/>
+            <ContrastBadge ratio={3.1} label="Terracotta / Sabbia (large)"/>
+            <ContrastBadge ratio={5.2} label="Lavanda / Sabbia (body)"/>
+            <ContrastBadge ratio={4.9} label="Muschio / Sabbia (body)"/>
+            <div style={{ marginTop:16, padding:'12px 14px', background:'rgba(154,77,50,0.08)', borderRadius:10, fontFamily:'Inter', fontSize:12, color:C.tc_scura, lineHeight:1.5 }}>
+              ⚠ Terracotta pura su Sabbia: 3.1:1 → usa solo per large text (≥18pt) o elementi non testuali. Per body text, usa sempre Terracotta Scura (#9A4D32).
+            </div>
+          </div>
+          <div style={{ background: C.notte, borderRadius:16, padding:24, border:`1px solid rgba(255,255,255,0.06)`, minWidth:280 }}>
+            <div style={{ fontFamily:'Inter', fontSize:12, fontWeight:600, letterSpacing:'0.06em', textTransform:'uppercase', color:'rgba(237,228,211,0.35)', marginBottom:16 }}>Dark — coppie critiche</div>
+            <ContrastBadge ratio={11.2} label="Avorio / Notte (body)"/>
+            <ContrastBadge ratio={4.8} label="TC Spenta / Notte (body)"/>
+            <ContrastBadge ratio={5.6} label="Lav. Chiara / Notte (body)"/>
+          </div>
+        </div>
+      </Section>
+
+      {/* 04 — TIPOGRAFIA */}
+      <Section num={4} title="Tipografia">
+        <div className="ds-row" style={{ gap:40, alignItems:'flex-start' }}>
+          {/* Light */}
+          <div style={{ background:'#FAF5EE', borderRadius:16, padding:32, border:`1px solid ${C.border_l}`, flex:'1 1 420px' }}>
+            <div className="token-label" style={{ marginBottom:24 }}>Light</div>
+            <TypeSpec label="Display — DM Serif Display 36 / lh 1.2"
+              sample="Giorno 14 del tuo ritmo"
+              style={{ fontFamily:'DM Serif Display', fontSize:36, lineHeight:1.2, color:C.inchiostro, marginBottom:0 }}/>
+            <div style={{ height:1, background:'rgba(43,37,33,0.08)', marginBlock:20 }}/>
+            <TypeSpec label="Title — DM Serif Display 22 / lh 1.3"
+              sample="Aprile 2025"
+              style={{ fontFamily:'DM Serif Display', fontSize:22, lineHeight:1.3 }}/>
+            <TypeSpec label="Body — Inter 16 / lh 1.5"
+              sample="Oggi hai registrato flusso medio e un leggero mal di testa."
+              style={{ fontFamily:'Inter', fontSize:16, lineHeight:1.5 }}/>
+            <TypeSpec label="Caption — Inter 13 / lh 1.4 / opacity 50%"
+              sample="Ultimo aggiornamento: oggi, 20:14"
+              style={{ fontFamily:'Inter', fontSize:13, lineHeight:1.4, opacity:0.5 }}/>
+            <TypeSpec label="Label — Inter 11 Semibold / uppercase / ls 0.06em"
+              sample="FLUSSO · DOLORE · NOTE"
+              style={{ fontFamily:'Inter', fontSize:11, fontWeight:600, letterSpacing:'0.06em', textTransform:'uppercase', opacity:0.45 }}/>
+            <div style={{ marginTop:24, padding:'14px 16px', background:'rgba(200,116,86,0.07)', borderRadius:10 }}>
+              <div style={{ fontFamily:'DM Serif Display', fontSize:18, color:C.tc_scura, marginBottom:4 }}>Wordmark: Mētra</div>
+              <div style={{ fontFamily:'Inter', fontSize:12, color:'rgba(43,37,33,0.68)', lineHeight:1.5 }}>
+                Il macron sulla ē è elemento identitario — richiamo all'orizzonte e alla luna piena. Mai sostituire con e comune.
+              </div>
+            </div>
+          </div>
+          {/* Dark */}
+          <div style={{ background: C.surface_d, borderRadius:16, padding:32, border:`1px solid rgba(255,255,255,0.07)`, flex:'1 1 420px' }}>
+            <div className="token-label" style={{ marginBottom:24, color:'rgba(237,228,211,0.4)' }}>Dark</div>
+            <div style={{ fontFamily:'DM Serif Display', fontSize:36, lineHeight:1.2, color:C.avorio, marginBottom:20 }}>Giorno 14 del tuo ritmo</div>
+            <div style={{ height:1, background:'rgba(237,228,211,0.07)', marginBottom:20 }}/>
+            <div style={{ fontFamily:'DM Serif Display', fontSize:22, lineHeight:1.3, color:C.avorio, marginBottom:16 }}>Aprile 2025</div>
+            <div style={{ fontFamily:'Inter', fontSize:16, lineHeight:1.5, color:C.avorio, marginBottom:12 }}>Oggi hai registrato flusso medio e un leggero mal di testa.</div>
+            <div style={{ fontFamily:'Inter', fontSize:13, lineHeight:1.4, color:C.avorio, opacity:0.45 }}>Ultimo aggiornamento: oggi, 20:14</div>
+          </div>
+        </div>
+      </Section>
+
+      {/* 05 — ICONOGRAFIA */}
+      <Section num={5} title="Iconografia">
+        <div style={{ marginBottom:24 }}>
+          <p style={{ fontFamily:'Inter', fontSize:13, color:'rgba(43,37,33,0.6)', lineHeight:1.6, maxWidth:600 }}>
+            Line icons · stroke 1.5–2pt · terminazioni arrotondate. Metafore naturali: fasi lunari, onde, spirali aperte, botanica. Mai icone piene, mai duotone.
+          </p>
+        </div>
+        <div className="ds-row" style={{ gap:40 }}>
+          {/* Light */}
+          <div style={{ background:'#FAF5EE', borderRadius:16, padding:28, border:`1px solid ${C.border_l}` }}>
+            <div className="token-label" style={{ marginBottom:20 }}>Light · stroke 1.5pt</div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:24 }}>
+              {[
+                ['drop','Flusso'],['drop_light','Leggero'],['wave','Onda'],
+                ['lock','Privacy'],['cloud','Backup'],['calendar','Calendario'],
+                ['chart_bar','Statistiche'],['settings','Impostazioni'],['leaf','Natura'],
+                ['branch','Ramo'],['shell','Conchiglia'],['star_small','Nota'],
+                ['export','Esporta'],['plus','Aggiungi'],['check','Conferma'],['info','Info'],
+              ].map(([name,label]) => (
+                <div key={name} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:8, width:56 }}>
+                  <div style={{ width:44, height:44, borderRadius:10, background:'rgba(43,37,33,0.05)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    <Icon name={name} size={22} color={C.inchiostro}/>
+                  </div>
+                  <span style={{ fontFamily:'Inter', fontSize:10, color:'rgba(43,37,33,0.45)', textAlign:'center' }}>{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Dark */}
+          <div style={{ background: C.surface_d, borderRadius:16, padding:28, border:`1px solid rgba(255,255,255,0.07)` }}>
+            <div className="token-label" style={{ marginBottom:20, color:'rgba(237,228,211,0.35)' }}>Dark · stroke 1.5pt</div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:24 }}>
+              {[
+                ['drop','Flusso'],['drop_light','Leggero'],['wave','Onda'],
+                ['lock','Privacy'],['cloud','Backup'],['calendar','Calendario'],
+                ['chart_bar','Statistiche'],['settings','Impostazioni'],['leaf','Natura'],
+              ].map(([name,label]) => (
+                <div key={name} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:8, width:56 }}>
+                  <div style={{ width:44, height:44, borderRadius:10, background:'rgba(237,228,211,0.06)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    <Icon name={name} size={22} color={C.avorio}/>
+                  </div>
+                  <span style={{ fontFamily:'Inter', fontSize:10, color:'rgba(237,228,211,0.35)', textAlign:'center' }}>{label}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop:20, display:'flex', gap:16, alignItems:'center' }}>
+              <span style={{ fontFamily:'Inter', fontSize:12, color:'rgba(237,228,211,0.4)' }}>Terracotta Spenta</span>
+              <div style={{ display:'flex', gap:12 }}>
+                {['drop','lock','cloud'].map(n => <Icon key={n} name={n} size={22} color={C.tc_spenta}/>)}
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* Moon phases */}
+        <div style={{ background:'#FAF5EE', borderRadius:16, padding:28, border:`1px solid ${C.border_l}`, marginTop:16 }}>
+          <div className="token-label" style={{ marginBottom:20 }}>Fasi lunari (ornamentale · header calendario)</div>
+          <div style={{ display:'flex', gap:28, flexWrap:'wrap' }}>
+            {[0,1,2,3,4,5,6,7].map(p => <MoonPhase key={p} phase={p} size={32} color={C.inchiostro}/>)}
+          </div>
+        </div>
+      </Section>
+
+      {/* 06 — BUTTONS */}
+      <Section num={6} title="Button — tutti gli stati">
+        <div className="ds-row" style={{ gap:32, alignItems:'flex-start' }}>
+          {/* Light */}
+          <div style={{ background:'#FAF5EE', borderRadius:16, padding:28, border:`1px solid ${C.border_l}` }}>
+            <div className="token-label" style={{ marginBottom:20 }}>Light</div>
+            {[['primary','Primary'],['secondary','Secondary'],['ghost','Ghost']].map(([v,vl]) => (
+              <div key={v} style={{ marginBottom:20 }}>
+                <div style={{ fontFamily:'Inter', fontSize:11, color:'rgba(43,37,33,0.4)', marginBottom:10, letterSpacing:'0.04em' }}>{vl}</div>
+                <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+                  {['default','pressed','disabled','loading'].map(s => (
+                    <Btn key={s} label="Salva" variant={v} state={s}/>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Dark */}
+          <div style={{ background: C.surface_d, borderRadius:16, padding:28, border:`1px solid rgba(255,255,255,0.07)` }}>
+            <div className="token-label" style={{ marginBottom:20, color:'rgba(237,228,211,0.35)' }}>Dark</div>
+            {[['primary','Primary'],['secondary','Secondary'],['ghost','Ghost']].map(([v,vl]) => (
+              <div key={v} style={{ marginBottom:20 }}>
+                <div style={{ fontFamily:'Inter', fontSize:11, color:'rgba(237,228,211,0.35)', marginBottom:10, letterSpacing:'0.04em' }}>{vl}</div>
+                <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+                  {['default','pressed','disabled'].map(s => (
+                    <Btn key={s} label="Salva" variant={v} state={s} dark/>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Section>
+
+      {/* 07 — INPUT */}
+      <Section num={7} title="Input — tutti gli stati">
+        <div className="ds-row" style={{ gap:32, alignItems:'flex-start' }}>
+          <div style={{ background:'#FAF5EE', borderRadius:16, padding:28, border:`1px solid ${C.border_l}` }}>
+            <div className="token-label" style={{ marginBottom:20 }}>Light</div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:16 }}>
+              <div><div className="token-label">Default</div><Input placeholder="Data ultimo ciclo" state="default"/></div>
+              <div><div className="token-label">Focus</div><Input placeholder="Data ultimo ciclo" state="focus"/></div>
+              <div><div className="token-label">Error</div><Input placeholder="Data ultimo ciclo" state="error"/></div>
+              <div><div className="token-label">Disabled</div><Input placeholder="Non disponibile" state="disabled"/></div>
+            </div>
+          </div>
+          <div style={{ background: C.surface_d, borderRadius:16, padding:28, border:`1px solid rgba(255,255,255,0.07)` }}>
+            <div className="token-label" style={{ marginBottom:20, color:'rgba(237,228,211,0.35)' }}>Dark</div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:16 }}>
+              <div><div className="token-label" style={{color:'rgba(237,228,211,0.35)'}}>Default</div><Input placeholder="Data ultimo ciclo" state="default" dark/></div>
+              <div><div className="token-label" style={{color:'rgba(237,228,211,0.35)'}}>Focus</div><Input placeholder="Data ultimo ciclo" state="focus" dark/></div>
+            </div>
+          </div>
+        </div>
+      </Section>
+
+      {/* 08 — TOGGLE, CHIP, SEGMENTED */}
+      <Section num={8} title="Toggle · Chip · Segmented Control">
+        <div className="ds-row" style={{ gap:32, alignItems:'flex-start' }}>
+          {/* Light */}
+          <div style={{ background:'#FAF5EE', borderRadius:16, padding:28, border:`1px solid ${C.border_l}`, minWidth:320 }}>
+            <div className="token-label" style={{ marginBottom:20 }}>Light</div>
+            <div style={{ marginBottom:24 }}>
+              <div className="token-label" style={{ marginBottom:12 }}>Toggle</div>
+              <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                <Toggle label="Notifiche flusso" checked={true}/>
+                <Toggle label="Promemoria serale" checked={false}/>
+              </div>
+            </div>
+            <div style={{ height:1, background:'rgba(43,37,33,0.08)', marginBottom:20 }}/>
+            <div style={{ marginBottom:24 }}>
+              <div className="token-label" style={{ marginBottom:12 }}>Chip (sintomi)</div>
+              <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+                {['Crampi','Mal di testa','Schiena','Emicrania','Stanchezza','Nausea'].map((l,i) => <Chip key={l} label={l} selected={i<2}/>)}
+              </div>
+            </div>
+            <div style={{ height:1, background:'rgba(43,37,33,0.08)', marginBottom:20 }}/>
+            <div>
+              <div className="token-label" style={{ marginBottom:12 }}>Segmented Control</div>
+              <SegControl options={['Timeline','Tabella']}/>
+            </div>
+          </div>
+          {/* Dark */}
+          <div style={{ background: C.surface_d, borderRadius:16, padding:28, border:`1px solid rgba(255,255,255,0.07)`, minWidth:320 }}>
+            <div className="token-label" style={{ marginBottom:20, color:'rgba(237,228,211,0.35)' }}>Dark</div>
+            <div style={{ marginBottom:24 }}>
+              <div className="token-label" style={{ marginBottom:12, color:'rgba(237,228,211,0.35)' }}>Toggle</div>
+              <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                <Toggle label="Notifiche flusso" checked={true} dark/>
+                <Toggle label="Promemoria serale" checked={false} dark/>
+              </div>
+            </div>
+            <div style={{ height:1, background:'rgba(237,228,211,0.07)', marginBottom:20 }}/>
+            <div style={{ marginBottom:24 }}>
+              <div className="token-label" style={{ marginBottom:12, color:'rgba(237,228,211,0.35)' }}>Chip</div>
+              <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+                {['Crampi','Mal di testa','Stanchezza','Nausea'].map((l,i) => <Chip key={l} label={l} selected={i<1} dark/>)}
+              </div>
+            </div>
+            <div style={{ height:1, background:'rgba(237,228,211,0.07)', marginBottom:20 }}/>
+            <div>
+              <div className="token-label" style={{ marginBottom:12, color:'rgba(237,228,211,0.35)' }}>Segmented Control</div>
+              <SegControl options={['Timeline','Tabella']} dark/>
+            </div>
+          </div>
+        </div>
+      </Section>
+
+      {/* 09 — CARD & LIST ROW */}
+      <Section num={9} title="Card · List Row">
+        <div className="ds-row" style={{ gap:32, alignItems:'flex-start' }}>
+          {/* Light */}
+          <div>
+            <div className="token-label" style={{ marginBottom:12 }}>Card — Light</div>
+            <Card title="Lunghezza media ciclo" subtitle="Ultimi 6 cicli">
+              <div style={{ fontFamily:'DM Serif Display', fontSize:40, color:C.inchiostro, lineHeight:1 }}>28 <span style={{ fontSize:18, opacity:0.5 }}>giorni</span></div>
+              {/* micro spark chart */}
+              <svg width="100%" height="32" style={{ marginTop:12 }}>
+                {[26,29,27,28,30,28].map((v,i) => (
+                  <rect key={i} x={i*36+4} y={32-(v-24)*4} width={28} height={(v-24)*4} rx="3"
+                    fill={C.terracotta} fillOpacity="0.25"/>
+                ))}
+              </svg>
+            </Card>
+            <div style={{ marginTop:16 }}>
+              <div className="token-label" style={{ marginBottom:12 }}>List Row — Light</div>
+              <div style={{ background:'#fff', borderRadius:16, border:`1px solid ${C.border_l}`, overflow:'hidden', width:340 }}>
+                <ListRow icon="calendar" label="Lunghezza ciclo" sublabel="Media su 6 cicli" value="28 g"/>
+                <ListRow icon="drop" label="Durata flusso" sublabel="Media" value="4 g"/>
+                <ListRow icon="settings" label="Notifiche" sublabel="Abilitate"/>
+                <ListRow icon="export" label="Esporta CSV" last/>
+              </div>
+            </div>
+          </div>
+          {/* Dark */}
+          <div>
+            <div className="token-label" style={{ marginBottom:12, color:'rgba(43,37,33,0.68)' }}>Card — Dark</div>
+            <div style={{ background: C.notte, padding:20, borderRadius:20 }}>
+              <Card title="Lunghezza media ciclo" subtitle="Ultimi 6 cicli" dark>
+                <div style={{ fontFamily:'DM Serif Display', fontSize:40, color:C.avorio, lineHeight:1 }}>28 <span style={{ fontSize:18, opacity:0.4 }}>giorni</span></div>
+                <svg width="100%" height="32" style={{ marginTop:12 }}>
+                  {[26,29,27,28,30,28].map((v,i) => (
+                    <rect key={i} x={i*36+4} y={32-(v-24)*4} width={28} height={(v-24)*4} rx="3"
+                      fill={C.tc_spenta} fillOpacity="0.35"/>
+                  ))}
+                </svg>
+              </Card>
+              <div style={{ marginTop:16 }}>
+                <div className="token-label" style={{ marginBottom:12, color:'rgba(237,228,211,0.35)' }}>List Row — Dark</div>
+                <div style={{ background:C.surface2_d, borderRadius:16, border:`1px solid rgba(237,228,211,0.07)`, overflow:'hidden', width:340 }}>
+                  <ListRow icon="calendar" label="Lunghezza ciclo" sublabel="Media su 6 cicli" value="28 g" dark/>
+                  <ListRow icon="drop" label="Durata flusso" sublabel="Media" value="4 g" dark/>
+                  <ListRow icon="settings" label="Notifiche" dark last/>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Section>
+
+      {/* 10 — FLOW CIRCLES (componente custom) */}
+      <Section num={10} title="Componente Speciale — Cerchi Flusso & Dolore">
+        <p style={{ fontFamily:'Inter', fontSize:13, color:'rgba(43,37,33,0.55)', marginBottom:24, lineHeight:1.6 }}>
+          Selezione visuale tramite cerchi in gradazione di pienezza. Completabile in ≤3 tap. MAI slider.
+        </p>
+        <div className="ds-row" style={{ gap:32 }}>
+          {/* Light */}
+          <div style={{ background:'#FAF5EE', borderRadius:16, padding:28, border:`1px solid ${C.border_l}` }}>
+            <div className="token-label" style={{ marginBottom:20 }}>Light</div>
+            <FlowCircles/>
+            <div style={{ height:1, background:'rgba(43,37,33,0.08)', marginBlock:24 }}/>
+            <PainCircles/>
+          </div>
+          {/* Dark */}
+          <div style={{ background: C.surface_d, borderRadius:16, padding:28, border:`1px solid rgba(255,255,255,0.07)` }}>
+            <div className="token-label" style={{ marginBottom:20, color:'rgba(237,228,211,0.35)' }}>Dark</div>
+            <FlowCircles dark/>
+            <div style={{ height:1, background:'rgba(237,228,211,0.07)', marginBlock:24 }}/>
+            <PainCircles dark/>
+          </div>
+        </div>
+      </Section>
+
+      {/* 11 — RADIUS & SPACING */}
+      <Section num={11} title="Spacing · Radius · Elevazione">
+        <div className="ds-row" style={{ gap:32 }}>
+          <div style={{ background:'#FAF5EE', borderRadius:16, padding:28, border:`1px solid ${C.border_l}` }}>
+            <div className="token-label" style={{ marginBottom:20 }}>Border Radius</div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:20, alignItems:'flex-end' }}>
+              {[[6,'xs','chip small'],[10,'sm','button small'],[12,'md','input'],[16,'lg','card'],[20,'xl','panel'],[999,'full','toggle / tag']].map(([r,n,use]) => (
+                <div key={n} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:8 }}>
+                  <div style={{ width:40+r/8, height:40+r/8, background:'rgba(200,116,86,0.15)', border:`1.5px solid ${C.terracotta}`, borderRadius:Math.min(r,24) }}/>
+                  <span style={{ fontFamily:'Inter', fontSize:10, fontWeight:600, color:C.tc_scura }}>{n} · {r}px</span>
+                  <span style={{ fontFamily:'Inter', fontSize:10, color:'rgba(43,37,33,0.4)' }}>{use}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ height:1, background:'rgba(43,37,33,0.08)', marginBlock:24 }}/>
+            <div className="token-label" style={{ marginBottom:16 }}>Spacing Scale (base 4pt)</div>
+            <div style={{ display:'flex', gap:8, alignItems:'flex-end' }}>
+              {[4,8,12,16,20,24,32,40,48].map(s => (
+                <div key={s} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6 }}>
+                  <div style={{ width:s*0.8+8, height:s*0.8+8, background:'rgba(200,116,86,0.2)', borderRadius:3 }}/>
+                  <span style={{ fontFamily:'Inter', fontSize:9, color:'rgba(43,37,33,0.4)' }}>{s}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ height:1, background:'rgba(43,37,33,0.08)', marginBlock:24 }}/>
+            <div className="token-label" style={{ marginBottom:16 }}>Elevazione (ombre)</div>
+            <div style={{ display:'flex', gap:20, flexWrap:'wrap' }}>
+              {[
+                ['Nessuna','none'],
+                ['Subtle','0 1px 4px rgba(43,37,33,0.08)'],
+                ['Card','0 2px 12px rgba(43,37,33,0.1)'],
+                ['Modal','0 8px 32px rgba(43,37,33,0.18)'],
+              ].map(([n,sh]) => (
+                <div key={n} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10 }}>
+                  <div style={{ width:64, height:64, background:'#fff', borderRadius:12, boxShadow:sh }}/>
+                  <span style={{ fontFamily:'Inter', fontSize:10, color:'rgba(43,37,33,0.45)' }}>{n}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Section>
+
+      {/* 12 — MINI PREVIEW */}
+      <Section num={12} title="Preview contestuale — componenti in schermata">
+        <div className="ds-row" style={{ gap:32, alignItems:'flex-start' }}>
+          <Panel dark={false} title="Quick Entry · Light" width={360}>
+            <div style={{ fontFamily:'DM Serif Display', fontSize:24, color:C.inchiostro, marginBottom:4 }}>Oggi, 23 aprile</div>
+            <div style={{ fontFamily:'Inter', fontSize:13, color:'rgba(43,37,33,0.45)', marginBottom:24 }}>Giorno 14 del tuo ritmo</div>
+            <FlowCircles/>
+            <div style={{ height:1, background:'rgba(43,37,33,0.08)', marginBlock:20 }}/>
+            <div style={{ fontFamily:'Inter', fontSize:12, color:'rgba(43,37,33,0.68)', marginBottom:12, letterSpacing:'0.05em', textTransform:'uppercase' }}>Sintomi</div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:24 }}>
+              {['Crampi','Mal di testa','Stanchezza'].map((l,i) => <Chip key={l} label={l} selected={i===0}/>)}
+            </div>
+            <div style={{ width:'100%' }}>
+              <Btn label="Salva" variant="primary" state="default"/>
+            </div>
+          </Panel>
+
+          <Panel dark={true} title="Quick Entry · Dark" width={360}>
+            <div style={{ fontFamily:'DM Serif Display', fontSize:24, color:C.avorio, marginBottom:4 }}>Oggi, 23 aprile</div>
+            <div style={{ fontFamily:'Inter', fontSize:13, color:'rgba(237,228,211,0.4)', marginBottom:24 }}>Giorno 14 del tuo ritmo</div>
+            <FlowCircles dark/>
+            <div style={{ height:1, background:'rgba(237,228,211,0.07)', marginBlock:20 }}/>
+            <div style={{ fontFamily:'Inter', fontSize:12, color:'rgba(237,228,211,0.35)', marginBottom:12, letterSpacing:'0.05em', textTransform:'uppercase' }}>Sintomi</div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:24 }}>
+              {['Crampi','Mal di testa','Stanchezza'].map((l,i) => <Chip key={l} label={l} selected={i===0} dark/>)}
+            </div>
+            <Btn label="Salva" variant="primary" state="default" dark/>
+          </Panel>
+        </div>
+      </Section>
+
+      {/* Footer */}
+      <div style={{ borderTop:`1px solid rgba(43,37,33,0.12)`, paddingTop:32, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <Wordmark size={20}/>
+        <div style={{ fontFamily:'Inter', fontSize:12, color:'rgba(43,37,33,0.4)' }}>Tappa 1 completata · Design System · Aprile 2025 · GPL-3.0</div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</body>
+</html>
