@@ -1,10 +1,7 @@
 title: Métra
 description: Un quaderno silenzioso per conoscerti, ciclo dopo ciclo.
-baseurl: ""
-url: ""
-
-# Theme
-remote_theme: false
+baseurl: "/metra"
+url: "https://paolo-santucci.github.io"
 
 # Build settings
 markdown: kramdown
