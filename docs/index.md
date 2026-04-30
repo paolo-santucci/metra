@@ -4,13 +4,7 @@ title: Mētra
 subtitle: An app for listening to your own rhythm.
 ---
 
-<div markdown="1" align="center">
-  
-[![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-2B2521?style=flat-square)](https://www.gnu.org/licenses/gpl-3.0)&nbsp;[![Flutter](https://img.shields.io/badge/Flutter-3.x-2B2521?style=flat-square&logo=flutter&logoColor=C87456)](https://flutter.dev)&nbsp;[![Status](https://img.shields.io/badge/Status-In%20development-C87456?style=flat-square)]()&nbsp;[![Privacy](https://img.shields.io/badge/Data-Local--first-7A8471?style=flat-square)]()
-
-</div>
-
------
+![Métra Logo](/assets/icon-light.svg)
 
 Métra is a free, open-source mobile app for menstrual cycle tracking.  
 No proprietary servers. No ads. No data handed to third parties.  
