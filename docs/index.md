@@ -3,9 +3,7 @@ layout: page
 title: Mētra
 subtitle: An app for listening to your own rhythm.
 ---
-
 ![Métra Logo](/assets/icon-light.svg)
-
 Métra is a free, open-source mobile app for menstrual cycle tracking.  
 No proprietary servers. No ads. No data handed to third parties.  
 Just a quiet tool that lives on your device.
@@ -43,19 +41,6 @@ It is an intimate digital notebook — closer to a Moleskine than a fitness app.
 
 -----
 
-## Tech stack
-
-| Component        | Choice                            |
-| ---------------- | --------------------------------- |
-| Framework        | Flutter 3.x                       |
-| Database         | Drift ORM + SQLCipher             |
-| State management | Riverpod 2.x                      |
-| Cryptography     | AES-256-GCM + Argon2id            |
-| Cycle prediction | Weighted Moving Average (N=6)     |
-| Cloud backup     | Google Drive · Dropbox · OneDrive |
-
------
-
 ## Platforms
 
 | Platform | Status         |
@@ -68,9 +53,7 @@ It is an intimate digital notebook — closer to a Moleskine than a fitness app.
 
 ## Contributing
 
-The project is in its early stages. Contribution guidelines will be added once the codebase is stable.
-
-In the meantime, if you want to follow development or suggest an idea, open an [Issue](../../issues).
+The project is in its early stages. You can find it on [GitHub](https://github.com/paolo-santucci/metra/).
 
 -----
 
