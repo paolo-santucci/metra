@@ -155,7 +155,8 @@ function DataIcon({ name, size = 12, color }) {
   const paths = {
     drop: <path d="M12 3C12 3 5 10 5 15a7 7 0 0 0 14 0c0-5-7-12-7-12z" fill={color} />,
     moon_crescent: <path d="M12 3a9 9 0 1 0 9 9 6.5 6.5 0 0 1-9-9z" fill={color} />,
-    star_small: <path d="M12 4l1.5 4.5H18l-3.75 2.75 1.5 4.5L12 13l-3.75 2.75 1.5-4.5L6 8.5h4.5z" fill={color} />
+    star_small: <path d="M12 4l1.5 4.5H18l-3.75 2.75 1.5 4.5L12 13l-3.75 2.75 1.5-4.5L6 8.5h4.5z" fill={color} />,
+    zap: <path d="M13 3L5 14L11 14L9 21L19 11L13 11Z" fill={color} />
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">{paths[name] ?? null}</svg>;
 }
@@ -560,38 +561,42 @@ const MONTH_DATA = (() => {
   const total = 30;
   const flow = [10, 11, 12, 13, 14]; // period days
   const pred = [7, 8, 9, 10, 11]; // 5-day predicted period window
-  const symptoms = [16, 17, 21, 22];
-  return { offset, total, flow, pred, symptoms };
+  const symptoms = [13, 16, 17];   // day 13: flow+symptom+pain; 16-17: symptom only or +pain
+  const pain = [11, 12, 13, 16];   // day 11-12: flow+pain; 13: flow+symptom+pain; 16: symptom+pain
+  return { offset, total, flow, pred, symptoms, pain };
 })();
 
 function CalDay({ day, offset, monthData, selected, onSelect }) {
   if (!day) return <div style={{ width: 48, height: 48 }} />;
-  const { flow, pred, symptoms } = monthData;
+  const { flow, pred, symptoms, pain = [] } = monthData;
   const isFlow = flow.includes(day);
   const isPred = pred.includes(day);
   const hasSymptom = symptoms.includes(day);
+  const hasPain = pain.includes(day);
   const isSel = selected === day;
+  const ic = isSel ? C.sabbia : null;
+  const indicators = [
+    isFlow       && { name: 'drop',          color: ic || C.tc_scura },
+    hasSymptom   && { name: 'star_small',    color: ic || C.ocra     },
+    hasPain      && { name: 'zap',           color: ic || C.malva    },
+  ].filter(Boolean);
   return (
     <div
       onClick={() => onSelect(day)}
       style={{
         width: 48, height: 48,
         borderRadius: 12,
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1,
         background: isSel ? C.inchiostro : isFlow ? `${C.terracotta}22` : 'transparent',
         border: isSel ? 'none' : isFlow ? `1px solid ${C.terracotta}44` : isPred ? `2px dashed ${C.lavanda}88` : '1px solid transparent',
-        cursor: 'pointer', position: 'relative'
+        cursor: 'pointer'
       }}>
-      
-      {/* Status badge: top-right corner, filled data icon, suppressed on selected */}
-      {!isSel && (isFlow || isPred || hasSymptom) && (
-        <div style={{ position: 'absolute', top: 4, right: 4 }}>
-          {isFlow     && <DataIcon name="drop"          size={10} color={C.tc_scura} />}
-          {!isFlow && isPred     && <DataIcon name="moon_crescent" size={10} color={C.lavanda} />}
-          {!isFlow && !isPred && hasSymptom && <DataIcon name="star_small" size={10} color={C.ocra} />}
+      <span style={{ fontFamily: 'Inter', fontSize: 15, fontWeight: isSel ? 600 : 400, color: isSel ? C.sabbia : C.inchiostro }}>{day}</span>
+      {indicators.length > 0 && (
+        <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          {indicators.map(ind => <DataIcon key={ind.name} name={ind.name} size={11} color={ind.color} />)}
         </div>
       )}
-      <span style={{ fontFamily: 'Inter', fontSize: 15, fontWeight: isSel ? 600 : 400, color: isSel ? C.sabbia : C.inchiostro }}>{day}</span>
     </div>);
 
 }
@@ -641,7 +646,8 @@ function ScreenCalendario() {
           {[
           { icon: 'drop',         color: C.tc_scura, label: 'Mestruazioni' },
           { icon: 'moon_crescent',color: C.lavanda,  label: 'Previsione' },
-          { icon: 'star_small',   color: C.ocra,     label: 'Sintomi' }].
+          { icon: 'star_small',   color: C.ocra,     label: 'Sintomi' },
+          { icon: 'zap',          color: C.malva,    label: 'Dolore' }].
           map((l) =>
           <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <DataIcon name={l.icon} size={14} color={l.color} />
