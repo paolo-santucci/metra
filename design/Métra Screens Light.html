@@ -230,82 +230,68 @@ function TabBar({ active = 'cal' }) {
 }
 
 /* ─── FLOW DOTS (cerchi flusso) ─── */
-function FlowDots({ value = -1, onChange }) {
+function FlowTypeChips({ value, onChange }) {
   const T = useT();
   const accent = T.accent || C.terracotta;
   const accentDark = T.accentDark || C.tc_scura;
-
-  const options = [
-  { id: -1, label: 'Assente',    size: 24, fillOp: 0,    color: accent, dashed: true  },
-  { id: 0,  label: 'Spotting',   size: 24, fillOp: 0,    color: accent, dashed: false },
-  { separator: true },
-  { id: 1,  label: 'Leggero',    size: 33, fillOp: 0.38, color: accent },
-  { id: 2,  label: 'Moderato',   size: 43, fillOp: 0.68, color: accent },
-  { id: 3,  label: 'Abbondante', size: 52, fillOp: 0.94, color: accent }];
-
+  const types = [
+    { id: 'assente',      label: 'Assente',      variant: 'neutral' },
+    { id: 'mestruazioni', label: 'Mestruazioni', variant: 'flow'    },
+    { id: 'spotting',     label: 'Spotting',     variant: 'spot'    },
+  ];
   return (
-    <div style={{ userSelect: 'none' }}>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
-        {options.map((opt, idx) => {
-          if (opt.separator) {
-            return <div key="sep" style={{
-              width: 1, height: 40, alignSelf: 'center', flexShrink: 0,
-              background: 'rgba(43,37,33,0.12)'
-            }} />;
-          }
-          const sel = value === opt.id;
-          const cx = Math.max(opt.size + 14, 44) / 2;
-          const r = opt.size / 2;
-          return (
-            <div key={opt.id}
-              onClick={() => onChange && onChange(sel ? -2 : opt.id)}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, cursor: 'pointer' }}>
-              <svg width={Math.max(opt.size + 14, 44)} height={Math.max(opt.size + 14, 44)}
-                viewBox={`0 0 ${Math.max(opt.size + 14, 44)} ${Math.max(opt.size + 14, 44)}`}
-                overflow="visible">
-                {sel && <circle cx={cx} cy={cx} r={r + 5.5}
-                  fill="none" stroke={opt.color} strokeWidth="1.2" opacity="0.32"
-                  strokeDasharray={opt.dashed ? '3 2' : undefined} />}
-                <circle cx={cx} cy={cx} r={r}
-                  fill={opt.color} fillOpacity={opt.fillOp}
-                  stroke={opt.color} strokeWidth={opt.dashed ? 0 : 1.4} />
-                {opt.dashed && <circle cx={cx} cy={cx} r={r}
-                  fill="none" stroke={opt.color} strokeWidth="1.4"
-                  strokeDasharray="3.5 2.5" />}
-              </svg>
-              <span style={{
-                fontFamily: 'Inter', fontSize: 10, textAlign: 'center',
-                color: sel ? accentDark : 'rgba(43,37,33,0.4)',
-                fontWeight: sel ? 600 : 400, transition: 'color 0.15s'
-              }}>{opt.label}</span>
-            </div>);
-        })}
-      </div>
-    </div>);
-
+    <div style={{ display: 'flex', gap: 8 }}>
+      {types.map(t => {
+        const sel = value === t.id;
+        const bg = !sel ? 'rgba(43,37,33,0.04)' :
+          t.variant === 'neutral' ? 'rgba(43,37,33,0.08)' :
+          t.variant === 'flow'    ? accent + '22' : accent + '14';
+        const border = !sel ? '1px solid rgba(43,37,33,0.1)' :
+          t.variant === 'neutral' ? '1.5px dashed rgba(43,37,33,0.32)' :
+          t.variant === 'flow'    ? `1.5px solid ${accent}BB` : `1.5px solid ${accent}66`;
+        const textColor = !sel ? 'rgba(43,37,33,0.42)' :
+          t.variant === 'neutral' ? C.inchiostro : accentDark;
+        return (
+          <div key={t.id} onClick={() => onChange(sel ? null : t.id)} style={{
+            flex: 1, height: 44, borderRadius: 12,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: bg, border, cursor: 'pointer', transition: 'all 0.15s'
+          }}>
+            <span style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: sel ? 500 : 400, color: textColor }}>{t.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
-/* ─── FLOW CIRCLES ─── */
-function FlowCircles({ value = 2, onChange }) {
+function FlowIntensityDots({ value, onChange }) {
   const T = useT();
   const accent = T.accent || C.terracotta;
   const accentDark = T.accentDark || C.tc_scura;
-  const levels = ['Nessuno', 'Spotting', 'Leggero', 'Medio', 'Abbondante'];
-  const fills = [0, 0.14, 0.38, 0.68, 1];
+  const R = 19, bx = (R + 7) * 2, cx = bx / 2;
+  const opts = [
+    { id: 1, label: 'Leggero',    fillOp: 0.30 },
+    { id: 2, label: 'Moderato',   fillOp: 0.65 },
+    { id: 3, label: 'Abbondante', fillOp: 0.94 },
+  ];
   return (
-    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-      {levels.map((l, i) =>
-      <div key={i} onClick={() => onChange && onChange(i)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-          <svg width={48} height={48} viewBox="0 0 48 48">
-            <circle cx="24" cy="24" r="18" stroke={accent} strokeWidth="1.5" fill={accent} fillOpacity={fills[i]} />
-            {value === i && <circle cx="24" cy="24" r="21" stroke={accent} strokeWidth="1.2" fill="none" opacity="0.3" />}
-          </svg>
-          <span style={{ fontFamily: 'Inter', fontSize: 10, color: value === i ? accentDark : 'rgba(43,37,33,0.4)' }}>{l}</span>
-        </div>
-      )}
-    </div>);
-
+    <div style={{ display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'center', paddingTop: 16, paddingBottom: 2 }}>
+      {opts.map(opt => {
+        const sel = value === opt.id;
+        return (
+          <div key={opt.id} onClick={() => onChange(sel ? null : opt.id)}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, cursor: 'pointer' }}>
+            <svg width={bx} height={bx} viewBox={`0 0 ${bx} ${bx}`}>
+              {sel && <circle cx={cx} cy={cx} r={R + 5} fill="none" stroke={accent} strokeWidth="1.2" opacity="0.3" />}
+              <circle cx={cx} cy={cx} r={R} fill={accent} fillOpacity={opt.fillOp} stroke={accent} strokeWidth="1.4" />
+            </svg>
+            <span style={{ fontFamily: 'Inter', fontSize: 10, color: sel ? accentDark : 'rgba(43,37,33,0.4)', fontWeight: sel ? 600 : 400 }}>{opt.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
-
 /* ─── PAIN CIRCLES ─── */
 function PainDots({ value = 0, onChange }) {
   const lav = C.malva;
@@ -698,9 +684,11 @@ function ScreenCalendario() {
 ══════════════════════════════════════ */
 function ScreenRegistrazione() {
   const { fontDisplay: font = "'DM Serif Display', serif" } = useT();
-  const [flow, setFlow] = useState(-1);
+  const [flowType, setFlowType] = useState('mestruazioni');
+  const [flowIntensity, setFlowIntensity] = useState(2);
   const [pain, setPain] = useState(0);
   const [symptoms, setSymptoms] = useState(new Set(['Crampi']));
+  const handleFlowType = t => { setFlowType(t); setFlowIntensity(t === 'mestruazioni' ? 2 : null); };
   const [customSymptoms, setCustomSymptoms] = useState([]);
   const [addingSymptom, setAddingSymptom] = useState(false);
   const [newSymptomText, setNewSymptomText] = useState('');
@@ -735,7 +723,21 @@ function ScreenRegistrazione() {
           {/* Flusso */}
           <div style={{ background: C.surface, borderTop: '1px solid rgba(43,37,33,0.07)', borderBottom: '1px solid rgba(43,37,33,0.07)', padding: '18px 24px' }}>
             <div style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(43,37,33,0.4)', marginBottom: 14 }}>Flusso</div>
-            <FlowDots value={flow} onChange={setFlow} />
+            <FlowTypeChips value={flowType} onChange={handleFlowType} />
+            {flowType === 'mestruazioni' && (
+              <FlowIntensityDots value={flowIntensity} onChange={setFlowIntensity} />
+            )}
+            {flowType === 'spotting' && (
+              <div style={{ marginTop: 14, padding: '11px 14px', borderRadius: 10, background: `${C.terracotta}0D`, border: `1px solid ${C.terracotta}28` }}>
+                <span style={{ fontFamily: 'Inter', fontSize: 12, color: 'rgba(43,37,33,0.65)', lineHeight: 1.55 }}>Piccola perdita fuori dal flusso mestruale. Non è necessariamente l'inizio del ciclo.</span>
+              </div>
+            )}
+            {flowType === 'assente' && (
+              <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5 9-9" stroke="rgba(43,37,33,0.35)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <span style={{ fontFamily: 'Inter', fontSize: 12, color: 'rgba(43,37,33,0.45)' }}>Nessun flusso oggi</span>
+              </div>
+            )}
           </div>
 
           {/* Dolore */}
