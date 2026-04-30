@@ -104,7 +104,7 @@ In the meantime, if you want to follow development or suggest an idea, open an [
 Métra is distributed under the **GPL-3.0** license.  
 Forks must keep the code open under the same license.
 
-The privacy policy is published on [GitHub Pages](../../).
+The privacy policy is published on [GitHub Pages](privacy).
 
 -----
 
