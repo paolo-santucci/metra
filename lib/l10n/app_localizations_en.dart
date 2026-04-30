@@ -516,6 +516,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings_privacy_policy => 'Privacy policy';
 
   @override
+  String get daily_entry_flow_chip_assente => 'Absent';
+
+  @override
+  String get daily_entry_flow_chip_mestruazioni => 'Menstruation';
+
+  @override
+  String get daily_entry_flow_chip_spotting => 'Spotting';
+
+  @override
+  String get daily_entry_flow_intensity_light => 'Light';
+
+  @override
+  String get daily_entry_flow_intensity_medium => 'Moderate';
+
+  @override
+  String get daily_entry_flow_intensity_heavy => 'Heavy';
+
+  @override
+  String get daily_entry_spotting_note =>
+      'Small spotting outside menstrual flow. It is not necessarily the start of a new cycle.';
+
+  @override
+  String get daily_entry_assente_confirmation => 'No flow today';
+
+  @override
+  String get daily_entry_save_action => 'Save day';
+
+  @override
   String get today_how_are_you => 'How are you today?';
 
   @override

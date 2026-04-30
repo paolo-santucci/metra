@@ -31,8 +31,9 @@ import '../../domain/entities/pain_symptom_type.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/repository_providers.dart';
 import 'state/daily_entry_controller.dart';
-import 'widgets/circle_flow_picker.dart';
 import 'widgets/circle_pain_picker.dart';
+import 'widgets/flow_intensity_dots.dart';
+import 'widgets/flow_type_chips.dart';
 
 class TodayScreen extends ConsumerStatefulWidget {
   const TodayScreen({super.key});
@@ -47,8 +48,9 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
   bool _formInitialized = false;
   bool _symptomsInitialized = false;
 
-  FlowIntensity? _selectedFlow;
-  bool _isSpotting = false;
+  FlowType? _flowType;
+  FlowIntensity? _flowIntensity;
+  FlowIntensity? _lastMensIntensity;
   PainLevel _painLevel = PainLevel.none;
   Set<PainSymptomType> _selectedSymptoms = {};
   late final TextEditingController _notesController;
@@ -82,8 +84,8 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
     _formInitialized = true;
     if (log == null) return;
     setState(() {
-      _isSpotting = log.spotting;
-      _selectedFlow = log.flowIntensity;
+      _flowType = log.flowType;
+      _flowIntensity = log.flowIntensity;
       _painLevel = _toPainLevel(log);
       if (log.notes != null) _notesController.text = log.notes!;
     });
@@ -120,16 +122,11 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
     final intensity = _painLevelToIntensity(_painLevel);
     final notesText = _notesController.text.trim();
 
-    final flowType = _isSpotting
-        ? FlowType.spotting
-        : (_selectedFlow != null ? FlowType.mestruazioni : null);
-    final flowIntensity = flowType == FlowType.mestruazioni ? _selectedFlow : null;
-
     await notifier.save(
       DailyLogEntity(
         date: _today,
-        flowType: flowType,
-        flowIntensity: flowIntensity,
+        flowType: _flowType,
+        flowIntensity: _flowType == FlowType.mestruazioni ? _flowIntensity : null,
         painEnabled: _painLevel != PainLevel.none,
         painIntensity: intensity,
         notesEnabled: notesText.isNotEmpty,
@@ -165,7 +162,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.today_save_day)),
+      SnackBar(content: Text(l10n.daily_entry_save_action)),
     );
   }
 
@@ -250,15 +247,55 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                       style: sectionLabelStyle,
                     ),
                     const SizedBox(height: MetraSpacing.s4),
-                    CircleFlowPicker(
-                      selectedFlow: _selectedFlow,
-                      isSpotting: _isSpotting,
-                      onFlowChanged: (f) => setState(() => _selectedFlow = f),
-                      onSpottingChanged: (s) => setState(() {
-                        _isSpotting = s;
-                        if (s) _selectedFlow = null;
-                      }),
+                    FlowTypeChips(
+                      selected: _flowType,
+                      onChanged: (newType) {
+                        setState(() {
+                          if (_flowType == FlowType.mestruazioni &&
+                              newType != FlowType.mestruazioni) {
+                            _lastMensIntensity = _flowIntensity;
+                          }
+                          _flowType = newType;
+                          if (newType == FlowType.mestruazioni) {
+                            _flowIntensity =
+                                _lastMensIntensity ?? FlowIntensity.medium;
+                          } else {
+                            _flowIntensity = null;
+                          }
+                        });
+                      },
                     ),
+                    if (_flowType == FlowType.mestruazioni) ...[
+                      const SizedBox(height: MetraSpacing.s4),
+                      FlowIntensityDots(
+                        selected: _flowIntensity,
+                        onChanged: (v) => setState(() => _flowIntensity = v),
+                      ),
+                    ],
+                    if (_flowType == FlowType.spotting) ...[
+                      const SizedBox(height: MetraSpacing.s3),
+                      Text(
+                        l10n.daily_entry_spotting_note,
+                        style: MetraTypography.caption.copyWith(
+                          color: textSecondary,
+                        ),
+                      ),
+                    ],
+                    if (_flowType == FlowType.assente) ...[
+                      const SizedBox(height: MetraSpacing.s3),
+                      Row(
+                        children: [
+                          Icon(Icons.check, color: accentFlow, size: 16),
+                          const SizedBox(width: MetraSpacing.s2),
+                          Text(
+                            l10n.daily_entry_assente_confirmation,
+                            style: MetraTypography.caption.copyWith(
+                              color: textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: MetraSpacing.s6),
                     Divider(color: dividerColor, thickness: 1, height: 1),
                     const SizedBox(height: MetraSpacing.s6),
@@ -376,7 +413,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                 ),
                 onPressed: _save,
                 icon: const Icon(Icons.check, size: 20),
-                label: Text(l10n.today_save_day),
+                label: Text(l10n.daily_entry_save_action),
               ),
             ),
           ],

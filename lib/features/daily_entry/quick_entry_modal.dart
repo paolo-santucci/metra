@@ -29,7 +29,8 @@ import '../../domain/entities/flow_intensity.dart';
 import '../../domain/entities/flow_type.dart';
 import '../../l10n/app_localizations.dart';
 import 'state/daily_entry_controller.dart';
-import 'widgets/flow_intensity_picker.dart';
+import 'widgets/flow_intensity_dots.dart';
+import 'widgets/flow_type_chips.dart';
 
 /// Today's quick daily entry: ≤3 taps to log flow.
 ///
@@ -47,8 +48,9 @@ class QuickEntryModal extends ConsumerStatefulWidget {
 
 class _QuickEntryModalState extends ConsumerState<QuickEntryModal> {
   late final DateTime _today;
-  FlowIntensity? _selectedFlow;
-  bool _isSpotting = false;
+  FlowType? _flowType;
+  FlowIntensity? _flowIntensity;
+  FlowIntensity? _lastMensIntensity;
   bool _initialized = false;
 
   /// Retains the full loaded entity so _save() can preserve pain/notes fields.
@@ -67,8 +69,8 @@ class _QuickEntryModalState extends ConsumerState<QuickEntryModal> {
     _initialized = true;
     _existingLog = log;
     if (log == null) return;
-    _selectedFlow = log.flowIntensity;
-    _isSpotting = log.spotting;
+    _flowType = log.flowType;
+    _flowIntensity = log.flowIntensity;
   }
 
   Future<void> _save() async {
@@ -76,24 +78,21 @@ class _QuickEntryModalState extends ConsumerState<QuickEntryModal> {
         AppLocalizations.of(context)!; // safe: delegates registered in MetraApp
     final notifier = ref.read(dailyEntryProvider(_today).notifier);
 
-    // Merge flow/spotting changes onto the existing entity so pain, notes, and
+    // Merge flow changes onto the existing entity so pain, notes, and
     // other fields set via HistoricalEntryScreen are not silently destroyed.
-    final derivedFlowType = _isSpotting
-        ? FlowType.spotting
-        : (_selectedFlow != null ? FlowType.mestruazioni : null);
-    final derivedFlowIntensity =
-        derivedFlowType == FlowType.mestruazioni ? _selectedFlow : null;
+    final effectiveIntensity =
+        _flowType == FlowType.mestruazioni ? _flowIntensity : null;
 
     final log = _existingLog?.copyWith(
-          flowType: derivedFlowType,
-          clearFlowType: derivedFlowType == null,
-          flowIntensity: derivedFlowIntensity,
-          clearFlowIntensity: derivedFlowIntensity == null,
+          flowType: _flowType,
+          clearFlowType: _flowType == null,
+          flowIntensity: effectiveIntensity,
+          clearFlowIntensity: effectiveIntensity == null,
         ) ??
         DailyLogEntity(
           date: _today,
-          flowType: derivedFlowType,
-          flowIntensity: derivedFlowIntensity,
+          flowType: _flowType,
+          flowIntensity: effectiveIntensity,
         );
 
     await notifier.save(log);
@@ -186,18 +185,45 @@ class _QuickEntryModalState extends ConsumerState<QuickEntryModal> {
           children: [
             SectionTitleMetra(title: l10n.daily_entry_flow_label),
             const SizedBox(height: MetraSpacing.s3),
-            FlowIntensityPicker(
-              selectedFlow: _selectedFlow,
-              isSpotting: _isSpotting,
-              onFlowChanged: (flow) => setState(() {
-                _selectedFlow = flow;
-                if (flow != null) _isSpotting = false;
-              }),
-              onSpottingChanged: (spotting) => setState(() {
-                _isSpotting = spotting;
-                if (spotting) _selectedFlow = null;
-              }),
+            FlowTypeChips(
+              selected: _flowType,
+              onChanged: (newType) {
+                setState(() {
+                  if (_flowType == FlowType.mestruazioni &&
+                      newType != FlowType.mestruazioni) {
+                    _lastMensIntensity = _flowIntensity;
+                  }
+                  _flowType = newType;
+                  if (newType == FlowType.mestruazioni) {
+                    _flowIntensity =
+                        _lastMensIntensity ?? FlowIntensity.medium;
+                  } else {
+                    _flowIntensity = null;
+                  }
+                });
+              },
             ),
+            if (_flowType == FlowType.mestruazioni) ...[
+              const SizedBox(height: MetraSpacing.s4),
+              FlowIntensityDots(
+                selected: _flowIntensity,
+                onChanged: (v) => setState(() => _flowIntensity = v),
+              ),
+            ],
+            if (_flowType == FlowType.spotting) ...[
+              const SizedBox(height: MetraSpacing.s3),
+              Text(l10n.daily_entry_spotting_note),
+            ],
+            if (_flowType == FlowType.assente) ...[
+              const SizedBox(height: MetraSpacing.s3),
+              Row(
+                children: [
+                  const Icon(Icons.check, size: 16),
+                  const SizedBox(width: MetraSpacing.s2),
+                  Text(l10n.daily_entry_assente_confirmation),
+                ],
+              ),
+            ],
             const SizedBox(height: MetraSpacing.s6),
             Row(
               children: [

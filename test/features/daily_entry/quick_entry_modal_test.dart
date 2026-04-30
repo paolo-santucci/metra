@@ -25,6 +25,7 @@ import 'package:metra/core/errors/metra_exception.dart';
 import 'package:metra/core/theme/metra_theme.dart';
 import 'package:metra/domain/entities/daily_log_entity.dart';
 import 'package:metra/domain/entities/flow_intensity.dart';
+import 'package:metra/domain/entities/flow_type.dart';
 import 'package:metra/features/daily_entry/quick_entry_modal.dart';
 import 'package:metra/features/daily_entry/state/daily_entry_controller.dart';
 import 'package:metra/l10n/app_localizations.dart';
@@ -124,13 +125,16 @@ void main() {
       await tester.tap(find.text('open-modal'));
       await tester.pumpAndSettle();
 
-      // FlowIntensityPicker section label.
+      // FlowTypeChips section label.
       expect(find.text('Flusso'), findsOneWidget);
+      // FlowTypeChips are rendered.
+      expect(find.text('Mestruazioni'), findsOneWidget);
       // Save button.
       expect(find.text('Salva'), findsOneWidget);
     });
 
-    testWidgets('tapping a flow chip then Salva calls save() with correct flow',
+    testWidgets(
+        'selecting Mestruazioni then Leggero and tapping Salva saves correct flow',
         (tester) async {
       final fakeNotifier = _FakeDailyEntryNotifier();
 
@@ -143,8 +147,12 @@ void main() {
       await tester.tap(find.text('open-modal'));
       await tester.pumpAndSettle();
 
-      // Select "Flusso leggero".
-      await tester.tap(find.text('Flusso leggero'));
+      // Select "Mestruazioni" chip — FlowIntensityDots appear with medium default.
+      await tester.tap(find.text('Mestruazioni'));
+      await tester.pumpAndSettle();
+
+      // Select "Leggero" dot to override the default medium intensity.
+      await tester.tap(find.text('Leggero'));
       await tester.pumpAndSettle();
 
       // Tap save.
@@ -152,6 +160,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(fakeNotifier.lastSaved, isNotNull);
+      expect(fakeNotifier.lastSaved!.flowType, equals(FlowType.mestruazioni));
       expect(
         fakeNotifier.lastSaved!.flowIntensity,
         equals(FlowIntensity.light),

@@ -992,6 +992,60 @@ abstract class AppLocalizations {
   /// **'Informativa sulla privacy'**
   String get settings_privacy_policy;
 
+  /// Chip label for no flow (user explicitly confirmed no bleeding)
+  ///
+  /// In it, this message translates to:
+  /// **'Assente'**
+  String get daily_entry_flow_chip_assente;
+
+  /// Chip label for menstrual flow
+  ///
+  /// In it, this message translates to:
+  /// **'Mestruazioni'**
+  String get daily_entry_flow_chip_mestruazioni;
+
+  /// Chip label for spotting. 'Spotting' is an established medical loanword in Italian — do not translate.
+  ///
+  /// In it, this message translates to:
+  /// **'Spotting'**
+  String get daily_entry_flow_chip_spotting;
+
+  /// Dot label for light menstrual flow intensity
+  ///
+  /// In it, this message translates to:
+  /// **'Leggero'**
+  String get daily_entry_flow_intensity_light;
+
+  /// Dot label for moderate menstrual flow intensity
+  ///
+  /// In it, this message translates to:
+  /// **'Moderato'**
+  String get daily_entry_flow_intensity_medium;
+
+  /// Dot label for heavy menstrual flow intensity
+  ///
+  /// In it, this message translates to:
+  /// **'Abbondante'**
+  String get daily_entry_flow_intensity_heavy;
+
+  /// Contextual note shown when spotting is selected
+  ///
+  /// In it, this message translates to:
+  /// **'Piccola perdita fuori dal flusso mestruale. Non è necessariamente l\'inizio del ciclo.'**
+  String get daily_entry_spotting_note;
+
+  /// Confirmation text shown with a check icon when assente is selected
+  ///
+  /// In it, this message translates to:
+  /// **'Nessun flusso oggi'**
+  String get daily_entry_assente_confirmation;
+
+  /// Save button label on daily entry screens
+  ///
+  /// In it, this message translates to:
+  /// **'Salva giornata'**
+  String get daily_entry_save_action;
+
   /// Today screen main heading
   ///
   /// In it, this message translates to:

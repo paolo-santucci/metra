@@ -518,6 +518,34 @@ class AppLocalizationsIt extends AppLocalizations {
   String get settings_privacy_policy => 'Informativa sulla privacy';
 
   @override
+  String get daily_entry_flow_chip_assente => 'Assente';
+
+  @override
+  String get daily_entry_flow_chip_mestruazioni => 'Mestruazioni';
+
+  @override
+  String get daily_entry_flow_chip_spotting => 'Spotting';
+
+  @override
+  String get daily_entry_flow_intensity_light => 'Leggero';
+
+  @override
+  String get daily_entry_flow_intensity_medium => 'Moderato';
+
+  @override
+  String get daily_entry_flow_intensity_heavy => 'Abbondante';
+
+  @override
+  String get daily_entry_spotting_note =>
+      'Piccola perdita fuori dal flusso mestruale. Non è necessariamente l\'inizio del ciclo.';
+
+  @override
+  String get daily_entry_assente_confirmation => 'Nessun flusso oggi';
+
+  @override
+  String get daily_entry_save_action => 'Salva giornata';
+
+  @override
   String get today_how_are_you => 'Come stai oggi?';
 
   @override

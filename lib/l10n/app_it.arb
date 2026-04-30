@@ -804,6 +804,51 @@
     "description": "Settings row label: link to the privacy policy"
   },
 
+  "daily_entry_flow_chip_assente": "Assente",
+  "@daily_entry_flow_chip_assente": {
+    "description": "Chip label for no flow (user explicitly confirmed no bleeding)"
+  },
+
+  "daily_entry_flow_chip_mestruazioni": "Mestruazioni",
+  "@daily_entry_flow_chip_mestruazioni": {
+    "description": "Chip label for menstrual flow"
+  },
+
+  "daily_entry_flow_chip_spotting": "Spotting",
+  "@daily_entry_flow_chip_spotting": {
+    "description": "Chip label for spotting. 'Spotting' is an established medical loanword in Italian — do not translate."
+  },
+
+  "daily_entry_flow_intensity_light": "Leggero",
+  "@daily_entry_flow_intensity_light": {
+    "description": "Dot label for light menstrual flow intensity"
+  },
+
+  "daily_entry_flow_intensity_medium": "Moderato",
+  "@daily_entry_flow_intensity_medium": {
+    "description": "Dot label for moderate menstrual flow intensity"
+  },
+
+  "daily_entry_flow_intensity_heavy": "Abbondante",
+  "@daily_entry_flow_intensity_heavy": {
+    "description": "Dot label for heavy menstrual flow intensity"
+  },
+
+  "daily_entry_spotting_note": "Piccola perdita fuori dal flusso mestruale. Non è necessariamente l'inizio del ciclo.",
+  "@daily_entry_spotting_note": {
+    "description": "Contextual note shown when spotting is selected"
+  },
+
+  "daily_entry_assente_confirmation": "Nessun flusso oggi",
+  "@daily_entry_assente_confirmation": {
+    "description": "Confirmation text shown with a check icon when assente is selected"
+  },
+
+  "daily_entry_save_action": "Salva giornata",
+  "@daily_entry_save_action": {
+    "description": "Save button label on daily entry screens"
+  },
+
   "today_how_are_you": "Come stai oggi?",
   "@today_how_are_you": {"description": "Today screen main heading"},
   "today_pain_intensity_label": "Intensità dolore",

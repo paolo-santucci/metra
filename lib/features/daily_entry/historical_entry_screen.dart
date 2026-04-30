@@ -33,7 +33,8 @@ import '../../domain/entities/pain_symptom_type.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/repository_providers.dart';
 import 'state/daily_entry_controller.dart';
-import 'widgets/flow_intensity_picker.dart';
+import 'widgets/flow_intensity_dots.dart';
+import 'widgets/flow_type_chips.dart';
 import 'widgets/pain_intensity_slider.dart';
 import 'widgets/symptom_chips_row.dart';
 
@@ -63,8 +64,9 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
   bool _hasExistingLog = false;
 
   // Form fields mirroring DailyLogEntity.
-  FlowIntensity? _selectedFlow;
-  bool _isSpotting = false;
+  FlowType? _flowType;
+  FlowIntensity? _flowIntensity;
+  FlowIntensity? _lastMensIntensity;
   bool _otherDischarge = false;
   bool _painEnabled = false;
   int _painIntensity = 0;
@@ -104,8 +106,8 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
     if (log == null) return;
 
     // Do not log entity contents — security requirement.
-    _selectedFlow = log.flowIntensity;
-    _isSpotting = log.spotting;
+    _flowType = log.flowType;
+    _flowIntensity = log.flowIntensity;
     _otherDischarge = log.otherDischarge;
     _painEnabled = log.painEnabled;
     _painIntensity = log.painIntensity ?? 0;
@@ -124,14 +126,10 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
   }
 
   DailyLogEntity _buildEntity() {
-    final flowType = _isSpotting
-        ? FlowType.spotting
-        : (_selectedFlow != null ? FlowType.mestruazioni : null);
-    final flowIntensity = flowType == FlowType.mestruazioni ? _selectedFlow : null;
     return DailyLogEntity(
       date: widget.date,
-      flowType: flowType,
-      flowIntensity: flowIntensity,
+      flowType: _flowType,
+      flowIntensity: _flowType == FlowType.mestruazioni ? _flowIntensity : null,
       otherDischarge: _otherDischarge,
       painEnabled: _painEnabled,
       painIntensity: _painEnabled ? _painIntensity : null,
@@ -275,18 +273,45 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
                   // Flow section
                   SectionTitleMetra(title: l10n.daily_entry_flow_label),
                   const SizedBox(height: MetraSpacing.s3),
-                  FlowIntensityPicker(
-                    selectedFlow: _selectedFlow,
-                    isSpotting: _isSpotting,
-                    onFlowChanged: (flow) => setState(() {
-                      _selectedFlow = flow;
-                      if (flow != null) _isSpotting = false;
-                    }),
-                    onSpottingChanged: (spotting) => setState(() {
-                      _isSpotting = spotting;
-                      if (spotting) _selectedFlow = null;
-                    }),
+                  FlowTypeChips(
+                    selected: _flowType,
+                    onChanged: (newType) {
+                      setState(() {
+                        if (_flowType == FlowType.mestruazioni &&
+                            newType != FlowType.mestruazioni) {
+                          _lastMensIntensity = _flowIntensity;
+                        }
+                        _flowType = newType;
+                        if (newType == FlowType.mestruazioni) {
+                          _flowIntensity =
+                              _lastMensIntensity ?? FlowIntensity.medium;
+                        } else {
+                          _flowIntensity = null;
+                        }
+                      });
+                    },
                   ),
+                  if (_flowType == FlowType.mestruazioni) ...[
+                    const SizedBox(height: MetraSpacing.s4),
+                    FlowIntensityDots(
+                      selected: _flowIntensity,
+                      onChanged: (v) => setState(() => _flowIntensity = v),
+                    ),
+                  ],
+                  if (_flowType == FlowType.spotting) ...[
+                    const SizedBox(height: MetraSpacing.s3),
+                    Text(l10n.daily_entry_spotting_note),
+                  ],
+                  if (_flowType == FlowType.assente) ...[
+                    const SizedBox(height: MetraSpacing.s3),
+                    Row(
+                      children: [
+                        const Icon(Icons.check, size: 16),
+                        const SizedBox(width: MetraSpacing.s2),
+                        Text(l10n.daily_entry_assente_confirmation),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: MetraSpacing.s6),
 
                   // Pain section — toggle + slider.
@@ -389,8 +414,8 @@ class _BottomBar extends StatelessWidget {
         children: [
           Expanded(
             child: ButtonPrimary(
-              label: l10n.daily_entry_save,
-              semanticsLabel: l10n.daily_entry_save,
+              label: l10n.daily_entry_save_action,
+              semanticsLabel: l10n.daily_entry_save_action,
               onPressed: onSave,
             ),
           ),

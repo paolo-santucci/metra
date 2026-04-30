@@ -133,7 +133,7 @@ void main() {
       await tester.pumpAndSettle();
       await _navigate(tester);
 
-      await tester.tap(find.text('Salva'));
+      await tester.tap(find.text('Salva giornata'));
       await tester.pumpAndSettle();
 
       expect(fakeNotifier.lastSaved?.otherDischarge, isTrue);
@@ -164,7 +164,7 @@ void main() {
       await tester.tap(painSwitch);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Salva'));
+      await tester.tap(find.text('Salva giornata'));
       await tester.pumpAndSettle();
 
       expect(fakeNotifier.lastSaved?.painEnabled, isFalse);

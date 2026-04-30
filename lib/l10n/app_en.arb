@@ -401,6 +401,51 @@
 
   "settings_privacy_policy": "Privacy policy",
 
+  "daily_entry_flow_chip_assente": "Absent",
+  "@daily_entry_flow_chip_assente": {
+    "description": "Chip label for no flow (user explicitly confirmed no bleeding)"
+  },
+
+  "daily_entry_flow_chip_mestruazioni": "Menstruation",
+  "@daily_entry_flow_chip_mestruazioni": {
+    "description": "Chip label for menstrual flow"
+  },
+
+  "daily_entry_flow_chip_spotting": "Spotting",
+  "@daily_entry_flow_chip_spotting": {
+    "description": "Chip label for spotting"
+  },
+
+  "daily_entry_flow_intensity_light": "Light",
+  "@daily_entry_flow_intensity_light": {
+    "description": "Dot label for light menstrual flow intensity"
+  },
+
+  "daily_entry_flow_intensity_medium": "Moderate",
+  "@daily_entry_flow_intensity_medium": {
+    "description": "Dot label for moderate menstrual flow intensity"
+  },
+
+  "daily_entry_flow_intensity_heavy": "Heavy",
+  "@daily_entry_flow_intensity_heavy": {
+    "description": "Dot label for heavy menstrual flow intensity"
+  },
+
+  "daily_entry_spotting_note": "Small spotting outside menstrual flow. It is not necessarily the start of a new cycle.",
+  "@daily_entry_spotting_note": {
+    "description": "Contextual note shown when spotting is selected"
+  },
+
+  "daily_entry_assente_confirmation": "No flow today",
+  "@daily_entry_assente_confirmation": {
+    "description": "Confirmation text shown with a check icon when assente is selected"
+  },
+
+  "daily_entry_save_action": "Save day",
+  "@daily_entry_save_action": {
+    "description": "Save button label on daily entry screens"
+  },
+
   "today_how_are_you": "How are you today?",
   "@today_how_are_you": {"description": "Today screen main heading"},
   "today_pain_intensity_label": "Pain intensity",
