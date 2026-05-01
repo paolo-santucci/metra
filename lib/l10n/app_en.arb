@@ -398,8 +398,8 @@
   "backup_disconnect_confirm_body": "Your cloud backup will not be deleted.",
   "backup_disconnect_confirm_button": "Disconnect",
 
-  "onboarding_tagline": "Your cycle, your data, your device.",
-  "onboarding_privacy_line": "Everything stays on your phone — no account, no cloud required.",
+  "onboarding_tagline": "Your rhythm,\ncherished.",
+  "onboarding_privacy_line": "Métra is a quiet journal to know yourself, cycle after cycle.\n\nEverything stays on your phone: no account, no cloud required.",
   "onboarding_last_period_question": "First day of your last menstruation",
   "onboarding_cycle_length_question": "How long is your cycle usually?",
   "onboarding_period_duration_label": "Menstruation duration",

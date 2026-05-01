@@ -956,16 +956,16 @@ abstract class AppLocalizations {
   /// **'Disconnetti'**
   String get backup_disconnect_confirm_button;
 
-  /// Tagline shown on the onboarding welcome screen
+  /// Title shown on the onboarding welcome screen
   ///
   /// In it, this message translates to:
-  /// **'Il tuo ciclo, i tuoi dati, il tuo dispositivo.'**
+  /// **'Il tuo ritmo,\ncustodito.'**
   String get onboarding_tagline;
 
-  /// Privacy reassurance on the onboarding welcome screen
+  /// Body text on the onboarding welcome screen
   ///
   /// In it, this message translates to:
-  /// **'Tutto rimane sul tuo telefono — nessun account, nessun cloud richiesto.'**
+  /// **'Métra è un quaderno silenzioso per conoscerti, ciclo dopo ciclo.\n\nTutto rimane sul tuo telefono: nessun account, nessun cloud richiesto.'**
   String get onboarding_privacy_line;
 
   /// Label for the last period date picker on onboarding

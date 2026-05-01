@@ -39,7 +39,7 @@ void main() {
       await tester.pumpWidget(_wrap());
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Your cycle'), findsOneWidget);
+      expect(find.textContaining('Your rhythm'), findsOneWidget);
       expect(find.text('Get started'), findsOneWidget);
     });
   });

@@ -774,14 +774,14 @@
     "description": "Confirm button in the Dropbox disconnect confirmation dialog"
   },
 
-  "onboarding_tagline": "Il tuo ciclo, i tuoi dati, il tuo dispositivo.",
+  "onboarding_tagline": "Il tuo ritmo,\ncustodito.",
   "@onboarding_tagline": {
-    "description": "Tagline shown on the onboarding welcome screen"
+    "description": "Title shown on the onboarding welcome screen"
   },
 
-  "onboarding_privacy_line": "Tutto rimane sul tuo telefono — nessun account, nessun cloud richiesto.",
+  "onboarding_privacy_line": "Métra è un quaderno silenzioso per conoscerti, ciclo dopo ciclo.\n\nTutto rimane sul tuo telefono: nessun account, nessun cloud richiesto.",
   "@onboarding_privacy_line": {
-    "description": "Privacy reassurance on the onboarding welcome screen"
+    "description": "Body text on the onboarding welcome screen"
   },
 
   "onboarding_last_period_question": "Primo giorno dell'ultima mestruazione",

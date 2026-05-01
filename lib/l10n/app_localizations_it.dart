@@ -496,12 +496,11 @@ class AppLocalizationsIt extends AppLocalizations {
   String get backup_disconnect_confirm_button => 'Disconnetti';
 
   @override
-  String get onboarding_tagline =>
-      'Il tuo ciclo, i tuoi dati, il tuo dispositivo.';
+  String get onboarding_tagline => 'Il tuo ritmo,\ncustodito.';
 
   @override
   String get onboarding_privacy_line =>
-      'Tutto rimane sul tuo telefono — nessun account, nessun cloud richiesto.';
+      'Métra è un quaderno silenzioso per conoscerti, ciclo dopo ciclo.\n\nTutto rimane sul tuo telefono: nessun account, nessun cloud richiesto.';
 
   @override
   String get onboarding_last_period_question =>

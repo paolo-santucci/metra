@@ -82,46 +82,133 @@ class _WelcomePage extends StatelessWidget {
     final textSecondary = isDark
         ? MetraColors.dark.textSecondary
         : MetraColors.light.textSecondary;
+    final bgPrimary =
+        isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
 
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: MetraSpacing.s6),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Spacer(flex: 3),
-            Semantics(
-              header: true,
-              child: Text(
-                MetraTypography.wordmark,
-                style: MetraTypography.displayLg.copyWith(color: accentFlow),
-                textAlign: TextAlign.center,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Cap hero zone at 340dp on tall screens; proportional on small ones.
+          final heroHeight = (constraints.maxHeight * 0.56).clamp(160.0, 340.0);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Hero zone: wordmark centered.
+              SizedBox(
+                height: heroHeight,
+                child: Center(
+                  child: Semantics(
+                    header: true,
+                    child: Text(
+                      MetraTypography.wordmark,
+                      style:
+                          MetraTypography.displayXl.copyWith(color: textPrimary),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: MetraSpacing.s4),
-            Text(
-              l10n.onboarding_tagline,
-              style: MetraTypography.titleMd.copyWith(color: textPrimary),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: MetraSpacing.s4),
-            Text(
-              l10n.onboarding_privacy_line,
-              style: MetraTypography.body.copyWith(color: textSecondary),
-              textAlign: TextAlign.center,
-            ),
-            const Spacer(flex: 3),
-            FilledButton(
-              onPressed: onGetStarted,
-              child: Text(l10n.onboarding_get_started),
-            ),
-            const SizedBox(height: MetraSpacing.s8),
-          ],
-        ),
+              // Content zone: text scrolls; CTA is pinned at bottom.
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding:
+                            const EdgeInsets.fromLTRB(36, 0, 36, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              l10n.onboarding_tagline,
+                              style: MetraTypography.displayMd
+                                  .copyWith(color: textPrimary),
+                            ),
+                            const SizedBox(height: 14),
+                            Text(
+                              l10n.onboarding_privacy_line,
+                              style: MetraTypography.body.copyWith(
+                                color: textSecondary,
+                                height: 1.6,
+                              ),
+                            ),
+                            const SizedBox(height: 40),
+                            Center(child: _MacronDots(color: accentFlow)),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(36, 0, 36, 28),
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: textPrimary,
+                          foregroundColor: bgPrimary,
+                          minimumSize: const Size.fromHeight(56),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        onPressed: onGetStarted,
+                        child: Text(l10n.onboarding_get_started),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
+}
+
+class _MacronDots extends StatelessWidget {
+  const _MacronDots({required this.color});
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: const Size(48, 22),
+      painter: _MacronDotsPainter(color: color),
+    );
+  }
+}
+
+class _MacronDotsPainter extends CustomPainter {
+  const _MacronDotsPainter({required this.color});
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final linePaint = Paint()
+      ..color = color
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(const Offset(6, 4), const Offset(42, 4), linePaint);
+    canvas.drawCircle(
+      const Offset(12, 16),
+      3,
+      Paint()..color = color.withValues(alpha: 0.4),
+    );
+    canvas.drawCircle(
+      const Offset(24, 16),
+      3,
+      Paint()..color = color.withValues(alpha: 0.65),
+    );
+    canvas.drawCircle(
+      const Offset(36, 16),
+      3,
+      Paint()..color = color.withValues(alpha: 0.4),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_MacronDotsPainter old) => old.color != color;
 }
 
 // ── Page 2: Data entry ────────────────────────────────────────────────────────
