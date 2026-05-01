@@ -18,8 +18,8 @@
 | E | Calendar header (DM Serif, left-aligned, cycle-day row), indicator dots | ✅ done | `b6047af` |
 | F | NavBar: remove active-pill indicator, terracotta active icon/label | ✅ done | `b6047af` |
 | G | HistoricalEntryScreen: bare scaffold, CirclePainPicker, ChoiceChipMetra wrap, inline add | ✅ done | `b6047af` |
-| B | Manifesto polish (halo, proportions, ornament, CTA margin) | 🔲 todo | — |
-| H | Today screen parity: chip fill, dots geometry, flow border weight | 🔲 todo | — |
+| B | Manifesto polish: terracotta radial halo in hero (outer + centered 220×220) | ✅ done | `aae8ece` |
+| H | Today screen: pain picker opacities, gap-14, flow chip borders 1.5px | ✅ done | `aae8ece` |
 
 All 403 tests green, 0 analyzer warnings after Sprint 3 commit.
 
