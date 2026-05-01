@@ -310,6 +310,28 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
+  String get archive_title => 'Archivio';
+
+  @override
+  String archive_card_duration_days(int n) {
+    return 'Durata ${n}g';
+  }
+
+  @override
+  String archive_card_footer(int len, String day) {
+    return 'Ciclo ${len}g · dal $day';
+  }
+
+  @override
+  String get table_col_month => 'Mese';
+
+  @override
+  String get table_col_duration => 'Dur.';
+
+  @override
+  String get table_col_flow => 'Flusso';
+
+  @override
   String get table_col_start => 'Inizio';
 
   @override

@@ -19,7 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/metra_colors.dart';
-import '../../core/theme/metra_spacing.dart';
+import '../../core/theme/metra_typography.dart';
 import '../../core/widgets/segmented_control_metra.dart';
 import '../../l10n/app_localizations.dart';
 import 'state/timeline_controller.dart';
@@ -51,16 +51,18 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(
-                MetraSpacing.s4,
-                MetraSpacing.s4,
-                MetraSpacing.s4,
-                MetraSpacing.s2,
-              ),
-              child: SegmentedControlMetra(
-                segments: [l10n.timeline_view_toggle, l10n.table_view_toggle],
-                selectedIndex: _mode.index,
-                onChanged: (i) => setState(() => _mode = _ViewMode.values[i]),
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l10n.archive_title, style: MetraTypography.titleLg),
+                  const SizedBox(height: 12),
+                  SegmentedControlMetra(
+                    segments: [l10n.timeline_view_toggle, l10n.table_view_toggle],
+                    selectedIndex: _mode.index,
+                    onChanged: (i) => setState(() => _mode = _ViewMode.values[i]),
+                  ),
+                ],
               ),
             ),
             Expanded(

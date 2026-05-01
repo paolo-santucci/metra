@@ -632,7 +632,43 @@ abstract class AppLocalizations {
   /// **'Ciclo dal {start}, in corso'**
   String timeline_card_a11y_in_progress(String start);
 
-  /// Table column header: start date
+  /// Archivio screen title (§ 10.1)
+  ///
+  /// In it, this message translates to:
+  /// **'Archivio'**
+  String get archive_title;
+
+  /// Duration label on an archive card, e.g. 'Durata 5g'
+  ///
+  /// In it, this message translates to:
+  /// **'Durata {n}g'**
+  String archive_card_duration_days(int n);
+
+  /// Footer line on an archive card, e.g. 'Ciclo 28g · dal 15 gen'
+  ///
+  /// In it, this message translates to:
+  /// **'Ciclo {len}g · dal {day}'**
+  String archive_card_footer(int len, String day);
+
+  /// Table column header: month (§ 10.2)
+  ///
+  /// In it, this message translates to:
+  /// **'Mese'**
+  String get table_col_month;
+
+  /// Table column header: cycle duration (§ 10.2)
+  ///
+  /// In it, this message translates to:
+  /// **'Dur.'**
+  String get table_col_duration;
+
+  /// Table column header: flow (§ 10.2)
+  ///
+  /// In it, this message translates to:
+  /// **'Flusso'**
+  String get table_col_flow;
+
+  /// DEPRECATED — removed when table_view.dart is rewritten in Phase 4c. Do not use for new code.
   ///
   /// In it, this message translates to:
   /// **'Inizio'**
@@ -644,13 +680,13 @@ abstract class AppLocalizations {
   /// **'Ciclo'**
   String get table_col_cycle;
 
-  /// Table column header: period length
+  /// DEPRECATED — removed when table_view.dart is rewritten in Phase 4c. Do not use for new code.
   ///
   /// In it, this message translates to:
   /// **'Mestr.'**
   String get table_col_period;
 
-  /// Table column header: symptoms
+  /// DEPRECATED — removed when table_view.dart is rewritten in Phase 4c. Do not use for new code.
   ///
   /// In it, this message translates to:
   /// **'Sintomi'**

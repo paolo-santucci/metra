@@ -263,10 +263,44 @@
       "start": { "type": "String" }
     }
   },
+  "archive_title": "Archive",
+  "@archive_title": { "description": "Archivio screen title (§ 10.1)" },
+
+  "archive_card_duration_days": "Duration {n}d",
+  "@archive_card_duration_days": {
+    "description": "Duration label on an archive card, e.g. 'Duration 5d'",
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+
+  "archive_card_footer": "Cycle {len}d · from {day}",
+  "@archive_card_footer": {
+    "description": "Footer line on an archive card, e.g. 'Cycle 28d · from 15 Jan'",
+    "placeholders": {
+      "len": { "type": "int" },
+      "day": { "type": "String" }
+    }
+  },
+
+  "table_col_month": "Month",
+  "@table_col_month": { "description": "Table column header: month (§ 10.2)" },
+
+  "table_col_duration": "Dur.",
+  "@table_col_duration": { "description": "Table column header: cycle duration (§ 10.2)" },
+
+  "table_col_flow": "Flow",
+  "@table_col_flow": { "description": "Table column header: flow (§ 10.2)" },
+
   "table_col_start": "Start",
+  "@table_col_start": { "description": "DEPRECATED — removed when table_view.dart is rewritten in Phase 4c. Do not use for new code." },
+
   "table_col_cycle": "Cycle",
   "table_col_period": "Period",
+  "@table_col_period": { "description": "DEPRECATED — removed when table_view.dart is rewritten in Phase 4c. Do not use for new code." },
+
   "table_col_symptoms": "Symptoms",
+  "@table_col_symptoms": { "description": "DEPRECATED — removed when table_view.dart is rewritten in Phase 4c. Do not use for new code." },
   "table_cycle_dash": "—",
   "stats_cycle_length_title": "Cycle length",
   "stats_period_length_title": "Period length",

@@ -507,17 +507,46 @@
     }
   },
 
+  "archive_title": "Archivio",
+  "@archive_title": { "description": "Archivio screen title (§ 10.1)" },
+
+  "archive_card_duration_days": "Durata {n}g",
+  "@archive_card_duration_days": {
+    "description": "Duration label on an archive card, e.g. 'Durata 5g'",
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+
+  "archive_card_footer": "Ciclo {len}g · dal {day}",
+  "@archive_card_footer": {
+    "description": "Footer line on an archive card, e.g. 'Ciclo 28g · dal 15 gen'",
+    "placeholders": {
+      "len": { "type": "int" },
+      "day": { "type": "String" }
+    }
+  },
+
+  "table_col_month": "Mese",
+  "@table_col_month": { "description": "Table column header: month (§ 10.2)" },
+
+  "table_col_duration": "Dur.",
+  "@table_col_duration": { "description": "Table column header: cycle duration (§ 10.2)" },
+
+  "table_col_flow": "Flusso",
+  "@table_col_flow": { "description": "Table column header: flow (§ 10.2)" },
+
   "table_col_start": "Inizio",
-  "@table_col_start": { "description": "Table column header: start date" },
+  "@table_col_start": { "description": "DEPRECATED — removed when table_view.dart is rewritten in Phase 4c. Do not use for new code." },
 
   "table_col_cycle": "Ciclo",
   "@table_col_cycle": { "description": "Table column header: cycle length" },
 
   "table_col_period": "Mestr.",
-  "@table_col_period": { "description": "Table column header: period length" },
+  "@table_col_period": { "description": "DEPRECATED — removed when table_view.dart is rewritten in Phase 4c. Do not use for new code." },
 
   "table_col_symptoms": "Sintomi",
-  "@table_col_symptoms": { "description": "Table column header: symptoms" },
+  "@table_col_symptoms": { "description": "DEPRECATED — removed when table_view.dart is rewritten in Phase 4c. Do not use for new code." },
 
   "table_cycle_dash": "—",
   "@table_cycle_dash": { "description": "Placeholder shown when cycle length is unknown" },
