@@ -1,6 +1,6 @@
 # Métra — Status
 
-**Last updated**: 2026-05-01 (Phase 5 complete)  
+**Last updated**: 2026-05-01 (Phase 6 complete)  
 **Active plan**: DESIGN-BIBLE Conformance Rebuild  
 **Plan**: `.claude/docs/plans/2026-05-01-bible-conformance-rebuild.md`
 
@@ -21,8 +21,8 @@
 | **3 · Onboarding** | MetraWordmark widget (Mētra U+0113, DM Serif 56/ls-0.02em), manifesto headlineLg (34px), hero fixed 340px, Primo Ciclo headlineSm (28px), stepper GestureDetector 40×40 radius 10, active text → sabbia, firstDate → DateTime(2000), ARB cleanup | ✅ done | `f3d2114` |
 | **4 · Archivio rebuild** | CycleSummary + dominantPainIntensity, TimelineCard rebuild (left rail, chips, footer), Tabella rebuild (Column/Row, 4 cols), header title, ARB, segmented control § 5.4 | ✅ done | `a351521`…`af80bb0` |
 | **5 · Statistics rebuild** | Stats screen per bible § 11 | ✅ done | `08d2e0b` |
-| **6 · Brand** | Métra/Mētra resolution in product copy — **needs user decision** before proceeding | ⏳ **next** | — |
-| **7 · Final** | Golden walk + ship | ⏳ queued | — |
+| **6 · Brand** | Métra/Mētra resolution in product copy | ✅ done | `see below` |
+| **7 · Final** | Golden walk + ship | ⏳ **next** | — |
 
 ---
 
@@ -36,7 +36,7 @@
 - **Onboarding flow**: 2-step (welcome → first cycle). `_PrivacyPage` removed in Sprint 3.
 - **Tab bar**: custom `MetraTabBar` (frosted glass, 84dp, BackdropFilter blur 16, MetraIcons) — replaced Material 3 `NavigationBar` in Phase 0 Wave 0.2.
 - **Off-catalog primitives**: `inkSoft`, `surfaceSunken`, `divider`, `textDisabled`, `dustyOchreDeep`, `mossDeep` still exist in `metra_colors.dart`; consumer sweep pending during per-screen phases.
-- **Brand**: `onboarding_privacy_line` ARB key retains acute `Métra` pending Phase 6 decision. `DESIGN-BIBLE.md` also retains acute in the manifesto subhead (HTML is canon — verify HTML before changing).
+- **Brand (Phase 6 decision 2026-05-01)**: `Mētra` (macron ē, U+0113) is the canonical product spelling everywhere in the app UI. `Métra` (acute é) is only valid in GPL license headers and design-file names (not product UI). All ARB strings, the DESIGN-BIBLE § 12.1 transcript, and code comments updated to macron.
 
 ## Key files reference
 

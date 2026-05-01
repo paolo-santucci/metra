@@ -880,7 +880,7 @@ text block (flex 1 · padding 0 / 36 / 28):
   headline DM Serif Display 34 inchiostro line 1.2 marginBottom 14:
     "Il tuo ritmo,⏎custodito."
   subhead Inter 16 rgba(0.58) line 1.6:
-    "Métra è un quaderno silenzioso per conoscerti, ciclo dopo ciclo.\n\n
+    "Mētra è un quaderno silenzioso per conoscerti, ciclo dopo ciclo.\n\n
      Tutto rimane sul tuo telefono: nessun account, nessun cloud richiesto."
   ornament (column · gap 6 · marginBottom 24):
     SVG 48 × 22:

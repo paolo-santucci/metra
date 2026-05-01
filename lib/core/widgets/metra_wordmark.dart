@@ -20,7 +20,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/metra_typography.dart';
 
-// MetraWordmark renders the Métra brand wordmark as DM Serif Display text.
+// MetraWordmark renders the Mētra brand wordmark as DM Serif Display text.
 // The product name uses macron-e (ē, U+0113) per DESIGN-BIBLE § 0.3.
 class MetraWordmark extends StatelessWidget {
   const MetraWordmark({super.key, required this.color, this.fontSize = 56.0});
