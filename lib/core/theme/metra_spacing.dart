@@ -65,10 +65,6 @@ abstract final class MetraRadius {
   static const double lgg = 18;
   static const double xl = 20;    // year-label pill (calendar)
   static const double phone = 44; // phone-corner large elements
-
-  // pill=999 violates DESIGN-BIBLE § 1.4 ("never use 999px").
-  // Pending deletion once all consumers are migrated to height÷2 per widget.
-  static const double pill = 999;
 }
 
 abstract final class MetraMotion {

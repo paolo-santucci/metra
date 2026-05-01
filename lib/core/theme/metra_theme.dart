@@ -16,6 +16,7 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'metra_colors.dart';
 import 'metra_typography.dart';
 
@@ -35,16 +36,16 @@ abstract final class MetraTheme {
         onPrimaryContainer: colors.sand,
         secondary: colors.nightLavender,
         onSecondary: colors.sand,
-        tertiary: colors.dustyOchreDeep,
+        tertiary: colors.dustyOchre,
         onTertiary: colors.sand,
         surface: colors.surfaceRaised,
         onSurface: colors.ink,
-        onSurfaceVariant: colors.inkSoft,
-        outline: colors.divider,
-        outlineVariant: colors.inkSoft,
+        onSurfaceVariant: colors.textSecondary,   // ink @ 0x66 — § 1.1
+        outline: colors.borderSubtle,              // ink @ 0x12 — § 1.5
+        outlineVariant: colors.borderStrong,       // ink @ 0x24 — § 1.5
         error: colors.terracottaDeep,
         onError: colors.sand,
-        shadow: const Color(0x142B2521),
+        shadow: const Color(0x1F2B2521),           // rgba(43,37,33,0.12) — § 1.6
         scrim: colors.overlayScrim,
       ),
       textTheme: MetraTypography.toTextTheme(colors.ink),
@@ -53,20 +54,21 @@ abstract final class MetraTheme {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: colors.divider),
+          side: BorderSide(color: colors.borderSubtle),  // ink @ 0x12 — § 1.5
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: colors.surfaceSunken,
+        fillColor: colors.bgSunken,                // ink @ 0x0A — § 1.1
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
       ),
-      dividerColor: colors.divider,
+      dividerColor: colors.borderSubtle,            // ink @ 0x12 — § 1.5
       navigationBarTheme: NavigationBarThemeData(
-        // Active-state = icon/label color only; no pill indicator background.
+        // Wave 0.2 will replace NavigationBar with a custom BackdropFilter tab bar.
+        // These styles are transitional until that rebuild lands.
         indicatorColor: Colors.transparent,
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
@@ -79,15 +81,13 @@ abstract final class MetraTheme {
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return TextStyle(
-              fontFamily: 'Inter',
+            return GoogleFonts.inter(
               fontSize: 11,
               fontWeight: FontWeight.w600,
               color: colors.terracotta,
             );
           }
-          return TextStyle(
-            fontFamily: 'Inter',
+          return GoogleFonts.inter(
             fontSize: 11,
             fontWeight: FontWeight.w400,
             color: colors.ink.withValues(alpha: 0.55),
@@ -154,15 +154,13 @@ abstract final class MetraTheme {
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return TextStyle(
-              fontFamily: 'Inter',
+            return GoogleFonts.inter(
               fontSize: 11,
               fontWeight: FontWeight.w600,
               color: colors.mutedTerracotta,
             );
           }
-          return TextStyle(
-            fontFamily: 'Inter',
+          return GoogleFonts.inter(
             fontSize: 11,
             fontWeight: FontWeight.w400,
             color: colors.ivory.withValues(alpha: 0.55),
