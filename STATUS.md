@@ -1,17 +1,17 @@
 # Métra — Status
 
-**Last updated**: 2026-05-01 (Phase 6 complete)  
-**Active plan**: DESIGN-BIBLE Conformance Rebuild  
+**Last updated**: 2026-05-01 (Phase 7 complete — bible conformance achieved)  
+**Active plan**: DESIGN-BIBLE Conformance Rebuild — COMPLETE  
 **Plan**: `.claude/docs/plans/2026-05-01-bible-conformance-rebuild.md`
 
 > **Canonical UI source of truth: [`design/DESIGN-BIBLE.md`](design/DESIGN-BIBLE.md)** — transcribes `design/Métra Screens Light.html`. Read at every session boot. All UI changes must conform; deviation requires updating the HTML mockup first.
 
 ---
 
-## DESIGN-BIBLE Conformance Rebuild (active, 2026-05-01)
+## DESIGN-BIBLE Conformance Rebuild — COMPLETE (2026-05-01)
 
-**Gate**: 430 tests green, `flutter analyze --fatal-infos --fatal-warnings` → 0 issues after Phases 0–4.  
-4 pre-existing encryption timeouts in full-suite run (pass in isolation — resource contention).
+**Final gate**: 459 tests green, `flutter analyze --fatal-infos --fatal-warnings` → 0 issues.  
+**Bible conformance achieved**: 2026-05-01. Tag: `v0.1.0-bible-conformant`.
 
 | Phase | Description | Status | Commits |
 |---|---|---|---|
@@ -22,7 +22,7 @@
 | **4 · Archivio rebuild** | CycleSummary + dominantPainIntensity, TimelineCard rebuild (left rail, chips, footer), Tabella rebuild (Column/Row, 4 cols), header title, ARB, segmented control § 5.4 | ✅ done | `a351521`…`af80bb0` |
 | **5 · Statistics rebuild** | Stats screen per bible § 11 | ✅ done | `08d2e0b` |
 | **6 · Brand** | Métra/Mētra resolution in product copy | ✅ done | `see below` |
-| **7 · Final** | Golden walk + ship | ⏳ **next** | — |
+| **7 · Final** | Golden walk + ship | ✅ done | `32527be` |
 
 ---
 
