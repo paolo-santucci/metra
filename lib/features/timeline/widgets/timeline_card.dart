@@ -135,7 +135,7 @@ class TimelineCard extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         color: badgeBg,
-                        borderRadius: BorderRadius.circular(MetraRadius.pill),
+                        borderRadius: BorderRadius.circular(MetraRadius.md),
                       ),
                       child: Text(
                         badgeText,
@@ -156,7 +156,7 @@ class TimelineCard extends StatelessWidget {
                       height: 8,
                       decoration: BoxDecoration(
                         color: barBg,
-                        borderRadius: BorderRadius.circular(MetraRadius.pill),
+                        borderRadius: BorderRadius.circular(4),
                       ),
                       child: Align(
                         alignment: Alignment.centerLeft,
@@ -165,8 +165,7 @@ class TimelineCard extends StatelessWidget {
                           child: Container(
                             decoration: BoxDecoration(
                               color: barFill,
-                              borderRadius:
-                                  BorderRadius.circular(MetraRadius.pill),
+                              borderRadius: BorderRadius.circular(4),
                             ),
                           ),
                         ),

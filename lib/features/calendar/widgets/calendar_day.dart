@@ -16,6 +16,7 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/metra_colors.dart';
 
 /// Single calendar day cell — 48×48 dp rounded square (borderRadius 12).
@@ -114,8 +115,7 @@ class CalendarDay extends StatelessWidget {
             children: [
               Text(
                 '${date.day}',
-                style: TextStyle(
-                  fontFamily: 'Inter',
+                style: GoogleFonts.inter(
                   fontSize: 15,
                   fontWeight: fontWeight,
                   color: textColor,

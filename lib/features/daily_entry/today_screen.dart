@@ -480,17 +480,17 @@ class _InlineSymptomInput extends StatelessWidget {
                 vertical: MetraSpacing.s2,
               ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(MetraRadius.pill),
+                borderRadius: BorderRadius.circular(MetraRadius.md),
                 borderSide:
                     BorderSide(color: textSecondary.withValues(alpha: 0.25)),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(MetraRadius.pill),
+                borderRadius: BorderRadius.circular(MetraRadius.md),
                 borderSide:
                     BorderSide(color: textSecondary.withValues(alpha: 0.25)),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(MetraRadius.pill),
+                borderRadius: BorderRadius.circular(MetraRadius.md),
                 borderSide:
                     BorderSide(color: textSecondary.withValues(alpha: 0.5)),
               ),

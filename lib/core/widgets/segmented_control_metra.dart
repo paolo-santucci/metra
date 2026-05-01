@@ -56,7 +56,7 @@ class SegmentedControlMetra extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: trackColor,
-          borderRadius: BorderRadius.circular(MetraRadius.pill),
+          borderRadius: BorderRadius.circular(MetraRadius.smm),
         ),
         padding: const EdgeInsets.all(2),
         child: Row(
@@ -83,15 +83,14 @@ class SegmentedControlMetra extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: isActive ? activeColor : Colors.transparent,
-                    borderRadius: BorderRadius.circular(MetraRadius.pill),
+                    borderRadius: BorderRadius.circular(MetraRadius.sm),
                     boxShadow: isActive
                         ? [
                             BoxShadow(
-                              // single elevation level per CLAUDE.md §8.5
                               color: isDark
                                   ? const Color(0x661A1410)
-                                  : const Color(0x142B2521),
-                              blurRadius: 2,
+                                  : const Color(0x1F2B2521),
+                              blurRadius: 4,
                               offset: const Offset(0, 1),
                             ),
                           ]

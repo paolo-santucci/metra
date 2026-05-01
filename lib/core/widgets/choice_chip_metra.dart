@@ -72,7 +72,7 @@ class ChoiceChipMetra extends StatelessWidget {
                 color: selected
                     ? bgSelected
                     : textPrimary.withValues(alpha: 0.07),
-                borderRadius: BorderRadius.circular(MetraRadius.pill),
+                borderRadius: BorderRadius.circular(MetraRadius.lgg),
                 border: selected
                     ? Border.all(color: Colors.transparent)
                     : Border.all(
