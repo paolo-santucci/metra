@@ -27,7 +27,10 @@ import '../../domain/entities/cycle_prediction.dart';
 import '../../domain/entities/daily_log_entity.dart';
 import '../../domain/entities/flow_intensity.dart';
 import '../../domain/entities/flow_type.dart';
+import '../../domain/entities/pain_symptom_data.dart';
+import '../../domain/entities/pain_symptom_type.dart';
 import '../../l10n/app_localizations.dart';
+import '../../providers/repository_providers.dart';
 import 'state/calendar_month_controller.dart';
 import 'state/prediction_controller.dart';
 import 'widgets/calendar_day.dart';
@@ -80,6 +83,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
     final calendarAsync = ref.watch(calendarMonthProvider);
     final prediction = ref.watch(cyclePredictionProvider).valueOrNull;
+    final symptomsAsync = ref.watch(painSymptomsProvider(_selectedDate));
+    final symptoms = symptomsAsync.valueOrNull ?? [];
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -147,6 +152,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 _DayDetailCard(
                   selectedDate: _selectedDate,
                   log: monthState.logs[_selectedDate],
+                  symptoms: symptoms,
                   l10n: l10n,
                   locale: locale,
                   isDark: isDark,
@@ -318,6 +324,7 @@ class _CalendarGrid extends StatelessWidget {
 class _DayDetailCard extends StatelessWidget {
   const _DayDetailCard({
     required this.selectedDate,
+    required this.symptoms,
     required this.l10n,
     required this.locale,
     required this.isDark,
@@ -326,9 +333,24 @@ class _DayDetailCard extends StatelessWidget {
 
   final DateTime selectedDate;
   final DailyLogEntity? log;
+  final List<PainSymptomData> symptoms;
   final AppLocalizations l10n;
   final String locale;
   final bool isDark;
+
+  String _symptomLabel(PainSymptomType type, AppLocalizations l10n) =>
+      switch (type) {
+        PainSymptomType.cramps => l10n.daily_entry_symptom_cramps,
+        PainSymptomType.headache => l10n.daily_entry_symptom_headache,
+        PainSymptomType.bloating => l10n.daily_entry_symptom_bloating,
+        PainSymptomType.backPain => l10n.daily_entry_symptom_backPain,
+        PainSymptomType.migraine => l10n.daily_entry_symptom_migraine,
+        PainSymptomType.custom => l10n.daily_entry_symptom_custom,
+        PainSymptomType.fatigue => l10n.daily_entry_symptom_fatigue,
+        PainSymptomType.nausea => l10n.daily_entry_symptom_nausea,
+        PainSymptomType.breastTenderness =>
+          l10n.daily_entry_symptom_breastTenderness,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -380,6 +402,28 @@ class _DayDetailCard extends StatelessWidget {
                 _FlowBadge(log: log!, isDark: isDark),
             ],
           ),
+          if (symptoms.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: [
+                ...symptoms.take(2).map(
+                      (s) => _SymptomPill(
+                        label: _symptomLabel(s.symptomType, l10n),
+                        isDark: isDark,
+                      ),
+                    ),
+                if (symptoms.length > 2)
+                  Text(
+                    '+${symptoms.length - 2}',
+                    style: MetraTypography.tiny.copyWith(
+                      color: textSecondary,
+                    ),
+                  ),
+              ],
+            ),
+          ],
           const SizedBox(height: 12),
           GestureDetector(
             onTap: () => context.push(
@@ -454,6 +498,35 @@ class _FlowBadge extends StatelessWidget {
         style: MetraTypography.caption.copyWith(
           fontWeight: FontWeight.w500,
           color: accentFlow,
+        ),
+      ),
+    );
+  }
+}
+
+class _SymptomPill extends StatelessWidget {
+  const _SymptomPill({required this.label, required this.isDark});
+
+  final String label;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final accentFlow =
+        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
+    final bgPrimary =
+        isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: accentFlow,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: MetraTypography.tiny.copyWith(
+          color: bgPrimary,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );

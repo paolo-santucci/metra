@@ -31,6 +31,7 @@ import 'package:metra/features/calendar/state/calendar_month_controller.dart';
 import 'package:metra/features/calendar/state/prediction_controller.dart';
 import 'package:metra/features/calendar/widgets/calendar_day.dart';
 import 'package:metra/l10n/app_localizations.dart';
+import 'package:metra/providers/repository_providers.dart';
 
 // ---------------------------------------------------------------------------
 // Stub notifiers
@@ -154,6 +155,8 @@ Widget _wrapWithRouter(
       // Default: no prediction (null) — prevents DB access in widget tests.
       cyclePredictionProvider
           .overrideWith(() => _StubCyclePredictionNotifier(prediction)),
+      // Prevent DB access — no symptoms in widget tests by default.
+      painSymptomsProvider.overrideWith((ref, date) async => []),
       ...overrides,
     ],
     child: MaterialApp.router(

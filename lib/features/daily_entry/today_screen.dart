@@ -54,6 +54,9 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
   int? _painIntensity;
   Set<PainSymptomType> _selectedSymptoms = {};
   late final TextEditingController _notesController;
+  bool _addingSymptom = false;
+  final TextEditingController _customSymptomController =
+      TextEditingController();
 
   @override
   void initState() {
@@ -76,6 +79,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
   @override
   void dispose() {
     _notesController.dispose();
+    _customSymptomController.dispose();
     super.dispose();
   }
 
@@ -334,10 +338,38 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                             },
                           );
                         }),
-                        _AddSymptomChip(
-                          label: l10n.today_add_symptom,
-                          textSecondary: textSecondary,
-                        ),
+                        if (!_addingSymptom)
+                          GestureDetector(
+                            onTap: () =>
+                                setState(() => _addingSymptom = true),
+                            child: _AddSymptomChip(
+                              label: l10n.today_add_symptom,
+                              textSecondary: textSecondary,
+                            ),
+                          )
+                        else
+                          _InlineSymptomInput(
+                            controller: _customSymptomController,
+                            textSecondary: textSecondary,
+                            onConfirm: () {
+                              final text =
+                                  _customSymptomController.text.trim();
+                              setState(() {
+                                if (text.isNotEmpty) {
+                                  _selectedSymptoms = {
+                                    ..._selectedSymptoms,
+                                    PainSymptomType.custom,
+                                  };
+                                }
+                                _addingSymptom = false;
+                                _customSymptomController.clear();
+                              });
+                            },
+                            onCancel: () => setState(() {
+                              _addingSymptom = false;
+                              _customSymptomController.clear();
+                            }),
+                          ),
                       ],
                     ),
                     const SizedBox(height: MetraSpacing.s6),
@@ -407,6 +439,79 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Inline text field that replaces the "+ Aggiungi" chip while editing.
+class _InlineSymptomInput extends StatelessWidget {
+  const _InlineSymptomInput({
+    required this.controller,
+    required this.textSecondary,
+    required this.onConfirm,
+    required this.onCancel,
+  });
+
+  final TextEditingController controller;
+  final Color textSecondary;
+  final VoidCallback onConfirm;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 100, maxWidth: 160),
+          child: TextField(
+            controller: controller,
+            autofocus: true,
+            onSubmitted: (_) => onConfirm(),
+            style: MetraTypography.caption.copyWith(color: textSecondary),
+            decoration: InputDecoration(
+              hintText: 'es. Vertigini',
+              hintStyle: MetraTypography.caption.copyWith(
+                color: textSecondary.withValues(alpha: 0.5),
+              ),
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: MetraSpacing.s4,
+                vertical: MetraSpacing.s2,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(MetraRadius.pill),
+                borderSide:
+                    BorderSide(color: textSecondary.withValues(alpha: 0.25)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(MetraRadius.pill),
+                borderSide:
+                    BorderSide(color: textSecondary.withValues(alpha: 0.25)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(MetraRadius.pill),
+                borderSide:
+                    BorderSide(color: textSecondary.withValues(alpha: 0.5)),
+              ),
+            ),
+          ),
+        ),
+        TextButton(
+          onPressed: onConfirm,
+          style: TextButton.styleFrom(
+            minimumSize: const Size(44, 44),
+            padding: EdgeInsets.zero,
+          ),
+          child: Text(
+            'OK',
+            style: MetraTypography.caption.copyWith(
+              color: textSecondary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
