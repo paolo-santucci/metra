@@ -1,6 +1,6 @@
 # Métra — Status
 
-**Last updated**: 2026-05-01  
+**Last updated**: 2026-05-01 (Phase 4 complete)  
 **Active plan**: DESIGN-BIBLE Conformance Rebuild  
 **Plan**: `.claude/docs/plans/2026-05-01-bible-conformance-rebuild.md`
 
@@ -10,7 +10,7 @@
 
 ## DESIGN-BIBLE Conformance Rebuild (active, 2026-05-01)
 
-**Gate**: 425 tests green, `flutter analyze --fatal-infos --fatal-warnings` → 0 issues after Phases 0–3.  
+**Gate**: 430 tests green, `flutter analyze --fatal-infos --fatal-warnings` → 0 issues after Phases 0–4.  
 4 pre-existing encryption timeouts in full-suite run (pass in isolation — resource contention).
 
 | Phase | Description | Status | Commits |
@@ -19,8 +19,8 @@
 | **1 · Daily entry** | Section frames (surfaceRaised + ink@0.07 borders + 18/24 padding + gap 1), screenTitle (26px), bottom padding 100, dot geometry (50×50, stroke 1.4/1.5), notes border, symptom 44dp tap targets | ✅ done | `5ad0202` |
 | **2 · Calendar** | Indicator icons (MetraIcons drop/dropOutline/starSmall size 11), symptom indicator added, CL-01 fix, grid padding 12 + rowGap 2, Italian day headers, flow pill height 32 radius 10, edit CTA MetraIcons.note, legend Previsione last | ✅ done | `774d9dd` |
 | **3 · Onboarding** | MetraWordmark widget (Mētra U+0113, DM Serif 56/ls-0.02em), manifesto headlineLg (34px), hero fixed 340px, Primo Ciclo headlineSm (28px), stepper GestureDetector 40×40 radius 10, active text → sabbia, firstDate → DateTime(2000), ARB cleanup | ✅ done | `f3d2114` |
-| **4 · Archivio rebuild** | Domain: extend CycleSummary (maxPain/dominantPainIntensity). UI: rebuild timeline card per bible § 10 | ⏳ **next** | — |
-| **5 · Statistics rebuild** | Stats screen per bible § 11 | ⏳ queued | — |
+| **4 · Archivio rebuild** | CycleSummary + dominantPainIntensity, TimelineCard rebuild (left rail, chips, footer), Tabella rebuild (Column/Row, 4 cols), header title, ARB, segmented control § 5.4 | ✅ done | `a351521`…`af80bb0` |
+| **5 · Statistics rebuild** | Stats screen per bible § 11 | ⏳ **next** | — |
 | **6 · Brand** | Métra/Mētra resolution in product copy — **needs user decision** before proceeding | ⏳ queued | — |
 | **7 · Final** | Golden walk + ship | ⏳ queued | — |
 
