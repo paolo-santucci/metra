@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
+import 'dart:ui' show Tristate;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/theme/metra_theme.dart';
@@ -117,7 +119,7 @@ void main() {
     expect(size.height, greaterThanOrEqualTo(44));
   });
 
-  testWidgets('check icon visible when selected', (tester) async {
+  testWidgets('semantics toggled true when selected', (tester) async {
     await tester.pumpWidget(
       _wrap(
         ChoiceChipMetra(
@@ -129,10 +131,11 @@ void main() {
         MetraTheme.light(),
       ),
     );
-    expect(find.byIcon(Icons.check), findsOneWidget);
+    final semantics = tester.getSemantics(find.byType(ChoiceChipMetra));
+    expect(semantics.flagsCollection.isToggled, Tristate.isTrue);
   });
 
-  testWidgets('no check icon when unselected', (tester) async {
+  testWidgets('semantics toggled false when unselected', (tester) async {
     await tester.pumpWidget(
       _wrap(
         ChoiceChipMetra(
@@ -144,7 +147,8 @@ void main() {
         MetraTheme.light(),
       ),
     );
-    expect(find.byIcon(Icons.check), findsNothing);
+    final semantics = tester.getSemantics(find.byType(ChoiceChipMetra));
+    expect(semantics.flagsCollection.isToggled, isNot(Tristate.isTrue));
   });
 
   testWidgets('onSelected callback fires with toggled value', (tester) async {

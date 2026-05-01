@@ -43,9 +43,6 @@ class CirclePainPicker extends StatelessWidget {
         isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
     final textPrimary =
         isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
-    final textSecondary = isDark
-        ? MetraColors.dark.textSecondary
-        : MetraColors.light.textSecondary;
     final borderColor = isDark ? Colors.white24 : Colors.black26;
 
     return Row(
@@ -61,7 +58,6 @@ class CirclePainPicker extends StatelessWidget {
           selected: selected,
           accent: accent,
           textPrimary: textPrimary,
-          textSecondary: textSecondary,
           onTap: () => onChanged(selected == 0 ? null : 0),
         ),
         _PainCircle(
@@ -71,7 +67,6 @@ class CirclePainPicker extends StatelessWidget {
           selected: selected,
           accent: accent,
           textPrimary: textPrimary,
-          textSecondary: textSecondary,
           onTap: () => onChanged(selected == 1 ? null : 1),
         ),
         _PainCircle(
@@ -81,7 +76,6 @@ class CirclePainPicker extends StatelessWidget {
           selected: selected,
           accent: accent,
           textPrimary: textPrimary,
-          textSecondary: textSecondary,
           onTap: () => onChanged(selected == 2 ? null : 2),
         ),
         _PainCircle(
@@ -91,7 +85,6 @@ class CirclePainPicker extends StatelessWidget {
           selected: selected,
           accent: accent,
           textPrimary: textPrimary,
-          textSecondary: textSecondary,
           onTap: () => onChanged(selected == 3 ? null : 3),
         ),
       ],
@@ -107,7 +100,6 @@ class _PainCircle extends StatelessWidget {
     required this.selected,
     required this.accent,
     required this.textPrimary,
-    required this.textSecondary,
     required this.onTap,
     this.showBorder = false,
     this.borderColor,
@@ -119,7 +111,6 @@ class _PainCircle extends StatelessWidget {
   final int? selected;
   final Color accent;
   final Color textPrimary;
-  final Color textSecondary;
   final VoidCallback onTap;
   final bool showBorder;
   final Color? borderColor;
@@ -127,11 +118,36 @@ class _PainCircle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isSelected = selected == value;
-    final BorderSide side = isSelected
-        ? BorderSide(color: accent, width: 2.5)
-        : (showBorder && borderColor != null
-            ? BorderSide(color: borderColor!, width: 1.5)
-            : BorderSide.none);
+
+    // Dot with optional soft halo: outer ring (46dp) wraps 36dp filled circle.
+    // No hard border on selection — design uses a translucent stroke halo.
+    Widget dot = Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: fillColor,
+        border: (!isSelected && showBorder && borderColor != null)
+            ? Border.all(color: borderColor!, width: 1.5)
+            : null,
+      ),
+    );
+
+    if (isSelected) {
+      dot = Container(
+        width: 46,
+        height: 46,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: accent.withValues(alpha: 0.28),
+            width: 1.2,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: dot,
+      );
+    }
 
     return GestureDetector(
       onTap: onTap,
@@ -144,23 +160,13 @@ class _PainCircle extends StatelessWidget {
             SizedBox(
               width: 48,
               height: 48,
-              child: Center(
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: fillColor,
-                    border: Border.fromBorderSide(side),
-                  ),
-                ),
-              ),
+              child: Center(child: dot),
             ),
             Text(
               label,
               textAlign: TextAlign.center,
               style: MetraTypography.tiny.copyWith(
-                color: isSelected ? textPrimary : textSecondary,
+                color: isSelected ? accent : textPrimary.withValues(alpha: 0.38),
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
               ),
             ),

@@ -20,11 +20,10 @@ import '../theme/metra_colors.dart';
 import '../theme/metra_typography.dart';
 import '../theme/metra_spacing.dart';
 
-/// Selectable chip with ochre fill when selected.
-///
-/// Color-blind safe: selected state shows both fill AND an inline check icon
-/// (shape cue independent of color), per COMPONENTS_SPEC §2 and CLAUDE.md §10.
-/// Semantics uses [toggled] to announce selection state to screen readers.
+/// Selectable chip matching the Quick Entry design: terracotta fill when
+/// selected, light gray fill with ink border when unselected. No checkmark —
+/// the design relies on fill color alone. Semantics uses [toggled] to announce
+/// selection state to screen readers.
 class ChoiceChipMetra extends StatelessWidget {
   const ChoiceChipMetra({
     super.key,
@@ -44,20 +43,10 @@ class ChoiceChipMetra extends StatelessWidget {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     final bgSelected =
-        isDark ? MetraColors.dark.accentWarmth : MetraColors.light.accentWarmth;
-    final bgDefault =
-        isDark ? MetraColors.dark.bgSurface : MetraColors.light.bgSurface;
-    final borderSelected = isDark
-        ? MetraColors.dark.accentWarmthStrong
-        : MetraColors.light.accentWarmthStrong;
-    final borderDefault =
-        isDark ? MetraColors.dark.borderSubtle : MetraColors.light.borderSubtle;
-    // Selected text on ochre warm bg needs sufficient contrast.
-    // accentWarmthStrong (dustyOchreDeep #8A6332) → on ochre: check below.
-    // For better contrast: use textOnAccent (sand) on warm ochre bg.
+        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
     final fgSelected =
-        isDark ? MetraColors.dark.textOnAccent : MetraColors.light.textOnAccent;
-    final fgDefault =
+        isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
+    final textPrimary =
         isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
 
     return Semantics(
@@ -73,42 +62,30 @@ class ChoiceChipMetra extends StatelessWidget {
             minWidth: 44,
             minHeight: 44,
           ),
-          child: Align(
-            alignment: Alignment.center,
-            widthFactor: 1.0,
-            heightFactor: 1.0,
+          child: Center(
             child: Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: MetraSpacing.s4,
                 vertical: MetraSpacing.s2,
               ),
               decoration: BoxDecoration(
-                color: selected ? bgSelected : bgDefault,
+                color: selected
+                    ? bgSelected
+                    : textPrimary.withValues(alpha: 0.07),
                 borderRadius: BorderRadius.circular(MetraRadius.pill),
-                border: Border.all(
-                  color: selected ? borderSelected : borderDefault,
-                  width: selected ? 1.5 : 1.0,
-                ),
+                border: selected
+                    ? Border.all(color: Colors.transparent)
+                    : Border.all(
+                        color: textPrimary.withValues(alpha: 0.12),
+                        width: 1.0,
+                      ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (selected) ...[
-                    Icon(
-                      Icons.check,
-                      size: 12,
-                      color: fgSelected,
-                    ),
-                    const SizedBox(width: MetraSpacing.s1),
-                  ],
-                  Text(
-                    label,
-                    style: MetraTypography.caption.copyWith(
-                      color: selected ? fgSelected : fgDefault,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+              child: Text(
+                label,
+                style: MetraTypography.caption.copyWith(
+                  color: selected ? fgSelected : textPrimary,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ),

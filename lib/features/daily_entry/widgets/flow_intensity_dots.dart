@@ -3,8 +3,8 @@
 // This file is part of Métra.
 //
 // Métra is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published
-// by the Free Software Foundation, either version 3 of the License,
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License,
 // or (at your option) any later version.
 //
 // Métra is distributed in the hope that it will be useful,
@@ -48,13 +48,13 @@ class FlowIntensityDots extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accent =
+    final accentFlow =
         isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
+    final accentFlowStrong = isDark
+        ? MetraColors.dark.accentFlowStrong
+        : MetraColors.light.accentFlowStrong;
     final textPrimary =
         isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
-    final textSecondary = isDark
-        ? MetraColors.dark.textSecondary
-        : MetraColors.light.textSecondary;
 
     final labels = [
       l10n.daily_entry_flow_intensity_light,
@@ -62,26 +62,29 @@ class FlowIntensityDots extends StatelessWidget {
       l10n.daily_entry_flow_intensity_heavy,
     ];
 
-    return Row(
-      children: [
-        for (var i = 0; i < _levels.length; i++) ...[
-          if (i > 0) const SizedBox(width: 8),
-          Expanded(
-            child: _IntensityDot(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 16, 0, 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < _levels.length; i++) ...[
+            if (i > 0) const SizedBox(width: 10),
+            _IntensityDot(
               label: labels[i],
               intensity: _levels[i].$1,
               fillOpacity: _levels[i].$2,
               selected: selected == _levels[i].$1,
-              accent: accent,
+              accentFlow: accentFlow,
+              accentFlowStrong: accentFlowStrong,
               textPrimary: textPrimary,
-              textSecondary: textSecondary,
               onTap: () => onChanged(
                 selected == _levels[i].$1 ? null : _levels[i].$1,
               ),
             ),
-          ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }
@@ -92,9 +95,9 @@ class _IntensityDot extends StatelessWidget {
     required this.intensity,
     required this.fillOpacity,
     required this.selected,
-    required this.accent,
+    required this.accentFlow,
+    required this.accentFlowStrong,
     required this.textPrimary,
-    required this.textSecondary,
     required this.onTap,
   });
 
@@ -102,9 +105,9 @@ class _IntensityDot extends StatelessWidget {
   final FlowIntensity intensity;
   final double fillOpacity;
   final bool selected;
-  final Color accent;
+  final Color accentFlow;
+  final Color accentFlowStrong;
   final Color textPrimary;
-  final Color textSecondary;
   final VoidCallback onTap;
 
   @override
@@ -121,27 +124,41 @@ class _IntensityDot extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
-              width: 48,
-              height: 48,
-              child: Center(
-                child: Container(
-                  width: selected ? 48 : 36,
-                  height: selected ? 48 : 36,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: accent.withValues(alpha: fillOpacity),
-                    border: selected
-                        ? Border.all(color: accent, width: 2)
-                        : null,
+              width: 46,
+              height: 46,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  if (selected)
+                    Container(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: accentFlow.withValues(alpha: 0.30),
+                          width: 1.2,
+                        ),
+                      ),
+                    ),
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: accentFlow.withValues(alpha: fillOpacity),
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: MetraTypography.tiny.copyWith(
-                color: selected ? textPrimary : textSecondary,
+                color: selected
+                    ? accentFlowStrong
+                    : textPrimary.withValues(alpha: 0.40),
                 fontWeight:
                     selected ? FontWeight.w600 : FontWeight.w400,
               ),
