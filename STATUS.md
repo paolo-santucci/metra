@@ -1,6 +1,6 @@
 # Métra — Status
 
-**Last updated**: 2026-05-01 (Phase 4 complete)  
+**Last updated**: 2026-05-01 (Phase 5 complete)  
 **Active plan**: DESIGN-BIBLE Conformance Rebuild  
 **Plan**: `.claude/docs/plans/2026-05-01-bible-conformance-rebuild.md`
 
@@ -20,8 +20,8 @@
 | **2 · Calendar** | Indicator icons (MetraIcons drop/dropOutline/starSmall size 11), symptom indicator added, CL-01 fix, grid padding 12 + rowGap 2, Italian day headers, flow pill height 32 radius 10, edit CTA MetraIcons.note, legend Previsione last | ✅ done | `774d9dd` |
 | **3 · Onboarding** | MetraWordmark widget (Mētra U+0113, DM Serif 56/ls-0.02em), manifesto headlineLg (34px), hero fixed 340px, Primo Ciclo headlineSm (28px), stepper GestureDetector 40×40 radius 10, active text → sabbia, firstDate → DateTime(2000), ARB cleanup | ✅ done | `f3d2114` |
 | **4 · Archivio rebuild** | CycleSummary + dominantPainIntensity, TimelineCard rebuild (left rail, chips, footer), Tabella rebuild (Column/Row, 4 cols), header title, ARB, segmented control § 5.4 | ✅ done | `a351521`…`af80bb0` |
-| **5 · Statistics rebuild** | Stats screen per bible § 11 | ⏳ **next** | — |
-| **6 · Brand** | Métra/Mētra resolution in product copy — **needs user decision** before proceeding | ⏳ queued | — |
+| **5 · Statistics rebuild** | Stats screen per bible § 11 | ✅ done | `08d2e0b` |
+| **6 · Brand** | Métra/Mētra resolution in product copy — **needs user decision** before proceeding | ⏳ **next** | — |
 | **7 · Final** | Golden walk + ship | ⏳ queued | — |
 
 ---
