@@ -610,6 +610,7 @@ class _CycleLengthStepper extends StatelessWidget {
               label: 'Diminuisci durata ciclo',
               child: GestureDetector(
                 onTap: value > _min ? onDecrement : null,
+                behavior: HitTestBehavior.opaque,
                 child: Container(
                   width: 40,
                   height: 40,
@@ -662,6 +663,7 @@ class _CycleLengthStepper extends StatelessWidget {
               label: 'Aumenta durata ciclo',
               child: GestureDetector(
                 onTap: value < _max ? onIncrement : null,
+                behavior: HitTestBehavior.opaque,
                 child: Container(
                   width: 40,
                   height: 40,

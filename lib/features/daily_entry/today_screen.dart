@@ -203,7 +203,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
 
     final sectionLabelStyle = MetraTypography.caption.copyWith(
       fontWeight: FontWeight.w600,
-      letterSpacing: 1.2,
+      letterSpacing: 0.72,
       color: textSecondary,
     );
 
@@ -218,7 +218,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.only(bottom: MetraSpacing.sp100),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // ── Header ───────────────────────────────────────────────────
               Padding(

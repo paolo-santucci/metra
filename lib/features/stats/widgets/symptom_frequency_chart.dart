@@ -16,6 +16,7 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/metra_colors.dart';
 import '../../../domain/entities/pain_symptom_type.dart';
@@ -117,18 +118,16 @@ class _SymptomRow extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     color: MetraColors.light.textPrimary,
                     fontSize: 13,
-                    fontFamily: 'Inter',
                   ),
                 ),
                 Text(
                   '$count/$totalCycles',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     color: MetraColors.light.textSecondary,
                     fontSize: 13,
-                    fontFamily: 'Inter',
                   ),
                 ),
               ],

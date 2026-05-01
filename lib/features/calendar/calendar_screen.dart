@@ -18,6 +18,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart' as intl;
 
 import '../../core/theme/metra_colors.dart';
@@ -359,7 +360,9 @@ class _DayDetailCard extends StatelessWidget {
         : MetraColors.light.textSecondary;
     final accentFlow =
         isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
-    final borderColor = isDark ? Colors.white12 : Colors.black12;
+    final borderColor = isDark
+        ? MetraColors.dark.borderSubtle
+        : MetraColors.light.borderSubtle;
 
     final hasData = log != null;
     final weekday = intl.DateFormat.EEEE(locale).format(selectedDate);
@@ -369,7 +372,7 @@ class _DayDetailCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         color: bgSurface,
         borderRadius: BorderRadius.circular(20),
@@ -517,21 +520,24 @@ class _SymptomPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accentFlow =
-        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
-    final bgPrimary =
-        isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
+    // Bible § 8.5: symptom chips use ocra (dustyOchre) tints, not terracotta.
+    final bg = MetraColors.light.dustyOchre.withAlpha(0x18);
+    final border = MetraColors.light.dustyOchre.withAlpha(0x55);
+    final textColor = MetraColors.light.terracottaDeep;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      height: 28,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
-        color: accentFlow,
-        borderRadius: BorderRadius.circular(20),
+        color: bg,
+        border: Border.all(color: border),
+        borderRadius: BorderRadius.circular(MetraRadius.sm),
       ),
+      alignment: Alignment.center,
       child: Text(
         label,
-        style: MetraTypography.tiny.copyWith(
-          color: bgPrimary,
-          fontWeight: FontWeight.w500,
+        style: GoogleFonts.inter(
+          fontSize: 12,
+          color: textColor,
         ),
       ),
     );

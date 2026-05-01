@@ -269,7 +269,7 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
       child: SingleChildScrollView(
         padding: const EdgeInsets.only(bottom: MetraSpacing.sp100),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Bare header — no Material AppBar.
             Padding(
