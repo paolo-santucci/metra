@@ -206,5 +206,134 @@ void main() {
       final result = await uc().first;
       expect(result.first.symptoms, isEmpty);
     });
+
+    test(
+      'given_all_logs_painEnabled_false_when_computing_dominantPain_then_null',
+      () async {
+        final logRepo = FakeDailyLogRepository();
+        final cycleRepo = FakeCycleEntryRepository();
+        cycleRepo.entries.add(
+          CycleEntryEntity(
+            id: 1,
+            startDate: jan15,
+            endDate: jan20,
+            cycleLength: 28,
+            periodLength: 6,
+          ),
+        );
+        logRepo.savedLogs.addAll([
+          DailyLogEntity(date: jan15, painEnabled: false, painIntensity: null),
+          DailyLogEntity(date: jan16, painEnabled: false, painIntensity: null),
+        ]);
+
+        final uc = GetCycleSummaries(logRepo, cycleRepo);
+        final result = await uc().first;
+        expect(result.first.dominantPainIntensity, isNull);
+      },
+    );
+
+    test(
+      'given_all_logs_painEnabled_true_but_intensity_zero_when_computing_dominantPain_then_null',
+      () async {
+        final logRepo = FakeDailyLogRepository();
+        final cycleRepo = FakeCycleEntryRepository();
+        cycleRepo.entries.add(
+          CycleEntryEntity(
+            id: 1,
+            startDate: jan15,
+            endDate: jan20,
+            cycleLength: 28,
+            periodLength: 6,
+          ),
+        );
+        logRepo.savedLogs.addAll([
+          DailyLogEntity(date: jan15, painEnabled: true, painIntensity: 0),
+          DailyLogEntity(date: jan16, painEnabled: true, painIntensity: 0),
+        ]);
+
+        final uc = GetCycleSummaries(logRepo, cycleRepo);
+        final result = await uc().first;
+        expect(result.first.dominantPainIntensity, isNull);
+      },
+    );
+
+    test(
+      'given_single_qualifying_log_painIntensity_2_when_computing_dominantPain_then_2',
+      () async {
+        final logRepo = FakeDailyLogRepository();
+        final cycleRepo = FakeCycleEntryRepository();
+        cycleRepo.entries.add(
+          CycleEntryEntity(
+            id: 1,
+            startDate: jan15,
+            endDate: jan20,
+            cycleLength: 28,
+            periodLength: 6,
+          ),
+        );
+        logRepo.savedLogs.add(
+          DailyLogEntity(date: jan15, painEnabled: true, painIntensity: 2),
+        );
+
+        final uc = GetCycleSummaries(logRepo, cycleRepo);
+        final result = await uc().first;
+        expect(result.first.dominantPainIntensity, 2);
+      },
+    );
+
+    test(
+      'given_multiple_logs_mode_is_3_when_computing_dominantPain_then_3',
+      () async {
+        final logRepo = FakeDailyLogRepository();
+        final cycleRepo = FakeCycleEntryRepository();
+        cycleRepo.entries.add(
+          CycleEntryEntity(
+            id: 1,
+            startDate: jan15,
+            endDate: jan20,
+            cycleLength: 28,
+            periodLength: 6,
+          ),
+        );
+        // 3 appears twice, 1 appears once → mode is 3
+        logRepo.savedLogs.addAll([
+          DailyLogEntity(date: jan15, painEnabled: true, painIntensity: 3),
+          DailyLogEntity(date: jan16, painEnabled: true, painIntensity: 3),
+          DailyLogEntity(date: jan17, painEnabled: true, painIntensity: 1),
+        ]);
+
+        final uc = GetCycleSummaries(logRepo, cycleRepo);
+        final result = await uc().first;
+        expect(result.first.dominantPainIntensity, 3);
+      },
+    );
+
+    test(
+      'given_tie_two_logs_intensity_1_two_logs_intensity_2_when_computing_dominantPain_then_2',
+      () async {
+        final logRepo = FakeDailyLogRepository();
+        final cycleRepo = FakeCycleEntryRepository();
+        cycleRepo.entries.add(
+          CycleEntryEntity(
+            id: 1,
+            startDate: jan15,
+            endDate: jan20,
+            cycleLength: 28,
+            periodLength: 6,
+          ),
+        );
+        // 2 × intensity 1, 2 × intensity 2 → tie → highest wins → 2
+        logRepo.savedLogs.addAll([
+          DailyLogEntity(date: jan15, painEnabled: true, painIntensity: 1),
+          DailyLogEntity(date: jan16, painEnabled: true, painIntensity: 1),
+          DailyLogEntity(date: jan17, painEnabled: true, painIntensity: 2),
+          DailyLogEntity(date: jan18, painEnabled: true, painIntensity: 2),
+        ]);
+
+        final uc = GetCycleSummaries(logRepo, cycleRepo);
+        final result = await uc().first;
+        expect(result.first.dominantPainIntensity, 2);
+      },
+    );
   });
 }

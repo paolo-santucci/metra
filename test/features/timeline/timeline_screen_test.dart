@@ -90,6 +90,7 @@ CycleSummary _makeSummary({
         periodLength: periodLength,
       ),
       symptoms: const [],
+      dominantPainIntensity: null,
     );
 
 void main() {

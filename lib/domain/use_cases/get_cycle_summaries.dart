@@ -74,13 +74,32 @@ class GetCycleSummaries {
           }
         }
         FlowIntensity? dominant;
-        var maxCount = 0;
+        var maxFlowCount = 0;
         for (final entry in flowCounts.entries) {
-          if (entry.value > maxCount ||
-              (entry.value == maxCount &&
+          if (entry.value > maxFlowCount ||
+              (entry.value == maxFlowCount &&
                   (dominant == null || entry.key.index > dominant.index))) {
-            maxCount = entry.value;
+            maxFlowCount = entry.value;
             dominant = entry.key;
+          }
+        }
+
+        // Compute dominant pain intensity: mode with highest value winning ties.
+        // Only logs with painEnabled=true and painIntensity > 0 contribute.
+        final painCounts = <int, int>{};
+        for (final log in logsInRange) {
+          final intensity = log.painIntensity;
+          if (!log.painEnabled || intensity == null || intensity <= 0) continue;
+          painCounts[intensity] = (painCounts[intensity] ?? 0) + 1;
+        }
+        int? dominantPain;
+        var maxPainCount = 0;
+        for (final entry in painCounts.entries) {
+          if (entry.value > maxPainCount ||
+              (entry.value == maxPainCount &&
+                  (dominantPain == null || entry.key > dominantPain))) {
+            maxPainCount = entry.value;
+            dominantPain = entry.key;
           }
         }
 
@@ -88,6 +107,7 @@ class GetCycleSummaries {
           cycle: cycle,
           symptoms: symptomSet.toList(),
           dominantFlow: dominant,
+          dominantPainIntensity: dominantPain,
         );
       }),
     );

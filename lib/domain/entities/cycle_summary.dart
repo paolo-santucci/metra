@@ -24,6 +24,7 @@ class CycleSummary {
   const CycleSummary({
     required this.cycle,
     required this.symptoms,
+    required this.dominantPainIntensity,
     this.dominantFlow,
   });
 
@@ -37,6 +38,11 @@ class CycleSummary {
   /// Null if no flow was logged for this cycle.
   final FlowIntensity? dominantFlow;
 
+  /// Most-frequent pain intensity (1–3) across this cycle's date range.
+  /// Null if no log has painEnabled=true with painIntensity > 0.
+  /// On tie, the highest value wins.
+  final int? dominantPainIntensity;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -44,11 +50,15 @@ class CycleSummary {
           runtimeType == other.runtimeType &&
           cycle == other.cycle &&
           _listEquals(symptoms, other.symptoms) &&
-          dominantFlow == other.dominantFlow;
+          dominantFlow == other.dominantFlow &&
+          dominantPainIntensity == other.dominantPainIntensity;
 
   @override
   int get hashCode =>
-      cycle.hashCode ^ Object.hashAll(symptoms) ^ dominantFlow.hashCode;
+      cycle.hashCode ^
+      Object.hashAll(symptoms) ^
+      dominantFlow.hashCode ^
+      dominantPainIntensity.hashCode;
 
   static bool _listEquals<T>(List<T> a, List<T> b) {
     if (identical(a, b)) return true;
