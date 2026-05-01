@@ -46,9 +46,61 @@ class SegmentedControlMetra extends StatelessWidget {
         isDark ? MetraColors.dark.bgSurface : MetraColors.light.bgSurface;
     final activeText =
         isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
+    // § 5.4: idle label = inchiostro (textPrimary) at 50% alpha.
     final inactiveText = isDark
-        ? MetraColors.dark.textSecondary
-        : MetraColors.light.textSecondary;
+        ? MetraColors.dark.textPrimary.withValues(alpha: 0.5)
+        : MetraColors.light.textPrimary.withValues(alpha: 0.5);
+
+    final List<Widget> segmentWidgets = [];
+    for (var i = 0; i < segments.length; i++) {
+      if (i > 0) segmentWidgets.add(const SizedBox(width: 2));
+      final isActive = i == selectedIndex;
+      segmentWidgets.add(
+        Semantics(
+          label: segments[i],
+          selected: isActive,
+          button: true,
+          excludeSemantics: true,
+          child: GestureDetector(
+            onTap: () => onChanged(i),
+            behavior: HitTestBehavior.opaque,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 240),
+              constraints: const BoxConstraints(
+                minHeight: 36,
+                minWidth: 44,
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: MetraSpacing.s4,
+                vertical: MetraSpacing.s2,
+              ),
+              decoration: BoxDecoration(
+                color: isActive ? activeColor : Colors.transparent,
+                borderRadius: BorderRadius.circular(MetraRadius.sm),
+                boxShadow: isActive
+                    ? [
+                        BoxShadow(
+                          color: isDark
+                              ? const Color(0x661A1410)
+                              : const Color(0x1F2B2521),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Text(
+                segments[i],
+                style: MetraTypography.caption.copyWith(
+                  color: isActive ? activeText : inactiveText,
+                  fontWeight: isActive ? FontWeight.w500 : FontWeight.w400,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     return Semantics(
       label: 'Vista',
@@ -58,55 +110,10 @@ class SegmentedControlMetra extends StatelessWidget {
           color: trackColor,
           borderRadius: BorderRadius.circular(MetraRadius.smm),
         ),
-        padding: const EdgeInsets.all(2),
+        padding: const EdgeInsets.all(3),
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          children: List.generate(segments.length, (index) {
-            final isActive = index == selectedIndex;
-            return Semantics(
-              label: segments[index],
-              selected: isActive,
-              button: true,
-              excludeSemantics: true,
-              child: GestureDetector(
-                onTap: () => onChanged(index),
-                behavior: HitTestBehavior.opaque,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 240),
-                  constraints: const BoxConstraints(
-                    minHeight: 36,
-                    minWidth: 44,
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: MetraSpacing.s4,
-                    vertical: MetraSpacing.s2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isActive ? activeColor : Colors.transparent,
-                    borderRadius: BorderRadius.circular(MetraRadius.sm),
-                    boxShadow: isActive
-                        ? [
-                            BoxShadow(
-                              color: isDark
-                                  ? const Color(0x661A1410)
-                                  : const Color(0x1F2B2521),
-                              blurRadius: 4,
-                              offset: const Offset(0, 1),
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: Text(
-                    segments[index],
-                    style: MetraTypography.caption.copyWith(
-                      color: isActive ? activeText : inactiveText,
-                      fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }),
+          children: segmentWidgets,
         ),
       ),
     );
