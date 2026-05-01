@@ -136,29 +136,38 @@ class _FlowChip extends StatelessWidget {
 
     Widget chip;
     if (isAssente && _isSelected) {
-      // Dashed terracotta border, transparent fill.
-      chip = CustomPaint(
-        painter: _DashedRoundedRectPainter(
-          color: accent,
-          radius: MetraRadius.md,
+      // Spec § 7.1: bg rgba(43,37,33,0.08), dashed inchiostro 0.32, width 1.5.
+      chip = Container(
+        height: 44,
+        decoration: BoxDecoration(
+          color: textPrimary.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(MetraRadius.md),
         ),
-        child: _ChipContent(
-          label: label,
-          textColor: textPrimary,
+        child: CustomPaint(
+          painter: _DashedRoundedRectPainter(
+            color: textPrimary.withValues(alpha: 0.32),
+            radius: MetraRadius.md,
+          ),
+          child: _ChipContent(label: label, textColor: textPrimary),
         ),
       );
     } else {
       // Solid border chip.
-      final (bgColor, borderColor) = switch ((flowType, _isSelected)) {
+      final (bgColor, borderColor, borderWidth) = switch ((flowType, _isSelected)) {
+        // ${terracotta}22 bg, ${terracotta}BB border, 1.5px
         (FlowType.mestruazioni, true) => (
-            accent.withValues(alpha: 0.15),
-            accent,
+            accent.withValues(alpha: 0.133),
+            accent.withValues(alpha: 0.733),
+            1.5,
           ),
+        // ${terracotta}14 bg, ${terracotta}66 border, 1.5px
         (FlowType.spotting, true) => (
-            accent.withValues(alpha: 0.25),
-            accent.withValues(alpha: 0.50),
+            accent.withValues(alpha: 0.078),
+            accent.withValues(alpha: 0.400),
+            1.5,
           ),
-        _ => (Colors.transparent, borderSubtle),
+        // Idle: rgba(0.04) bg, rgba(0.10) border, 1px
+        _ => (textPrimary.withValues(alpha: 0.04), borderSubtle, 1.0),
       };
 
       chip = Container(
@@ -166,7 +175,7 @@ class _FlowChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(MetraRadius.md),
-          border: Border.all(color: borderColor),
+          border: Border.all(color: borderColor, width: borderWidth),
         ),
         child: _ChipContent(
           label: label,
@@ -234,7 +243,7 @@ class _DashedRoundedRectPainter extends CustomPainter {
     const dashSpace = 3.0;
     final paint = Paint()
       ..color = color
-      ..strokeWidth = 1.0
+      ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
 
     final path = Path()

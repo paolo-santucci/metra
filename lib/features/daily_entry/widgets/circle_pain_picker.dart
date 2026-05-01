@@ -45,48 +45,31 @@ class CirclePainPicker extends StatelessWidget {
         isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
     final borderColor = isDark ? Colors.white24 : Colors.black26;
 
+    // Spec § 7.3: gap 14 between items.
+    Widget paincircle(String lbl, Color fill, int v, {bool showBorder = false}) =>
+        _PainCircle(
+          label: lbl,
+          fillColor: fill,
+          showBorder: showBorder,
+          borderColor: borderColor,
+          value: v,
+          selected: selected,
+          accent: accent,
+          textPrimary: textPrimary,
+          onTap: () => onChanged(selected == v ? null : v),
+        );
+
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _PainCircle(
-          label: l10n.today_pain_none,
-          fillColor: bgPrimary,
-          showBorder: true,
-          borderColor: borderColor,
-          value: 0,
-          selected: selected,
-          accent: accent,
-          textPrimary: textPrimary,
-          onTap: () => onChanged(selected == 0 ? null : 0),
-        ),
-        _PainCircle(
-          label: l10n.daily_entry_pain_mild,
-          fillColor: accent.withValues(alpha: 0.25),
-          value: 1,
-          selected: selected,
-          accent: accent,
-          textPrimary: textPrimary,
-          onTap: () => onChanged(selected == 1 ? null : 1),
-        ),
-        _PainCircle(
-          label: l10n.daily_entry_pain_moderate,
-          fillColor: accent.withValues(alpha: 0.55),
-          value: 2,
-          selected: selected,
-          accent: accent,
-          textPrimary: textPrimary,
-          onTap: () => onChanged(selected == 2 ? null : 2),
-        ),
-        _PainCircle(
-          label: l10n.daily_entry_pain_severe,
-          fillColor: accent.withValues(alpha: 0.90),
-          value: 3,
-          selected: selected,
-          accent: accent,
-          textPrimary: textPrimary,
-          onTap: () => onChanged(selected == 3 ? null : 3),
-        ),
+        paincircle(l10n.today_pain_none, bgPrimary, 0, showBorder: true),
+        const SizedBox(width: 14),
+        paincircle(l10n.daily_entry_pain_mild, accent.withValues(alpha: 0.28), 1),
+        const SizedBox(width: 14),
+        paincircle(l10n.daily_entry_pain_moderate, accent.withValues(alpha: 0.60), 2),
+        const SizedBox(width: 14),
+        paincircle(l10n.daily_entry_pain_severe, accent.withValues(alpha: 0.92), 3),
       ],
     );
   }
@@ -152,9 +135,7 @@ class _PainCircle extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: SizedBox(
-        width: 72,
-        child: Column(
+      child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
@@ -172,7 +153,6 @@ class _PainCircle extends StatelessWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }

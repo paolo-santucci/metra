@@ -94,19 +94,58 @@ class _WelcomePage extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Hero zone: wordmark centered.
+              // Hero zone: wordmark + terracotta radial halos (spec § 12.1).
               SizedBox(
                 height: heroHeight,
-                child: Center(
-                  child: Semantics(
-                    header: true,
-                    child: Text(
-                      MetraTypography.wordmark,
-                      style:
-                          MetraTypography.displayXl.copyWith(color: textPrimary),
-                      textAlign: TextAlign.center,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Outer elliptical glow: rgba(200,116,86,0.05) → transparent 80%
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          center: const Alignment(0, -0.4),
+                          radius: 0.85,
+                          colors: [
+                            accentFlow.withValues(alpha: 0.05),
+                            Colors.transparent,
+                          ],
+                          stops: const [0.0, 0.80],
+                        ),
+                      ),
                     ),
-                  ),
+                    // Centered halo 220×220: rgba(200,116,86,0.12) → transparent 70%
+                    Center(
+                      child: SizedBox(
+                        width: 220,
+                        height: 220,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              colors: [
+                                accentFlow.withValues(alpha: 0.12),
+                                Colors.transparent,
+                              ],
+                              stops: const [0.0, 0.70],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Wordmark
+                    Center(
+                      child: Semantics(
+                        header: true,
+                        child: Text(
+                          MetraTypography.wordmark,
+                          style: MetraTypography.displayXl
+                              .copyWith(color: textPrimary),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               // Content zone: text scrolls; CTA is pinned at bottom.
