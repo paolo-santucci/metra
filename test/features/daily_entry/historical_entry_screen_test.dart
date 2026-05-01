@@ -133,6 +133,7 @@ void main() {
       await tester.pumpAndSettle();
       await _navigate(tester);
 
+      await tester.ensureVisible(find.text('Salva giornata'));
       await tester.tap(find.text('Salva giornata'));
       await tester.pumpAndSettle();
 
@@ -163,6 +164,7 @@ void main() {
       await tester.tap(find.text('Moderato'));
       await tester.pumpAndSettle();
 
+      await tester.ensureVisible(find.text('Salva giornata'));
       await tester.tap(find.text('Salva giornata'));
       await tester.pumpAndSettle();
 

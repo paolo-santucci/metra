@@ -16,9 +16,9 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/metra_colors.dart';
-import '../../../core/theme/metra_typography.dart';
 import '../../../domain/entities/flow_intensity.dart';
 import '../../../l10n/app_localizations.dart';
 
@@ -124,8 +124,8 @@ class _IntensityDot extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
-              width: 46,
-              height: 46,
+              width: 50,
+              height: 50,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
@@ -147,20 +147,25 @@ class _IntensityDot extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: accentFlow.withValues(alpha: fillOpacity),
+                      border: Border.all(
+                        color: accentFlow,
+                        width: 1.4,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 7),
             Text(
               label,
-              style: MetraTypography.tiny.copyWith(
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                height: 1.4,
                 color: selected
                     ? accentFlowStrong
                     : textPrimary.withValues(alpha: 0.40),
-                fontWeight:
-                    selected ? FontWeight.w600 : FontWeight.w400,
               ),
               textAlign: TextAlign.center,
               maxLines: 1,

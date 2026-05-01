@@ -17,6 +17,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/theme/metra_colors.dart';
@@ -187,11 +188,13 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
         : MetraColors.light.textSecondary;
     final bgPrimary =
         isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
-    final bgSurface =
-        isDark ? MetraColors.dark.bgSurface : MetraColors.light.bgSurface;
+    final surfaceRaised =
+        isDark ? MetraColors.dark.bgSurface : MetraColors.light.surfaceRaised;
     final accentFlow =
         isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
-    final dividerColor = isDark ? Colors.white12 : Colors.black12;
+    final borderColor = isDark
+        ? MetraColors.dark.textPrimary.withAlpha(0x12)
+        : MetraColors.light.ink.withAlpha(0x12);
 
     final locale = Localizations.localeOf(context).languageCode;
     final rawDate = DateFormat('EEEE d MMMM', locale).format(DateTime.now());
@@ -204,20 +207,25 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
       color: textSecondary,
     );
 
+    final sectionBorder = Border(
+      top: BorderSide(color: borderColor, width: 1),
+      bottom: BorderSide(color: borderColor, width: 1),
+    );
+
     return Scaffold(
       backgroundColor: bgPrimary,
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: MetraSpacing.s6,
-                ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: MetraSpacing.sp100),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Header ───────────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: MetraSpacing.s6),
                     Text(
                       dateStr,
                       style: MetraTypography.caption.copyWith(
@@ -227,13 +235,27 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                     const SizedBox(height: MetraSpacing.s1),
                     Text(
                       l10n.today_how_are_you,
-                      style: MetraTypography.displayMd.copyWith(
+                      style: MetraTypography.screenTitle.copyWith(
                         color: textPrimary,
                       ),
                     ),
-                    const SizedBox(height: MetraSpacing.s6),
+                  ],
+                ),
+              ),
 
-                    // ── Flow ──────────────────────────────────────────────
+              // ── Flow section frame ────────────────────────────────────────
+              Container(
+                decoration: BoxDecoration(
+                  color: surfaceRaised,
+                  border: sectionBorder,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  vertical: MetraSpacing.sp18,
+                  horizontal: MetraSpacing.s6,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
                       l10n.daily_entry_flow_label.toUpperCase(),
                       style: sectionLabelStyle,
@@ -288,11 +310,25 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                         ],
                       ),
                     ],
-                    const SizedBox(height: MetraSpacing.s6),
-                    Divider(color: dividerColor, thickness: 1, height: 1),
-                    const SizedBox(height: MetraSpacing.s6),
+                  ],
+                ),
+              ),
 
-                    // ── Pain ──────────────────────────────────────────────
+              const SizedBox(height: 1),
+
+              // ── Pain section frame ────────────────────────────────────────
+              Container(
+                decoration: BoxDecoration(
+                  color: surfaceRaised,
+                  border: sectionBorder,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  vertical: MetraSpacing.sp18,
+                  horizontal: MetraSpacing.s6,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
                       l10n.today_pain_intensity_label.toUpperCase(),
                       style: sectionLabelStyle,
@@ -302,11 +338,25 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                       selected: _painIntensity,
                       onChanged: (v) => setState(() => _painIntensity = v),
                     ),
-                    const SizedBox(height: MetraSpacing.s6),
-                    Divider(color: dividerColor, thickness: 1, height: 1),
-                    const SizedBox(height: MetraSpacing.s6),
+                  ],
+                ),
+              ),
 
-                    // ── Symptoms ──────────────────────────────────────────
+              const SizedBox(height: 1),
+
+              // ── Symptoms section frame ────────────────────────────────────
+              Container(
+                decoration: BoxDecoration(
+                  color: surfaceRaised,
+                  border: sectionBorder,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  vertical: MetraSpacing.sp18,
+                  horizontal: MetraSpacing.s6,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
                       l10n.daily_entry_symptoms_label.toUpperCase(),
                       style: sectionLabelStyle,
@@ -342,41 +392,61 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                           GestureDetector(
                             onTap: () =>
                                 setState(() => _addingSymptom = true),
-                            child: _AddSymptomChip(
-                              label: l10n.today_add_symptom,
-                              textSecondary: textSecondary,
+                            child: Container(
+                              constraints: const BoxConstraints(minHeight: 44),
+                              child: _AddSymptomChip(
+                                label: l10n.today_add_symptom,
+                                textSecondary: textSecondary,
+                              ),
                             ),
                           )
                         else
-                          _InlineSymptomInput(
-                            controller: _customSymptomController,
-                            textSecondary: textSecondary,
-                            onConfirm: () {
-                              final text =
-                                  _customSymptomController.text.trim();
-                              setState(() {
-                                if (text.isNotEmpty) {
-                                  _selectedSymptoms = {
-                                    ..._selectedSymptoms,
-                                    PainSymptomType.custom,
-                                  };
-                                }
+                          Container(
+                            constraints: const BoxConstraints(minHeight: 44),
+                            child: _InlineSymptomInput(
+                              controller: _customSymptomController,
+                              textSecondary: textSecondary,
+                              onConfirm: () {
+                                final text =
+                                    _customSymptomController.text.trim();
+                                setState(() {
+                                  if (text.isNotEmpty) {
+                                    _selectedSymptoms = {
+                                      ..._selectedSymptoms,
+                                      PainSymptomType.custom,
+                                    };
+                                  }
+                                  _addingSymptom = false;
+                                  _customSymptomController.clear();
+                                });
+                              },
+                              onCancel: () => setState(() {
                                 _addingSymptom = false;
                                 _customSymptomController.clear();
-                              });
-                            },
-                            onCancel: () => setState(() {
-                              _addingSymptom = false;
-                              _customSymptomController.clear();
-                            }),
+                              }),
+                            ),
                           ),
                       ],
                     ),
-                    const SizedBox(height: MetraSpacing.s6),
-                    Divider(color: dividerColor, thickness: 1, height: 1),
-                    const SizedBox(height: MetraSpacing.s6),
+                  ],
+                ),
+              ),
 
-                    // ── Notes ─────────────────────────────────────────────
+              const SizedBox(height: 1),
+
+              // ── Notes section frame ───────────────────────────────────────
+              Container(
+                decoration: BoxDecoration(
+                  color: surfaceRaised,
+                  border: sectionBorder,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  vertical: MetraSpacing.sp18,
+                  horizontal: MetraSpacing.s6,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
                       l10n.today_notes_label.toUpperCase(),
                       style: sectionLabelStyle,
@@ -389,19 +459,23 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                       style: MetraTypography.body.copyWith(color: textPrimary),
                       decoration: InputDecoration(
                         hintText: l10n.today_notes_hint,
-                        hintStyle: MetraTypography.body.copyWith(
+                        hintStyle: GoogleFonts.inter(
+                          fontSize: 15,
                           color: textSecondary,
                         ),
                         filled: true,
-                        fillColor: bgSurface,
-                        contentPadding: const EdgeInsets.all(MetraSpacing.s4),
+                        fillColor: surfaceRaised,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: MetraSpacing.sp14,
+                          vertical: MetraSpacing.s3,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(MetraRadius.md),
-                          borderSide: BorderSide.none,
+                          borderSide: BorderSide(color: borderColor, width: 1),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(MetraRadius.md),
-                          borderSide: BorderSide.none,
+                          borderSide: BorderSide(color: borderColor, width: 1),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(MetraRadius.md),
@@ -412,31 +486,34 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: MetraSpacing.s8),
                   ],
                 ),
               ),
-            ),
 
-            // ── Save button ───────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                MetraSpacing.s6,
-                0,
-                MetraSpacing.s6,
-                MetraSpacing.s4,
-              ),
-              child: FilledButton.icon(
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(52),
-                  backgroundColor: accentFlow,
+              // ── Save CTA ─────────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  MetraSpacing.s6,
+                  MetraSpacing.s6,
+                  MetraSpacing.s6,
+                  0,
                 ),
-                onPressed: _save,
-                icon: const Icon(Icons.check, size: 20),
-                label: Text(l10n.daily_entry_save_action),
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(56),
+                    backgroundColor: accentFlow,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(MetraRadius.lg),
+                    ),
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                  ),
+                  onPressed: _save,
+                  icon: const Icon(Icons.check, size: 18),
+                  label: Text(l10n.daily_entry_save_action),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

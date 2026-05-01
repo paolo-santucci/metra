@@ -21,7 +21,7 @@ import '../../../core/theme/metra_typography.dart';
 import '../../../l10n/app_localizations.dart';
 
 /// Four malva circles (36 dp) for quick pain level selection.
-/// null = not logged (no ring); 0=Nessuno (outlined); 1–3 = increasing fill.
+/// null = not logged; 0=Nessuno (transparent fill + malva stroke); 1–3 = increasing fill.
 /// Tapping the already-selected circle calls onChanged(null) to deselect.
 class CirclePainPicker extends StatelessWidget {
   const CirclePainPicker({
@@ -39,19 +39,13 @@ class CirclePainPicker extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accent =
         isDark ? MetraColors.dark.accentPain : MetraColors.light.accentPain;
-    final bgPrimary =
-        isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
     final textPrimary =
         isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
-    final borderColor = isDark ? Colors.white24 : Colors.black26;
 
-    // Spec § 7.3: gap 14 between items.
-    Widget paincircle(String lbl, Color fill, int v, {bool showBorder = false}) =>
-        _PainCircle(
+    // Spec § 7.3: gap 14 between items, always malva stroke 1.5.
+    Widget paincircle(String lbl, Color fill, int v) => _PainCircle(
           label: lbl,
           fillColor: fill,
-          showBorder: showBorder,
-          borderColor: borderColor,
           value: v,
           selected: selected,
           accent: accent,
@@ -63,7 +57,7 @@ class CirclePainPicker extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        paincircle(l10n.today_pain_none, bgPrimary, 0, showBorder: true),
+        paincircle(l10n.today_pain_none, Colors.transparent, 0),
         const SizedBox(width: 14),
         paincircle(l10n.daily_entry_pain_mild, accent.withValues(alpha: 0.28), 1),
         const SizedBox(width: 14),
@@ -84,8 +78,6 @@ class _PainCircle extends StatelessWidget {
     required this.accent,
     required this.textPrimary,
     required this.onTap,
-    this.showBorder = false,
-    this.borderColor,
   });
 
   final String label;
@@ -95,24 +87,20 @@ class _PainCircle extends StatelessWidget {
   final Color accent;
   final Color textPrimary;
   final VoidCallback onTap;
-  final bool showBorder;
-  final Color? borderColor;
 
   @override
   Widget build(BuildContext context) {
     final isSelected = selected == value;
 
-    // Dot with optional soft halo: outer ring (46dp) wraps 36dp filled circle.
-    // No hard border on selection — design uses a translucent stroke halo.
+    // Inner 36dp circle always has malva stroke 1.5 (spec § 7.3).
+    // Outer 46dp halo ring only appears when selected.
     Widget dot = Container(
       width: 36,
       height: 36,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: fillColor,
-        border: (!isSelected && showBorder && borderColor != null)
-            ? Border.all(color: borderColor!, width: 1.5)
-            : null,
+        border: Border.all(color: accent, width: 1.5),
       ),
     );
 
@@ -136,23 +124,23 @@ class _PainCircle extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 48,
-              height: 48,
-              child: Center(child: dot),
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 50,
+            height: 50,
+            child: Center(child: dot),
+          ),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: MetraTypography.tiny.copyWith(
+              color: isSelected ? accent : textPrimary.withValues(alpha: 0.38),
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
             ),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: MetraTypography.tiny.copyWith(
-                color: isSelected ? accent : textPrimary.withValues(alpha: 0.38),
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
+      ),
     );
   }
 }
