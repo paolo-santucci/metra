@@ -42,6 +42,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
+  void _goToPrivacyPage() {
+    _controller.nextPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
   void _goToDataPage() {
     _controller.nextPage(
       duration: const Duration(milliseconds: 300),
@@ -56,7 +63,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         controller: _controller,
         physics: const NeverScrollableScrollPhysics(),
         children: [
-          _WelcomePage(onGetStarted: _goToDataPage),
+          _WelcomePage(onGetStarted: _goToPrivacyPage),
+          _PrivacyPage(onContinue: _goToDataPage),
           const _DataPage(),
         ],
       ),
@@ -211,7 +219,141 @@ class _MacronDotsPainter extends CustomPainter {
   bool shouldRepaint(_MacronDotsPainter old) => old.color != color;
 }
 
-// ── Page 2: Data entry ────────────────────────────────────────────────────────
+// ── Page 2: Privacy ──────────────────────────────────────────────────────────
+
+class _PrivacyPage extends StatelessWidget {
+  const _PrivacyPage({required this.onContinue});
+  final VoidCallback onContinue;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary =
+        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
+    final textSecondary = isDark
+        ? MetraColors.dark.textSecondary
+        : MetraColors.light.textSecondary;
+    final bgPrimary =
+        isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
+    final accentFlow =
+        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(36, 0, 36, 28),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: MetraSpacing.s6),
+            _StepProgressBar(
+              current: 2,
+              total: 3,
+              label: l10n.onboarding_step_label(2, 3),
+              accentColor: accentFlow,
+              textColor: textSecondary,
+            ),
+            const SizedBox(height: MetraSpacing.s6),
+            Text(
+              l10n.onboarding_privacy_heading,
+              style: MetraTypography.displayMd.copyWith(color: textPrimary),
+            ),
+            const SizedBox(height: MetraSpacing.s8),
+            _PrivacyItem(
+              icon: Icons.lock_outline,
+              title: l10n.onboarding_privacy_item1_title,
+              body: l10n.onboarding_privacy_item1_body,
+              accentFlow: accentFlow,
+              textPrimary: textPrimary,
+              textSecondary: textSecondary,
+            ),
+            const SizedBox(height: MetraSpacing.s6),
+            _PrivacyItem(
+              icon: Icons.cloud_off_outlined,
+              title: l10n.onboarding_privacy_item2_title,
+              body: l10n.onboarding_privacy_item2_body,
+              accentFlow: accentFlow,
+              textPrimary: textPrimary,
+              textSecondary: textSecondary,
+            ),
+            const SizedBox(height: MetraSpacing.s6),
+            _PrivacyItem(
+              icon: Icons.file_download_outlined,
+              title: l10n.onboarding_privacy_item3_title,
+              body: l10n.onboarding_privacy_item3_body,
+              accentFlow: accentFlow,
+              textPrimary: textPrimary,
+              textSecondary: textSecondary,
+            ),
+            const Spacer(),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: textPrimary,
+                foregroundColor: bgPrimary,
+                minimumSize: const Size.fromHeight(56),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              onPressed: onContinue,
+              child: Text(l10n.onboarding_privacy_continue),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PrivacyItem extends StatelessWidget {
+  const _PrivacyItem({
+    required this.icon,
+    required this.title,
+    required this.body,
+    required this.accentFlow,
+    required this.textPrimary,
+    required this.textSecondary,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
+  final Color accentFlow;
+  final Color textPrimary;
+  final Color textSecondary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 24, color: accentFlow),
+        const SizedBox(width: MetraSpacing.s4),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: MetraTypography.body.copyWith(
+                  color: textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                body,
+                style: MetraTypography.body.copyWith(color: textSecondary),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Page 3: Data entry ────────────────────────────────────────────────────────
 
 class _DataPage extends ConsumerWidget {
   const _DataPage();
@@ -236,9 +378,9 @@ class _DataPage extends ConsumerWidget {
           children: [
             const SizedBox(height: MetraSpacing.s6),
             _StepProgressBar(
-              current: 2,
-              total: 2,
-              label: l10n.onboarding_step_label(2, 2),
+              current: 3,
+              total: 3,
+              label: l10n.onboarding_step_label(3, 3),
               accentColor: isDark
                   ? MetraColors.dark.accentFlow
                   : MetraColors.light.accentFlow,

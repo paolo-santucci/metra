@@ -1010,6 +1010,54 @@ abstract class AppLocalizations {
   /// **'Passo {current} di {total}'**
   String onboarding_step_label(int current, int total);
 
+  /// Heading on the onboarding privacy screen
+  ///
+  /// In it, this message translates to:
+  /// **'La tua privacy è il fondamento.'**
+  String get onboarding_privacy_heading;
+
+  ///
+  ///
+  /// In it, this message translates to:
+  /// **'Tutto sul tuo dispositivo'**
+  String get onboarding_privacy_item1_title;
+
+  ///
+  ///
+  /// In it, this message translates to:
+  /// **'I dati non lasciano mai il tuo telefono.'**
+  String get onboarding_privacy_item1_body;
+
+  ///
+  ///
+  /// In it, this message translates to:
+  /// **'Nessun account necessario'**
+  String get onboarding_privacy_item2_title;
+
+  ///
+  ///
+  /// In it, this message translates to:
+  /// **'Usi l\'app senza registrarti da nessuna parte.'**
+  String get onboarding_privacy_item2_body;
+
+  ///
+  ///
+  /// In it, this message translates to:
+  /// **'Esporti sempre i tuoi dati'**
+  String get onboarding_privacy_item3_title;
+
+  ///
+  ///
+  /// In it, this message translates to:
+  /// **'Puoi scaricare tutto in qualsiasi momento.'**
+  String get onboarding_privacy_item3_body;
+
+  /// CTA button on onboarding privacy screen
+  ///
+  /// In it, this message translates to:
+  /// **'Continua'**
+  String get onboarding_privacy_continue;
+
   /// Settings group header: about section
   ///
   /// In it, this message translates to:

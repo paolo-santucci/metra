@@ -823,6 +823,27 @@
     }
   },
 
+  "onboarding_privacy_heading": "La tua privacy è il fondamento.",
+  "@onboarding_privacy_heading": { "description": "Heading on the onboarding privacy screen" },
+
+  "onboarding_privacy_item1_title": "Tutto sul tuo dispositivo",
+  "@onboarding_privacy_item1_title": { "description": "" },
+  "onboarding_privacy_item1_body": "I dati non lasciano mai il tuo telefono.",
+  "@onboarding_privacy_item1_body": { "description": "" },
+
+  "onboarding_privacy_item2_title": "Nessun account necessario",
+  "@onboarding_privacy_item2_title": { "description": "" },
+  "onboarding_privacy_item2_body": "Usi l'app senza registrarti da nessuna parte.",
+  "@onboarding_privacy_item2_body": { "description": "" },
+
+  "onboarding_privacy_item3_title": "Esporti sempre i tuoi dati",
+  "@onboarding_privacy_item3_title": { "description": "" },
+  "onboarding_privacy_item3_body": "Puoi scaricare tutto in qualsiasi momento.",
+  "@onboarding_privacy_item3_body": { "description": "" },
+
+  "onboarding_privacy_continue": "Continua",
+  "@onboarding_privacy_continue": { "description": "CTA button on onboarding privacy screen" },
+
   "settings_section_about": "Informazioni",
   "@settings_section_about": {
     "description": "Settings group header: about section"

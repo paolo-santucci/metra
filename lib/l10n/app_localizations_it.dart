@@ -528,6 +528,33 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
+  String get onboarding_privacy_heading => 'La tua privacy è il fondamento.';
+
+  @override
+  String get onboarding_privacy_item1_title => 'Tutto sul tuo dispositivo';
+
+  @override
+  String get onboarding_privacy_item1_body =>
+      'I dati non lasciano mai il tuo telefono.';
+
+  @override
+  String get onboarding_privacy_item2_title => 'Nessun account necessario';
+
+  @override
+  String get onboarding_privacy_item2_body =>
+      'Usi l\'app senza registrarti da nessuna parte.';
+
+  @override
+  String get onboarding_privacy_item3_title => 'Esporti sempre i tuoi dati';
+
+  @override
+  String get onboarding_privacy_item3_body =>
+      'Puoi scaricare tutto in qualsiasi momento.';
+
+  @override
+  String get onboarding_privacy_continue => 'Continua';
+
+  @override
   String get settings_section_about => 'Informazioni';
 
   @override

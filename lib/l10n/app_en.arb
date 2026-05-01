@@ -416,6 +416,15 @@
     }
   },
 
+  "onboarding_privacy_heading": "Your privacy is the foundation.",
+  "onboarding_privacy_item1_title": "Everything on your device",
+  "onboarding_privacy_item1_body": "Your data never leaves your phone.",
+  "onboarding_privacy_item2_title": "No account needed",
+  "onboarding_privacy_item2_body": "Use the app without signing up anywhere.",
+  "onboarding_privacy_item3_title": "Your data is always exportable",
+  "onboarding_privacy_item3_body": "You can download everything at any time.",
+  "onboarding_privacy_continue": "Continue",
+
   "settings_section_about": "About",
   "@settings_section_about": {
     "description": "Settings group header: about section"
