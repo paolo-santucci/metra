@@ -17,24 +17,15 @@
 
 import 'package:flutter/material.dart';
 import '../../../core/theme/metra_colors.dart';
-import '../../../core/theme/metra_typography.dart';
 
-/// Single calendar day circle.
+/// Single calendar day cell — 48×48 dp rounded square (borderRadius 12).
 ///
-/// Visual size of the circle: 36×36 logical pixels.
-/// Total widget minimum tap target: 48×48 dp (GestureDetector + SizedBox),
-/// meeting the Android 48dp floor from CLAUDE.md §10.
+/// State precedence (highest wins): selected > flow > spotting > prediction
+/// > today > default. States are mutually exclusive in decoration; only one
+/// visual treatment is applied at a time.
 ///
-/// States can coexist. Z-order (bottom to top):
-/// 1. Transparent background.
-/// 2. Prediction solid lavender outline.
-/// 3. Flow solid terracotta fill.
-/// 4. Spotting semi-transparent terracotta fill (if !isFlow).
-/// 5. Today thin Ink ring (1.5pt).
-/// 6. Selected thick terracotta ring (2.5pt).
-/// 7. Day number (DM Serif Display, white on flow, ink otherwise).
-/// 8. Note dot: 4pt ochre circle, ~20pt below circle center.
-/// 9. Indicator row: small icons (prediction, pain) centered at bottom.
+/// [hasNote] is accepted for interface compatibility but has no visual output
+/// in this design; note indicators are rendered at the parent grid level.
 ///
 /// Accessibility: caller provides the full [semanticsLabel] string
 /// (e.g. "Flusso medio, 15 aprile 2026"). Widget never constructs it.
@@ -47,7 +38,6 @@ class CalendarDay extends StatelessWidget {
     this.isSpotting = false,
     this.hasPrediction = false,
     this.hasNote = false,
-    this.hasPain = false,
     this.isToday = false,
     this.isSelected = false,
     this.onTap,
@@ -58,39 +48,35 @@ class CalendarDay extends StatelessWidget {
   final bool isSpotting;
   final bool hasPrediction;
   final bool hasNote;
-  final bool hasPain;
   final bool isToday;
   final bool isSelected;
   final VoidCallback? onTap;
   final String semanticsLabel;
 
-  // Visual circle diameter.
-  static const double _circleDiameter = 36.0;
-
-  // Full tap-target size (circle + margin for outer rings + hit area).
-  // 48 dp meets the Android minimum (CLAUDE.md §10); iOS minimum is 44 pt.
-  static const double _tapTargetSize = 48.0;
+  static const double _cellSize = 48.0;
+  static const double _borderRadius = 12.0;
 
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final flowFill =
+    final Color accentFlow =
         isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
-    final spottingFill = flowFill.withValues(alpha: 0.4);
-    final predictionOutline = isDark
+    final Color textPrimary =
+        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
+    final Color bgPrimary =
+        isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
+    final Color accentPrediction = isDark
         ? MetraColors.dark.accentPrediction
         : MetraColors.light.accentPrediction;
-    final todayRing = isDark
-        ? MetraColors.dark.textPrimary // ivory
-        : MetraColors.light.ink;
-    final selectedRing =
-        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
-    final noteColor =
-        isDark ? MetraColors.dark.accentWarmth : MetraColors.light.accentWarmth;
-    final dayNumberColor = isFlow
-        ? Colors.white
-        : (isDark ? MetraColors.dark.textPrimary : MetraColors.light.ink);
+
+    final (Color bg, Border? border, Color textColor, FontWeight fontWeight) =
+        _resolveState(
+      accentFlow: accentFlow,
+      textPrimary: textPrimary,
+      bgPrimary: bgPrimary,
+      accentPrediction: accentPrediction,
+    );
 
     return Semantics(
       label: semanticsLabel,
@@ -100,239 +86,99 @@ class CalendarDay extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
-        child: SizedBox(
-          width: _tapTargetSize,
-          height: _tapTargetSize,
-          child: CustomPaint(
-            painter: _CalendarDayPainter(
-              dayNumber: date.day,
-              isFlow: isFlow,
-              isSpotting: isSpotting,
-              hasPrediction: hasPrediction,
-              hasNote: hasNote,
-              hasPain: hasPain,
-              isToday: isToday,
-              isSelected: isSelected,
-              flowFill: flowFill,
-              spottingFill: spottingFill,
-              predictionOutline: predictionOutline,
-              todayRing: todayRing,
-              selectedRing: selectedRing,
-              noteColor: noteColor,
-              dayNumberColor: dayNumberColor,
-              isDark: isDark,
-            ),
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 2),
-                child: _IndicatorRow(
-                  hasPrediction: hasPrediction,
-                  hasPain: hasPain,
-                  predictionColor: predictionOutline,
-                  painColor: isDark
-                      ? MetraColors.dark.accentPain
-                      : MetraColors.light.accentPain,
-                ),
-              ),
+        child: Container(
+          width: _cellSize,
+          height: _cellSize,
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(_borderRadius),
+            border: border,
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            '${date.day}',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 15,
+              fontWeight: fontWeight,
+              color: textColor,
             ),
           ),
         ),
       ),
     );
   }
-}
 
-class _CalendarDayPainter extends CustomPainter {
-  const _CalendarDayPainter({
-    required this.dayNumber,
-    required this.isFlow,
-    required this.isSpotting,
-    required this.hasPrediction,
-    required this.hasNote,
-    required this.hasPain,
-    required this.isToday,
-    required this.isSelected,
-    required this.flowFill,
-    required this.spottingFill,
-    required this.predictionOutline,
-    required this.todayRing,
-    required this.selectedRing,
-    required this.noteColor,
-    required this.dayNumberColor,
-    required this.isDark,
-  });
+  (Color, Border?, Color, FontWeight) _resolveState({
+    required Color accentFlow,
+    required Color textPrimary,
+    required Color bgPrimary,
+    required Color accentPrediction,
+  }) {
 
-  final int dayNumber;
-  final bool isFlow;
-  final bool isSpotting;
-  final bool hasPrediction;
-  final bool hasNote;
-  final bool hasPain;
-  final bool isToday;
-  final bool isSelected;
-  final Color flowFill;
-  final Color spottingFill;
-  final Color predictionOutline;
-  final Color todayRing;
-  final Color selectedRing;
-  final Color noteColor;
-  final Color dayNumberColor;
-  final bool isDark;
-
-  static const double _circleDiameter = CalendarDay._circleDiameter;
-  static const double _circleRadius = _circleDiameter / 2;
-
-  // Outer ring radii — rings sit outside the 36pt circle, within the 44pt tap area.
-  static const double _todayRingRadius = _circleRadius + 2.5;
-  static const double _selectedRingRadius = _circleRadius + 3.0;
-
-  // Dot metrics
-  static const double _dotRadius = 2.0; // 4pt diameter
-  static const double _dotOffsetY = 20.0; // below circle center
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Center of the widget — the circle lives here.
-    final center = Offset(size.width / 2, size.height / 2);
-
-    // 1. Prediction solid lavender outline (drawn first, behind everything).
-    if (hasPrediction) {
-      canvas.drawCircle(
-        center,
-        _circleRadius - 1,
-        Paint()
-          ..color = predictionOutline.withValues(alpha: 0.4)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5,
-      );
-    }
-
-    // 2. Flow: solid terracotta fill.
-    if (isFlow) {
-      canvas.drawCircle(
-        center,
-        _circleRadius,
-        Paint()
-          ..color = flowFill
-          ..style = PaintingStyle.fill,
-      );
-    }
-
-    // 3. Spotting: semi-transparent terracotta fill (only when not flow).
-    if (isSpotting && !isFlow) {
-      canvas.drawCircle(
-        center,
-        _circleRadius,
-        Paint()
-          ..color = spottingFill
-          ..style = PaintingStyle.fill,
-      );
-    }
-
-    // 4. Today: thin Ink/Ivory ring (1.5pt stroke) outside the 36pt circle.
-    if (isToday) {
-      canvas.drawCircle(
-        center,
-        _todayRingRadius,
-        Paint()
-          ..color = todayRing
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5,
-      );
-    }
-
-    // 5. Selected: thick terracotta ring (2.5pt stroke) outside the circle.
     if (isSelected) {
-      canvas.drawCircle(
-        center,
-        _selectedRingRadius,
-        Paint()
-          ..color = selectedRing
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2.5,
+      return (
+        textPrimary,
+        null,
+        bgPrimary,
+        FontWeight.w600,
       );
     }
 
-    // 6. Day number (DM Serif Display, tabular nums).
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: dayNumber.toString(),
-        style: MetraTypography.titleSm.copyWith(
-          color: dayNumberColor,
-          // titleSm uses Inter — for the number we use DM Serif Display per spec.
-          fontFamily: 'DM Serif Display',
-          fontSize: 18,
-          height: 1.0,
-          fontFeatures: const [FontFeature.tabularFigures()],
+    if (isFlow) {
+      return (
+        accentFlow.withValues(alpha: 0.13),
+        Border.all(
+          color: accentFlow.withValues(alpha: 0.27),
+          width: 1.0,
         ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-
-    textPainter.paint(
-      canvas,
-      Offset(
-        center.dx - textPainter.width / 2,
-        center.dy - textPainter.height / 2,
-      ),
-    );
-
-    // 7. Note dot: 4pt ochre circle below the circle.
-    if (hasNote) {
-      canvas.drawCircle(
-        Offset(center.dx, center.dy + _dotOffsetY),
-        _dotRadius,
-        Paint()
-          ..color = noteColor
-          ..style = PaintingStyle.fill,
+        textPrimary,
+        FontWeight.w500,
       );
     }
-  }
 
-  @override
-  bool shouldRepaint(_CalendarDayPainter oldDelegate) =>
-      oldDelegate.dayNumber != dayNumber ||
-      oldDelegate.isFlow != isFlow ||
-      oldDelegate.isSpotting != isSpotting ||
-      oldDelegate.hasPrediction != hasPrediction ||
-      oldDelegate.hasNote != hasNote ||
-      oldDelegate.hasPain != hasPain ||
-      oldDelegate.isToday != isToday ||
-      oldDelegate.isSelected != isSelected ||
-      oldDelegate.flowFill != flowFill ||
-      oldDelegate.spottingFill != spottingFill ||
-      oldDelegate.predictionOutline != predictionOutline ||
-      oldDelegate.todayRing != todayRing ||
-      oldDelegate.selectedRing != selectedRing ||
-      oldDelegate.noteColor != noteColor ||
-      oldDelegate.dayNumberColor != dayNumberColor;
-}
+    if (isSpotting) {
+      return (
+        accentFlow.withValues(alpha: 0.07),
+        Border.all(
+          color: accentFlow.withValues(alpha: 0.22),
+          width: 1.0,
+        ),
+        textPrimary,
+        FontWeight.w400,
+      );
+    }
 
-class _IndicatorRow extends StatelessWidget {
-  const _IndicatorRow({
-    required this.hasPrediction,
-    required this.hasPain,
-    required this.predictionColor,
-    required this.painColor,
-  });
+    if (hasPrediction) {
+      return (
+        Colors.transparent,
+        Border.all(
+          color: accentPrediction.withValues(alpha: 0.40),
+          width: 1.5,
+        ),
+        textPrimary.withValues(alpha: 0.60),
+        FontWeight.w400,
+      );
+    }
 
-  final bool hasPrediction;
-  final bool hasPain;
-  final Color predictionColor;
-  final Color painColor;
+    if (isToday) {
+      return (
+        Colors.transparent,
+        Border.all(
+          color: textPrimary.withValues(alpha: 0.35),
+          width: 1.5,
+        ),
+        textPrimary,
+        FontWeight.w500,
+      );
+    }
 
-  @override
-  Widget build(BuildContext context) {
-    if (!hasPrediction && !hasPain) return const SizedBox.shrink();
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (hasPrediction)
-          Icon(Icons.water_drop_outlined, size: 9, color: predictionColor),
-        if (hasPrediction && hasPain) const SizedBox(width: 2),
-        if (hasPain) Icon(Icons.bolt, size: 9, color: painColor),
-      ],
+    // Default
+    return (
+      Colors.transparent,
+      null,
+      textPrimary.withValues(alpha: 0.60),
+      FontWeight.w400,
     );
   }
 }

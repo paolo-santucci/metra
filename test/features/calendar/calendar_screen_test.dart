@@ -247,7 +247,8 @@ void main() {
       expect(count, lessThanOrEqualTo(daysInMonth));
     });
 
-    testWidgets('FAB has correct accessibility label', (tester) async {
+    testWidgets('day-detail card is visible on initial load (today selected)',
+        (tester) async {
       await tester.pumpWidget(
         _wrapWithRouter([
           calendarMonthProvider.overrideWith(_StubCalendarMonthNotifier.new),
@@ -255,24 +256,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(
-        find.byTooltip('Aggiungi o modifica il registro di oggi'),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('tapping FAB navigates to /oggi', (tester) async {
-      await tester.pumpWidget(
-        _wrapWithRouter([
-          calendarMonthProvider.overrideWith(_StubCalendarMonthNotifier.new),
-        ]),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byType(FloatingActionButton));
-      await tester.pumpAndSettle();
-
-      expect(find.text('oggi-stub'), findsOneWidget);
+      // The stub has no logs, so the card shows "Nessun dato registrato".
+      expect(find.text('Nessun dato registrato'), findsOneWidget);
+      expect(find.text('Modifica giornata'), findsOneWidget);
     });
 
     testWidgets('tapping a day cell shows the day-detail card',

@@ -37,11 +37,7 @@ import 'widgets/month_navigator.dart';
 /// The main calendar screen (tab 1).
 ///
 /// Shows a monthly grid of [CalendarDay] widgets, a month navigation header,
-/// and a FAB to jump to today's quick entry.
-///
-/// The FAB scales in from 0 → 1 with an elastic curve on first mount
-/// (plain easeOut when reduce-motion is active). Duration is capped at
-/// 240ms per project animation spec.
+/// and a day-detail card that is always visible (defaults to today).
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
 
@@ -50,7 +46,14 @@ class CalendarScreen extends ConsumerStatefulWidget {
 }
 
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
-  DateTime? _selectedDate;
+  late DateTime _selectedDate;
+
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _selectedDate = DateTime.utc(now.year, now.month, now.day);
+  }
 
   /// Builds locale-aware single-character day-of-week headers, Monday first.
   ///
@@ -74,12 +77,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final textColor = isDark
         ? MetraColors.dark.textSecondary
         : MetraColors.light.textSecondary;
-
-    final reduceMotion = MediaQuery.of(context).disableAnimations;
-    final fabDuration = reduceMotion
-        ? const Duration(milliseconds: 80)
-        : const Duration(milliseconds: 240);
-    final fabCurve = reduceMotion ? Curves.easeOut : Curves.elasticOut;
 
     final calendarAsync = ref.watch(calendarMonthProvider);
     final prediction = ref.watch(cyclePredictionProvider).valueOrNull;
@@ -147,32 +144,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   ),
                 ),
                 const CalendarLegend(),
-                if (_selectedDate != null)
-                  _DayDetailCard(
-                    selectedDate: _selectedDate!,
-                    log: monthState.logs[_selectedDate],
-                    l10n: l10n,
-                    locale: locale,
-                    isDark: isDark,
-                  ),
+                _DayDetailCard(
+                  selectedDate: _selectedDate,
+                  log: monthState.logs[_selectedDate],
+                  l10n: l10n,
+                  locale: locale,
+                  isDark: isDark,
+                ),
               ],
             );
           },
-        ),
-      ),
-      floatingActionButton: TweenAnimationBuilder<double>(
-        tween: Tween<double>(begin: 0.0, end: 1.0),
-        duration: fabDuration,
-        curve: fabCurve,
-        builder: (context, scale, child) =>
-            Transform.scale(scale: scale, child: child),
-        child: FloatingActionButton(
-          onPressed: () => context.go('/oggi'),
-          tooltip: l10n.calendar_fab_label,
-          child: Semantics(
-            label: l10n.calendar_fab_label,
-            child: const Icon(Icons.add),
-          ),
         ),
       ),
     );
