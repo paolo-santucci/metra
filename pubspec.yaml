@@ -64,6 +64,7 @@ dependencies:
 
   # i18n
   intl: ^0.20.2
+  flutter_svg: ^2.2.4
 
 dev_dependencies:
   flutter_test:
