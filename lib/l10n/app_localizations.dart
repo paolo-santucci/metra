@@ -668,29 +668,11 @@ abstract class AppLocalizations {
   /// **'Flusso'**
   String get table_col_flow;
 
-  /// DEPRECATED — removed when table_view.dart is rewritten in Phase 4c. Do not use for new code.
-  ///
-  /// In it, this message translates to:
-  /// **'Inizio'**
-  String get table_col_start;
-
   /// Table column header: cycle length
   ///
   /// In it, this message translates to:
   /// **'Ciclo'**
   String get table_col_cycle;
-
-  /// DEPRECATED — removed when table_view.dart is rewritten in Phase 4c. Do not use for new code.
-  ///
-  /// In it, this message translates to:
-  /// **'Mestr.'**
-  String get table_col_period;
-
-  /// DEPRECATED — removed when table_view.dart is rewritten in Phase 4c. Do not use for new code.
-  ///
-  /// In it, this message translates to:
-  /// **'Sintomi'**
-  String get table_col_symptoms;
 
   /// Placeholder shown when cycle length is unknown
   ///

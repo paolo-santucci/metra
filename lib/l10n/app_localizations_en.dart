@@ -331,16 +331,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get table_col_flow => 'Flow';
 
   @override
-  String get table_col_start => 'Start';
-
-  @override
   String get table_col_cycle => 'Cycle';
-
-  @override
-  String get table_col_period => 'Period';
-
-  @override
-  String get table_col_symptoms => 'Symptoms';
 
   @override
   String get table_cycle_dash => '—';

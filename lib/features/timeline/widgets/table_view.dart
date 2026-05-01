@@ -71,8 +71,7 @@ class _HeaderRow extends StatelessWidget {
       ),
       child: _CellRow(
         mese: Text(
-          // TODO: use l10n.table_col_month when ARB key lands (agent 4b)
-          'Mese',
+          l10n.table_col_month,
           style: labelStyle,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -84,15 +83,13 @@ class _HeaderRow extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         dur: Text(
-          // TODO: use l10n.table_col_duration when ARB key lands (agent 4b)
-          'Dur.',
+          l10n.table_col_duration,
           style: labelStyle,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
         flusso: Text(
-          // TODO: use l10n.table_col_flow when ARB key lands (agent 4b)
-          'Flusso',
+          l10n.table_col_flow,
           style: labelStyle,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,

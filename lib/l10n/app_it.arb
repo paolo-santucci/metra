@@ -536,17 +536,8 @@
   "table_col_flow": "Flusso",
   "@table_col_flow": { "description": "Table column header: flow (§ 10.2)" },
 
-  "table_col_start": "Inizio",
-  "@table_col_start": { "description": "DEPRECATED — removed when table_view.dart is rewritten in Phase 4c. Do not use for new code." },
-
   "table_col_cycle": "Ciclo",
   "@table_col_cycle": { "description": "Table column header: cycle length" },
-
-  "table_col_period": "Mestr.",
-  "@table_col_period": { "description": "DEPRECATED — removed when table_view.dart is rewritten in Phase 4c. Do not use for new code." },
-
-  "table_col_symptoms": "Sintomi",
-  "@table_col_symptoms": { "description": "DEPRECATED — removed when table_view.dart is rewritten in Phase 4c. Do not use for new code." },
 
   "table_cycle_dash": "—",
   "@table_cycle_dash": { "description": "Placeholder shown when cycle length is unknown" },
