@@ -1,8 +1,25 @@
 # Métra — UI Alignment Sprint Status
 
-**Last updated**: 2026-05-01 (Design Bible authored)  
-**Active plan**: Design Alignment Fixes (4-phase, 2026-05-01)  
-**Plan location**: `.claude/docs/plans/2026-05-01-design-alignment-fixes.md`
+**Last updated**: 2026-05-01  
+**Active plan**: DESIGN-BIBLE Conformance Rebuild (2026-05-01)  
+**Plan location**: `.claude/docs/plans/2026-05-01-bible-conformance-rebuild.md`
+
+---
+
+## DESIGN-BIBLE Conformance Rebuild (current)
+
+| Phase | Description | Status | Commits |
+|---|---|---|---|
+| Phase 0 · Foundation | Token files, icon system, tab bar | ✅ done | `9656b58`…`7316fc2` |
+| Phase 1 · Daily entry | Section frames, dot geometry, typography | ✅ done | `5ad0202` |
+| Phase 2 · Calendar | Indicator icons, grid, legend | ✅ done | `774d9dd` |
+| Phase 3 · Onboarding | MetraWordmark, manifesto, stepper, ARB | ✅ done | `f3d2114` |
+| Phase 4 · Archivio rebuild | Domain extension + full timeline rebuild | ⏳ next | — |
+| Phase 5 · Statistics rebuild | Stats screens | ⏳ queued | — |
+| Phase 6 · Brand | Métra/Mētra resolution (needs user decision) | ⏳ queued | — |
+| Phase 7 · Final | Golden walk + ship | ⏳ queued | — |
+
+425 tests green, 0 analyzer warnings after Phases 0–3. 4 pre-existing encryption timeouts in full-suite run (pass in isolation).
 
 > **🕮 Canonical UI source of truth: [`design/DESIGN-BIBLE.md`](design/DESIGN-BIBLE.md)** — transcribes `design/Métra Screens Light.html`. Read at every session boot. All UI changes must conform; deviation requires updating the HTML mockup first.
 
@@ -79,4 +96,3 @@ All 7 issues from `what-you-MUST-fix.md` resolved. All 405 tests green.
 | `lib/features/onboarding/onboarding_screen.dart` | 2-step onboarding: Manifesto → Primo Ciclo (privacy screen removed) |
 | `lib/core/theme/metra_colors.dart` | Token source — `accentPain` = malva |
 | `lib/l10n/app_it.arb` | All Italian copy |
-| `design/design-review-tasks.md` | Authoritative task list with DM/UX/CL codes |
