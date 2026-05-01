@@ -1,73 +1,28 @@
-# Métra — UI Alignment Sprint Status
+# Métra — Status
 
 **Last updated**: 2026-05-01  
-**Active plan**: DESIGN-BIBLE Conformance Rebuild (2026-05-01)  
-**Plan location**: `.claude/docs/plans/2026-05-01-bible-conformance-rebuild.md`
+**Active plan**: DESIGN-BIBLE Conformance Rebuild  
+**Plan**: `.claude/docs/plans/2026-05-01-bible-conformance-rebuild.md`
+
+> **Canonical UI source of truth: [`design/DESIGN-BIBLE.md`](design/DESIGN-BIBLE.md)** — transcribes `design/Métra Screens Light.html`. Read at every session boot. All UI changes must conform; deviation requires updating the HTML mockup first.
 
 ---
 
-## DESIGN-BIBLE Conformance Rebuild (current)
+## DESIGN-BIBLE Conformance Rebuild (active, 2026-05-01)
+
+**Gate**: 425 tests green, `flutter analyze --fatal-infos --fatal-warnings` → 0 issues after Phases 0–3.  
+4 pre-existing encryption timeouts in full-suite run (pass in isolation — resource contention).
 
 | Phase | Description | Status | Commits |
 |---|---|---|---|
-| Phase 0 · Foundation | Token files, icon system, tab bar | ✅ done | `9656b58`…`7316fc2` |
-| Phase 1 · Daily entry | Section frames, dot geometry, typography | ✅ done | `5ad0202` |
-| Phase 2 · Calendar | Indicator icons, grid, legend | ✅ done | `774d9dd` |
-| Phase 3 · Onboarding | MetraWordmark, manifesto, stepper, ARB | ✅ done | `f3d2114` |
-| Phase 4 · Archivio rebuild | Domain extension + full timeline rebuild | ⏳ next | — |
-| Phase 5 · Statistics rebuild | Stats screens | ⏳ queued | — |
-| Phase 6 · Brand | Métra/Mētra resolution (needs user decision) | ⏳ queued | — |
-| Phase 7 · Final | Golden walk + ship | ⏳ queued | — |
-
-425 tests green, 0 analyzer warnings after Phases 0–3. 4 pre-existing encryption timeouts in full-suite run (pass in isolation).
-
-> **🕮 Canonical UI source of truth: [`design/DESIGN-BIBLE.md`](design/DESIGN-BIBLE.md)** — transcribes `design/Métra Screens Light.html`. Read at every session boot. All UI changes must conform; deviation requires updating the HTML mockup first.
-
----
-
-## Sprint 3 — Screenshot comparison blocks A+C+D+E+F+G (2026-05-01)
-
-| Block | Task | Status | Commit |
-|---|---|---|---|
-| A | Patch DESIGN-BIBLE.md (2-screen onboarding), STATUS.md, memory | ✅ done | `b6047af` |
-| C | Remove privacy screen entirely; onboarding is now 2-step | ✅ done | `b6047af` |
-| D | Rebuild Primo Ciclo: headline, subhead, micro-labels, range track, "giorni", CTA | ✅ done | `b6047af` |
-| E | Calendar header (DM Serif, left-aligned, cycle-day row), indicator dots | ✅ done | `b6047af` |
-| F | NavBar: remove active-pill indicator, terracotta active icon/label | ✅ done | `b6047af` |
-| G | HistoricalEntryScreen: bare scaffold, CirclePainPicker, ChoiceChipMetra wrap, inline add | ✅ done | `b6047af` |
-| B | Manifesto polish: terracotta radial halo in hero (outer + centered 220×220) | ✅ done | `aae8ece` |
-| H | Today screen: pain picker opacities, gap-14, flow chip borders 1.5px | ✅ done | `aae8ece` |
-
-All 403 tests green, 0 analyzer warnings after Sprint 3 commit.
-
----
-
-## Sprint 2 — Design Alignment Fixes (2026-05-01)
-
-| Phase | Task | Status | Commit |
-|---|---|---|---|
-| Phase 1 | Calendar: rounded-square days, remove FAB, default selection | ✅ done | `bf4173d` |
-| Phase 2 | Widgets: soft halo dots/pain picker, terracotta chips, no checkmark | ✅ done | `a81cc11` |
-| Phase 3 | Entry+Calendar: inline symptom input, symptom chips in day card | ✅ done | `ba9ad63` |
-| Phase 4 | Onboarding: privacy screen step (reverted — screen removed in Sprint 3) | ✅ done | `5b7ec8e` |
-
-All 7 issues from `what-you-MUST-fix.md` resolved. All 405 tests green.
-
----
-
-## Sprint 1 — UI Alignment to HTML Design Mockups (2026-04-30)
-
-| Phase | Task | Status | Commit |
-|---|---|---|---|
-| P-A | Foundation reconciliation (theme tokens, wordmark) | ✅ done | `214d2ad` |
-| P-B | Flow domain migration (FlowType enum, schema v4) | ✅ done | `0f5b8b1` |
-| P-C | Daily entry widget overhaul (FlowTypeChips + FlowIntensityDots) | ✅ done | `c4f86de` |
-| P-D | Pain picker null state | ✅ done | `4fc46d8` |
-| P-E | Calendar visual + navigation | ✅ done | `d4a0e29` |
-| P-F | Archive timeline + Stats label fix | ✅ done | `3d197c1` |
-| P-G | Onboarding fixes | ✅ done | `c974baf` |
-| P-H | Symptom defaults + l10n | ✅ done | — |
-| P-I | Final visual QA pass | ✅ done | `5ecd523` |
+| **0 · Foundation** | Token files (colors/spacing/typography), MetraIcon/MetraMoon, custom tab bar | ✅ done | `9656b58`…`7316fc2` |
+| **1 · Daily entry** | Section frames (surfaceRaised + ink@0.07 borders + 18/24 padding + gap 1), screenTitle (26px), bottom padding 100, dot geometry (50×50, stroke 1.4/1.5), notes border, symptom 44dp tap targets | ✅ done | `5ad0202` |
+| **2 · Calendar** | Indicator icons (MetraIcons drop/dropOutline/starSmall size 11), symptom indicator added, CL-01 fix, grid padding 12 + rowGap 2, Italian day headers, flow pill height 32 radius 10, edit CTA MetraIcons.note, legend Previsione last | ✅ done | `774d9dd` |
+| **3 · Onboarding** | MetraWordmark widget (Mētra U+0113, DM Serif 56/ls-0.02em), manifesto headlineLg (34px), hero fixed 340px, Primo Ciclo headlineSm (28px), stepper GestureDetector 40×40 radius 10, active text → sabbia, firstDate → DateTime(2000), ARB cleanup | ✅ done | `f3d2114` |
+| **4 · Archivio rebuild** | Domain: extend CycleSummary (maxPain/dominantPainIntensity). UI: rebuild timeline card per bible § 10 | ⏳ **next** | — |
+| **5 · Statistics rebuild** | Stats screen per bible § 11 | ⏳ queued | — |
+| **6 · Brand** | Métra/Mētra resolution in product copy — **needs user decision** before proceeding | ⏳ queued | — |
+| **7 · Final** | Golden walk + ship | ⏳ queued | — |
 
 ---
 
@@ -78,21 +33,28 @@ All 7 issues from `what-you-MUST-fix.md` resolved. All 405 tests green.
 - **BackupSnapshot v2**: added `flow_type` field; reads v1 snapshots via old-spotting-bool derivation.
 - **UX-02 intensity preservation**: `_lastMensIntensity` local state in today/historical screens — persists last-known intensity when switching away from mestruazioni; restores on switch-back.
 - **Calendar selection**: `_selectedDate` is non-nullable `DateTime`, initialized to today UTC; `_DayDetailCard` always rendered.
-- **Onboarding flow**: 2-step (welcome → first cycle). `_PrivacyPage` removed; canvas only renders Manifesto + Primo Ciclo.
+- **Onboarding flow**: 2-step (welcome → first cycle). `_PrivacyPage` removed in Sprint 3.
+- **Tab bar**: custom `MetraTabBar` (frosted glass, 84dp, BackdropFilter blur 16, MetraIcons) — replaced Material 3 `NavigationBar` in Phase 0 Wave 0.2.
+- **Off-catalog primitives**: `inkSoft`, `surfaceSunken`, `divider`, `textDisabled`, `dustyOchreDeep`, `mossDeep` still exist in `metra_colors.dart`; consumer sweep pending during per-screen phases.
+- **Brand**: `onboarding_privacy_line` ARB key retains acute `Métra` pending Phase 6 decision. `DESIGN-BIBLE.md` also retains acute in the manifesto subhead (HTML is canon — verify HTML before changing).
 
 ## Key files reference
 
 | File | Role |
 |---|---|
+| `lib/core/theme/metra_colors.dart` | Canonical color tokens (10 primitives + semantic aliases) |
+| `lib/core/theme/metra_spacing.dart` | Spacing (legacy sN + canonical spN) and radius catalog |
+| `lib/core/theme/metra_typography.dart` | Role-named type tokens (displayHero, screenTitle, headlineLg…) |
+| `lib/core/widgets/metra_icon.dart` | MetraIcon widget + MetraIcons SVG constants |
+| `lib/core/widgets/metra_tab_bar.dart` | Custom frosted-glass tab bar (Wave 0.2) |
+| `lib/core/widgets/metra_wordmark.dart` | MetraWordmark widget — "Mētra" DM Serif 56 |
 | `lib/domain/entities/flow_type.dart` | FlowType enum |
 | `lib/domain/entities/daily_log_entity.dart` | Main log entity (flowType, flowIntensity, painEnabled, painIntensity) |
-| `lib/features/daily_entry/widgets/flow_type_chips.dart` | Flow type selector |
-| `lib/features/daily_entry/widgets/flow_intensity_dots.dart` | Soft halo dot selector |
-| `lib/features/daily_entry/widgets/circle_pain_picker.dart` | Pain picker (int? selected, malva, soft halo) |
-| `lib/features/daily_entry/today_screen.dart` | Today entry with inline symptom input |
-| `lib/features/calendar/widgets/calendar_day.dart` | Rounded-square day cells |
-| `lib/features/calendar/calendar_screen.dart` | Default selection, symptom chips in day card |
-| `lib/core/widgets/choice_chip_metra.dart` | Terracotta chip, no checkmark |
-| `lib/features/onboarding/onboarding_screen.dart` | 2-step onboarding: Manifesto → Primo Ciclo (privacy screen removed) |
-| `lib/core/theme/metra_colors.dart` | Token source — `accentPain` = malva |
-| `lib/l10n/app_it.arb` | All Italian copy |
+| `lib/features/daily_entry/today_screen.dart` | Today entry — section frames, Stack CTA overlay |
+| `lib/features/daily_entry/widgets/flow_intensity_dots.dart` | Soft halo dot selector (50×50, stroke 1.4) |
+| `lib/features/daily_entry/widgets/circle_pain_picker.dart` | Pain picker (50×50, malva 1.5 stroke, level-0 transparent) |
+| `lib/features/calendar/calendar_screen.dart` | Calendar with symptom indicator support |
+| `lib/features/calendar/widgets/calendar_day.dart` | Day cells with MetraIcons indicators |
+| `lib/features/onboarding/onboarding_screen.dart` | 2-step onboarding: Manifesto → Primo Ciclo |
+| `lib/l10n/app_it.arb` | All Italian copy (source of truth) |
+| `lib/router/app_router.dart` | go_router config + MetraTabBar shell |
