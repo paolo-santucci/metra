@@ -107,14 +107,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             final isCurrentMonth =
                 monthState.year == now.year && monthState.month == now.month;
 
-            // intl.DateFormat.MMMM uses locale-aware month name.
-            final monthName = intl.DateFormat.MMMM(locale).format(
+            // Month name only (spec § 8.1); capitalize first letter locale-aware.
+            final rawMonth = intl.DateFormat.MMMM(locale).format(
               DateTime(monthState.year, monthState.month),
             );
-            final title = l10n.calendar_month_title(
-              monthName,
-              monthState.year.toString(),
-            );
+            final title = rawMonth.substring(0, 1).toUpperCase() +
+                rawMonth.substring(1);
 
             return Column(
               children: [
@@ -303,6 +301,7 @@ class _CalendarGrid extends StatelessWidget {
         final isSpotting = log?.spotting ?? false;
         final hasNote = log?.notes != null && log!.notes!.isNotEmpty;
         final hasPrediction = prediction?.containsDate(date) ?? false;
+        final hasPain = log?.painEnabled ?? false;
 
         return CalendarDay(
           date: date,
@@ -312,6 +311,7 @@ class _CalendarGrid extends StatelessWidget {
           isSpotting: isSpotting,
           hasPrediction: hasPrediction,
           hasNote: hasNote,
+          hasPain: hasPain,
           isToday: isToday,
           isSelected: selectedDate == date,
           onTap: () => onDaySelected(date),

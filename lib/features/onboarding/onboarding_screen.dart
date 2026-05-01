@@ -18,6 +18,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart' as intl;
 
 import '../../core/theme/metra_colors.dart';
 import '../../core/theme/metra_spacing.dart';
@@ -42,13 +43,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  void _goToPrivacyPage() {
-    _controller.nextPage(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
-  }
-
   void _goToDataPage() {
     _controller.nextPage(
       duration: const Duration(milliseconds: 300),
@@ -63,8 +57,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         controller: _controller,
         physics: const NeverScrollableScrollPhysics(),
         children: [
-          _WelcomePage(onGetStarted: _goToPrivacyPage),
-          _PrivacyPage(onContinue: _goToDataPage),
+          _WelcomePage(onGetStarted: _goToDataPage),
           const _DataPage(),
         ],
       ),
@@ -219,141 +212,7 @@ class _MacronDotsPainter extends CustomPainter {
   bool shouldRepaint(_MacronDotsPainter old) => old.color != color;
 }
 
-// ── Page 2: Privacy ──────────────────────────────────────────────────────────
-
-class _PrivacyPage extends StatelessWidget {
-  const _PrivacyPage({required this.onContinue});
-  final VoidCallback onContinue;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textPrimary =
-        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
-    final textSecondary = isDark
-        ? MetraColors.dark.textSecondary
-        : MetraColors.light.textSecondary;
-    final bgPrimary =
-        isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
-    final accentFlow =
-        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
-
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(36, 0, 36, 28),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: MetraSpacing.s6),
-            _StepProgressBar(
-              current: 2,
-              total: 3,
-              label: l10n.onboarding_step_label(2, 3),
-              accentColor: accentFlow,
-              textColor: textSecondary,
-            ),
-            const SizedBox(height: MetraSpacing.s6),
-            Text(
-              l10n.onboarding_privacy_heading,
-              style: MetraTypography.displayMd.copyWith(color: textPrimary),
-            ),
-            const SizedBox(height: MetraSpacing.s8),
-            _PrivacyItem(
-              icon: Icons.lock_outline,
-              title: l10n.onboarding_privacy_item1_title,
-              body: l10n.onboarding_privacy_item1_body,
-              accentFlow: accentFlow,
-              textPrimary: textPrimary,
-              textSecondary: textSecondary,
-            ),
-            const SizedBox(height: MetraSpacing.s6),
-            _PrivacyItem(
-              icon: Icons.cloud_off_outlined,
-              title: l10n.onboarding_privacy_item2_title,
-              body: l10n.onboarding_privacy_item2_body,
-              accentFlow: accentFlow,
-              textPrimary: textPrimary,
-              textSecondary: textSecondary,
-            ),
-            const SizedBox(height: MetraSpacing.s6),
-            _PrivacyItem(
-              icon: Icons.file_download_outlined,
-              title: l10n.onboarding_privacy_item3_title,
-              body: l10n.onboarding_privacy_item3_body,
-              accentFlow: accentFlow,
-              textPrimary: textPrimary,
-              textSecondary: textSecondary,
-            ),
-            const Spacer(),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: textPrimary,
-                foregroundColor: bgPrimary,
-                minimumSize: const Size.fromHeight(56),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              onPressed: onContinue,
-              child: Text(l10n.onboarding_privacy_continue),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PrivacyItem extends StatelessWidget {
-  const _PrivacyItem({
-    required this.icon,
-    required this.title,
-    required this.body,
-    required this.accentFlow,
-    required this.textPrimary,
-    required this.textSecondary,
-  });
-
-  final IconData icon;
-  final String title;
-  final String body;
-  final Color accentFlow;
-  final Color textPrimary;
-  final Color textSecondary;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 24, color: accentFlow),
-        const SizedBox(width: MetraSpacing.s4),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: MetraTypography.body.copyWith(
-                  color: textPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                body,
-                style: MetraTypography.body.copyWith(color: textSecondary),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ── Page 3: Data entry ────────────────────────────────────────────────────────
+// ── Page 2: Data entry ────────────────────────────────────────────────────────
 
 class _DataPage extends ConsumerWidget {
   const _DataPage();
@@ -367,66 +226,107 @@ class _DataPage extends ConsumerWidget {
     final textSecondary = isDark
         ? MetraColors.dark.textSecondary
         : MetraColors.light.textSecondary;
+    final accentFlow =
+        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
+    final bgPrimary =
+        isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
     final state = ref.watch(onboardingNotifierProvider);
     final notifier = ref.read(onboardingNotifierProvider.notifier);
+    final locale = Localizations.localeOf(context).toString();
+
+    final microLabelStyle = MetraTypography.caption.copyWith(
+      color: textPrimary.withValues(alpha: 0.40),
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.06 * 12,
+    );
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: MetraSpacing.s6),
+        padding: const EdgeInsets.fromLTRB(28, 0, 28, 0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: MetraSpacing.s6),
+            const SizedBox(height: 20),
             _StepProgressBar(
-              current: 3,
-              total: 3,
-              label: l10n.onboarding_step_label(3, 3),
-              accentColor: isDark
-                  ? MetraColors.dark.accentFlow
-                  : MetraColors.light.accentFlow,
+              current: 2,
+              total: 2,
+              label: l10n.onboarding_step_label(2, 2),
+              accentColor: accentFlow,
               textColor: textSecondary,
             ),
-            const SizedBox(height: MetraSpacing.s6),
+            const SizedBox(height: 24),
             Text(
-              l10n.onboarding_last_period_question,
-              style: MetraTypography.titleMd.copyWith(color: textPrimary),
+              l10n.onboarding_headline,
+              style: MetraTypography.displayMd.copyWith(
+                color: textPrimary,
+                height: 1.25,
+              ),
             ),
-            const SizedBox(height: MetraSpacing.s4),
+            const SizedBox(height: 8),
+            Text(
+              l10n.onboarding_subhead,
+              style: MetraTypography.caption.copyWith(
+                color: textPrimary.withValues(alpha: 0.68),
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 28),
+
+            // Field 1 — last period date
+            Text(
+              l10n.onboarding_last_period_question.toUpperCase(),
+              style: microLabelStyle,
+            ),
+            const SizedBox(height: 10),
             _DatePickerField(
               selectedDate: state.lastPeriodDate,
               onDateSelected: notifier.setDate,
+              locale: locale,
+              l10n: l10n,
             ),
-            const SizedBox(height: MetraSpacing.s8),
+            const SizedBox(height: 24),
+
+            // Field 2 — cycle length
             Text(
-              l10n.onboarding_cycle_length_question,
-              style: MetraTypography.titleMd.copyWith(color: textPrimary),
+              l10n.onboarding_cycle_length_label.toUpperCase(),
+              style: microLabelStyle,
             ),
-            const SizedBox(height: MetraSpacing.s4),
+            const SizedBox(height: 10),
             _CycleLengthStepper(
               value: state.cycleLength,
               l10n: l10n,
               onIncrement: notifier.incrementCycleLength,
               onDecrement: notifier.decrementCycleLength,
+              accentFlow: accentFlow,
+              textPrimary: textPrimary,
             ),
-            const SizedBox(height: MetraSpacing.s8),
+            const SizedBox(height: 24),
+
+            // Field 3 — period duration
             Text(
               l10n.onboarding_period_duration_label.toUpperCase(),
-              style: MetraTypography.caption.copyWith(
-                color: textSecondary,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1.1,
-              ),
+              style: microLabelStyle,
             ),
-            const SizedBox(height: MetraSpacing.s3),
+            const SizedBox(height: 10),
             _PeriodDurationPicker(
               selected: state.periodLength,
               onChanged: notifier.setPeriodLength,
             ),
             const Spacer(),
             FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: textPrimary,
+                foregroundColor: bgPrimary,
+                disabledBackgroundColor: textPrimary.withValues(alpha: 0.35),
+                disabledForegroundColor: bgPrimary.withValues(alpha: 0.60),
+                minimumSize: const Size.fromHeight(56),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
               onPressed:
                   state.canSubmit ? () => _onSubmit(context, ref, state) : null,
-              child: Text(l10n.onboarding_start),
+              child: Text(l10n.onboarding_all_set),
             ),
             const SizedBox(height: MetraSpacing.s8),
           ],
@@ -458,29 +358,68 @@ class _DatePickerField extends StatelessWidget {
   const _DatePickerField({
     required this.selectedDate,
     required this.onDateSelected,
+    required this.locale,
+    required this.l10n,
   });
 
   final DateTime? selectedDate;
   final ValueChanged<DateTime> onDateSelected;
+  final String locale;
+  final AppLocalizations l10n;
+
+  String _formatDate(DateTime date) {
+    return intl.DateFormat('d MMMM yyyy', locale).format(date);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary =
+        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
+    final bgSurface =
+        isDark ? MetraColors.dark.bgSurface : MetraColors.light.bgSurface;
+
     final displayText = selectedDate != null
-        ? '${selectedDate!.year}-${selectedDate!.month.toString().padLeft(2, '0')}-${selectedDate!.day.toString().padLeft(2, '0')}'
-        : 'Select date';
+        ? _formatDate(selectedDate!)
+        : l10n.onboarding_date_placeholder;
+    final hasDate = selectedDate != null;
 
     return Semantics(
-      label:
-          'Last period start date, ${selectedDate != null ? displayText : 'not selected'}',
+      label: 'Primo giorno ultima mestruazione, ${hasDate ? displayText : 'non selezionato'}',
       button: true,
-      child: OutlinedButton.icon(
-        style: OutlinedButton.styleFrom(
-          minimumSize: const Size.fromHeight(52),
-          alignment: Alignment.centerLeft,
+      child: GestureDetector(
+        onTap: () => _pickDate(context),
+        child: Container(
+          height: 52,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: bgSurface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: textPrimary.withValues(alpha: 0.14),
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  displayText,
+                  style: MetraTypography.body.copyWith(
+                    color: hasDate
+                        ? textPrimary
+                        : textPrimary.withValues(alpha: 0.40),
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.calendar_today_outlined,
+                size: 18,
+                color: textPrimary.withValues(alpha: 0.40),
+              ),
+            ],
+          ),
         ),
-        icon: const Icon(Icons.calendar_today_outlined, size: 20),
-        label: Text(displayText),
-        onPressed: () => _pickDate(context),
       ),
     );
   }
@@ -611,44 +550,120 @@ class _CycleLengthStepper extends StatelessWidget {
     required this.l10n,
     required this.onIncrement,
     required this.onDecrement,
+    required this.accentFlow,
+    required this.textPrimary,
   });
 
   final int value;
   final AppLocalizations l10n;
   final VoidCallback onIncrement;
   final VoidCallback onDecrement;
+  final Color accentFlow;
+  final Color textPrimary;
+
+  static const int _min = 21;
+  static const int _max = 45;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    final trackFraction = ((value - _min) / (_max - _min)).clamp(0.0, 1.0);
+    final labelStyle11 = TextStyle(
+      fontFamily: 'Inter',
+      fontSize: 11,
+      color: textPrimary.withValues(alpha: 0.35),
+    );
+
+    return Column(
       children: [
-        SizedBox(
-          width: 48,
-          height: 48,
-          child: IconButton(
-            tooltip: 'Decrease cycle length',
-            icon: const Icon(Icons.remove),
-            onPressed: onDecrement,
-          ),
+        // Number + controls row
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 48,
+              height: 48,
+              child: IconButton(
+                tooltip: 'Diminuisci durata ciclo',
+                icon: const Icon(Icons.remove),
+                onPressed: value > _min ? onDecrement : null,
+              ),
+            ),
+            const SizedBox(width: MetraSpacing.s4),
+            Semantics(
+              label: '$value ${l10n.onboarding_days_unit}',
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    value.toString(),
+                    style: MetraTypography.displayXl.copyWith(
+                      color: textPrimary,
+                      fontSize: 40,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    l10n.onboarding_days_unit,
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 16,
+                      color: textPrimary.withValues(alpha: 0.68),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: MetraSpacing.s4),
+            SizedBox(
+              width: 48,
+              height: 48,
+              child: IconButton(
+                tooltip: 'Aumenta durata ciclo',
+                icon: const Icon(Icons.add),
+                onPressed: value < _max ? onIncrement : null,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: MetraSpacing.s4),
-        Semantics(
-          label: '$value ${l10n.onboarding_days_unit}',
-          child: Text(
-            value.toString(),
-            style: MetraTypography.titleMd,
-          ),
-        ),
-        const SizedBox(width: MetraSpacing.s4),
-        SizedBox(
-          width: 48,
-          height: 48,
-          child: IconButton(
-            tooltip: 'Increase cycle length',
-            icon: const Icon(Icons.add),
-            onPressed: onIncrement,
-          ),
+        const SizedBox(height: 12),
+        // Range track
+        LayoutBuilder(
+          builder: (context, constraints) {
+            return Column(
+              children: [
+                Stack(
+                  children: [
+                    Container(
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: textPrimary.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    FractionallySizedBox(
+                      widthFactor: trackFraction,
+                      child: Container(
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: accentFlow,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('$_min', style: labelStyle11),
+                    Text('$_max', style: labelStyle11),
+                  ],
+                ),
+              ],
+            );
+          },
         ),
       ],
     );

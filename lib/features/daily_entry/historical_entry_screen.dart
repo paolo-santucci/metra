@@ -18,13 +18,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../core/theme/metra_colors.dart';
 import '../../core/theme/metra_spacing.dart';
-import '../../core/widgets/button_ghost.dart';
-import '../../core/widgets/button_primary.dart';
-import '../../core/widgets/section_title_metra.dart';
-import '../../core/widgets/text_field_metra.dart';
+import '../../core/theme/metra_typography.dart';
+import '../../core/widgets/choice_chip_metra.dart';
 import '../../domain/entities/daily_log_entity.dart';
 import '../../domain/entities/flow_intensity.dart';
 import '../../domain/entities/flow_type.dart';
@@ -33,10 +32,10 @@ import '../../domain/entities/pain_symptom_type.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/repository_providers.dart';
 import 'state/daily_entry_controller.dart';
+import 'widgets/circle_pain_picker.dart';
 import 'widgets/flow_intensity_dots.dart';
 import 'widgets/flow_type_chips.dart';
-import 'widgets/pain_intensity_slider.dart';
-import 'widgets/symptom_chips_row.dart';
+// symptom_chips_row omitted; chips rendered inline via ChoiceChipMetra;
 
 /// Full-screen entry for logging or editing data for an arbitrary past date.
 ///
@@ -68,12 +67,14 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
   FlowIntensity? _flowIntensity;
   FlowIntensity? _lastMensIntensity;
   bool _otherDischarge = false;
-  bool _painEnabled = false;
-  int _painIntensity = 0;
-  bool _notesEnabled = false;
+  // null = not logged; 0 = Nessuno (explicit zero); 1-3 = pain levels.
+  int? _painIntensity;
   Set<PainSymptomType> _selectedSymptoms = {};
+  bool _addingSymptom = false;
 
   late final TextEditingController _notesController;
+  final TextEditingController _customSymptomController =
+      TextEditingController();
 
   @override
   void initState() {
@@ -94,6 +95,7 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
   @override
   void dispose() {
     _notesController.dispose();
+    _customSymptomController.dispose();
     super.dispose();
   }
 
@@ -105,20 +107,16 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
     _hasExistingLog = log != null;
     if (log == null) return;
 
-    // Do not log entity contents — security requirement.
     _flowType = log.flowType;
     _flowIntensity = log.flowIntensity;
     _otherDischarge = log.otherDischarge;
-    _painEnabled = log.painEnabled;
-    _painIntensity = log.painIntensity ?? 0;
-    _notesEnabled = log.notesEnabled;
+    _painIntensity = log.painEnabled ? log.painIntensity : null;
     if (log.notes != null) {
-      _notesController.text = log.notes!; // safe: notes is non-null checked
+      _notesController.text = log.notes!;
     }
   }
 
   /// Seeds [_selectedSymptoms] from the one-shot [painSymptomsProvider] load.
-  /// Only runs once; subsequent calls are no-ops.
   void _initSymptoms(List<PainSymptomData> symptoms) {
     if (_symptomsInitialized) return;
     _symptomsInitialized = true;
@@ -126,22 +124,20 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
   }
 
   DailyLogEntity _buildEntity() {
+    final notesText = _notesController.text.trim();
     return DailyLogEntity(
       date: widget.date,
       flowType: _flowType,
       flowIntensity: _flowType == FlowType.mestruazioni ? _flowIntensity : null,
       otherDischarge: _otherDischarge,
-      painEnabled: _painEnabled,
-      painIntensity: _painEnabled ? _painIntensity : null,
-      notesEnabled: _notesEnabled,
-      notes: _notesEnabled && _notesController.text.trim().isNotEmpty
-          ? _notesController.text.trim()
-          : null,
+      painEnabled: _painIntensity != null,
+      painIntensity: _painIntensity,
+      notesEnabled: notesText.isNotEmpty,
+      notes: notesText.isNotEmpty ? notesText : null,
     );
   }
 
   Future<void> _save() async {
-    // safe: delegates registered in MetraApp
     final l10n = AppLocalizations.of(context)!;
     final notifier = ref.read(dailyEntryProvider(widget.date).notifier);
     await notifier.save(_buildEntity());
@@ -155,9 +151,6 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
       return;
     }
 
-    // Persist symptom chips only when we have successfully loaded them first.
-    // If symptoms were never fetched (_symptomsInitialized == false), skipping
-    // replacePainSymptoms preserves whatever was already in the DB.
     if (_symptomsInitialized) {
       try {
         final repo = await ref.read(dailyLogRepositoryProvider.future);
@@ -168,7 +161,6 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
               .toList(),
         );
       } catch (e) {
-        // Symptom persistence failure is non-fatal: surface in debug only.
         assert(() {
           debugPrint('replacePainSymptoms failed: $e');
           return true;
@@ -181,7 +173,6 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
   }
 
   Future<void> _delete() async {
-    // safe: delegates registered in MetraApp
     final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -212,67 +203,124 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // safe: delegates registered in MetraApp
     final l10n = AppLocalizations.of(context)!;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor =
         isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
 
     final logAsync = ref.watch(dailyEntryProvider(widget.date));
-    // Symptoms watched for UI reactivity only; seeding happens in initState.
     ref.watch(painSymptomsProvider(widget.date));
 
     return Scaffold(
       backgroundColor: bgColor,
-      appBar: AppBar(
-        backgroundColor: bgColor,
-        elevation: 0,
-        title: Text(l10n.daily_entry_title),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-          tooltip: l10n.daily_entry_cancel,
-        ),
-        actions: [
-          if (_hasExistingLog)
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              tooltip: l10n.common_delete,
-              onPressed: _delete,
-            ),
-        ],
-      ),
       body: logAsync.when(
-        loading: () => Center(
-          child: Semantics(
-            label: l10n.common_loading,
-            child: const CircularProgressIndicator(),
+        loading: () => SafeArea(
+          child: Center(
+            child: Semantics(
+              label: l10n.common_loading,
+              child: const CircularProgressIndicator(),
+            ),
           ),
         ),
-        error: (_, __) => Center(
-          child: Semantics(
-            liveRegion: true,
-            child: Text(l10n.common_error_generic),
+        error: (_, __) => SafeArea(
+          child: Center(
+            child: Semantics(
+              liveRegion: true,
+              child: Text(l10n.common_error_generic),
+            ),
           ),
         ),
-        data: (_) => _buildForm(context, l10n),
+        data: (_) => _buildForm(context, l10n, isDark),
       ),
     );
   }
 
-  Widget _buildForm(BuildContext context, AppLocalizations l10n) {
+  Widget _buildForm(BuildContext context, AppLocalizations l10n, bool isDark) {
+    final textPrimary =
+        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
+    final textSecondary = isDark
+        ? MetraColors.dark.textSecondary
+        : MetraColors.light.textSecondary;
+    final accentFlow =
+        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
+    final bgSurface =
+        isDark ? MetraColors.dark.bgSurface : MetraColors.light.bgSurface;
+    final dividerColor = isDark ? Colors.white12 : Colors.black12;
+
+    final locale = Localizations.localeOf(context).languageCode;
+    final rawDate = DateFormat('EEEE d MMMM', locale).format(widget.date);
+    final dateStr = rawDate.substring(0, 1).toUpperCase() + rawDate.substring(1);
+
+    final sectionLabelStyle = MetraTypography.caption.copyWith(
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.06 * 12,
+      color: textPrimary.withValues(alpha: 0.40),
+    );
+
     return SafeArea(
       child: Column(
         children: [
+          // Bare header — no Material AppBar.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => context.pop(),
+                      behavior: HitTestBehavior.opaque,
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.arrow_back_ios_rounded,
+                          size: 18,
+                          color: textSecondary,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    if (_hasExistingLog)
+                      GestureDetector(
+                        onTap: _delete,
+                        behavior: HitTestBehavior.opaque,
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Icon(
+                            Icons.delete_outline,
+                            size: 20,
+                            color: textSecondary,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  dateStr,
+                  style: MetraTypography.caption.copyWith(color: textSecondary),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  l10n.today_how_are_you,
+                  style: MetraTypography.displayMd.copyWith(color: textPrimary),
+                ),
+              ],
+            ),
+          ),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(MetraSpacing.s4),
+              padding: const EdgeInsets.symmetric(horizontal: MetraSpacing.s6),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Flow section
-                  SectionTitleMetra(title: l10n.daily_entry_flow_label),
-                  const SizedBox(height: MetraSpacing.s3),
+                  // ── Flusso ─────────────────────────────────────────────
+                  Text(
+                    l10n.daily_entry_flow_label.toUpperCase(),
+                    style: sectionLabelStyle,
+                  ),
+                  const SizedBox(height: MetraSpacing.s4),
                   FlowTypeChips(
                     selected: _flowType,
                     onChanged: (newType) {
@@ -300,133 +348,350 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
                   ],
                   if (_flowType == FlowType.spotting) ...[
                     const SizedBox(height: MetraSpacing.s3),
-                    Text(l10n.daily_entry_spotting_note),
+                    Text(
+                      l10n.daily_entry_spotting_note,
+                      style: MetraTypography.caption.copyWith(
+                        color: textSecondary,
+                      ),
+                    ),
                   ],
                   if (_flowType == FlowType.assente) ...[
                     const SizedBox(height: MetraSpacing.s3),
                     Row(
                       children: [
-                        const Icon(Icons.check, size: 16),
+                        Icon(Icons.check, color: accentFlow, size: 16),
                         const SizedBox(width: MetraSpacing.s2),
-                        Text(l10n.daily_entry_assente_confirmation),
+                        Text(
+                          l10n.daily_entry_assente_confirmation,
+                          style: MetraTypography.caption.copyWith(
+                            color: textPrimary,
+                          ),
+                        ),
                       ],
                     ),
                   ],
                   const SizedBox(height: MetraSpacing.s6),
+                  Divider(color: dividerColor, thickness: 1, height: 1),
+                  const SizedBox(height: MetraSpacing.s6),
 
-                  // Pain section — toggle + slider.
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      SectionTitleMetra(title: l10n.daily_entry_pain_label),
-                      Semantics(
-                        label: l10n.daily_entry_pain_label,
-                        toggled: _painEnabled,
-                        child: Switch(
-                          value: _painEnabled,
-                          onChanged: (v) => setState(() => _painEnabled = v),
-                        ),
-                      ),
-                    ],
+                  // ── Dolore ────────────────────────────────────────────
+                  Text(
+                    l10n.today_pain_intensity_label.toUpperCase(),
+                    style: sectionLabelStyle,
                   ),
-                  PainIntensitySlider(
-                    enabled: _painEnabled,
-                    value: _painIntensity,
+                  const SizedBox(height: MetraSpacing.s4),
+                  CirclePainPicker(
+                    selected: _painIntensity,
                     onChanged: (v) => setState(() => _painIntensity = v),
                   ),
                   const SizedBox(height: MetraSpacing.s6),
-
-                  // Symptoms section
-                  SectionTitleMetra(title: l10n.daily_entry_symptoms_label),
-                  const SizedBox(height: MetraSpacing.s3),
-                  SymptomChipsRow(
-                    selected: _selectedSymptoms,
-                    onChanged: (s) => setState(() => _selectedSymptoms = s),
-                  ),
+                  Divider(color: dividerColor, thickness: 1, height: 1),
                   const SizedBox(height: MetraSpacing.s6),
 
-                  // Notes section — toggle + text field.
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  // ── Sintomi ───────────────────────────────────────────
+                  Text(
+                    l10n.daily_entry_symptoms_label.toUpperCase(),
+                    style: sectionLabelStyle,
+                  ),
+                  const SizedBox(height: MetraSpacing.s4),
+                  Wrap(
+                    spacing: MetraSpacing.s2,
+                    runSpacing: MetraSpacing.s2,
                     children: [
-                      SectionTitleMetra(title: l10n.daily_entry_notes_label),
-                      Semantics(
-                        label: l10n.daily_entry_notes_label,
-                        toggled: _notesEnabled,
-                        child: Switch(
-                          value: _notesEnabled,
-                          onChanged: (v) => setState(() => _notesEnabled = v),
-                        ),
-                      ),
+                      ..._buildSymptomChips(l10n, textPrimary, textSecondary),
                     ],
                   ),
-                  if (_notesEnabled) ...[
-                    const SizedBox(height: MetraSpacing.s3),
-                    Semantics(
-                      label: l10n.daily_entry_notes_label,
-                      textField: true,
-                      child: TextFieldMetra(
-                        controller: _notesController,
-                        hint: l10n.daily_entry_notes_placeholder,
-                        maxLines: null,
+                  const SizedBox(height: MetraSpacing.s6),
+                  Divider(color: dividerColor, thickness: 1, height: 1),
+                  const SizedBox(height: MetraSpacing.s6),
+
+                  // ── Nota libera ───────────────────────────────────────
+                  Text(
+                    l10n.today_notes_label.toUpperCase(),
+                    style: sectionLabelStyle,
+                  ),
+                  const SizedBox(height: MetraSpacing.s4),
+                  TextField(
+                    controller: _notesController,
+                    minLines: 3,
+                    maxLines: 6,
+                    style: MetraTypography.body.copyWith(color: textPrimary),
+                    decoration: InputDecoration(
+                      hintText: l10n.today_notes_hint,
+                      hintStyle: MetraTypography.body.copyWith(
+                        color: textSecondary,
+                      ),
+                      filled: true,
+                      fillColor: bgSurface,
+                      contentPadding: const EdgeInsets.all(MetraSpacing.s4),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(MetraRadius.md),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(MetraRadius.md),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(MetraRadius.md),
+                        borderSide: BorderSide(color: accentFlow, width: 1.5),
                       ),
                     ),
-                  ],
+                  ),
                   const SizedBox(height: MetraSpacing.s8),
                 ],
               ),
             ),
           ),
-          // Bottom action bar — always visible.
-          _BottomBar(onSave: _save, onCancel: () => context.pop()),
+          // ── Save CTA ─────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              MetraSpacing.s6,
+              0,
+              MetraSpacing.s6,
+              MetraSpacing.s4,
+            ),
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(56),
+                backgroundColor: accentFlow,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              onPressed: _save,
+              icon: const Icon(Icons.check, size: 18),
+              label: Text(l10n.daily_entry_save_action),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  static const List<PainSymptomType> _symptomTypes = [
+    PainSymptomType.cramps,
+    PainSymptomType.headache,
+    PainSymptomType.fatigue,
+    PainSymptomType.backPain,
+    PainSymptomType.nausea,
+    PainSymptomType.bloating,
+    PainSymptomType.breastTenderness,
+  ];
+
+  String _symptomLabel(PainSymptomType type, AppLocalizations l10n) =>
+      switch (type) {
+        PainSymptomType.cramps => l10n.daily_entry_symptom_cramps,
+        PainSymptomType.headache => l10n.daily_entry_symptom_headache,
+        PainSymptomType.bloating => l10n.daily_entry_symptom_bloating,
+        PainSymptomType.backPain => l10n.daily_entry_symptom_backPain,
+        PainSymptomType.migraine => l10n.daily_entry_symptom_migraine,
+        PainSymptomType.custom => l10n.daily_entry_symptom_custom,
+        PainSymptomType.fatigue => l10n.daily_entry_symptom_fatigue,
+        PainSymptomType.nausea => l10n.daily_entry_symptom_nausea,
+        PainSymptomType.breastTenderness =>
+          l10n.daily_entry_symptom_breastTenderness,
+      };
+
+  List<Widget> _buildSymptomChips(
+    AppLocalizations l10n,
+    Color textPrimary,
+    Color textSecondary,
+  ) {
+    final chips = _symptomTypes.map((type) {
+      final label = _symptomLabel(type, l10n);
+      return ChoiceChipMetra(
+        label: label,
+        selected: _selectedSymptoms.contains(type),
+        semanticsLabel: label,
+        onSelected: (isSelected) {
+          setState(() {
+            final updated = Set<PainSymptomType>.from(_selectedSymptoms);
+            if (isSelected) {
+              updated.add(type);
+            } else {
+              updated.remove(type);
+            }
+            _selectedSymptoms = updated;
+          });
+        },
+      );
+    }).toList();
+
+    final Widget addWidget = _addingSymptom
+        ? _InlineSymptomInput(
+            controller: _customSymptomController,
+            textSecondary: textSecondary,
+            onConfirm: () {
+              final text = _customSymptomController.text.trim();
+              setState(() {
+                if (text.isNotEmpty) {
+                  _selectedSymptoms = {
+                    ..._selectedSymptoms,
+                    PainSymptomType.custom,
+                  };
+                }
+                _addingSymptom = false;
+                _customSymptomController.clear();
+              });
+            },
+            onCancel: () => setState(() {
+              _addingSymptom = false;
+              _customSymptomController.clear();
+            }),
+          )
+        : GestureDetector(
+            onTap: () => setState(() => _addingSymptom = true),
+            child: _AddSymptomChip(
+              label: l10n.today_add_symptom,
+              textSecondary: textSecondary,
+            ),
+          );
+
+    return [...chips, addWidget];
+  }
+}
+
+// ── Inline symptom input ──────────────────────────────────────────────────────
+
+class _InlineSymptomInput extends StatelessWidget {
+  const _InlineSymptomInput({
+    required this.controller,
+    required this.textSecondary,
+    required this.onConfirm,
+    required this.onCancel,
+  });
+
+  final TextEditingController controller;
+  final Color textSecondary;
+  final VoidCallback onConfirm;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 100, maxWidth: 160),
+          child: TextField(
+            controller: controller,
+            autofocus: true,
+            onSubmitted: (_) => onConfirm(),
+            style: MetraTypography.caption.copyWith(color: textSecondary),
+            decoration: InputDecoration(
+              hintText: 'es. Vertigini',
+              hintStyle: MetraTypography.caption.copyWith(
+                color: textSecondary.withValues(alpha: 0.5),
+              ),
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: MetraSpacing.s4,
+                vertical: MetraSpacing.s2,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(MetraRadius.pill),
+                borderSide:
+                    BorderSide(color: textSecondary.withValues(alpha: 0.25)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(MetraRadius.pill),
+                borderSide:
+                    BorderSide(color: textSecondary.withValues(alpha: 0.25)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(MetraRadius.pill),
+                borderSide:
+                    BorderSide(color: textSecondary.withValues(alpha: 0.5)),
+              ),
+            ),
+          ),
+        ),
+        TextButton(
+          onPressed: onConfirm,
+          style: TextButton.styleFrom(
+            minimumSize: const Size(44, 44),
+            padding: EdgeInsets.zero,
+          ),
+          child: Text(
+            'OK',
+            style: MetraTypography.caption.copyWith(
+              color: textSecondary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Dashed "add" chip ─────────────────────────────────────────────────────────
+
+class _AddSymptomChip extends StatelessWidget {
+  const _AddSymptomChip({required this.label, required this.textSecondary});
+
+  final String label;
+  final Color textSecondary;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _DashedBorderPainter(color: textSecondary.withValues(alpha: 0.25)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: MetraSpacing.s4,
+          vertical: MetraSpacing.s2,
+        ),
+        child: Text(
+          label,
+          style: MetraTypography.caption.copyWith(
+            color: textSecondary.withValues(alpha: 0.40),
+          ),
+        ),
       ),
     );
   }
 }
 
-class _BottomBar extends StatelessWidget {
-  const _BottomBar({required this.onSave, required this.onCancel});
-
-  final VoidCallback onSave;
-  final VoidCallback onCancel;
+class _DashedBorderPainter extends CustomPainter {
+  const _DashedBorderPainter({required this.color});
+  final Color color;
 
   @override
-  Widget build(BuildContext context) {
-    // safe: delegates registered in MetraApp
-    final l10n = AppLocalizations.of(context)!;
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor =
-        isDark ? MetraColors.dark.bgSurface : MetraColors.light.bgSurface;
-    final borderColor =
-        isDark ? MetraColors.dark.borderSubtle : MetraColors.light.borderSubtle;
+  void paint(Canvas canvas, Size size) {
+    const dashWidth = 4.0;
+    const dashSpace = 3.0;
+    const radius = 20.0;
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: bgColor,
-        border: Border(top: BorderSide(color: borderColor)),
-      ),
-      padding: const EdgeInsets.symmetric(
-        horizontal: MetraSpacing.s4,
-        vertical: MetraSpacing.s3,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: ButtonPrimary(
-              label: l10n.daily_entry_save_action,
-              semanticsLabel: l10n.daily_entry_save_action,
-              onPressed: onSave,
-            ),
+    final path = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(0, 0, size.width, size.height),
+          const Radius.circular(radius),
+        ),
+      );
+
+    final pathMetrics = path.computeMetrics();
+    for (final metric in pathMetrics) {
+      double distance = 0;
+      while (distance < metric.length) {
+        canvas.drawPath(
+          metric.extractPath(
+            distance,
+            (distance + dashWidth).clamp(0, metric.length),
           ),
-          const SizedBox(width: MetraSpacing.s3),
-          ButtonGhost(
-            label: l10n.daily_entry_cancel,
-            semanticsLabel: l10n.daily_entry_cancel,
-            onPressed: onCancel,
-          ),
-        ],
-      ),
-    );
+          paint,
+        );
+        distance += dashWidth + dashSpace;
+      }
+    }
   }
+
+  @override
+  bool shouldRepaint(_DashedBorderPainter old) => old.color != color;
 }

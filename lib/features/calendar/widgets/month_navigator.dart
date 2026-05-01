@@ -23,8 +23,8 @@ import '../../../core/theme/metra_typography.dart';
 
 /// Month/year navigation header for the calendar screen.
 ///
-/// Accessibility labels are passed in as strings by the caller so this
-/// widget has no context dependency on [AppLocalizations].
+/// Spec § 8.1: left column = month name (DM Serif Display 26) + optional
+/// cycle-day caption row; right column = prev/next chevrons.
 class MonthNavigator extends StatelessWidget {
   const MonthNavigator({
     super.key,
@@ -34,6 +34,7 @@ class MonthNavigator extends StatelessWidget {
     required this.onPrev,
     required this.onNext,
     this.canGoNext = true,
+    this.cycleDay,
   });
 
   final String title;
@@ -45,38 +46,75 @@ class MonthNavigator extends StatelessWidget {
   /// When false, the next-month button is hidden (already at current month).
   final bool canGoNext;
 
+  /// Optional current cycle day number shown below the month name.
+  final int? cycleDay;
+
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor =
+    final textPrimary =
         isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
-    final iconColor =
-        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
+    final textSecondary = isDark
+        ? MetraColors.dark.textSecondary
+        : MetraColors.light.textSecondary;
+    final chevronActive = textPrimary;
+    final chevronInactive = textPrimary.withValues(alpha: 0.40);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: MetraSpacing.s4,
-        vertical: MetraSpacing.s2,
+      padding: const EdgeInsets.fromLTRB(
+        MetraSpacing.s4,
+        MetraSpacing.s3,
+        MetraSpacing.s2,
+        MetraSpacing.s2,
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          // Left: month name + optional cycle-day caption.
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: MetraTypography.displayMd.copyWith(color: textPrimary),
+                ),
+                if (cycleDay != null) ...[
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.brightness_2_rounded,
+                        size: 14,
+                        color: textSecondary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Giorno $cycleDay',
+                        style: MetraTypography.caption.copyWith(
+                          color: textSecondary,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+          // Right: prev / next buttons.
           Semantics(
             label: prevLabel,
             button: true,
             child: IconButton(
               onPressed: onPrev,
-              icon: Icon(Icons.chevron_left, color: iconColor),
+              icon: Icon(Icons.chevron_left, color: chevronInactive),
               tooltip: prevLabel,
-              iconSize: 28,
-              // Minimum 44×44 tap target.
+              iconSize: 24,
               constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
               padding: EdgeInsets.zero,
             ),
-          ),
-          Text(
-            title,
-            style: MetraTypography.titleMd.copyWith(color: textColor),
           ),
           Semantics(
             label: nextLabel,
@@ -87,13 +125,10 @@ class MonthNavigator extends StatelessWidget {
                 ignoring: !canGoNext,
                 child: IconButton(
                   onPressed: canGoNext ? onNext : null,
-                  icon: Icon(Icons.chevron_right, color: iconColor),
+                  icon: Icon(Icons.chevron_right, color: chevronActive),
                   tooltip: nextLabel,
-                  iconSize: 28,
-                  constraints: const BoxConstraints(
-                    minWidth: 44,
-                    minHeight: 44,
-                  ),
+                  iconSize: 24,
+                  constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
                   padding: EdgeInsets.zero,
                 ),
               ),

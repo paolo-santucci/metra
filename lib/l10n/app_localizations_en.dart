@@ -554,6 +554,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboarding_privacy_continue => 'Continue';
 
   @override
+  String get onboarding_headline => 'Tell me\nabout your cycle.';
+
+  @override
+  String get onboarding_subhead =>
+      'You can always change this later. No precise answers needed.';
+
+  @override
+  String get onboarding_cycle_length_label => 'Average cycle length';
+
+  @override
+  String get onboarding_all_set => 'All set →';
+
+  @override
+  String get onboarding_date_placeholder => 'Select date';
+
+  @override
   String get settings_section_about => 'About';
 
   @override

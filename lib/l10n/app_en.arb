@@ -424,6 +424,11 @@
   "onboarding_privacy_item3_title": "Your data is always exportable",
   "onboarding_privacy_item3_body": "You can download everything at any time.",
   "onboarding_privacy_continue": "Continue",
+  "onboarding_headline": "Tell me\nabout your cycle.",
+  "onboarding_subhead": "You can always change this later. No precise answers needed.",
+  "onboarding_cycle_length_label": "Average cycle length",
+  "onboarding_all_set": "All set →",
+  "onboarding_date_placeholder": "Select date",
 
   "settings_section_about": "About",
   "@settings_section_about": {

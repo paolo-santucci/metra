@@ -844,6 +844,21 @@
   "onboarding_privacy_continue": "Continua",
   "@onboarding_privacy_continue": { "description": "CTA button on onboarding privacy screen" },
 
+  "onboarding_headline": "Raccontami\nil tuo ciclo.",
+  "@onboarding_headline": { "description": "Main headline on onboarding data-entry screen (step 2 of 2)" },
+
+  "onboarding_subhead": "Puoi sempre modificarlo dopo. Non servono risposte precise.",
+  "@onboarding_subhead": { "description": "Subhead below headline on onboarding data-entry screen" },
+
+  "onboarding_cycle_length_label": "Durata media ciclo",
+  "@onboarding_cycle_length_label": { "description": "Micro-label above cycle-length stepper on onboarding" },
+
+  "onboarding_all_set": "Tutto pronto →",
+  "@onboarding_all_set": { "description": "CTA on onboarding data-entry screen; arrow is part of the label" },
+
+  "onboarding_date_placeholder": "Seleziona data",
+  "@onboarding_date_placeholder": { "description": "Placeholder text in the date input when no date is selected" },
+
   "settings_section_about": "Informazioni",
   "@settings_section_about": {
     "description": "Settings group header: about section"

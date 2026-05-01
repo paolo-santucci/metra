@@ -139,7 +139,7 @@ void main() {
       expect(fakeNotifier.lastSaved?.otherDischarge, isTrue);
     });
 
-    testWidgets('pain section disabled on save clears painIntensity',
+    testWidgets('pain deselected via CirclePainPicker clears painIntensity',
         (tester) async {
       final existingLog = DailyLogEntity(
         date: _testDate,
@@ -159,9 +159,8 @@ void main() {
       await tester.pumpAndSettle();
       await _navigate(tester);
 
-      // Toggle pain off — the first Switch after navigation.
-      final painSwitch = find.byType(Switch).first;
-      await tester.tap(painSwitch);
+      // Tap the already-selected "Moderato" circle to deselect pain.
+      await tester.tap(find.text('Moderato'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Salva giornata'));

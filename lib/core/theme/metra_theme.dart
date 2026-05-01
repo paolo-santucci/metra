@@ -65,6 +65,35 @@ abstract final class MetraTheme {
         ),
       ),
       dividerColor: colors.divider,
+      navigationBarTheme: NavigationBarThemeData(
+        // Active-state = icon/label color only; no pill indicator background.
+        indicatorColor: Colors.transparent,
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return IconThemeData(color: colors.terracotta, size: 24);
+          }
+          return IconThemeData(
+            color: colors.ink.withValues(alpha: 0.30),
+            size: 24,
+          );
+        }),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: colors.terracotta,
+            );
+          }
+          return TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 11,
+            fontWeight: FontWeight.w400,
+            color: colors.ink.withValues(alpha: 0.55),
+          );
+        }),
+      ),
       useMaterial3: true,
     );
   }
@@ -112,6 +141,34 @@ abstract final class MetraTheme {
         ),
       ),
       dividerColor: colors.dividerDark,
+      navigationBarTheme: NavigationBarThemeData(
+        indicatorColor: Colors.transparent,
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return IconThemeData(color: colors.mutedTerracotta, size: 24);
+          }
+          return IconThemeData(
+            color: colors.ivory.withValues(alpha: 0.30),
+            size: 24,
+          );
+        }),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: colors.mutedTerracotta,
+            );
+          }
+          return TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 11,
+            fontWeight: FontWeight.w400,
+            color: colors.ivory.withValues(alpha: 0.55),
+          );
+        }),
+      ),
       useMaterial3: true,
     );
   }

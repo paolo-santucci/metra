@@ -1,8 +1,10 @@
 # Métra — UI Alignment Sprint Status
 
-**Last updated**: 2026-05-01 (all design-alignment fixes complete)  
+**Last updated**: 2026-05-01 (Design Bible authored)  
 **Active plan**: Design Alignment Fixes (4-phase, 2026-05-01)  
 **Plan location**: `.claude/docs/plans/2026-05-01-design-alignment-fixes.md`
+
+> **🕮 Canonical UI source of truth: [`design/DESIGN-BIBLE.md`](design/DESIGN-BIBLE.md)** — transcribes `design/Métra Screens Light.html`. Read at every session boot. All UI changes must conform; deviation requires updating the HTML mockup first.
 
 ---
 
@@ -42,7 +44,7 @@ All 7 issues from `what-you-MUST-fix.md` resolved. All 405 tests green.
 - **BackupSnapshot v2**: added `flow_type` field; reads v1 snapshots via old-spotting-bool derivation.
 - **UX-02 intensity preservation**: `_lastMensIntensity` local state in today/historical screens — persists last-known intensity when switching away from mestruazioni; restores on switch-back.
 - **Calendar selection**: `_selectedDate` is non-nullable `DateTime`, initialized to today UTC; `_DayDetailCard` always rendered.
-- **Onboarding flow**: 3-step (welcome → privacy → data entry); `_PrivacyPage` is step 2/3.
+- **Onboarding flow**: 2-step (welcome → first cycle). `_PrivacyPage` removed; canvas only renders Manifesto + Primo Ciclo.
 
 ## Key files reference
 

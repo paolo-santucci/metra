@@ -555,6 +555,22 @@ class AppLocalizationsIt extends AppLocalizations {
   String get onboarding_privacy_continue => 'Continua';
 
   @override
+  String get onboarding_headline => 'Raccontami\nil tuo ciclo.';
+
+  @override
+  String get onboarding_subhead =>
+      'Puoi sempre modificarlo dopo. Non servono risposte precise.';
+
+  @override
+  String get onboarding_cycle_length_label => 'Durata media ciclo';
+
+  @override
+  String get onboarding_all_set => 'Tutto pronto →';
+
+  @override
+  String get onboarding_date_placeholder => 'Seleziona data';
+
+  @override
   String get settings_section_about => 'Informazioni';
 
   @override

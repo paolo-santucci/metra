@@ -1058,6 +1058,36 @@ abstract class AppLocalizations {
   /// **'Continua'**
   String get onboarding_privacy_continue;
 
+  /// Main headline on onboarding data-entry screen (step 2 of 2)
+  ///
+  /// In it, this message translates to:
+  /// **'Raccontami\nil tuo ciclo.'**
+  String get onboarding_headline;
+
+  /// Subhead below headline on onboarding data-entry screen
+  ///
+  /// In it, this message translates to:
+  /// **'Puoi sempre modificarlo dopo. Non servono risposte precise.'**
+  String get onboarding_subhead;
+
+  /// Micro-label above cycle-length stepper on onboarding
+  ///
+  /// In it, this message translates to:
+  /// **'Durata media ciclo'**
+  String get onboarding_cycle_length_label;
+
+  /// CTA on onboarding data-entry screen; arrow is part of the label
+  ///
+  /// In it, this message translates to:
+  /// **'Tutto pronto →'**
+  String get onboarding_all_set;
+
+  /// Placeholder text in the date input when no date is selected
+  ///
+  /// In it, this message translates to:
+  /// **'Seleziona data'**
+  String get onboarding_date_placeholder;
+
   /// Settings group header: about section
   ///
   /// In it, this message translates to:

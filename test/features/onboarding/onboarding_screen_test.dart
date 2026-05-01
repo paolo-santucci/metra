@@ -34,7 +34,7 @@ Widget _wrap({List<Override> overrides = const []}) => ProviderScope(
     );
 
 void main() {
-  group('OnboardingScreen — welcome page', () {
+  group('OnboardingScreen — welcome page (step 1 of 2)', () {
     testWidgets('shows tagline and Get started button', (tester) async {
       await tester.pumpWidget(_wrap());
       await tester.pumpAndSettle();
@@ -43,7 +43,7 @@ void main() {
       expect(find.text('Get started'), findsOneWidget);
     });
 
-    testWidgets('Get started navigates to privacy page', (tester) async {
+    testWidgets('Get started navigates directly to data page', (tester) async {
       tester.view.physicalSize = const Size(800, 1800);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
@@ -57,79 +57,13 @@ void main() {
       await tester.tap(find.text('Get started'));
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('Your privacy is the foundation.'),
-        findsOneWidget,
-      );
+      // Lands on the data page (step 2 of 2), not a privacy screen.
+      expect(find.textContaining('Tell me'), findsOneWidget);
     });
   });
 
-  group('OnboardingScreen — privacy page', () {
-    testWidgets('shows all three trust items', (tester) async {
-      tester.view.physicalSize = const Size(800, 1800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
-
-      await tester.pumpWidget(_wrap());
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Get started'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Everything on your device'), findsOneWidget);
-      expect(find.text('No account needed'), findsOneWidget);
-      expect(find.text('Your data is always exportable'), findsOneWidget);
-    });
-
-    testWidgets('Continue navigates to data page', (tester) async {
-      tester.view.physicalSize = const Size(800, 1800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
-
-      await tester.pumpWidget(_wrap());
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Get started'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Continue'));
-      await tester.pumpAndSettle();
-
-      expect(
-        find.textContaining('First day of your last menstruation'),
-        findsOneWidget,
-      );
-    });
-  });
-
-  group('OnboardingScreen — data page', () {
-    testWidgets('navigates to data page after welcome and privacy',
-        (tester) async {
-      tester.view.physicalSize = const Size(800, 1800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
-
-      await tester.pumpWidget(_wrap());
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Get started'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Continue'));
-      await tester.pumpAndSettle();
-
-      expect(
-        find.textContaining('First day of your last menstruation'),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('Start button is disabled with no date selected',
+  group('OnboardingScreen — data page (step 2 of 2)', () {
+    testWidgets('navigates to data page after tapping Get started',
         (tester) async {
       tester.view.physicalSize = const Size(800, 1800);
       tester.view.devicePixelRatio = 1.0;
@@ -142,11 +76,26 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Get started'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Continue'));
+
+      expect(find.textContaining('Tell me'), findsOneWidget);
+    });
+
+    testWidgets('All set button is disabled with no date selected',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 1800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(_wrap());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Get started'));
       await tester.pumpAndSettle();
 
       final button = tester.widget<FilledButton>(
-        find.widgetWithText(FilledButton, 'Start'),
+        find.widgetWithText(FilledButton, 'All set →'),
       );
       expect(button.onPressed, isNull);
     });
@@ -163,8 +112,6 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Get started'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Continue'));
-      await tester.pumpAndSettle();
 
       expect(find.text('28'), findsOneWidget);
     });
@@ -180,8 +127,6 @@ void main() {
       await tester.pumpWidget(_wrap());
       await tester.pumpAndSettle();
       await tester.tap(find.text('Get started'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.widgetWithIcon(IconButton, Icons.add));

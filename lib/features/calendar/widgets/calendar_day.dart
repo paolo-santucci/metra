@@ -24,8 +24,8 @@ import '../../../core/theme/metra_colors.dart';
 /// > today > default. States are mutually exclusive in decoration; only one
 /// visual treatment is applied at a time.
 ///
-/// [hasNote] is accepted for interface compatibility but has no visual output
-/// in this design; note indicators are rendered at the parent grid level.
+/// Indicator dots (spec § 8.3.2) are rendered below the day number:
+/// terracotta = flow logged, lavanda = predicted, malva = pain logged.
 ///
 /// Accessibility: caller provides the full [semanticsLabel] string
 /// (e.g. "Flusso medio, 15 aprile 2026"). Widget never constructs it.
@@ -38,6 +38,7 @@ class CalendarDay extends StatelessWidget {
     this.isSpotting = false,
     this.hasPrediction = false,
     this.hasNote = false,
+    this.hasPain = false,
     this.isToday = false,
     this.isSelected = false,
     this.onTap,
@@ -48,6 +49,7 @@ class CalendarDay extends StatelessWidget {
   final bool isSpotting;
   final bool hasPrediction;
   final bool hasNote;
+  final bool hasPain;
   final bool isToday;
   final bool isSelected;
   final VoidCallback? onTap;
@@ -78,6 +80,19 @@ class CalendarDay extends StatelessWidget {
       accentPrediction: accentPrediction,
     );
 
+    // Build indicator dots (spec § 8.3.2): shown below the day number.
+    // Selected cell uses reversed colors; dots use the cell background color.
+    final dotFlow = isSelected ? bgPrimary : accentFlow;
+    final dotPrediction = isSelected ? bgPrimary : accentPrediction;
+    final dotPain = isSelected
+        ? bgPrimary
+        : (isDark ? MetraColors.dark.accentPain : MetraColors.light.accentPain);
+
+    final dots = <Widget>[];
+    if (isFlow || isSpotting) dots.add(_Dot(color: dotFlow));
+    if (hasPrediction && !isFlow) dots.add(_Dot(color: dotPrediction));
+    if (hasPain) dots.add(_Dot(color: dotPain));
+
     return Semantics(
       label: semanticsLabel,
       button: onTap != null,
@@ -94,15 +109,31 @@ class CalendarDay extends StatelessWidget {
             borderRadius: BorderRadius.circular(_borderRadius),
             border: border,
           ),
-          alignment: Alignment.center,
-          child: Text(
-            '${date.day}',
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 15,
-              fontWeight: fontWeight,
-              color: textColor,
-            ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '${date.day}',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 15,
+                  fontWeight: fontWeight,
+                  color: textColor,
+                ),
+              ),
+              if (dots.isNotEmpty) ...[
+                const SizedBox(height: 3),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    for (int i = 0; i < dots.length; i++) ...[
+                      if (i > 0) const SizedBox(width: 2),
+                      dots[i],
+                    ],
+                  ],
+                ),
+              ],
+            ],
           ),
         ),
       ),
@@ -179,6 +210,25 @@ class CalendarDay extends StatelessWidget {
       null,
       textPrimary.withValues(alpha: 0.60),
       FontWeight.w400,
+    );
+  }
+}
+
+// ── Indicator dot ─────────────────────────────────────────────────────────────
+
+class _Dot extends StatelessWidget {
+  const _Dot({required this.color});
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 5,
+      height: 5,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+      ),
     );
   }
 }
