@@ -16,13 +16,12 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart' as intl;
 
 import '../../../core/theme/metra_colors.dart';
-import '../../../core/theme/metra_spacing.dart';
-import '../../../core/theme/metra_typography.dart';
 import '../../../domain/entities/cycle_summary.dart';
-import '../../../domain/entities/pain_symptom_type.dart';
+import '../../../domain/entities/flow_intensity.dart';
 import '../../../l10n/app_localizations.dart';
 
 class TableView extends StatelessWidget {
@@ -34,126 +33,175 @@ class TableView extends StatelessWidget {
   Widget build(BuildContext context) {
     if (summaries.isEmpty) return const _TableEmptyState();
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final headerStyle = MetraTypography.caption.copyWith(
-      color: isDark
-          ? MetraColors.dark.textSecondary
-          : MetraColors.light.textSecondary,
-      fontWeight: FontWeight.w600,
-    );
-    final cellStyle = MetraTypography.body.copyWith(
-      color:
-          isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary,
-      fontSize: 14,
-    );
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(MetraSpacing.s4),
-      child: Table(
-        columnWidths: const {
-          0: FlexColumnWidth(2),
-          1: FlexColumnWidth(1),
-          2: FlexColumnWidth(1),
-          3: FlexColumnWidth(2),
-        },
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 90),
+      child: Column(
         children: [
-          TableRow(
-            children: [
-              l10n.table_col_start,
-              l10n.table_col_cycle,
-              l10n.table_col_period,
-              l10n.table_col_symptoms,
-            ]
-                .map(
-                  (label) => Semantics(
-                    header: true,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: MetraSpacing.s2,
-                      ),
-                      child: Text(
-                        label,
-                        style: headerStyle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                )
-                .toList(),
-          ),
-          ...summaries.map((s) {
-            final dateStr = intl.DateFormat('d MMM', 'it').format(
-              s.cycle.startDate,
-            );
-            final cycleLenStr = s.cycle.cycleLength != null
-                ? '${s.cycle.cycleLength} g'
-                : l10n.table_cycle_dash;
-            final periodLenStr = s.cycle.periodLength != null
-                ? '${s.cycle.periodLength} g'
-                : l10n.table_cycle_dash;
-            final symptomsStr = _formatSymptoms(s.symptoms, l10n);
-
-            return TableRow(
-              children: [dateStr, cycleLenStr, periodLenStr, symptomsStr]
-                  .map(
-                    (text) => Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: MetraSpacing.s3,
-                      ),
-                      child: Text(
-                        text,
-                        style: cellStyle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  )
-                  .toList(),
-            );
-          }),
+          _HeaderRow(l10n: l10n),
+          ...summaries.map((s) => _DataRow(summary: s)),
         ],
       ),
     );
   }
+}
 
-  String _formatSymptoms(
-    List<PainSymptomType> symptoms,
-    AppLocalizations l10n,
-  ) {
-    if (symptoms.isEmpty) return '—';
-    final labels = symptoms
-        .map((s) => _symptomLabel(l10n, s))
-        .where((s) => s.isNotEmpty)
-        .toList();
-    if (labels.isEmpty) return '—';
-    if (labels.length <= 2) return labels.join(', ');
-    return '${labels.take(2).join(', ')}…';
+class _HeaderRow extends StatelessWidget {
+  const _HeaderRow({required this.l10n});
+
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final ink = MetraColors.light.ink;
+    final labelStyle = GoogleFonts.inter(
+      fontSize: 11,
+      fontWeight: FontWeight.w600,
+      // rgba(43,37,33,0.68) — inchiostro at 68% opacity per §10.4
+      color: ink.withValues(alpha: 0.68),
+      letterSpacing: 0.44, // 0.04em × 11px
+    );
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+      decoration: BoxDecoration(
+        color: ink.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: _CellRow(
+        mese: Text(
+          // TODO: use l10n.table_col_month when ARB key lands (agent 4b)
+          'Mese',
+          style: labelStyle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        ciclo: Text(
+          l10n.table_col_cycle,
+          style: labelStyle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        dur: Text(
+          // TODO: use l10n.table_col_duration when ARB key lands (agent 4b)
+          'Dur.',
+          style: labelStyle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        flusso: Text(
+          // TODO: use l10n.table_col_flow when ARB key lands (agent 4b)
+          'Flusso',
+          style: labelStyle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+  }
+}
+
+class _DataRow extends StatelessWidget {
+  const _DataRow({required this.summary});
+
+  final CycleSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final ink = MetraColors.light.ink;
+    final tcScura = MetraColors.light.terracottaDeep;
+
+    final raw = intl.DateFormat.yMMM('it').format(summary.cycle.startDate);
+    final month = raw[0].toUpperCase() + raw.substring(1);
+
+    final meseStyle = GoogleFonts.inter(fontSize: 14, color: ink);
+    final secondaryStyle = GoogleFonts.inter(
+      fontSize: 14,
+      color: ink.withValues(alpha: 0.60),
+    );
+    final flussoStyle = GoogleFonts.inter(fontSize: 13, color: tcScura);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+      decoration: BoxDecoration(
+        color: MetraColors.light.bgSurface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: ink.withValues(alpha: 0.06)),
+      ),
+      child: _CellRow(
+        mese: Text(
+          month,
+          style: meseStyle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        ciclo: Text(
+          '${summary.cycle.cycleLength ?? '—'}g',
+          style: secondaryStyle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        dur: Text(
+          '${summary.cycle.periodLength ?? '—'}g',
+          style: secondaryStyle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        flusso: Text(
+          _flowLabel(summary.dominantFlow),
+          style: flussoStyle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
   }
 
-  String _symptomLabel(AppLocalizations l10n, PainSymptomType type) {
-    switch (type) {
-      case PainSymptomType.cramps:
-        return l10n.daily_entry_symptom_cramps;
-      case PainSymptomType.backPain:
-        return l10n.daily_entry_symptom_backPain;
-      case PainSymptomType.headache:
-        return l10n.daily_entry_symptom_headache;
-      case PainSymptomType.migraine:
-        return l10n.daily_entry_symptom_migraine;
-      case PainSymptomType.bloating:
-        return l10n.daily_entry_symptom_bloating;
-      case PainSymptomType.fatigue:
-        return l10n.daily_entry_symptom_fatigue;
-      case PainSymptomType.nausea:
-        return l10n.daily_entry_symptom_nausea;
-      case PainSymptomType.breastTenderness:
-        return l10n.daily_entry_symptom_breastTenderness;
-      case PainSymptomType.custom:
-        // custom symptoms carry no fixed label; caller filters empty strings.
-        return '';
+  String _flowLabel(FlowIntensity? flow) {
+    switch (flow) {
+      case null:
+        return '—';
+      case FlowIntensity.light:
+        return 'Leggero';
+      case FlowIntensity.medium:
+        return 'Moderato';
+      case FlowIntensity.heavy:
+      // veryHeavy is a v3 back-compat value — treated as Abbondante
+      case FlowIntensity.veryHeavy:
+        return 'Abbondante';
     }
+  }
+}
+
+/// Four-column row layout matching §10.4 grid "1fr 60px 50px 80px" with gap 8.
+class _CellRow extends StatelessWidget {
+  const _CellRow({
+    required this.mese,
+    required this.ciclo,
+    required this.dur,
+    required this.flusso,
+  });
+
+  final Widget mese;
+  final Widget ciclo;
+  final Widget dur;
+  final Widget flusso;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(child: mese),
+        const SizedBox(width: 8),
+        SizedBox(width: 60, child: ciclo),
+        const SizedBox(width: 8),
+        SizedBox(width: 50, child: dur),
+        const SizedBox(width: 8),
+        SizedBox(width: 80, child: flusso),
+      ],
+    );
   }
 }
 
@@ -163,18 +211,15 @@ class _TableEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(MetraSpacing.s8),
+        padding: const EdgeInsets.all(64),
         child: Text(
           l10n.timeline_empty_hint,
           textAlign: TextAlign.center,
-          style: TextStyle(
-            color: isDark
-                ? MetraColors.dark.textSecondary
-                : MetraColors.light.textSecondary,
+          style: GoogleFonts.inter(
             fontSize: 15,
+            color: MetraColors.light.textSecondary,
           ),
         ),
       ),
