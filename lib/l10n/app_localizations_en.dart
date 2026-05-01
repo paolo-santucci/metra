@@ -337,34 +337,65 @@ class AppLocalizationsEn extends AppLocalizations {
   String get table_cycle_dash => '—';
 
   @override
-  String get stats_cycle_length_title => 'Cycle length';
-
-  @override
-  String get stats_period_length_title => 'Period length';
-
-  @override
-  String get stats_symptoms_title => 'Frequent symptoms';
-
-  @override
-  String get stats_flow_title => 'Flow intensity';
-
-  @override
   String get stats_insufficient_data => 'Insufficient data';
 
   @override
-  String stats_cycle_length_avg(int n) {
-    return '$n d on average';
+  String get stats_title => 'Statistics';
+
+  @override
+  String get stats_subtitle => 'Last 6 cycles';
+
+  @override
+  String get stats_card_cycle_length_title => 'Average cycle length';
+
+  @override
+  String get stats_card_cycle_length_unit => 'days';
+
+  @override
+  String stats_card_cycle_length_sub(int min, int max) {
+    return 'Range: $min–${max}d';
   }
 
   @override
-  String stats_period_length_avg(int n) {
-    return '$n d on average';
+  String get stats_card_period_length_title => 'Average period length';
+
+  @override
+  String get stats_card_period_length_unit => 'days';
+
+  @override
+  String stats_card_period_length_sub(int min, int max) {
+    return 'Range: $min–${max}d';
   }
 
   @override
-  String stats_n_days(int n) {
-    return '$n days';
-  }
+  String get stats_card_pain_title => 'Average pain';
+
+  @override
+  String get stats_card_pain_unit => '/3';
+
+  @override
+  String get stats_card_pain_trend_decreasing => 'Trend: decreasing';
+
+  @override
+  String get stats_card_pain_trend_increasing => 'Trend: increasing';
+
+  @override
+  String get stats_card_pain_trend_stable => 'Trend: stable';
+
+  @override
+  String get stats_card_cycles_title => 'Tracked cycles';
+
+  @override
+  String get stats_card_cycles_unit => 'total';
+
+  @override
+  String get stats_chart_cycle_length_title => 'Cycle length (days)';
+
+  @override
+  String get stats_chart_pain_title => 'Pain intensity (0–3)';
+
+  @override
+  String get stats_symptom_card_title => 'Most frequent symptoms';
 
   @override
   String get timeline_view_toggle => 'Timeline';

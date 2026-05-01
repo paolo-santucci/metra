@@ -18,87 +18,49 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/metra_colors.dart';
-import '../../../core/theme/metra_spacing.dart';
 import '../../../domain/entities/pain_symptom_type.dart';
 import '../../../l10n/app_localizations.dart';
 
 class SymptomFrequencyChart extends StatelessWidget {
-  const SymptomFrequencyChart({super.key, required this.frequencies});
+  const SymptomFrequencyChart({
+    super.key,
+    required this.counts,
+    required this.totalCycles,
+  });
 
-  final Map<PainSymptomType, double> frequencies;
+  final Map<PainSymptomType, int> counts;
+  final int totalCycles;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final barColor =
-        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
-    final trackColor =
-        isDark ? MetraColors.dark.bgSunken : MetraColors.light.bgSunken;
-    final textColor = isDark
-        ? MetraColors.dark.textSecondary
-        : MetraColors.light.textSecondary;
 
-    final nonZero = frequencies.entries
-        .where(
-          (e) =>
-              e.key != PainSymptomType.custom &&
-              e.value > 0, // custom excluded per P-2 scope (§1)
-        )
-        .toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+    final nonZero =
+        counts.entries
+            .where((e) => e.key != PainSymptomType.custom && e.value > 0)
+            .toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
 
-    if (nonZero.isEmpty) {
+    if (nonZero.isEmpty || totalCycles == 0) {
       return Text(
         l10n.stats_insufficient_data,
-        style: TextStyle(color: textColor, fontSize: 14),
+        style: TextStyle(
+          color: MetraColors.light.textSecondary,
+          fontSize: 14,
+        ),
       );
     }
 
     return Column(
-      children: nonZero.map((entry) {
-        final pct = (entry.value * 100).round();
-        final label = _symptomLabel(l10n, entry.key);
-        return Semantics(
-          label: '$label, $pct%',
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: MetraSpacing.s1),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 90,
-                  child: Text(
-                    label,
-                    style: TextStyle(color: textColor, fontSize: 13),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: MetraSpacing.s2),
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: entry.value,
-                      backgroundColor: trackColor,
-                      valueColor: AlwaysStoppedAnimation<Color>(barColor),
-                      minHeight: 8,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: MetraSpacing.s2),
-                SizedBox(
-                  width: 36,
-                  child: Text(
-                    '$pct%',
-                    textAlign: TextAlign.right,
-                    style: TextStyle(color: textColor, fontSize: 12),
-                  ),
-                ),
-              ],
-            ),
+      children: [
+        for (var i = 0; i < nonZero.length; i++)
+          _SymptomRow(
+            label: _symptomLabel(l10n, nonZero[i].key),
+            count: nonZero[i].value,
+            totalCycles: totalCycles,
+            isLast: i == nonZero.length - 1,
           ),
-        );
-      }).toList(),
+      ],
     );
   }
 
@@ -123,5 +85,78 @@ class SymptomFrequencyChart extends StatelessWidget {
       case PainSymptomType.custom:
         return '';
     }
+  }
+}
+
+class _SymptomRow extends StatelessWidget {
+  const _SymptomRow({
+    required this.label,
+    required this.count,
+    required this.totalCycles,
+    required this.isLast,
+  });
+
+  final String label;
+  final int count;
+  final int totalCycles;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    final widthFactor = (count / totalCycles).clamp(0.0, 1.0);
+
+    return Semantics(
+      label: '$label, $count di $totalCycles',
+      child: Padding(
+        padding: EdgeInsets.only(bottom: isLast ? 0 : 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: MetraColors.light.textPrimary,
+                    fontSize: 13,
+                    fontFamily: 'Inter',
+                  ),
+                ),
+                Text(
+                  '$count/$totalCycles',
+                  style: TextStyle(
+                    color: MetraColors.light.textSecondary,
+                    fontSize: 13,
+                    fontFamily: 'Inter',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Container(
+              height: 6,
+              decoration: BoxDecoration(
+                color: MetraColors.light.ink.withAlpha(0x14),
+                borderRadius: BorderRadius.circular(3),
+              ),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: FractionallySizedBox(
+                  widthFactor: widthFactor,
+                  child: Container(
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: MetraColors.light.dustyOchre,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

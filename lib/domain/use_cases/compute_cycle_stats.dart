@@ -18,6 +18,7 @@
 import '../entities/cycle_stats_data.dart';
 import '../entities/cycle_summary.dart';
 import '../entities/pain_symptom_type.dart';
+import '../entities/pain_trend.dart';
 import 'get_cycle_summaries.dart';
 
 class ComputeCycleStats {
@@ -41,6 +42,7 @@ class ComputeCycleStats {
             cycleLength: s.cycle.cycleLength!,
             periodLength: s.cycle.periodLength,
             dominantFlow: s.dominantFlow,
+            dominantPainIntensity: s.dominantPainIntensity,
           ),
         )
         .toList();
@@ -55,12 +57,70 @@ class ComputeCycleStats {
       PainSymptomType.nausea,
       PainSymptomType.breastTenderness,
     ];
-    final frequencies = <PainSymptomType, double>{
+
+    final counts = <PainSymptomType, int>{
       for (final type in fixedTypes)
-        type: complete.where((s) => s.symptoms.contains(type)).length /
-            complete.length,
+        type: complete.where((s) => s.symptoms.contains(type)).length,
     };
 
-    return CycleStatsData(points: points, symptomFrequencies: frequencies);
+    final cycleLengths = points.map((p) => p.cycleLength).toList();
+    final cycleLengthSum = cycleLengths.fold(0, (a, b) => a + b);
+    final cycleLengthAvg = (cycleLengthSum / points.length).round();
+    final cycleLengthMin = cycleLengths.reduce((a, b) => a < b ? a : b);
+    final cycleLengthMax = cycleLengths.reduce((a, b) => a > b ? a : b);
+
+    final periodLengths =
+        points.map((p) => p.periodLength).whereType<int>().toList();
+    double? periodLengthAvg;
+    int? periodLengthMin;
+    int? periodLengthMax;
+    if (periodLengths.isNotEmpty) {
+      final periodSum = periodLengths.fold(0, (a, b) => a + b);
+      periodLengthAvg = periodSum / periodLengths.length;
+      periodLengthMin = periodLengths.reduce((a, b) => a < b ? a : b);
+      periodLengthMax = periodLengths.reduce((a, b) => a > b ? a : b);
+    }
+
+    final painValues =
+        points.map((p) => p.dominantPainIntensity).whereType<int>().toList();
+    double? painIntensityAvg;
+    PainTrend? painTrend;
+    if (painValues.isNotEmpty) {
+      final painSum = painValues.fold(0, (a, b) => a + b);
+      painIntensityAvg = painSum / painValues.length;
+    }
+    if (painValues.length >= 3) {
+      painTrend = _computePainTrend(painValues);
+    }
+
+    return CycleStatsData(
+      points: points,
+      cycleLengthAvg: cycleLengthAvg,
+      cycleLengthMin: cycleLengthMin,
+      cycleLengthMax: cycleLengthMax,
+      periodLengthAvg: periodLengthAvg,
+      periodLengthMin: periodLengthMin,
+      periodLengthMax: periodLengthMax,
+      painIntensityAvg: painIntensityAvg,
+      painTrend: painTrend,
+      cyclesTrackedCount: points.length,
+      symptomCounts: counts,
+    );
+  }
+
+  static PainTrend _computePainTrend(List<int> painValues) {
+    final midpoint = painValues.length ~/ 2;
+    final firstHalf = painValues.sublist(0, midpoint);
+    final secondHalf = painValues.sublist(midpoint);
+
+    final firstSum = firstHalf.fold(0, (a, b) => a + b);
+    final secondSum = secondHalf.fold(0, (a, b) => a + b);
+    final firstMean = firstSum / firstHalf.length;
+    final secondMean = secondSum / secondHalf.length;
+    final diff = secondMean - firstMean;
+
+    if (diff > 0.3) return PainTrend.increasing;
+    if (diff < -0.3) return PainTrend.decreasing;
+    return PainTrend.stable;
   }
 }

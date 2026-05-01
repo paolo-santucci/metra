@@ -680,53 +680,119 @@ abstract class AppLocalizations {
   /// **'—'**
   String get table_cycle_dash;
 
-  /// Stat card title: cycle length chart
-  ///
-  /// In it, this message translates to:
-  /// **'Lunghezza ciclo'**
-  String get stats_cycle_length_title;
-
-  /// Stat card title: period length chart
-  ///
-  /// In it, this message translates to:
-  /// **'Durata mestruazione'**
-  String get stats_period_length_title;
-
-  /// Stat card title: symptom frequency chart
-  ///
-  /// In it, this message translates to:
-  /// **'Sintomi frequenti'**
-  String get stats_symptoms_title;
-
-  /// Stat card title: flow intensity chart
-  ///
-  /// In it, this message translates to:
-  /// **'Intensità flusso'**
-  String get stats_flow_title;
-
-  /// Shown inside a stat card when there are no complete cycles
+  /// Shown when there are no complete cycles to display
   ///
   /// In it, this message translates to:
   /// **'Dati insufficienti'**
   String get stats_insufficient_data;
 
-  /// Average cycle length label below the cycle-length chart
+  /// Statistiche screen header title (§ 11.1)
   ///
   /// In it, this message translates to:
-  /// **'{n} g in media'**
-  String stats_cycle_length_avg(int n);
+  /// **'Statistiche'**
+  String get stats_title;
 
-  /// Average period length label below the period-length chart
+  /// Statistiche screen header subtitle (§ 11.1)
   ///
   /// In it, this message translates to:
-  /// **'{n} g in media'**
-  String stats_period_length_avg(int n);
+  /// **'Ultimi 6 cicli'**
+  String get stats_subtitle;
 
-  /// Accessibility label fragment: n days, used in chart semantics labels
+  /// Summary card title (§ 11.3)
   ///
   /// In it, this message translates to:
-  /// **'{n} giorni'**
-  String stats_n_days(int n);
+  /// **'Durata media ciclo'**
+  String get stats_card_cycle_length_title;
+
+  /// Summary card unit: days
+  ///
+  /// In it, this message translates to:
+  /// **'giorni'**
+  String get stats_card_cycle_length_unit;
+
+  /// Summary card sub: cycle length range
+  ///
+  /// In it, this message translates to:
+  /// **'Range: {min}–{max}g'**
+  String stats_card_cycle_length_sub(int min, int max);
+
+  /// Summary card title (§ 11.3)
+  ///
+  /// In it, this message translates to:
+  /// **'Durata media flusso'**
+  String get stats_card_period_length_title;
+
+  /// Summary card unit: days
+  ///
+  /// In it, this message translates to:
+  /// **'giorni'**
+  String get stats_card_period_length_unit;
+
+  /// Summary card sub: period length range
+  ///
+  /// In it, this message translates to:
+  /// **'Range: {min}–{max}g'**
+  String stats_card_period_length_sub(int min, int max);
+
+  /// Summary card title: average pain (§ 11.3)
+  ///
+  /// In it, this message translates to:
+  /// **'Dolore medio'**
+  String get stats_card_pain_title;
+
+  /// Summary card unit: pain scale /3
+  ///
+  /// In it, this message translates to:
+  /// **'/3'**
+  String get stats_card_pain_unit;
+
+  /// Pain trend sub: decreasing
+  ///
+  /// In it, this message translates to:
+  /// **'Trend in calo'**
+  String get stats_card_pain_trend_decreasing;
+
+  /// Pain trend sub: increasing
+  ///
+  /// In it, this message translates to:
+  /// **'Trend in aumento'**
+  String get stats_card_pain_trend_increasing;
+
+  /// Pain trend sub: stable
+  ///
+  /// In it, this message translates to:
+  /// **'Trend stabile'**
+  String get stats_card_pain_trend_stable;
+
+  /// Summary card title: tracked cycles (§ 11.3)
+  ///
+  /// In it, this message translates to:
+  /// **'Cicli tracciati'**
+  String get stats_card_cycles_title;
+
+  /// Summary card unit: total
+  ///
+  /// In it, this message translates to:
+  /// **'totali'**
+  String get stats_card_cycles_unit;
+
+  /// MiniBar chart title: cycle length (§ 11.4)
+  ///
+  /// In it, this message translates to:
+  /// **'Durata ciclo (giorni)'**
+  String get stats_chart_cycle_length_title;
+
+  /// MiniBar chart title: pain intensity (§ 11.4)
+  ///
+  /// In it, this message translates to:
+  /// **'Intensità dolore (0–3)'**
+  String get stats_chart_pain_title;
+
+  /// Symptom frequency card title (§ 11.5)
+  ///
+  /// In it, this message translates to:
+  /// **'Sintomi più frequenti'**
+  String get stats_symptom_card_title;
 
   /// Segmented control label for timeline view
   ///

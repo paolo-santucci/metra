@@ -294,25 +294,68 @@
 
   "table_col_cycle": "Cycle",
   "table_cycle_dash": "—",
-  "stats_cycle_length_title": "Cycle length",
-  "stats_period_length_title": "Period length",
-  "stats_symptoms_title": "Frequent symptoms",
-  "stats_flow_title": "Flow intensity",
   "stats_insufficient_data": "Insufficient data",
-  "stats_cycle_length_avg": "{n} d on average",
-  "@stats_cycle_length_avg": {
-    "placeholders": { "n": { "type": "int" } }
+  "@stats_insufficient_data": { "description": "Shown when there are no complete cycles to display" },
+
+  "stats_title": "Statistics",
+  "@stats_title": { "description": "Statistiche screen header title (§ 11.1)" },
+
+  "stats_subtitle": "Last 6 cycles",
+  "@stats_subtitle": { "description": "Statistiche screen header subtitle (§ 11.1)" },
+
+  "stats_card_cycle_length_title": "Average cycle length",
+  "@stats_card_cycle_length_title": { "description": "Summary card title (§ 11.3)" },
+
+  "stats_card_cycle_length_unit": "days",
+  "@stats_card_cycle_length_unit": { "description": "Summary card unit: days" },
+
+  "stats_card_cycle_length_sub": "Range: {min}–{max}d",
+  "@stats_card_cycle_length_sub": {
+    "description": "Summary card sub: cycle length range",
+    "placeholders": { "min": { "type": "int" }, "max": { "type": "int" } }
   },
-  "stats_period_length_avg": "{n} d on average",
-  "@stats_period_length_avg": {
-    "placeholders": { "n": { "type": "int" } }
+
+  "stats_card_period_length_title": "Average period length",
+  "@stats_card_period_length_title": { "description": "Summary card title (§ 11.3)" },
+
+  "stats_card_period_length_unit": "days",
+  "@stats_card_period_length_unit": { "description": "Summary card unit: days" },
+
+  "stats_card_period_length_sub": "Range: {min}–{max}d",
+  "@stats_card_period_length_sub": {
+    "description": "Summary card sub: period length range",
+    "placeholders": { "min": { "type": "int" }, "max": { "type": "int" } }
   },
-  "stats_n_days": "{n} days",
-  "@stats_n_days": {
-    "placeholders": {
-      "n": { "type": "int" }
-    }
-  },
+
+  "stats_card_pain_title": "Average pain",
+  "@stats_card_pain_title": { "description": "Summary card title: average pain (§ 11.3)" },
+
+  "stats_card_pain_unit": "/3",
+  "@stats_card_pain_unit": { "description": "Summary card unit: pain scale /3" },
+
+  "stats_card_pain_trend_decreasing": "Trend: decreasing",
+  "@stats_card_pain_trend_decreasing": { "description": "Pain trend sub: decreasing" },
+
+  "stats_card_pain_trend_increasing": "Trend: increasing",
+  "@stats_card_pain_trend_increasing": { "description": "Pain trend sub: increasing" },
+
+  "stats_card_pain_trend_stable": "Trend: stable",
+  "@stats_card_pain_trend_stable": { "description": "Pain trend sub: stable" },
+
+  "stats_card_cycles_title": "Tracked cycles",
+  "@stats_card_cycles_title": { "description": "Summary card title: tracked cycles (§ 11.3)" },
+
+  "stats_card_cycles_unit": "total",
+  "@stats_card_cycles_unit": { "description": "Summary card unit: total" },
+
+  "stats_chart_cycle_length_title": "Cycle length (days)",
+  "@stats_chart_cycle_length_title": { "description": "MiniBar chart title: cycle length (§ 11.4)" },
+
+  "stats_chart_pain_title": "Pain intensity (0–3)",
+  "@stats_chart_pain_title": { "description": "MiniBar chart title: pain intensity (§ 11.4)" },
+
+  "stats_symptom_card_title": "Most frequent symptoms",
+  "@stats_symptom_card_title": { "description": "Symptom frequency card title (§ 11.5)" },
   "timeline_view_toggle": "Timeline",
   "table_view_toggle": "Table",
 

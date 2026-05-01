@@ -22,18 +22,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/theme/metra_theme.dart';
 import 'package:metra/domain/entities/cycle_stats_data.dart';
-import 'package:metra/domain/entities/flow_intensity.dart';
 import 'package:metra/domain/entities/pain_symptom_type.dart';
 import 'package:metra/features/stats/state/stats_controller.dart';
 import 'package:metra/features/stats/stats_screen.dart';
-import 'package:metra/features/stats/widgets/cycle_length_chart.dart';
-import 'package:metra/features/stats/widgets/flow_intensity_chart.dart';
-import 'package:metra/features/stats/widgets/period_length_chart.dart';
+import 'package:metra/features/stats/widgets/mini_bar_chart.dart';
+import 'package:metra/features/stats/widgets/stat_card.dart';
 import 'package:metra/features/stats/widgets/symptom_frequency_chart.dart';
 import 'package:metra/l10n/app_localizations.dart';
-
-// Fake notifiers — extend StatsNotifier and override build().
-// Do NOT call super.build() — these are pure stubs.
 
 class _LoadingNotifier extends StatsNotifier {
   @override
@@ -52,7 +47,6 @@ class _DataNotifier extends StatsNotifier {
   Future<CycleStatsData?> build() async => _data;
 }
 
-// Helper: wrap StatsScreen with ProviderScope + MaterialApp
 Widget _wrap(List<Override> overrides) {
   return ProviderScope(
     overrides: overrides,
@@ -66,59 +60,42 @@ Widget _wrap(List<Override> overrides) {
   );
 }
 
-// Minimal CycleStatsData with 2 data points (below the 3-cycle gate)
-CycleStatsData _makeTwoPointData() => CycleStatsData(
-      points: [
-        CycleDataPoint(
-          startDate: DateTime.utc(2026, 1, 10),
-          cycleLength: 28,
-          periodLength: 5,
-          dominantFlow: FlowIntensity.medium,
-        ),
-        CycleDataPoint(
-          startDate: DateTime.utc(2026, 2, 7),
-          cycleLength: 30,
-          periodLength: 6,
-          dominantFlow: FlowIntensity.light,
-        ),
-      ],
-      symptomFrequencies: {
-        PainSymptomType.cramps: 0.8,
-        PainSymptomType.backPain: 0.4,
-        PainSymptomType.headache: 0.2,
-        PainSymptomType.migraine: 0.1,
-        PainSymptomType.bloating: 0.5,
-      },
-    );
-
-// CycleStatsData with 3 data points (meets the 3-cycle gate)
 CycleStatsData _makeStatsData() => CycleStatsData(
       points: [
         CycleDataPoint(
           startDate: DateTime.utc(2026, 1, 10),
           cycleLength: 28,
           periodLength: 5,
-          dominantFlow: FlowIntensity.medium,
         ),
         CycleDataPoint(
           startDate: DateTime.utc(2026, 2, 7),
           cycleLength: 30,
           periodLength: 6,
-          dominantFlow: FlowIntensity.light,
         ),
         CycleDataPoint(
           startDate: DateTime.utc(2026, 3, 9),
           cycleLength: 29,
           periodLength: 5,
-          dominantFlow: FlowIntensity.heavy,
         ),
       ],
-      symptomFrequencies: {
-        PainSymptomType.cramps: 0.8,
-        PainSymptomType.backPain: 0.4,
-        PainSymptomType.headache: 0.2,
-        PainSymptomType.migraine: 0.1,
-        PainSymptomType.bloating: 0.5,
+      cycleLengthAvg: 29,
+      cycleLengthMin: 28,
+      cycleLengthMax: 30,
+      periodLengthAvg: 5.3,
+      periodLengthMin: 5,
+      periodLengthMax: 6,
+      painIntensityAvg: null,
+      painTrend: null,
+      cyclesTrackedCount: 3,
+      symptomCounts: {
+        PainSymptomType.cramps: 2,
+        PainSymptomType.backPain: 1,
+        PainSymptomType.headache: 0,
+        PainSymptomType.migraine: 0,
+        PainSymptomType.bloating: 1,
+        PainSymptomType.fatigue: 1,
+        PainSymptomType.nausea: 0,
+        PainSymptomType.breastTenderness: 0,
       },
     );
 
@@ -144,44 +121,16 @@ void main() {
   });
 
   group('StatsScreen — null data', () {
-    testWidgets('shows insufficient data text in all four stat cards',
-        (tester) async {
+    testWidgets('shows insufficient data text', (tester) async {
       await tester.pumpWidget(
         _wrap([statsProvider.overrideWith(() => _DataNotifier(null))]),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Dati insufficienti'), findsNWidgets(4));
-    });
-  });
-
-  group('StatsScreen — fewer than 3 cycles', () {
-    testWidgets('shows insufficient data text in all four stat cards',
-        (tester) async {
-      await tester.pumpWidget(
-        _wrap([
-          statsProvider.overrideWith(() => _DataNotifier(_makeTwoPointData())),
-        ]),
-      );
-      await tester.pumpAndSettle();
-      expect(find.text('Dati insufficienti'), findsNWidgets(4));
+      expect(find.text('Dati insufficienti'), findsOneWidget);
     });
   });
 
   group('StatsScreen — with data', () {
-    testWidgets('renders four chart widgets when data is available',
-        (tester) async {
-      await tester.pumpWidget(
-        _wrap([
-          statsProvider.overrideWith(() => _DataNotifier(_makeStatsData())),
-        ]),
-      );
-      await tester.pumpAndSettle();
-      expect(find.byType(CycleLengthChart), findsOneWidget);
-      expect(find.byType(PeriodLengthChart), findsOneWidget);
-      expect(find.byType(SymptomFrequencyChart), findsOneWidget);
-      expect(find.byType(FlowIntensityChart), findsOneWidget);
-    });
-
     testWidgets('does not show insufficient data text when data is present',
         (tester) async {
       await tester.pumpWidget(
@@ -191,6 +140,56 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Dati insufficienti'), findsNothing);
+    });
+
+    testWidgets('renders StatSummaryCard widgets', (tester) async {
+      await tester.pumpWidget(
+        _wrap([
+          statsProvider.overrideWith(() => _DataNotifier(_makeStatsData())),
+        ]),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(StatSummaryCard), findsWidgets);
+    });
+
+    testWidgets('renders MiniBarChart widgets', (tester) async {
+      await tester.pumpWidget(
+        _wrap([
+          statsProvider.overrideWith(() => _DataNotifier(_makeStatsData())),
+        ]),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(MiniBarChart), findsWidgets);
+    });
+
+    testWidgets('renders SymptomFrequencyChart widget', (tester) async {
+      await tester.pumpWidget(
+        _wrap([
+          statsProvider.overrideWith(() => _DataNotifier(_makeStatsData())),
+        ]),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(SymptomFrequencyChart), findsOneWidget);
+    });
+
+    testWidgets('header shows title Statistiche', (tester) async {
+      await tester.pumpWidget(
+        _wrap([
+          statsProvider.overrideWith(() => _DataNotifier(_makeStatsData())),
+        ]),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Statistiche'), findsOneWidget);
+    });
+
+    testWidgets('header shows subtitle Ultimi 6 cicli', (tester) async {
+      await tester.pumpWidget(
+        _wrap([
+          statsProvider.overrideWith(() => _DataNotifier(_makeStatsData())),
+        ]),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Ultimi 6 cicli'), findsOneWidget);
     });
   });
 }

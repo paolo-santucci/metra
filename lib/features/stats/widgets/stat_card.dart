@@ -16,44 +16,89 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/metra_colors.dart';
 import '../../../core/theme/metra_spacing.dart';
 import '../../../core/theme/metra_typography.dart';
 
-class StatCard extends StatelessWidget {
-  const StatCard({super.key, required this.title, required this.child});
+class StatSummaryCard extends StatelessWidget {
+  const StatSummaryCard({
+    super.key,
+    required this.title,
+    required this.value,
+    required this.unit,
+    this.sub,
+    this.isAccent = false,
+  });
 
   final String title;
-  final Widget child;
+  final String value;
+  final String unit;
+  final String? sub;
+  final bool isAccent;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isAccent
+        ? MetraColors.light.terracotta.withAlpha(0x44)
+        : MetraColors.light.borderSubtle;
+    final valueColor = isAccent
+        ? MetraColors.light.terracotta
+        : MetraColors.light.textPrimary;
+
     return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: MetraSpacing.s4,
-        vertical: MetraSpacing.s2,
-      ),
-      padding: const EdgeInsets.all(MetraSpacing.s4),
       decoration: BoxDecoration(
-        color:
-            isDark ? MetraColors.dark.bgSurface : MetraColors.light.bgSurface,
-        borderRadius: BorderRadius.circular(MetraRadius.md),
+        color: MetraColors.light.bgSurface,
+        borderRadius: BorderRadius.circular(MetraRadius.lg),
+        border: Border.all(color: borderColor),
+      ),
+      padding: const EdgeInsets.symmetric(
+        vertical: MetraSpacing.s4,
+        horizontal: MetraSpacing.sp18,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: MetraTypography.titleSm.copyWith(
-              color: isDark
-                  ? MetraColors.dark.textPrimary
-                  : MetraColors.light.textPrimary,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+              color: MetraColors.light.textSecondary,
             ),
           ),
-          const SizedBox(height: MetraSpacing.s3),
-          child,
+          const SizedBox(height: 6),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                value,
+                style: MetraTypography.statCard.copyWith(color: valueColor),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                unit,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: MetraColors.light.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          if (sub != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              sub!,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+                color: MetraColors.light.textSecondary,
+              ),
+            ),
+          ],
         ],
       ),
     );
