@@ -18,6 +18,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../core/widgets/metra_tab_bar.dart';
 import '../features/backup/backup_screen.dart';
 import '../features/calendar/calendar_screen.dart';
 import '../features/daily_entry/historical_entry_screen.dart';
@@ -109,30 +110,6 @@ class _ScaffoldWithNav extends StatelessWidget {
 
   final Widget child;
 
-  // Italian labels: source of truth is the mockup (mockup/scripts/i18n.js).
-  static const _destinations = [
-    NavigationDestination(
-      icon: Icon(Icons.calendar_today_outlined),
-      label: 'Calendario',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.edit_note_outlined),
-      label: 'Oggi',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.view_timeline_outlined),
-      label: 'Archivio',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.bar_chart_outlined),
-      label: 'Statistiche',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.settings_outlined),
-      label: 'Impostazioni',
-    ),
-  ];
-
   static const _paths = <String>[
     '/calendar',
     '/oggi',
@@ -151,10 +128,9 @@ class _ScaffoldWithNav extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex(context),
-        onDestinationSelected: (index) => context.go(_paths[index]),
-        destinations: _destinations,
+      bottomNavigationBar: MetraTabBar(
+        currentIndex: _currentIndex(context),
+        onTabSelected: (index) => context.go(_paths[index]),
       ),
     );
   }
