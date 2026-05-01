@@ -24,52 +24,53 @@ Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
 void main() {
   group('MetraTabBar', () {
     testWidgets('renders exactly 84 dp high', (tester) async {
-      await tester.pumpWidget(_wrap(
-        MetraTabBar(currentIndex: 0, onTabSelected: (_) {}),
-      ));
+      await tester.pumpWidget(
+        _wrap(MetraTabBar(currentIndex: 0, onTabSelected: (_) {})),
+      );
       final size = tester.getSize(find.byType(MetraTabBar));
       expect(size.height, equals(84.0));
     });
 
     testWidgets('contains a BackdropFilter', (tester) async {
-      await tester.pumpWidget(_wrap(
-        MetraTabBar(currentIndex: 0, onTabSelected: (_) {}),
-      ));
+      await tester.pumpWidget(
+        _wrap(MetraTabBar(currentIndex: 0, onTabSelected: (_) {})),
+      );
       expect(find.byType(BackdropFilter), findsOneWidget);
     });
 
     testWidgets('contains no Material NavigationBar', (tester) async {
-      await tester.pumpWidget(_wrap(
-        MetraTabBar(currentIndex: 0, onTabSelected: (_) {}),
-      ));
+      await tester.pumpWidget(
+        _wrap(MetraTabBar(currentIndex: 0, onTabSelected: (_) {})),
+      );
       expect(find.byType(NavigationBar), findsNothing);
     });
 
     testWidgets('shows 5 tab items', (tester) async {
-      await tester.pumpWidget(_wrap(
-        MetraTabBar(currentIndex: 0, onTabSelected: (_) {}),
-      ));
+      await tester.pumpWidget(
+        _wrap(MetraTabBar(currentIndex: 0, onTabSelected: (_) {})),
+      );
       expect(find.byType(GestureDetector), findsNWidgets(5));
     });
 
     testWidgets('calls onTabSelected with correct index on tap', (tester) async {
       int? tapped;
-      await tester.pumpWidget(_wrap(
-        MetraTabBar(
-          currentIndex: 0,
-          onTabSelected: (i) => tapped = i,
+      await tester.pumpWidget(
+        _wrap(
+          MetraTabBar(
+            currentIndex: 0,
+            onTabSelected: (i) => tapped = i,
+          ),
         ),
-      ));
-      // Tap the third tab (Archivio, index 2)
+      );
       final gestures = find.byType(GestureDetector);
       await tester.tap(gestures.at(2));
       expect(tapped, equals(2));
     });
 
     testWidgets('shows all Italian tab labels', (tester) async {
-      await tester.pumpWidget(_wrap(
-        MetraTabBar(currentIndex: 0, onTabSelected: (_) {}),
-      ));
+      await tester.pumpWidget(
+        _wrap(MetraTabBar(currentIndex: 0, onTabSelected: (_) {})),
+      );
       expect(find.text('Calendario'), findsOneWidget);
       expect(find.text('Oggi'), findsOneWidget);
       expect(find.text('Archivio'), findsOneWidget);
