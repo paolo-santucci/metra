@@ -53,18 +53,12 @@ class CalendarLegend extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.start,
+            // Bible CL-01: Previsione must be last.
             children: [
               _LegendItem(
                 icon: Icons.water_drop,
                 color: accentFlow,
                 label: l10n.calendar_legend_mestruazioni,
-                textColor: textSecondary,
-              ),
-              const SizedBox(width: 16),
-              _LegendItem(
-                icon: Icons.water_drop_outlined,
-                color: accentPrediction,
-                label: l10n.calendar_legend_prediction,
                 textColor: textSecondary,
               ),
               const SizedBox(width: 16),
@@ -79,6 +73,13 @@ class CalendarLegend extends StatelessWidget {
                 icon: Icons.bolt,
                 color: accentPain,
                 label: l10n.calendar_legend_dolore,
+                textColor: textSecondary,
+              ),
+              const SizedBox(width: 16),
+              _LegendItem(
+                icon: Icons.water_drop_outlined,
+                color: accentPrediction,
+                label: l10n.calendar_legend_prediction,
                 textColor: textSecondary,
               ),
             ],

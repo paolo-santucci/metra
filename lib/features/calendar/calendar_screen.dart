@@ -23,6 +23,7 @@ import 'package:intl/intl.dart' as intl;
 import '../../core/theme/metra_colors.dart';
 import '../../core/theme/metra_spacing.dart';
 import '../../core/theme/metra_typography.dart';
+import '../../core/widgets/metra_icon.dart';
 import '../../domain/entities/cycle_prediction.dart';
 import '../../domain/entities/daily_log_entity.dart';
 import '../../domain/entities/flow_intensity.dart';
@@ -58,16 +59,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     _selectedDate = DateTime.utc(now.year, now.month, now.day);
   }
 
-  /// Builds locale-aware single-character day-of-week headers, Monday first.
-  ///
-  /// 2024-01-01 is a Monday, so iterating i=0..6 over that week gives Mon→Sun.
-  List<String> _buildDayHeaders(String locale) {
-    final fmt = intl.DateFormat.E(locale);
-    return List.generate(7, (i) {
-      final d = DateTime(2024, 1, i + 1);
-      return fmt.format(d).substring(0, 1).toUpperCase();
-    });
-  }
+  // Italian day-of-week initials, Monday first (Bible § 8.2).
+  static const List<String> _dayHeaders = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
 
   @override
   Widget build(BuildContext context) {
@@ -128,15 +121,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 ),
                 // Day-of-week header row.
                 _DayOfWeekHeader(
-                  labels: _buildDayHeaders(locale),
+                  labels: _dayHeaders,
                   isDark: isDark,
-                  textColor: textColor,
                 ),
                 Expanded(
                   child: _CalendarGrid(
                     year: monthState.year,
                     month: monthState.month,
                     logs: monthState.logs,
+                    daysWithSymptoms: monthState.daysWithSymptoms,
                     today: now,
                     l10n: l10n,
                     locale: locale,
@@ -168,27 +161,28 @@ class _DayOfWeekHeader extends StatelessWidget {
   const _DayOfWeekHeader({
     required this.labels,
     required this.isDark,
-    required this.textColor,
   });
 
   final List<String> labels;
   final bool isDark;
-  final Color textColor;
 
   @override
   Widget build(BuildContext context) {
+    // Bible § 8.2: ink @ 35% alpha (0x59 = round(0.35 × 255)).
+    final labelColor = (isDark
+            ? MetraColors.dark.textPrimary
+            : MetraColors.light.textPrimary)
+        .withAlpha(0x59);
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: MetraSpacing.s2),
+      padding: const EdgeInsets.fromLTRB(12, 16, 12, 4),
       child: Row(
         children: labels.map((label) {
           return Expanded(
             child: Center(
               child: Text(
                 label,
-                style: MetraTypography.caption.copyWith(
-                  color: textColor,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: MetraTypography.dayHeader.copyWith(color: labelColor),
               ),
             ),
           );
@@ -203,6 +197,7 @@ class _CalendarGrid extends StatelessWidget {
     required this.year,
     required this.month,
     required this.logs,
+    required this.daysWithSymptoms,
     required this.today,
     required this.l10n,
     required this.locale,
@@ -214,6 +209,7 @@ class _CalendarGrid extends StatelessWidget {
   final int year;
   final int month;
   final Map<DateTime, DailyLogEntity> logs;
+  final Set<DateTime> daysWithSymptoms;
   final DateTime today;
   final AppLocalizations l10n;
   final String locale;
@@ -274,13 +270,11 @@ class _CalendarGrid extends StatelessWidget {
     final totalCells = blanks + days;
 
     return GridView.builder(
-      padding: const EdgeInsets.symmetric(
-        horizontal: MetraSpacing.s2,
-        vertical: MetraSpacing.s1,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: MetraSpacing.s3),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
         childAspectRatio: 1,
+        mainAxisSpacing: 2,
       ),
       itemCount: totalCells,
       itemBuilder: (context, index) {
@@ -302,6 +296,7 @@ class _CalendarGrid extends StatelessWidget {
         final hasNote = log?.notes != null && log!.notes!.isNotEmpty;
         final hasPrediction = prediction?.containsDate(date) ?? false;
         final hasPain = log?.painEnabled ?? false;
+        final hasSymptom = daysWithSymptoms.contains(date);
 
         return CalendarDay(
           date: date,
@@ -312,6 +307,7 @@ class _CalendarGrid extends StatelessWidget {
           hasPrediction: hasPrediction,
           hasNote: hasNote,
           hasPain: hasPain,
+          hasSymptom: hasSymptom,
           isToday: isToday,
           isSelected: selectedDate == date,
           onTap: () => onDaySelected(date),
@@ -439,13 +435,20 @@ class _DayDetailCard extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.edit_outlined, size: 16, color: accentFlow),
+                  MetraIcon(
+                    svgBody: MetraIcons.note,
+                    size: 16,
+                    color: accentFlow,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     l10n.calendar_day_detail_edit,
                     style: MetraTypography.body.copyWith(
-                      color: textPrimary,
+                      fontSize: 14,
                       fontWeight: FontWeight.w500,
+                      color: isDark
+                          ? MetraColors.dark.accentFlowStrong
+                          : MetraColors.light.terracottaDeep,
                     ),
                   ),
                 ],
@@ -487,12 +490,14 @@ class _FlowBadge extends StatelessWidget {
     if (label == null) return const SizedBox.shrink();
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      height: 32,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: accentFlow.withValues(alpha: 0.09),
         border: Border.all(color: accentFlow.withValues(alpha: 0.27)),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(MetraRadius.smm),
       ),
+      alignment: Alignment.center,
       child: Text(
         label,
         style: MetraTypography.caption.copyWith(

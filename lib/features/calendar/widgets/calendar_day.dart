@@ -18,6 +18,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/metra_colors.dart';
+import '../../../core/widgets/metra_icon.dart';
 
 /// Single calendar day cell — 48×48 dp rounded square (borderRadius 12).
 ///
@@ -25,8 +26,12 @@ import '../../../core/theme/metra_colors.dart';
 /// > today > default. States are mutually exclusive in decoration; only one
 /// visual treatment is applied at a time.
 ///
-/// Indicator dots (spec § 8.3.2) are rendered below the day number:
-/// terracotta = flow logged, lavanda = predicted, malva = pain logged.
+/// Indicator icons (spec § 8.3.2) are rendered below the day number:
+/// - flow/spotting → drop (terracotta)
+/// - prediction   → dropOutline (nightLavender) — shown independently, not
+///   suppressed when flow is also present (CL-01 fix)
+/// - symptom      → starSmall (dustyOchre)
+/// - pain         → small filled circle (malva)
 ///
 /// Accessibility: caller provides the full [semanticsLabel] string
 /// (e.g. "Flusso medio, 15 aprile 2026"). Widget never constructs it.
@@ -40,6 +45,7 @@ class CalendarDay extends StatelessWidget {
     this.hasPrediction = false,
     this.hasNote = false,
     this.hasPain = false,
+    this.hasSymptom = false,
     this.isToday = false,
     this.isSelected = false,
     this.onTap,
@@ -51,6 +57,7 @@ class CalendarDay extends StatelessWidget {
   final bool hasPrediction;
   final bool hasNote;
   final bool hasPain;
+  final bool hasSymptom;
   final bool isToday;
   final bool isSelected;
   final VoidCallback? onTap;
@@ -58,6 +65,7 @@ class CalendarDay extends StatelessWidget {
 
   static const double _cellSize = 48.0;
   static const double _borderRadius = 12.0;
+  static const double _indicatorSize = 11.0;
 
   @override
   Widget build(BuildContext context) {
@@ -72,6 +80,10 @@ class CalendarDay extends StatelessWidget {
     final Color accentPrediction = isDark
         ? MetraColors.dark.accentPrediction
         : MetraColors.light.accentPrediction;
+    final Color accentWarmth =
+        isDark ? MetraColors.dark.accentWarmth : MetraColors.light.accentWarmth;
+    final Color accentPain =
+        isDark ? MetraColors.dark.accentPain : MetraColors.light.accentPain;
 
     final (Color bg, Border? border, Color textColor, FontWeight fontWeight) =
         _resolveState(
@@ -81,18 +93,46 @@ class CalendarDay extends StatelessWidget {
       accentPrediction: accentPrediction,
     );
 
-    // Build indicator dots (spec § 8.3.2): shown below the day number.
-    // Selected cell uses reversed colors; dots use the cell background color.
-    final dotFlow = isSelected ? bgPrimary : accentFlow;
-    final dotPrediction = isSelected ? bgPrimary : accentPrediction;
-    final dotPain = isSelected
-        ? bgPrimary
-        : (isDark ? MetraColors.dark.accentPain : MetraColors.light.accentPain);
+    // On a selected cell, indicators use the cell background color (inverted).
+    final indicatorFlow = isSelected ? bgPrimary : accentFlow;
+    final indicatorPrediction = isSelected ? bgPrimary : accentPrediction;
+    final indicatorSymptom = isSelected ? bgPrimary : accentWarmth;
+    final indicatorPain = isSelected ? bgPrimary : accentPain;
 
-    final dots = <Widget>[];
-    if (isFlow || isSpotting) dots.add(_Dot(color: dotFlow));
-    if (hasPrediction && !isFlow) dots.add(_Dot(color: dotPrediction));
-    if (hasPain) dots.add(_Dot(color: dotPain));
+    // Indicator order: flow, prediction, symptom, pain (Bible § 8.3.2).
+    // Each indicator is independent — prediction is NOT suppressed when flow
+    // is also present (CL-01 fix).
+    final indicators = <Widget>[];
+    if (isFlow || isSpotting) {
+      indicators.add(
+        MetraIcon(
+          svgBody: MetraIcons.drop,
+          size: _indicatorSize,
+          color: indicatorFlow,
+        ),
+      );
+    }
+    if (hasPrediction) {
+      indicators.add(
+        MetraIcon(
+          svgBody: MetraIcons.dropOutline,
+          size: _indicatorSize,
+          color: indicatorPrediction,
+        ),
+      );
+    }
+    if (hasSymptom) {
+      indicators.add(
+        MetraIcon(
+          svgBody: MetraIcons.starSmall,
+          size: _indicatorSize,
+          color: indicatorSymptom,
+        ),
+      );
+    }
+    if (hasPain) {
+      indicators.add(_PainDot(color: indicatorPain));
+    }
 
     return Semantics(
       label: semanticsLabel,
@@ -121,14 +161,14 @@ class CalendarDay extends StatelessWidget {
                   color: textColor,
                 ),
               ),
-              if (dots.isNotEmpty) ...[
+              if (indicators.isNotEmpty) ...[
                 const SizedBox(height: 3),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    for (int i = 0; i < dots.length; i++) ...[
+                    for (int i = 0; i < indicators.length; i++) ...[
                       if (i > 0) const SizedBox(width: 2),
-                      dots[i],
+                      indicators[i],
                     ],
                   ],
                 ),
@@ -146,7 +186,6 @@ class CalendarDay extends StatelessWidget {
     required Color bgPrimary,
     required Color accentPrediction,
   }) {
-
     if (isSelected) {
       return (
         textPrimary,
@@ -214,17 +253,17 @@ class CalendarDay extends StatelessWidget {
   }
 }
 
-// ── Indicator dot ─────────────────────────────────────────────────────────────
+// ── Pain indicator — small filled circle (no SVG equivalent) ──────────────────
 
-class _Dot extends StatelessWidget {
-  const _Dot({required this.color});
+class _PainDot extends StatelessWidget {
+  const _PainDot({required this.color});
   final Color color;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 5,
-      height: 5,
+      width: 11,
+      height: 11,
       decoration: BoxDecoration(
         color: color,
         shape: BoxShape.circle,

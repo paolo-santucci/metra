@@ -20,6 +20,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/entities/daily_log_entity.dart';
+import '../../../providers/repository_providers.dart';
 import '../../../providers/use_case_providers.dart';
 
 class CalendarMonthState {
@@ -27,11 +28,15 @@ class CalendarMonthState {
     required this.year,
     required this.month,
     this.logs = const {},
+    this.daysWithSymptoms = const {},
   });
 
   final int year;
   final int month;
   final Map<DateTime, DailyLogEntity> logs;
+
+  /// UTC-midnight dates in this month that have at least one symptom logged.
+  final Set<DateTime> daysWithSymptoms;
 }
 
 final calendarMonthProvider =
@@ -55,6 +60,10 @@ class CalendarMonthNotifier extends AsyncNotifier<CalendarMonthState> {
     _logSub = null;
 
     final getMonthLogs = await ref.read(getMonthLogsProvider.future);
+    final repo = await ref.read(dailyLogRepositoryProvider.future);
+
+    // Load symptom dates once per month navigation (one query, not N per cell).
+    final symptomDates = await repo.getSymptomDatesForMonth(year, month);
 
     // Seed the initial state, then keep updating via the stream.
     final completer = Completer<CalendarMonthState>();
@@ -62,7 +71,12 @@ class CalendarMonthNotifier extends AsyncNotifier<CalendarMonthState> {
       final mapped = <DateTime, DailyLogEntity>{
         for (final l in logs) l.date: l,
       };
-      final next = CalendarMonthState(year: year, month: month, logs: mapped);
+      final next = CalendarMonthState(
+        year: year,
+        month: month,
+        logs: mapped,
+        daysWithSymptoms: symptomDates,
+      );
       if (!completer.isCompleted) {
         completer.complete(next);
       } else {

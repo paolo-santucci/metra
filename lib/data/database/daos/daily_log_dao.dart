@@ -65,6 +65,21 @@ class DailyLogDao extends DatabaseAccessor<AppDatabase>
             ..where((t) => t.dailyLogDate.equals(_toUtcDay(date))))
           .get();
 
+  /// Returns the distinct dates in [year]/[month] that have at least one
+  /// pain-symptom row. Used by the calendar grid to render per-day indicators.
+  Future<Set<DateTime>> getSymptomDatesForMonth(int year, int month) async {
+    final start = DateTime.utc(year, month);
+    final end = DateTime.utc(year, month + 1);
+    final rows = await (select(painSymptoms)
+          ..where(
+            (t) =>
+                t.dailyLogDate.isBiggerOrEqualValue(start) &
+                t.dailyLogDate.isSmallerThanValue(end),
+          ))
+        .get();
+    return {for (final r in rows) r.dailyLogDate.toUtc()};
+  }
+
   Stream<List<PainSymptom>> watchPainSymptoms(DateTime date) =>
       (select(painSymptoms)
             ..where((t) => t.dailyLogDate.equals(_toUtcDay(date))))

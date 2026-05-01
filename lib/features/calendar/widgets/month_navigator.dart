@@ -78,7 +78,7 @@ class MonthNavigator extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: MetraTypography.displayMd.copyWith(color: textPrimary),
+                  style: MetraTypography.screenTitle.copyWith(color: textPrimary),
                 ),
                 if (cycleDay != null) ...[
                   const SizedBox(height: 3),

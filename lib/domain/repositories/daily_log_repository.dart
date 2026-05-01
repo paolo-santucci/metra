@@ -31,6 +31,10 @@ abstract class DailyLogRepository {
 
   Future<List<PainSymptomData>> getPainSymptoms(DateTime date);
 
+  /// Returns the set of UTC-midnight dates in [year]/[month] that have at
+  /// least one symptom recorded. Used by the calendar grid for per-day indicators.
+  Future<Set<DateTime>> getSymptomDatesForMonth(int year, int month);
+
   Future<void> replacePainSymptoms(
     DateTime date,
     List<PainSymptomData> symptoms,

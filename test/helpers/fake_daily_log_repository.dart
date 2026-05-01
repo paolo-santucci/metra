@@ -66,6 +66,13 @@ class FakeDailyLogRepository implements DailyLogRepository {
   }
 
   @override
+  Future<Set<DateTime>> getSymptomDatesForMonth(int year, int month) async {
+    return symptoms.keys
+        .where((d) => d.year == year && d.month == month)
+        .toSet();
+  }
+
+  @override
   Future<void> replacePainSymptoms(
     DateTime date,
     List<PainSymptomData> newSymptoms,

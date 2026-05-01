@@ -159,6 +159,10 @@ class DriftDailyLogRepository implements DailyLogRepository {
   }
 
   @override
+  Future<Set<DateTime>> getSymptomDatesForMonth(int year, int month) =>
+      _dao.getSymptomDatesForMonth(year, month);
+
+  @override
   Future<void> replacePainSymptoms(
     DateTime date,
     List<PainSymptomData> symptoms,
