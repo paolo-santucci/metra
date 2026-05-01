@@ -73,7 +73,10 @@ class ChoiceChipMetra extends StatelessWidget {
             minWidth: 44,
             minHeight: 44,
           ),
-          child: Center(
+          child: Align(
+            alignment: Alignment.center,
+            widthFactor: 1.0,
+            heightFactor: 1.0,
             child: Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: MetraSpacing.s4,
