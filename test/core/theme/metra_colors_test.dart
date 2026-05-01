@@ -26,7 +26,7 @@ void main() {
     });
 
     test('terracottaDeep matches design HTML', () {
-      expect(MetraColors.light.terracottaDeep, const Color(0xFF9B4E32));
+      expect(MetraColors.light.terracottaDeep, const Color(0xFF9A4D32));
     });
 
     test('sand matches design HTML', () {
@@ -96,8 +96,9 @@ void main() {
       expect(MetraColors.dark.bgOverlay, MetraColors.dark.overlayScrim);
     });
 
-    test('light textDisabledColor maps to textDisabled primitive', () {
-      expect(MetraColors.light.textDisabledColor, const Color(0xFF8C8378));
+    test('light textDisabledColor is inchiostro @ 0.68 per DESIGN-BIBLE § 1.1', () {
+      // ink.withAlpha(0xAD) = rgba(43,37,33, 0xAD/255 ≈ 0.68)
+      expect(MetraColors.light.textDisabledColor, const Color(0xAD2B2521));
     });
 
     test('dark textDisabledColor maps to textDisabled primitive', () {

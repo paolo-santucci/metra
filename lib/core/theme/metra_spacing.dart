@@ -15,8 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
-// Spacing, radius, and motion tokens sourced from design/Métra Screens Light.html.
+// Spacing, radius, and motion tokens sourced from design/DESIGN-BIBLE.md §§ 1.3–1.4,
+// cross-checked against design/Métra Screens Light.html (super-canon).
+
+// Legacy spacing aliases — kept for backward compatibility during migration.
+// New code should use sp{value} constants below which map directly to the
+// DESIGN-BIBLE § 1.3 canonical scale: 0·2·3·4·5·6·7·8·10·12·14·16·18·20·24·28·32·36·44·48·56·72·84·90·100
 abstract final class MetraSpacing {
+  // Legacy aliases (sN = step N, value ≠ N)
   static const double s0 = 0;
   static const double s1 = 4;
   static const double s2 = 8;
@@ -25,15 +31,43 @@ abstract final class MetraSpacing {
   static const double s5 = 20;
   static const double s6 = 24;
   static const double s8 = 32;
-  static const double s10 = 40;
   static const double s12 = 48;
-  static const double s16 = 64;
+
+  // Canonical scale per DESIGN-BIBLE § 1.3 (spN = N logical pixels)
+  static const double sp2 = 2;
+  static const double sp3 = 3;
+  static const double sp5 = 5;
+  static const double sp6 = 6;
+  static const double sp7 = 7;
+  static const double sp10 = 10;
+  static const double sp14 = 14;
+  static const double sp18 = 18;
+  static const double sp28 = 28;
+  static const double sp36 = 36;
+  static const double sp44 = 44;
+  static const double sp56 = 56;
+  static const double sp72 = 72;
+  static const double sp84 = 84;
+  static const double sp90 = 90;
+  static const double sp100 = 100;
 }
 
+// Border-radius catalog per DESIGN-BIBLE § 1.4.
+// Allowed values: 6, 8, 10, 12, 14, 16, 18, 20, 44.
+// Chip-pill rule: radius = ½ × height — never use a fixed large value.
 abstract final class MetraRadius {
+  static const double xs = 6;     // sharp inner elements
   static const double sm = 8;
+  static const double smm = 10;   // segmented track, stepper micro-buttons
   static const double md = 12;
+  static const double mmd = 14;   // timeline card, flow pill
   static const double lg = 16;
+  static const double lgg = 18;
+  static const double xl = 20;    // year-label pill (calendar)
+  static const double phone = 44; // phone-corner large elements
+
+  // pill=999 violates DESIGN-BIBLE § 1.4 ("never use 999px").
+  // Pending deletion once all consumers are migrated to height÷2 per widget.
   static const double pill = 999;
 }
 

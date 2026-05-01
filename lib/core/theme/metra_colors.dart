@@ -17,39 +17,52 @@
 
 import 'package:flutter/material.dart';
 
-// Design tokens sourced from design/Métra Screens Light.html and Dark.html
-// (the live design system; was mockup/tokens.json before P-A reconciliation).
-// Field names mirror the C palette in the design HTML files.
-// Never add a color here that is not in the design HTML.
+// Design tokens sourced from design/DESIGN-BIBLE.md § 1.1, cross-checked against
+// design/Métra Screens Light.html (super-canon). Field names use English aliases
+// (sand/ink/moss…); the bible uses Italian (sabbia/inchiostro/muschio…).
+// This is a deliberate naming choice — do not rename without updating all consumers.
+// Never add a color here that is not in the DESIGN-BIBLE canonical palette.
 @immutable
 final class _LightPalette {
   const _LightPalette();
 
-  // Primitive palette
-  final Color sand = const Color(0xFFF4EDE2);
-  final Color terracotta = const Color(0xFFC87456);
-  final Color terracottaDeep = const Color(0xFF9B4E32);
-  final Color dustyOchre = const Color(0xFFD4A26A);
-  final Color dustyOchreDeep = const Color(0xFF8A6332);
-  final Color nightLavender = const Color(0xFF5B4E7A);
-  final Color malva = const Color(0xFF9E7488);
-  final Color moss = const Color(0xFF7A8471);
-  final Color mossDeep = const Color(0xFF4F5A47);
-  final Color ink = const Color(0xFF2B2521);
+  // ── 10 canonical primitives per DESIGN-BIBLE § 1.1 ──────────────────────────
+  final Color sand = const Color(0xFFF4EDE2);           // sabbia
+  final Color surfaceRaised = const Color(0xFFFAF5EE);  // surface (#FAF5EE)
+  final Color bianco = const Color(0xFFFDFAF6);          // bianco
+  final Color ink = const Color(0xFF2B2521);             // inchiostro
+  final Color terracotta = const Color(0xFFC87456);      // terracotta
+  final Color terracottaDeep = const Color(0xFF9A4D32);  // tc_scura (#9A4D32)
+  final Color dustyOchre = const Color(0xFFD4A26A);     // ocra
+  final Color nightLavender = const Color(0xFF5B4E7A);  // lavanda
+  final Color malva = const Color(0xFF9E7488);           // malva
+  final Color moss = const Color(0xFF7A8471);            // muschio
+
+  // ── Off-catalog primitives — pending deletion after consumer sweep ───────────
+  // Do not add new references. Replace usages with bible alpha-tints:
+  //   inkSoft       → ink.withAlpha(0x66) [secondary text, inchiostro @ 0.40]
+  //                    ink.withAlpha(0x24) [strong border, inchiostro @ 0.14]
+  //   surfaceSunken → ink.withAlpha(0x0A) [sunken bg, inchiostro @ 0.04]
+  //   divider       → ink.withAlpha(0x12) [card/section edge, inchiostro @ 0.07]
+  //   textDisabled  → ink.withAlpha(0xAD) [disabled label, inchiostro @ 0.68]
+  //   dustyOchreDeep → dustyOchre (ocra)
+  //   mossDeep      → moss (muschio)
   final Color inkSoft = const Color(0xFF5A4F47);
-  final Color surfaceRaised = const Color(0xFFFBF6EC);
   final Color surfaceSunken = const Color(0xFFECE4D6);
   final Color divider = const Color(0xFFDCD2C0);
+  final Color textDisabled = const Color(0xFF8C8378);
+  final Color dustyOchreDeep = const Color(0xFF8A6332);
+  final Color mossDeep = const Color(0xFF4F5A47);
+
   // rgba(43,37,33,0.32) → alpha=round(0.32*255)=82=0x52, RGB=0x2B2521
   final Color overlayScrim = const Color(0x522B2521);
-  final Color textDisabled = const Color(0xFF8C8378);
 
-  // Semantic aliases — use these in widgets, not the primitives above.
+  // ── Semantic aliases — use these in widgets, not the primitives above ────────
   Color get bgPrimary => sand;
   Color get bgSurface => surfaceRaised;
-  Color get bgSunken => surfaceSunken;
+  Color get bgSunken => ink.withAlpha(0x0A);            // inchiostro @ 0.04 — § 1.1
   Color get textPrimary => ink;
-  Color get textSecondary => inkSoft;
+  Color get textSecondary => ink.withAlpha(0x66);        // inchiostro @ 0.40 — § 1.1
   Color get textOnSand => terracottaDeep;
   Color get textOnAccent => sand;
   Color get accentFlow => terracotta;
@@ -58,18 +71,18 @@ final class _LightPalette {
   Color get accentFlowText => terracottaDeep;
   Color get accentPrediction => nightLavender;
   Color get accentWarmth => dustyOchre;
-  Color get accentWarmthStrong => dustyOchreDeep;
+  Color get accentWarmthStrong => dustyOchre;
   Color get accentPain => malva;
   Color get accentConfirmation => moss;
-  Color get accentConfirmationStrong => mossDeep;
-  Color get borderSubtle => divider;
-  Color get borderStrong => inkSoft;
+  Color get accentConfirmationStrong => moss;
+  Color get borderSubtle => ink.withAlpha(0x12);         // inchiostro @ 0.07 — § 1.5
+  Color get borderStrong => ink.withAlpha(0x24);         // inchiostro @ 0.14 — § 1.5
   Color get stateError => terracottaDeep;
-  Color get stateSuccess => mossDeep;
-  Color get stateWarning => dustyOchreDeep;
+  Color get stateSuccess => moss;
+  Color get stateWarning => dustyOchre;
   Color get focusRing => nightLavender;
   Color get bgOverlay => overlayScrim;
-  Color get textDisabledColor => textDisabled;
+  Color get textDisabledColor => ink.withAlpha(0xAD);   // inchiostro @ 0.68 — § 1.1
 }
 
 @immutable
