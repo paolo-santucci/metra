@@ -129,7 +129,7 @@ void main() {
       await tester.tap(find.text('Get started'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.widgetWithIcon(IconButton, Icons.add));
+      await tester.tap(find.text('+'));
       await tester.pumpAndSettle();
 
       expect(find.text('29'), findsOneWidget);

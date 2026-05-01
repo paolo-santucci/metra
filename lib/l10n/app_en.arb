@@ -399,12 +399,11 @@
   "backup_disconnect_confirm_button": "Disconnect",
 
   "onboarding_tagline": "Your rhythm,\ncherished.",
-  "onboarding_privacy_line": "Métra is a quiet journal to know yourself, cycle after cycle.\n\nEverything stays on your phone: no account, no cloud required.",
+  "onboarding_privacy_line": "Mētra is a quiet journal to know yourself, cycle after cycle.\n\nEverything stays on your phone: no account, no cloud required.",
   "onboarding_last_period_question": "First day of your last menstruation",
   "onboarding_cycle_length_question": "How long is your cycle usually?",
   "onboarding_period_duration_label": "Menstruation duration",
   "onboarding_get_started": "Get started",
-  "onboarding_start": "Start",
   "onboarding_days_unit": "days",
 
   "onboarding_step_label": "Step {current} of {total}",
@@ -416,14 +415,6 @@
     }
   },
 
-  "onboarding_privacy_heading": "Your privacy is the foundation.",
-  "onboarding_privacy_item1_title": "Everything on your device",
-  "onboarding_privacy_item1_body": "Your data never leaves your phone.",
-  "onboarding_privacy_item2_title": "No account needed",
-  "onboarding_privacy_item2_body": "Use the app without signing up anywhere.",
-  "onboarding_privacy_item3_title": "Your data is always exportable",
-  "onboarding_privacy_item3_body": "You can download everything at any time.",
-  "onboarding_privacy_continue": "Continue",
   "onboarding_headline": "Tell me\nabout your cycle.",
   "onboarding_subhead": "You can always change this later. No precise answers needed.",
   "onboarding_cycle_length_label": "Average cycle length",
@@ -488,7 +479,7 @@
   "@today_pain_intensity_label": {"description": "Pain intensity section heading"},
   "today_notes_label": "Free note",
   "@today_notes_label": {"description": "Free notes section heading"},
-  "today_notes_hint": "Write something...",
+  "today_notes_hint": "Write something…",
   "@today_notes_hint": {"description": "Notes text field placeholder"},
   "today_save_day": "Save day",
   "@today_save_day": {"description": "Save button label"},

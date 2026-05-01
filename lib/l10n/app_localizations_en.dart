@@ -499,7 +499,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboarding_privacy_line =>
-      'Métra is a quiet journal to know yourself, cycle after cycle.\n\nEverything stays on your phone: no account, no cloud required.';
+      'Mētra is a quiet journal to know yourself, cycle after cycle.\n\nEverything stays on your phone: no account, no cloud required.';
 
   @override
   String get onboarding_last_period_question =>
@@ -516,42 +516,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboarding_get_started => 'Get started';
 
   @override
-  String get onboarding_start => 'Start';
-
-  @override
   String get onboarding_days_unit => 'days';
 
   @override
   String onboarding_step_label(int current, int total) {
     return 'Step $current of $total';
   }
-
-  @override
-  String get onboarding_privacy_heading => 'Your privacy is the foundation.';
-
-  @override
-  String get onboarding_privacy_item1_title => 'Everything on your device';
-
-  @override
-  String get onboarding_privacy_item1_body =>
-      'Your data never leaves your phone.';
-
-  @override
-  String get onboarding_privacy_item2_title => 'No account needed';
-
-  @override
-  String get onboarding_privacy_item2_body =>
-      'Use the app without signing up anywhere.';
-
-  @override
-  String get onboarding_privacy_item3_title => 'Your data is always exportable';
-
-  @override
-  String get onboarding_privacy_item3_body =>
-      'You can download everything at any time.';
-
-  @override
-  String get onboarding_privacy_continue => 'Continue';
 
   @override
   String get onboarding_headline => 'Tell me\nabout your cycle.';
@@ -613,7 +583,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get today_notes_label => 'Free note';
 
   @override
-  String get today_notes_hint => 'Write something...';
+  String get today_notes_hint => 'Write something…';
 
   @override
   String get today_save_day => 'Save day';

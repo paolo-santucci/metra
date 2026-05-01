@@ -965,7 +965,7 @@ abstract class AppLocalizations {
   /// Body text on the onboarding welcome screen
   ///
   /// In it, this message translates to:
-  /// **'Métra è un quaderno silenzioso per conoscerti, ciclo dopo ciclo.\n\nTutto rimane sul tuo telefono: nessun account, nessun cloud richiesto.'**
+  /// **'Mētra è un quaderno silenzioso per conoscerti, ciclo dopo ciclo.\n\nTutto rimane sul tuo telefono: nessun account, nessun cloud richiesto.'**
   String get onboarding_privacy_line;
 
   /// Label for the last period date picker on onboarding
@@ -992,12 +992,6 @@ abstract class AppLocalizations {
   /// **'Inizia'**
   String get onboarding_get_started;
 
-  /// Submit button on the onboarding data entry screen
-  ///
-  /// In it, this message translates to:
-  /// **'Inizia'**
-  String get onboarding_start;
-
   /// Unit label for cycle length stepper
   ///
   /// In it, this message translates to:
@@ -1009,54 +1003,6 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Passo {current} di {total}'**
   String onboarding_step_label(int current, int total);
-
-  /// Heading on the onboarding privacy screen
-  ///
-  /// In it, this message translates to:
-  /// **'La tua privacy è il fondamento.'**
-  String get onboarding_privacy_heading;
-
-  ///
-  ///
-  /// In it, this message translates to:
-  /// **'Tutto sul tuo dispositivo'**
-  String get onboarding_privacy_item1_title;
-
-  ///
-  ///
-  /// In it, this message translates to:
-  /// **'I dati non lasciano mai il tuo telefono.'**
-  String get onboarding_privacy_item1_body;
-
-  ///
-  ///
-  /// In it, this message translates to:
-  /// **'Nessun account necessario'**
-  String get onboarding_privacy_item2_title;
-
-  ///
-  ///
-  /// In it, this message translates to:
-  /// **'Usi l\'app senza registrarti da nessuna parte.'**
-  String get onboarding_privacy_item2_body;
-
-  ///
-  ///
-  /// In it, this message translates to:
-  /// **'Esporti sempre i tuoi dati'**
-  String get onboarding_privacy_item3_title;
-
-  ///
-  ///
-  /// In it, this message translates to:
-  /// **'Puoi scaricare tutto in qualsiasi momento.'**
-  String get onboarding_privacy_item3_body;
-
-  /// CTA button on onboarding privacy screen
-  ///
-  /// In it, this message translates to:
-  /// **'Continua'**
-  String get onboarding_privacy_continue;
 
   /// Main headline on onboarding data-entry screen (step 2 of 2)
   ///
@@ -1175,7 +1121,7 @@ abstract class AppLocalizations {
   /// Notes text field placeholder
   ///
   /// In it, this message translates to:
-  /// **'Scrivi qualcosa...'**
+  /// **'Scrivi qualcosa…'**
   String get today_notes_hint;
 
   /// Save button label

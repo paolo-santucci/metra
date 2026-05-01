@@ -18,11 +18,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart' as intl;
 
 import '../../core/theme/metra_colors.dart';
 import '../../core/theme/metra_spacing.dart';
 import '../../core/theme/metra_typography.dart';
+import '../../core/widgets/metra_wordmark.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/use_case_providers.dart';
 import 'state/onboarding_notifier.dart';
@@ -87,119 +89,109 @@ class _WelcomePage extends StatelessWidget {
         isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
 
     return SafeArea(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          // Cap hero zone at 340dp on tall screens; proportional on small ones.
-          final heroHeight = (constraints.maxHeight * 0.56).clamp(160.0, 340.0);
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Hero zone: wordmark + terracotta radial halos (spec § 12.1).
-              SizedBox(
-                height: heroHeight,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    // Outer elliptical glow: rgba(200,116,86,0.05) → transparent 80%
-                    DecoratedBox(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Hero zone: wordmark + terracotta radial halos (spec § 12.1).
+          // Fixed at 340dp per DESIGN-BIBLE § 12.1 flex 0 0 340.
+          SizedBox(
+            height: 340,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Outer elliptical glow: rgba(200,116,86,0.05) → transparent 80%
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: const Alignment(0, -0.4),
+                      radius: 0.85,
+                      colors: [
+                        accentFlow.withValues(alpha: 0.05),
+                        Colors.transparent,
+                      ],
+                      stops: const [0.0, 0.80],
+                    ),
+                  ),
+                ),
+                // Centered halo 220×220: rgba(200,116,86,0.12) → transparent 70%
+                Center(
+                  child: SizedBox(
+                    width: 220,
+                    height: 220,
+                    child: DecoratedBox(
                       decoration: BoxDecoration(
+                        shape: BoxShape.circle,
                         gradient: RadialGradient(
-                          center: const Alignment(0, -0.4),
-                          radius: 0.85,
                           colors: [
-                            accentFlow.withValues(alpha: 0.05),
+                            accentFlow.withValues(alpha: 0.12),
                             Colors.transparent,
                           ],
-                          stops: const [0.0, 0.80],
+                          stops: const [0.0, 0.70],
                         ),
                       ),
                     ),
-                    // Centered halo 220×220: rgba(200,116,86,0.12) → transparent 70%
-                    Center(
-                      child: SizedBox(
-                        width: 220,
-                        height: 220,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: RadialGradient(
-                              colors: [
-                                accentFlow.withValues(alpha: 0.12),
-                                Colors.transparent,
-                              ],
-                              stops: const [0.0, 0.70],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Wordmark
-                    Center(
-                      child: Semantics(
-                        header: true,
-                        child: Text(
-                          MetraTypography.wordmark,
-                          style: MetraTypography.displayXl
+                  ),
+                ),
+                // Wordmark
+                Center(
+                  child: Semantics(
+                    header: true,
+                    child: MetraWordmark(color: textPrimary),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Content zone: text scrolls; CTA is pinned at bottom.
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(36, 0, 36, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Manifesto headline: DM Serif Display 34 / lh 1.2 per § 12.1.
+                        Text(
+                          l10n.onboarding_tagline,
+                          style: MetraTypography.headlineLg
                               .copyWith(color: textPrimary),
-                          textAlign: TextAlign.center,
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Content zone: text scrolls; CTA is pinned at bottom.
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding:
-                            const EdgeInsets.fromLTRB(36, 0, 36, 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              l10n.onboarding_tagline,
-                              style: MetraTypography.displayMd
-                                  .copyWith(color: textPrimary),
-                            ),
-                            const SizedBox(height: 14),
-                            Text(
-                              l10n.onboarding_privacy_line,
-                              style: MetraTypography.body.copyWith(
-                                color: textSecondary,
-                                height: 1.6,
-                              ),
-                            ),
-                            const SizedBox(height: 40),
-                            Center(child: _MacronDots(color: accentFlow)),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(36, 0, 36, 28),
-                      child: FilledButton(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: textPrimary,
-                          foregroundColor: bgPrimary,
-                          minimumSize: const Size.fromHeight(56),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                        const SizedBox(height: 14),
+                        Text(
+                          l10n.onboarding_privacy_line,
+                          style: MetraTypography.body.copyWith(
+                            color: textSecondary,
+                            height: 1.6,
                           ),
                         ),
-                        onPressed: onGetStarted,
-                        child: Text(l10n.onboarding_get_started),
+                        const SizedBox(height: 40),
+                        Center(child: _MacronDots(color: accentFlow)),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(36, 0, 36, 28),
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: textPrimary,
+                      foregroundColor: bgPrimary,
+                      minimumSize: const Size.fromHeight(56),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                  ],
+                    onPressed: onGetStarted,
+                    child: Text(l10n.onboarding_get_started),
+                  ),
                 ),
-              ),
-            ],
-          );
-        },
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -294,12 +286,10 @@ class _DataPage extends ConsumerWidget {
               textColor: textSecondary,
             ),
             const SizedBox(height: 24),
+            // "Il tuo primo ciclo" headline: DM Serif Display 28 / lh 1.25 per § 12.1.
             Text(
               l10n.onboarding_headline,
-              style: MetraTypography.displayMd.copyWith(
-                color: textPrimary,
-                height: 1.25,
-              ),
+              style: MetraTypography.headlineSm.copyWith(color: textPrimary),
             ),
             const SizedBox(height: 8),
             Text(
@@ -467,7 +457,7 @@ class _DatePickerField extends StatelessWidget {
     final now = DateTime.now();
     final picked = await showDatePicker(
       context: context,
-      firstDate: now.subtract(const Duration(days: 182)),
+      firstDate: DateTime(2000),
       lastDate: now,
       initialDate: selectedDate ?? now.subtract(const Duration(days: 28)),
     );
@@ -493,10 +483,12 @@ class _PeriodDurationPicker extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accentFlow =
         isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
-    final bgSurface =
-        isDark ? MetraColors.dark.bgSurface : MetraColors.light.bgSurface;
     final textPrimary =
         isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
+    // Active text: sabbia (sand) per DESIGN-BIBLE § 5.2.
+    // Idle background: ink @ 0.07 per DESIGN-BIBLE § 5.2.
+    final sand = isDark ? MetraColors.dark.textOnAccent : MetraColors.light.sand;
+    final idleBg = textPrimary.withAlpha(0x12);
 
     return Row(
       children: List.generate(8, (i) {
@@ -507,24 +499,19 @@ class _PeriodDurationPicker extends StatelessWidget {
             onTap: () => onChanged(day),
             child: Container(
               height: 44,
-              margin: EdgeInsets.only(right: i < 7 ? 4 : 0),
+              // Gap between cells: 8px per DESIGN-BIBLE § 5.2.
+              margin: EdgeInsets.only(right: i < 7 ? 8 : 0),
               decoration: BoxDecoration(
-                color: isSelected ? accentFlow : bgSurface,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: isSelected
-                      ? Colors.transparent
-                      : (isDark ? Colors.white12 : Colors.black12),
-                ),
+                color: isSelected ? accentFlow : idleBg,
+                borderRadius: BorderRadius.circular(MetraRadius.smm),
               ),
               alignment: Alignment.center,
               child: Text(
                 '$day',
-                style: TextStyle(
-                  fontFamily: 'Inter',
+                style: GoogleFonts.inter(
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
-                  color: isSelected ? Colors.white : textPrimary,
+                  color: isSelected ? sand : textPrimary,
                 ),
               ),
             ),
@@ -606,8 +593,7 @@ class _CycleLengthStepper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final trackFraction = ((value - _min) / (_max - _min)).clamp(0.0, 1.0);
-    final labelStyle11 = TextStyle(
-      fontFamily: 'Inter',
+    final labelStyle11 = GoogleFonts.inter(
       fontSize: 11,
       color: textPrimary.withValues(alpha: 0.35),
     );
@@ -618,13 +604,33 @@ class _CycleLengthStepper extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SizedBox(
-              width: 48,
-              height: 48,
-              child: IconButton(
-                tooltip: 'Diminuisci durata ciclo',
-                icon: const Icon(Icons.remove),
-                onPressed: value > _min ? onDecrement : null,
+            // Decrement button: 40×40 touch area, radius 10, ink @ 0.07 fill.
+            Semantics(
+              button: true,
+              label: 'Diminuisci durata ciclo',
+              child: GestureDetector(
+                onTap: value > _min ? onDecrement : null,
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: textPrimary.withAlpha(
+                      value > _min ? 0x12 : 0x08,
+                    ),
+                    borderRadius: BorderRadius.circular(MetraRadius.smm),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '−',
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w300,
+                      color: textPrimary.withValues(
+                        alpha: value > _min ? 1.0 : 0.35,
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
             const SizedBox(width: MetraSpacing.s4),
@@ -636,16 +642,12 @@ class _CycleLengthStepper extends StatelessWidget {
                 children: [
                   Text(
                     value.toString(),
-                    style: MetraTypography.displayXl.copyWith(
-                      color: textPrimary,
-                      fontSize: 40,
-                    ),
+                    style: MetraTypography.stepper.copyWith(color: textPrimary),
                   ),
                   const SizedBox(width: 6),
                   Text(
                     l10n.onboarding_days_unit,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
+                    style: GoogleFonts.inter(
                       fontSize: 16,
                       color: textPrimary.withValues(alpha: 0.68),
                     ),
@@ -654,13 +656,33 @@ class _CycleLengthStepper extends StatelessWidget {
               ),
             ),
             const SizedBox(width: MetraSpacing.s4),
-            SizedBox(
-              width: 48,
-              height: 48,
-              child: IconButton(
-                tooltip: 'Aumenta durata ciclo',
-                icon: const Icon(Icons.add),
-                onPressed: value < _max ? onIncrement : null,
+            // Increment button: 40×40 touch area, radius 10, ink @ 0.07 fill.
+            Semantics(
+              button: true,
+              label: 'Aumenta durata ciclo',
+              child: GestureDetector(
+                onTap: value < _max ? onIncrement : null,
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: textPrimary.withAlpha(
+                      value < _max ? 0x12 : 0x08,
+                    ),
+                    borderRadius: BorderRadius.circular(MetraRadius.smm),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '+',
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w300,
+                      color: textPrimary.withValues(
+                        alpha: value < _max ? 1.0 : 0.35,
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
           ],

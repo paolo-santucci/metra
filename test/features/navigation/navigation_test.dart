@@ -18,6 +18,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/app.dart';
+import 'package:metra/core/widgets/metra_tab_bar.dart';
 import 'package:metra/domain/entities/app_settings_data.dart';
 import 'package:metra/domain/entities/cycle_stats_data.dart';
 import 'package:metra/domain/entities/cycle_summary.dart';
@@ -107,7 +108,7 @@ final _settingsOverride = appSettingsRepositoryProvider.overrideWith(
 
 void main() {
   group('Bottom navigation shell', () {
-    testWidgets('renders 5 navigation destinations', (tester) async {
+    testWidgets('renders MetraTabBar with 5 tabs', (tester) async {
       await tester.pumpWidget(
         MetraApp(
           overrides: [
@@ -120,9 +121,33 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // NavigationBar has 5 items: Calendar, Oggi, Archivio, Stats, Settings.
-      expect(find.byType(NavigationBar), findsOneWidget);
-      expect(find.byType(NavigationDestination), findsNWidgets(5));
+      // Custom tab bar: MetraTabBar with 5 GestureDetector tabs.
+      expect(find.byType(MetraTabBar), findsOneWidget);
+      final tabTaps = find.descendant(
+        of: find.byType(MetraTabBar),
+        matching: find.byType(GestureDetector),
+      );
+      expect(tabTaps, findsNWidgets(5));
+    });
+
+    testWidgets('shows all Italian tab labels', (tester) async {
+      await tester.pumpWidget(
+        MetraApp(
+          overrides: [
+            _calendarOverride,
+            _statsOverride,
+            _timelineOverride,
+            _settingsOverride,
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Calendario'), findsOneWidget);
+      expect(find.text('Oggi'), findsOneWidget);
+      expect(find.text('Archivio'), findsOneWidget);
+      expect(find.text('Statistiche'), findsOneWidget);
+      expect(find.text('Impostazioni'), findsOneWidget);
     });
 
     testWidgets('Calendar is the initial route', (tester) async {
@@ -138,9 +163,6 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Assert by widget type to avoid collision with the destination label
-      // (e.g. 'Timeline' appears both as NavigationDestination label and as
-      // TimelineScreen body text).
       expect(find.byType(CalendarScreen), findsOneWidget);
     });
 
@@ -157,9 +179,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Tap the 3rd navigation destination (index 2 = Archivio / Timeline).
-      final destinations = find.byType(NavigationDestination);
-      await tester.tap(destinations.at(2));
+      // Tap the 3rd tab (index 2 = Archivio / Timeline) in MetraTabBar.
+      final tabs = find.descendant(
+        of: find.byType(MetraTabBar),
+        matching: find.byType(GestureDetector),
+      );
+      await tester.tap(tabs.at(2));
       await tester.pumpAndSettle();
 
       expect(find.byType(TimelineScreen), findsOneWidget);
@@ -178,9 +203,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Tap the 4th navigation destination (index 3 = Stats).
-      final destinations = find.byType(NavigationDestination);
-      await tester.tap(destinations.at(3));
+      // Tap the 4th tab (index 3 = Statistiche) in MetraTabBar.
+      final tabs = find.descendant(
+        of: find.byType(MetraTabBar),
+        matching: find.byType(GestureDetector),
+      );
+      await tester.tap(tabs.at(3));
       await tester.pumpAndSettle();
 
       expect(find.byType(StatsScreen), findsOneWidget);
@@ -199,9 +227,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Tap the 5th navigation destination (index 4 = Settings).
-      final destinations = find.byType(NavigationDestination);
-      await tester.tap(destinations.at(4));
+      // Tap the 5th tab (index 4 = Impostazioni) in MetraTabBar.
+      final tabs = find.descendant(
+        of: find.byType(MetraTabBar),
+        matching: find.byType(GestureDetector),
+      );
+      await tester.tap(tabs.at(4));
       await tester.pumpAndSettle();
 
       expect(find.byType(SettingsScreen), findsOneWidget);
