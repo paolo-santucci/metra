@@ -8,6 +8,23 @@
 
 ---
 
+## Sprint 3 — Screenshot comparison blocks A+C+D+E+F+G (2026-05-01)
+
+| Block | Task | Status | Commit |
+|---|---|---|---|
+| A | Patch DESIGN-BIBLE.md (2-screen onboarding), STATUS.md, memory | ✅ done | `b6047af` |
+| C | Remove privacy screen entirely; onboarding is now 2-step | ✅ done | `b6047af` |
+| D | Rebuild Primo Ciclo: headline, subhead, micro-labels, range track, "giorni", CTA | ✅ done | `b6047af` |
+| E | Calendar header (DM Serif, left-aligned, cycle-day row), indicator dots | ✅ done | `b6047af` |
+| F | NavBar: remove active-pill indicator, terracotta active icon/label | ✅ done | `b6047af` |
+| G | HistoricalEntryScreen: bare scaffold, CirclePainPicker, ChoiceChipMetra wrap, inline add | ✅ done | `b6047af` |
+| B | Manifesto polish (halo, proportions, ornament, CTA margin) | 🔲 todo | — |
+| H | Today screen parity: chip fill, dots geometry, flow border weight | 🔲 todo | — |
+
+All 403 tests green, 0 analyzer warnings after Sprint 3 commit.
+
+---
+
 ## Sprint 2 — Design Alignment Fixes (2026-05-01)
 
 | Phase | Task | Status | Commit |
@@ -15,7 +32,7 @@
 | Phase 1 | Calendar: rounded-square days, remove FAB, default selection | ✅ done | `bf4173d` |
 | Phase 2 | Widgets: soft halo dots/pain picker, terracotta chips, no checkmark | ✅ done | `a81cc11` |
 | Phase 3 | Entry+Calendar: inline symptom input, symptom chips in day card | ✅ done | `ba9ad63` |
-| Phase 4 | Onboarding: privacy screen (step 2 of 3) | ✅ done | `5b7ec8e` |
+| Phase 4 | Onboarding: privacy screen step (reverted — screen removed in Sprint 3) | ✅ done | `5b7ec8e` |
 
 All 7 issues from `what-you-MUST-fix.md` resolved. All 405 tests green.
 
@@ -59,7 +76,7 @@ All 7 issues from `what-you-MUST-fix.md` resolved. All 405 tests green.
 | `lib/features/calendar/widgets/calendar_day.dart` | Rounded-square day cells |
 | `lib/features/calendar/calendar_screen.dart` | Default selection, symptom chips in day card |
 | `lib/core/widgets/choice_chip_metra.dart` | Terracotta chip, no checkmark |
-| `lib/features/onboarding/onboarding_screen.dart` | 3-step onboarding with privacy screen |
+| `lib/features/onboarding/onboarding_screen.dart` | 2-step onboarding: Manifesto → Primo Ciclo (privacy screen removed) |
 | `lib/core/theme/metra_colors.dart` | Token source — `accentPain` = malva |
 | `lib/l10n/app_it.arb` | All Italian copy |
 | `design/design-review-tasks.md` | Authoritative task list with DM/UX/CL codes |
