@@ -16,290 +16,312 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart' as intl;
 
 import '../../../core/theme/metra_colors.dart';
-import '../../../core/theme/metra_spacing.dart';
+import '../../../core/theme/metra_typography.dart';
+import '../../../core/widgets/metra_icon.dart';
 import '../../../domain/entities/cycle_summary.dart';
 import '../../../domain/entities/flow_intensity.dart';
 import '../../../domain/entities/pain_symptom_type.dart';
 import '../../../l10n/app_localizations.dart';
 
 class TimelineCard extends StatelessWidget {
-  const TimelineCard({super.key, required this.summary});
+  const TimelineCard({super.key, required this.summary, required this.isLast});
+
+  final CycleSummary summary;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _TimelineRail(isLast: isLast),
+          const SizedBox(width: 16),
+          Expanded(child: _CardBody(summary: summary)),
+        ],
+      ),
+    );
+  }
+}
+
+class _TimelineRail extends StatelessWidget {
+  const _TimelineRail({required this.isLast});
+
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 20,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const SizedBox(height: 18),
+          Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: MetraColors.light.terracotta,
+            ),
+          ),
+          if (!isLast)
+            Expanded(
+              child: Container(
+                width: 2,
+                margin: const EdgeInsets.only(top: 2),
+                color: MetraColors.light.ink.withValues(alpha: 0.10),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CardBody extends StatelessWidget {
+  const _CardBody({required this.summary});
 
   final CycleSummary summary;
 
-  // Maximum cycle length used to normalise the proportional bar width.
-  static const int _kBarMaxDays = 35;
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      decoration: BoxDecoration(
+        color: MetraColors.light.bgSurface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: MetraColors.light.ink.withValues(alpha: 0.07),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _Header(summary: summary),
+          const SizedBox(height: 6),
+          _ChipRow(summary: summary),
+          _Footer(summary: summary),
+        ],
+      ),
+    );
+  }
+}
+
+class _Header extends StatelessWidget {
+  const _Header({required this.summary});
+
+  final CycleSummary summary;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final rawMonth = intl.DateFormat.yMMM('it').format(summary.cycle.startDate);
+    final monthLabel = rawMonth.isEmpty
+        ? rawMonth
+        : rawMonth[0].toUpperCase() + rawMonth.substring(1);
+    final n = summary.cycle.periodLength;
+    final durationLabel =
+        n != null ? l10n.archive_card_duration_days(n) : 'Durata —g';
 
-    final cycle = summary.cycle;
-
-    // A cycle is in-progress when it has no recorded length yet.
-    final bool inProgress = cycle.cycleLength == null;
-
-    final fmt = intl.DateFormat('d MMM', 'it');
-    final startStr = fmt.format(cycle.startDate);
-    final endStr = cycle.endDate != null ? fmt.format(cycle.endDate!) : '';
-
-    final String semanticsLabel = inProgress
-        ? l10n.timeline_card_a11y_in_progress(startStr)
-        : l10n.timeline_card_a11y(startStr, endStr, cycle.cycleLength!);
-
-    final now = DateTime.now();
-    final todayNorm = DateTime(now.year, now.month, now.day);
-
-    // Number of elapsed days in the current in-progress cycle (inclusive of start day).
-    final int elapsedDays = todayNorm.difference(cycle.startDate).inDays + 1;
-
-    final double barFraction =
-        ((cycle.cycleLength ?? elapsedDays) / _kBarMaxDays).clamp(0.0, 1.0);
-
-    // Terracotta-tinted badge background for in-progress cycles, sunken for complete.
-    final Color badgeBg = inProgress
-        ? (isDark
-            ? MetraColors.dark.accentFlow.withValues(alpha: 0.18)
-            : MetraColors.light.accentFlow.withValues(alpha: 0.18))
-        : (isDark ? MetraColors.dark.bgSunken : MetraColors.light.bgSunken);
-    final Color badgeFg = inProgress
-        ? (isDark
-            ? MetraColors.dark.accentFlowStrong
-            : MetraColors.light.accentFlowStrong)
-        : (isDark
-            ? MetraColors.dark.textSecondary
-            : MetraColors.light.textSecondary);
-
-    final String badgeText = inProgress
-        ? l10n.timeline_cycle_in_progress
-        : l10n.timeline_cycle_length_days(cycle.cycleLength!);
-
-    final String dateRangeText = inProgress ? startStr : '$startStr – $endStr';
-
-    final Color cardColor =
-        isDark ? MetraColors.dark.bgSurface : MetraColors.light.bgSurface;
-    final Color borderColor =
-        isDark ? MetraColors.dark.borderSubtle : MetraColors.light.borderSubtle;
-    final Color textPrimary =
-        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
-    final Color barBg =
-        isDark ? MetraColors.dark.bgSunken : MetraColors.light.bgSunken;
-    final Color barFill =
-        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
-
-    return Semantics(
-      label: semanticsLabel,
-      button: true,
-      child: Card(
-        color: cardColor,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(MetraRadius.md),
-          side: BorderSide(color: borderColor),
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(MetraRadius.md),
-          onTap: () {
-            final dateKey = cycle.startDate.toIso8601String().substring(0, 10);
-            context.push('/daily-entry/$dateKey');
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(MetraSpacing.s4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Header row: date range + badge
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        dateRangeText,
-                        style: TextStyle(
-                          color: textPrimary,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: MetraSpacing.s2),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: MetraSpacing.s3,
-                        vertical: MetraSpacing.s1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: badgeBg,
-                        borderRadius: BorderRadius.circular(MetraRadius.md),
-                      ),
-                      child: Text(
-                        badgeText,
-                        style: TextStyle(
-                          color: badgeFg,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: MetraSpacing.s3),
-                // Proportional bar: full-width track with terracotta fill.
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    return Container(
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: barBg,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: FractionallySizedBox(
-                          widthFactor: barFraction,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: barFill,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                // Chip row: flow chip + up to 2 symptom chips.
-                Builder(
-                  builder: (context) {
-                    final flowChip = summary.dominantFlow != null;
-                    final symptomChips = summary.symptoms
-                        .where((t) => _symptomLabel(l10n, t).isNotEmpty)
-                        .take(2)
-                        .toList();
-                    if (!flowChip && symptomChips.isEmpty) {
-                      return const SizedBox.shrink();
-                    }
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: MetraSpacing.s3),
-                        Wrap(
-                          spacing: MetraSpacing.s2,
-                          runSpacing: MetraSpacing.s2,
-                          children: [
-                            if (summary.dominantFlow != null)
-                              _TimelineChip(
-                                icon: Icons.water_drop,
-                                iconColor: isDark
-                                    ? MetraColors.dark.accentFlowStrong
-                                    : MetraColors.light.accentFlowStrong,
-                                label: _flowLabel(l10n, summary.dominantFlow!),
-                                bgColor: (isDark
-                                        ? MetraColors.dark.accentFlow
-                                        : MetraColors.light.accentFlow)
-                                    .withValues(alpha: 0.08),
-                              ),
-                            ...symptomChips.map(
-                              (type) => _TimelineChip(
-                                icon: Icons.star_border,
-                                iconColor: isDark
-                                    ? MetraColors.dark.accentWarmth
-                                    : MetraColors.light.accentWarmth,
-                                label: _symptomLabel(l10n, type),
-                                bgColor: (isDark
-                                        ? MetraColors.dark.accentWarmth
-                                        : MetraColors.light.accentWarmth)
-                                    .withValues(alpha: 0.10),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ],
-            ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Text(
+          monthLabel,
+          style: MetraTypography.archiveMonth.copyWith(
+            color: MetraColors.light.ink,
           ),
         ),
-      ),
+        Text(
+          durationLabel,
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            color: MetraColors.light.ink.withValues(alpha: 0.40),
+          ),
+        ),
+      ],
     );
-  }
-
-  String _symptomLabel(AppLocalizations l10n, PainSymptomType type) {
-    switch (type) {
-      case PainSymptomType.cramps:
-        return l10n.daily_entry_symptom_cramps;
-      case PainSymptomType.backPain:
-        return l10n.daily_entry_symptom_backPain;
-      case PainSymptomType.headache:
-        return l10n.daily_entry_symptom_headache;
-      case PainSymptomType.migraine:
-        return l10n.daily_entry_symptom_migraine;
-      case PainSymptomType.bloating:
-        return l10n.daily_entry_symptom_bloating;
-      case PainSymptomType.fatigue:
-        return l10n.daily_entry_symptom_fatigue;
-      case PainSymptomType.nausea:
-        return l10n.daily_entry_symptom_nausea;
-      case PainSymptomType.breastTenderness:
-        return l10n.daily_entry_symptom_breastTenderness;
-      case PainSymptomType.custom:
-        // custom symptoms carry no fixed label; caller filters empty strings.
-        return '';
-    }
-  }
-
-  String _flowLabel(AppLocalizations l10n, FlowIntensity intensity) {
-    return switch (intensity) {
-      FlowIntensity.light => l10n.daily_entry_flow_light,
-      FlowIntensity.medium => l10n.daily_entry_flow_medium,
-      FlowIntensity.heavy => l10n.daily_entry_flow_heavy,
-      FlowIntensity.veryHeavy => l10n.daily_entry_flow_veryHeavy,
-    };
   }
 }
 
-class _TimelineChip extends StatelessWidget {
-  const _TimelineChip({
-    required this.icon,
-    required this.iconColor,
-    required this.label,
-    required this.bgColor,
-  });
+class _ChipRow extends StatelessWidget {
+  const _ChipRow({required this.summary});
 
-  final IconData icon;
-  final Color iconColor;
-  final String label;
-  final Color bgColor;
+  final CycleSummary summary;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark
-        ? MetraColors.dark.textSecondary
-        : MetraColors.light.textSecondary;
+    final l10n = AppLocalizations.of(context)!;
+    final chips = <Widget>[
+      _FlowPill(flow: summary.dominantFlow),
+      if (summary.dominantPainIntensity != null &&
+          summary.dominantPainIntensity! > 0)
+        _PainPill(intensity: summary.dominantPainIntensity!, l10n: l10n),
+      ...summary.symptoms
+          .where((t) => t != PainSymptomType.custom)
+          .take(2)
+          .map((t) => _SymptomPill(type: t, l10n: l10n)),
+    ];
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: chips,
+    );
+  }
+}
+
+class _FlowPill extends StatelessWidget {
+  const _FlowPill({required this.flow});
+
+  final FlowIntensity? flow;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = flow != null ? _flowLabel(flow!) : '—';
+    return _MiniChip(
+      svgBody: MetraIcons.dropFilled,
+      iconColor: MetraColors.light.terracottaDeep,
+      label: label,
+      labelColor: MetraColors.light.terracottaDeep,
+      bg: MetraColors.light.terracotta.withValues(alpha: 0x15 / 255),
+    );
+  }
+
+  static String _flowLabel(FlowIntensity intensity) => switch (intensity) {
+        FlowIntensity.light => 'Leggero',
+        FlowIntensity.medium => 'Moderato',
+        FlowIntensity.heavy => 'Abbondante',
+        FlowIntensity.veryHeavy => 'Molto abbondante',
+      };
+}
+
+class _PainPill extends StatelessWidget {
+  const _PainPill({required this.intensity, required this.l10n});
+
+  final int intensity;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = switch (intensity) {
+      1 => l10n.daily_entry_pain_mild,
+      2 => l10n.daily_entry_pain_moderate,
+      _ => l10n.daily_entry_pain_severe,
+    };
+    return _MiniChip(
+      svgBody: MetraIcons.zapFilled,
+      iconColor: MetraColors.light.malva,
+      label: label,
+      labelColor: MetraColors.light.malva,
+      bg: const Color.fromARGB(0x1F, 158, 116, 136),
+    );
+  }
+}
+
+class _SymptomPill extends StatelessWidget {
+  const _SymptomPill({required this.type, required this.l10n});
+
+  final PainSymptomType type;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    return _MiniChip(
+      svgBody: MetraIcons.starSmallFilled,
+      iconColor: MetraColors.light.dustyOchre,
+      label: _symptomLabel(l10n, type),
+      labelColor: MetraColors.light.ink.withValues(alpha: 0.60),
+      bg: MetraColors.light.dustyOchre.withValues(alpha: 0x18 / 255),
+    );
+  }
+
+  static String _symptomLabel(AppLocalizations l10n, PainSymptomType type) =>
+      switch (type) {
+        PainSymptomType.cramps => l10n.daily_entry_symptom_cramps,
+        PainSymptomType.backPain => l10n.daily_entry_symptom_backPain,
+        PainSymptomType.headache => l10n.daily_entry_symptom_headache,
+        PainSymptomType.migraine => l10n.daily_entry_symptom_migraine,
+        PainSymptomType.bloating => l10n.daily_entry_symptom_bloating,
+        PainSymptomType.fatigue => l10n.daily_entry_symptom_fatigue,
+        PainSymptomType.nausea => l10n.daily_entry_symptom_nausea,
+        PainSymptomType.breastTenderness =>
+          l10n.daily_entry_symptom_breastTenderness,
+        PainSymptomType.custom => '',
+      };
+}
+
+class _MiniChip extends StatelessWidget {
+  const _MiniChip({
+    required this.svgBody,
+    required this.iconColor,
+    required this.label,
+    required this.labelColor,
+    required this.bg,
+  });
+
+  final String svgBody;
+  final Color iconColor;
+  final String label;
+  final Color labelColor;
+  final Color bg;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      height: 24,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
-        color: bgColor,
+        color: bg,
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 11, color: iconColor),
+          MetraIcon(svgBody: svgBody, size: 11, color: iconColor, filled: true),
           const SizedBox(width: 4),
           Text(
             label,
-            style: TextStyle(fontSize: 11, color: textColor),
+            style: GoogleFonts.inter(fontSize: 11, color: labelColor),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _Footer extends StatelessWidget {
+  const _Footer({required this.summary});
+
+  final CycleSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final len = summary.cycle.cycleLength;
+    final dayStr =
+        intl.DateFormat('d MMM', 'it').format(summary.cycle.startDate);
+
+    final text = len != null
+        ? l10n.archive_card_footer(len, dayStr)
+        : 'Ciclo —g · dal $dayStr';
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Text(
+        text,
+        style: GoogleFonts.inter(
+          fontSize: 12,
+          color: MetraColors.light.ink.withValues(alpha: 0.40),
+        ),
       ),
     );
   }

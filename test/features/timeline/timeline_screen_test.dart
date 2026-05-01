@@ -154,38 +154,37 @@ void main() {
       await tester.tap(find.text('Tabella'));
       await tester.pumpAndSettle();
       expect(find.byType(TimelineCard), findsNothing);
-      expect(find.text('Inizio'), findsOneWidget);
+      // §10.4 rebuild renamed first column from "Inizio" to "Mese"
+      expect(find.text('Mese'), findsOneWidget);
     });
 
-    testWidgets('tapping a TimelineCard navigates to daily-entry',
+    testWidgets('TimelineCard shows month label and footer', (tester) async {
+      await tester.pumpWidget(
+        _wrap([timelineProvider.overrideWith(() => _DataNotifier(kSummaries))]),
+      );
+      await tester.pumpAndSettle();
+      // Month label contains locale-formatted start date
+      expect(find.textContaining('gen'), findsWidgets);
+      // Footer contains cycle length
+      expect(find.textContaining('Ciclo 28g'), findsOneWidget);
+    });
+
+    testWidgets('flow pill always renders, shows dash when no flow',
         (tester) async {
       await tester.pumpWidget(
         _wrap([timelineProvider.overrideWith(() => _DataNotifier(kSummaries))]),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byType(TimelineCard).first);
-      await tester.pumpAndSettle();
-      expect(find.text('entry-stub'), findsOneWidget);
+      expect(find.text('—'), findsOneWidget);
     });
 
-    testWidgets('TimelineCard semantics label contains "Ciclo dal"',
+    testWidgets('TimelineCard has no tap affordance (display-only)',
         (tester) async {
       await tester.pumpWidget(
         _wrap([timelineProvider.overrideWith(() => _DataNotifier(kSummaries))]),
       );
       await tester.pumpAndSettle();
-      expect(find.bySemanticsLabel(RegExp(r'Ciclo dal')), findsOneWidget);
-    });
-
-    testWidgets('in-progress cycle shows "In corso" badge', (tester) async {
-      final inProgress = [
-        _makeSummary(start: DateTime.utc(2026, 4, 13)),
-      ];
-      await tester.pumpWidget(
-        _wrap([timelineProvider.overrideWith(() => _DataNotifier(inProgress))]),
-      );
-      await tester.pumpAndSettle();
-      expect(find.text('In corso'), findsWidgets);
+      expect(find.byType(InkWell), findsNothing);
     });
   });
 }

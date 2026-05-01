@@ -32,10 +32,13 @@ class TimelineView extends StatelessWidget {
   Widget build(BuildContext context) {
     if (summaries.isEmpty) return const _EmptyState();
     return ListView.separated(
-      padding: const EdgeInsets.all(MetraSpacing.s4),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 90),
       itemCount: summaries.length,
-      separatorBuilder: (_, __) => const SizedBox(height: MetraSpacing.s2),
-      itemBuilder: (_, i) => TimelineCard(summary: summaries[i]),
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (_, i) => TimelineCard(
+        summary: summaries[i],
+        isLast: i == summaries.length - 1,
+      ),
     );
   }
 }
