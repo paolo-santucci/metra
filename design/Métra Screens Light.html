@@ -544,7 +544,9 @@ const MONTH_DATA = (() => {
   const pain = [11, 12, 13, 16];   // day 11-12: flow+pain; 13: flow+symptom+pain; 16: symptom+pain
   const flowByDay = { 10: 'Abbondante', 11: 'Abbondante', 12: 'Moderato', 13: 'Leggero', 14: 'Leggero' };
   const symptomsByDay = { 13: ['Crampi', 'Stanchezza'], 16: ['Mal di testa'], 17: ['Stanchezza'] };
-  return { offset, total, flow, pred, symptoms, pain, flowByDay, symptomsByDay };
+  const painByDay = { 11: 'Moderato', 12: 'Moderato', 13: 'Forte', 16: 'Lieve' };
+  const notesByDay = { 13: 'Ciclo molto doloroso oggi', 16: 'Emicrania intensa' };
+  return { offset, total, flow, pred, symptoms, pain, flowByDay, symptomsByDay, painByDay, notesByDay };
 })();
 
 function CalDay({ day, offset, monthData, selected, onSelect }) {
@@ -600,6 +602,8 @@ function ScreenCalendario() {
   const selDaySymptoms = MONTH_DATA.symptomsByDay[sel] || [];
   const selCycleDay = isSelFlow ? MONTH_DATA.flow.indexOf(sel) + 1 : null;
   const hasEntry = isSelFlow || selDaySymptoms.length > 0 || MONTH_DATA.pain.includes(sel);
+  const selPainLabel = MONTH_DATA.painByDay[sel] || null;
+  const selNote = MONTH_DATA.notesByDay[sel] || null;
 
   return (
     <Phone>
@@ -652,32 +656,40 @@ function ScreenCalendario() {
           margin: '4px 16px', background: C.surface, borderRadius: 20,
           border: '1px solid rgba(43,37,33,0.08)', padding: '16px 20px', flex: 1
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <div>
-              <div style={{ fontFamily: 'DM Serif Display', fontSize: 20, color: C.inchiostro }}>{selWeekday} {sel} aprile</div>
-              {selCycleDay && <div style={{ fontFamily: 'Inter', fontSize: 13, color: 'rgba(43,37,33,0.68)', marginTop: 2 }}>Giorno {selCycleDay} del ciclo</div>}
-            </div>
-            {selFlowLabel ? (
-              <div style={{
-                paddingInline: 12, height: 32, background: `${C.terracotta}18`,
-                border: `1px solid ${C.terracotta}44`, borderRadius: 10,
-                display: 'flex', alignItems: 'center'
-              }}>
-                <span style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 500, color: C.tc_scura }}>{selFlowLabel}</span>
-              </div>
-            ) : (
-              <div style={{ fontFamily: 'Inter', fontSize: 12, color: 'rgba(43,37,33,0.38)', fontStyle: 'italic' }}>Nessun dato registrato</div>
-            )}
+          {/* Header */}
+          <div style={{ marginBottom: hasEntry ? 10 : 12 }}>
+            <div style={{ fontFamily: 'DM Serif Display', fontSize: 20, color: C.inchiostro }}>{selWeekday} {sel} aprile</div>
+            {selCycleDay && <div style={{ fontFamily: 'Inter', fontSize: 13, color: 'rgba(43,37,33,0.68)', marginTop: 2 }}>Giorno {selCycleDay} del ciclo</div>}
+            {!hasEntry && <div style={{ fontFamily: 'Inter', fontSize: 12, color: 'rgba(43,37,33,0.38)', fontStyle: 'italic', marginTop: 4 }}>Nessun dato registrato</div>}
           </div>
-          {selDaySymptoms.length > 0 &&
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
-              {selDaySymptoms.map((s) =>
-            <div key={s} style={{ paddingInline: 10, height: 28, background: `${C.ocra}18`, border: `1px solid ${C.ocra}55`, borderRadius: 8, display: 'flex', alignItems: 'center' }}>
-                  <span style={{ fontFamily: 'Inter', fontSize: 12, color: C.tc_scura }}>{s}</span>
+          {/* Pills row */}
+          {hasEntry && (selFlowLabel || selPainLabel || selDaySymptoms.length > 0) && (
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+              {selFlowLabel && (
+                <div style={{ height: 24, paddingInline: 8, background: `${C.terracotta}15`, borderRadius: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <DataIcon name="drop" size={11} color={C.terracotta} />
+                  <span style={{ fontFamily: 'Inter', fontSize: 11, color: C.tc_scura }}>{selFlowLabel}</span>
                 </div>
-            )}
+              )}
+              {selPainLabel && (
+                <div style={{ height: 24, paddingInline: 8, background: `${C.malva}1F`, borderRadius: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <DataIcon name="zap" size={11} color={C.malva} />
+                  <span style={{ fontFamily: 'Inter', fontSize: 11, color: C.malva }}>{selPainLabel}</span>
+                </div>
+              )}
+              {selDaySymptoms.map((s) => (
+                <div key={s} style={{ height: 24, paddingInline: 8, background: `${C.ocra}18`, borderRadius: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <DataIcon name="star_small" size={11} color={C.ocra} />
+                  <span style={{ fontFamily: 'Inter', fontSize: 11, color: C.tc_scura }}>{s}</span>
+                </div>
+              ))}
             </div>
-          }
+          )}
+          {/* Note text */}
+          {selNote && (
+            <div style={{ fontFamily: 'Inter', fontSize: 13, color: 'rgba(43,37,33,0.68)', lineHeight: 1.5, marginBottom: 10 }}>{selNote}</div>
+          )}
+          {/* CTA button */}
           <div style={{
             height: 44, background: `${C.terracotta}10`, border: `1px solid ${C.terracotta}22`, borderRadius: 12,
             display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
