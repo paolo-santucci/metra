@@ -15,8 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/entities/cycle_prediction.dart';
@@ -24,24 +22,7 @@ import '../../../providers/use_case_providers.dart';
 
 /// Non-autoDispose provider: the prediction is app-lifetime state consumed by
 /// the calendar and the app-level notification listener.
-final cyclePredictionProvider =
-    AsyncNotifierProvider<CyclePredictionNotifier, CyclePrediction?>(
-  CyclePredictionNotifier.new,
-);
-
-class CyclePredictionNotifier extends AsyncNotifier<CyclePrediction?> {
-  @override
-  Future<CyclePrediction?> build() async {
-    final uc = await ref.read(watchCyclePredictionProvider.future);
-    final completer = Completer<CyclePrediction?>();
-    final sub = uc().listen((CyclePrediction? prediction) {
-      if (!completer.isCompleted) {
-        completer.complete(prediction);
-      } else {
-        state = AsyncData(prediction);
-      }
-    });
-    ref.onDispose(sub.cancel);
-    return completer.future;
-  }
-}
+final cyclePredictionProvider = StreamProvider<CyclePrediction?>((ref) async* {
+  final uc = await ref.watch(watchCyclePredictionProvider.future);
+  yield* uc();
+});

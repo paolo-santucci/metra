@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
+import 'dart:async';
+
 import '../../core/errors/metra_exception.dart';
 import '../../core/utils/result.dart';
 import '../entities/cycle_entry_entity.dart';
@@ -24,7 +26,7 @@ import '../repositories/cycle_entry_repository.dart';
 import '../repositories/daily_log_repository.dart';
 
 class RecomputeCycleEntries {
-  const RecomputeCycleEntries(this._logRepo, this._cycleRepo);
+  RecomputeCycleEntries(this._logRepo, this._cycleRepo);
 
   final DailyLogRepository _logRepo;
   final CycleEntryRepository _cycleRepo;
@@ -33,7 +35,24 @@ class RecomputeCycleEntries {
   // many days are considered distinct cycles.
   static const int _kNewCycleGapDays = 21;
 
-  Future<Result<List<CycleEntryEntity>>> call() async {
+  // Future-chain mutex; catchError keeps the chain alive after a failed run.
+  Future<void> _serialized = Future.value();
+
+  Future<Result<List<CycleEntryEntity>>> call() {
+    final completer = Completer<Result<List<CycleEntryEntity>>>();
+    _serialized = _serialized.then((_) async {
+      completer.complete(await _doCall());
+    }).catchError((Object e, StackTrace s) {
+      if (!completer.isCompleted) {
+        completer.complete(
+          Err(StorageException('Failed to recompute cycle entries: $e')),
+        );
+      }
+    });
+    return completer.future;
+  }
+
+  Future<Result<List<CycleEntryEntity>>> _doCall() async {
     try {
       final logs = await _logRepo.getAllOrderedByDate();
       final entries = _compute(logs);
@@ -58,25 +77,11 @@ class RecomputeCycleEntries {
 
     if (flowDays.isEmpty) return const [];
 
-    // Group flow days into runs separated by ≥ _kNewCycleGapDays.
-    final groups = <_CycleGroup>[];
-    var groupStart = flowDays.first.date;
-    var groupEnd = flowDays.first.date;
-
-    for (var i = 1; i < flowDays.length; i++) {
-      final gap = flowDays[i].date.difference(groupEnd).inDays;
-      if (gap >= _kNewCycleGapDays) {
-        groups.add((start: groupStart, end: groupEnd));
-        groupStart = flowDays[i].date;
-      }
-      groupEnd = flowDays[i].date;
-    }
-    groups.add((start: groupStart, end: groupEnd));
+    final groups = _groupFlowDays(flowDays);
 
     // Build CycleEntryEntity list; IDs are placeholder (replaceAll ignores them).
     return List.generate(groups.length, (i) {
       final group = groups[i];
-      final periodLength = group.end.difference(group.start).inDays + 1;
       final cycleLength = i + 1 < groups.length
           ? groups[i + 1].start.difference(group.start).inDays
           : null;
@@ -84,11 +89,34 @@ class RecomputeCycleEntries {
         id: 0,
         startDate: group.start,
         endDate: group.end,
-        periodLength: periodLength,
+        periodLength: group.flowDayCount,
         cycleLength: cycleLength,
       );
     });
   }
+
+  // Groups flow days into bleeding episodes separated by ≥ _kNewCycleGapDays.
+  // flowDayCount is the number of logged days, not the calendar span.
+  static List<_CycleGroup> _groupFlowDays(List<DailyLogEntity> flowDays) {
+    final groups = <_CycleGroup>[];
+    var groupStart = flowDays.first.date;
+    var groupEnd = flowDays.first.date;
+    var flowDayCount = 1;
+
+    for (var i = 1; i < flowDays.length; i++) {
+      final gap = flowDays[i].date.difference(groupEnd).inDays;
+      if (gap >= _kNewCycleGapDays) {
+        groups.add((start: groupStart, end: groupEnd, flowDayCount: flowDayCount));
+        groupStart = flowDays[i].date;
+        flowDayCount = 1;
+      } else {
+        flowDayCount++;
+      }
+      groupEnd = flowDays[i].date;
+    }
+    groups.add((start: groupStart, end: groupEnd, flowDayCount: flowDayCount));
+    return groups;
+  }
 }
 
-typedef _CycleGroup = ({DateTime start, DateTime end});
+typedef _CycleGroup = ({DateTime start, DateTime end, int flowDayCount});

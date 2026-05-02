@@ -1214,10 +1214,10 @@ abstract class AppLocalizations {
   /// **'Salva giornata'**
   String get today_save_day;
 
-  /// Add symptom chip label
+  /// Add symptom chip label (the '+' icon is rendered separately in code)
   ///
   /// In it, this message translates to:
-  /// **'+ Aggiungi'**
+  /// **'Aggiungi'**
   String get today_add_symptom;
 
   /// Flow circle label: light

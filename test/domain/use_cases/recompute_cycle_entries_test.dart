@@ -15,12 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/utils/result.dart';
 import 'package:metra/domain/entities/cycle_entry_entity.dart';
 import 'package:metra/domain/entities/daily_log_entity.dart';
 import 'package:metra/domain/entities/flow_intensity.dart';
 import 'package:metra/domain/entities/flow_type.dart';
+import 'package:metra/domain/entities/pain_symptom_data.dart';
+import 'package:metra/domain/repositories/cycle_entry_repository.dart';
+import 'package:metra/domain/repositories/daily_log_repository.dart';
 import 'package:metra/domain/use_cases/recompute_cycle_entries.dart';
 
 import '../../helpers/fake_cycle_entry_repository.dart';
@@ -152,6 +157,39 @@ void main() {
       expect(entries[0].cycleLength, 21);
       expect(entries[1].cycleLength, 45);
     });
+
+    // Regression: Bug [2] — gap=19 (< threshold) keeps both days in ONE group,
+    // but periodLength must be 2 (flow day count), NOT 20 (calendar span).
+    test(
+      'given_gap_below_threshold_when_compute_then_periodLength_counts_flow_days_not_span',
+      () {
+        final logs = [
+          _flowDay(DateTime.utc(2026, 1, 1)),
+          _flowDay(DateTime.utc(2026, 1, 20)), // gap = 19 days, below threshold
+        ];
+        final entries = RecomputeCycleEntries.compute(logs);
+        expect(entries, hasLength(1));
+        expect(entries.first.periodLength, 2);
+      },
+    );
+
+    // Mixed: 3+2 flow days with intra-episode gaps, all within one cycle episode.
+    test(
+      'given_flow_days_with_intra_episode_gaps_when_compute_then_periodLength_counts_actual_flow_days',
+      () {
+        // Jan 1, 2, 3 — gap — Jan 8 — gap — Jan 14: span=14, flow days=5
+        final logs = [
+          _flowDay(DateTime.utc(2026, 1, 1)),
+          _flowDay(DateTime.utc(2026, 1, 2)),
+          _flowDay(DateTime.utc(2026, 1, 3)),
+          _flowDay(DateTime.utc(2026, 1, 8)),  // +5 days gap
+          _flowDay(DateTime.utc(2026, 1, 14)), // +6 days gap
+        ];
+        final entries = RecomputeCycleEntries.compute(logs);
+        expect(entries, hasLength(1));
+        expect(entries.first.periodLength, 5);
+      },
+    );
   });
 
   group('call() — integration with repos', () {
@@ -173,5 +211,127 @@ void main() {
       await useCase();
       expect(cycleRepo.entries, hasLength(2));
     });
+
+    // Concurrency: two overlapping call() invocations must execute their
+    // read→compute→write triples sequentially — the second getAllOrderedByDate
+    // must not fire before the first replaceAll completes.
+    test(
+      'given_two_concurrent_calls_when_call_invoked_twice_then_executes_sequentially',
+      () async {
+        final events = <String>[];
+
+        // Fake log repo: first getAllOrderedByDate stalls until released; second
+        // proceeds immediately. Both return one flow day (content unimportant for
+        // the ordering assertion).
+        final firstGetCompleter = Completer<void>();
+
+        final serialFakeLog = _SerializationFakeLogRepo(
+          firstGetCompleter: firstGetCompleter,
+          events: events,
+          log: _flowDay(DateTime.utc(2026, 1, 1)),
+        );
+        final serialFakeCycle = _SerializationFakeCycleRepo(events: events);
+        final uc = RecomputeCycleEntries(serialFakeLog, serialFakeCycle);
+
+        // Launch both calls without awaiting between them.
+        final f1 = uc();
+        final f2 = uc();
+
+        // Allow microtasks to run so both calls enter their bodies.
+        await Future<void>.delayed(Duration.zero);
+
+        // Release the first getAllOrderedByDate — this must trigger replaceAll#1
+        // before getAllOrderedByDate#2 fires.
+        firstGetCompleter.complete();
+
+        await Future.wait([f1, f2]);
+
+        // Sequential order: get1 → replace1 → get2 → replace2
+        expect(events, ['get1', 'replace1', 'get2', 'replace2']);
+      },
+    );
   });
+}
+
+// ---------------------------------------------------------------------------
+// Local fakes for the concurrency test — not reusable outside this file.
+// ---------------------------------------------------------------------------
+
+class _SerializationFakeLogRepo implements DailyLogRepository {
+  _SerializationFakeLogRepo({
+    required this.firstGetCompleter,
+    required this.events,
+    required this.log,
+  });
+
+  final Completer<void> firstGetCompleter;
+  final List<String> events;
+  final DailyLogEntity log;
+  int _callCount = 0;
+
+  @override
+  Future<List<DailyLogEntity>> getAllOrderedByDate() async {
+    _callCount++;
+    final label = 'get$_callCount';
+    if (_callCount == 1) {
+      await firstGetCompleter.future; // stall until released
+    }
+    events.add(label);
+    return [log];
+  }
+
+  // Unused interface methods — return stubs so the class compiles.
+  @override
+  Stream<DailyLogEntity?> watchDay(DateTime date) => const Stream.empty();
+  @override
+  Stream<List<DailyLogEntity>> watchMonth(int year, int month) =>
+      const Stream.empty();
+  @override
+  Future<void> saveDailyLog(DailyLogEntity log) async {}
+  @override
+  Future<void> deleteDailyLog(DateTime date) async {}
+  @override
+  Future<List<PainSymptomData>> getPainSymptoms(DateTime date) async => [];
+  @override
+  Future<Set<DateTime>> getSymptomDatesForMonth(int year, int month) async =>
+      {};
+  @override
+  Future<void> replacePainSymptoms(
+    DateTime date,
+    List<PainSymptomData> newSymptoms,
+  ) async {}
+  @override
+  Future<void> deleteAll() async {}
+  @override
+  Future<void> deleteAllAndReplace(
+    List<DailyLogEntity> logs,
+    Map<DateTime, List<PainSymptomData>> newSymptoms,
+  ) async {}
+}
+
+class _SerializationFakeCycleRepo implements CycleEntryRepository {
+  _SerializationFakeCycleRepo({required this.events});
+
+  final List<String> events;
+  int _replaceCount = 0;
+
+  @override
+  Future<void> replaceAll(List<CycleEntryEntity> newEntries) async {
+    _replaceCount++;
+    events.add('replace$_replaceCount');
+  }
+
+  // Unused interface methods.
+  @override
+  Stream<List<CycleEntryEntity>> watchAll() => const Stream.empty();
+  @override
+  Future<List<CycleEntryEntity>> getRecent(int n) async => [];
+  @override
+  Future<CycleEntryEntity> insert(CycleEntryEntity entry) async => entry;
+  @override
+  Future<void> update(CycleEntryEntity entry) async {}
+  @override
+  Future<void> delete(int id) async {}
+  @override
+  Future<void> deleteAll() async {}
 }

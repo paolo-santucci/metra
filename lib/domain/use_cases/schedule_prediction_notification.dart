@@ -32,9 +32,14 @@ class SchedulePredictionNotification {
   }) async {
     await _notifService.cancelPredictionNotifications();
     if (prediction == null || !settings.notificationsEnabled) return;
-    final clampedDays = settings.notificationDaysBefore.clamp(1, 7);
-    final notifyAt =
-        prediction.windowStart.subtract(Duration(days: clampedDays));
+    assert(
+      settings.notificationDaysBefore >= 1 &&
+          settings.notificationDaysBefore <= 7,
+      'notificationDaysBefore must be in [1, 7]; '
+      'got ${settings.notificationDaysBefore}',
+    );
+    final notifyAt = prediction.windowStart
+        .subtract(Duration(days: settings.notificationDaysBefore));
     if (notifyAt.isBefore(DateTime.now())) return;
     await _notifService.schedulePredictionNotification(notifyAt, title, body);
   }

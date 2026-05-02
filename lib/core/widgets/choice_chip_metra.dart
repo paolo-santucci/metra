@@ -49,6 +49,9 @@ class ChoiceChipMetra extends StatelessWidget {
     final textPrimary =
         isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
 
+    // Container without `alignment` stays intrinsic-width under Wrap's loose
+    // constraints. Row(mainAxisSize.min) gives horizontal centering for the
+    // text without triggering Container's expand-to-fill behavior.
     return Semantics(
       label: semanticsLabel,
       toggled: selected,
@@ -57,36 +60,37 @@ class ChoiceChipMetra extends StatelessWidget {
       child: GestureDetector(
         onTap: () => onSelected(!selected),
         behavior: HitTestBehavior.opaque,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            minWidth: 44,
-            minHeight: 44,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 44),
+          decoration: BoxDecoration(
+            color: selected
+                ? bgSelected
+                : textPrimary.withValues(alpha: 0.07),
+            borderRadius: BorderRadius.circular(MetraRadius.lgg),
+            border: selected
+                ? Border.all(color: Colors.transparent)
+                : Border.all(
+                    color: textPrimary.withValues(alpha: 0.12),
+                    width: 1.0,
+                  ),
           ),
-          child: Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: MetraSpacing.s4,
-                vertical: MetraSpacing.s2,
-              ),
-              decoration: BoxDecoration(
-                color: selected
-                    ? bgSelected
-                    : textPrimary.withValues(alpha: 0.07),
-                borderRadius: BorderRadius.circular(MetraRadius.lgg),
-                border: selected
-                    ? Border.all(color: Colors.transparent)
-                    : Border.all(
-                        color: textPrimary.withValues(alpha: 0.12),
-                        width: 1.0,
-                      ),
-              ),
-              child: Text(
-                label,
-                style: MetraTypography.caption.copyWith(
-                  color: selected ? fgSelected : textPrimary,
-                  fontWeight: FontWeight.w500,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: MetraSpacing.s2,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  label,
+                  style: MetraTypography.caption.copyWith(
+                    color: selected ? fgSelected : textPrimary,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ),

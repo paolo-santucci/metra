@@ -29,5 +29,5 @@ class WatchCyclePrediction {
   final CyclePredictionService _service;
 
   Stream<CyclePrediction?> call() =>
-      _cycleRepo.watchAll().map(_service.predict);
+      _cycleRepo.watchAll().map(_service.predict).distinct();
 }

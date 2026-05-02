@@ -43,7 +43,7 @@ class MonthNavigator extends StatelessWidget {
   final VoidCallback onPrev;
   final VoidCallback onNext;
 
-  /// When false, the next-month button is hidden (already at current month).
+  /// When false, the next-month button is non-interactive (already at current month).
   final bool canGoNext;
 
   /// Optional current cycle day number shown below the month name.
@@ -57,15 +57,19 @@ class MonthNavigator extends StatelessWidget {
     final textSecondary = isDark
         ? MetraColors.dark.textSecondary
         : MetraColors.light.textSecondary;
-    final chevronActive = textPrimary;
-    final chevronInactive = textPrimary.withValues(alpha: 0.40);
+    // Bible § 8.1: inchiostro when enabled, faded (alpha 0.40) when disabled.
+    final chevronPrev = textPrimary;
+    final chevronNext = canGoNext
+        ? textPrimary
+        : textPrimary.withValues(alpha: 0.40);
 
     return Padding(
+      // Bible § 8.1: padding 12 / 24 / 0 → top 12, sides 24, bottom 0.
       padding: const EdgeInsets.fromLTRB(
-        MetraSpacing.s4,
+        MetraSpacing.s6,
         MetraSpacing.s3,
-        MetraSpacing.s2,
-        MetraSpacing.s2,
+        MetraSpacing.s6,
+        MetraSpacing.s0,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -87,9 +91,9 @@ class MonthNavigator extends StatelessWidget {
                       Icon(
                         Icons.brightness_2_rounded,
                         size: 14,
-                        color: textSecondary,
+                        color: textPrimary,
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: MetraSpacing.sp6),
                       Text(
                         'Giorno $cycleDay',
                         style: MetraTypography.caption.copyWith(
@@ -103,15 +107,15 @@ class MonthNavigator extends StatelessWidget {
               ],
             ),
           ),
-          // Right: prev / next buttons.
+          // Right: prev / next buttons — gap 10 (Bible § 8.1).
           Semantics(
             label: prevLabel,
             button: true,
             child: IconButton(
               onPressed: onPrev,
-              icon: Icon(Icons.chevron_left, color: chevronInactive),
+              icon: Icon(Icons.chevron_left, color: chevronPrev),
               tooltip: prevLabel,
-              iconSize: 24,
+              iconSize: 22,
               constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
               padding: EdgeInsets.zero,
             ),
@@ -119,18 +123,15 @@ class MonthNavigator extends StatelessWidget {
           Semantics(
             label: nextLabel,
             button: true,
-            child: Opacity(
-              opacity: canGoNext ? 1.0 : 0.0,
-              child: IgnorePointer(
-                ignoring: !canGoNext,
-                child: IconButton(
-                  onPressed: canGoNext ? onNext : null,
-                  icon: Icon(Icons.chevron_right, color: chevronActive),
-                  tooltip: nextLabel,
-                  iconSize: 24,
-                  constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                  padding: EdgeInsets.zero,
-                ),
+            child: IgnorePointer(
+              ignoring: !canGoNext,
+              child: IconButton(
+                onPressed: canGoNext ? onNext : null,
+                icon: Icon(Icons.chevron_right, color: chevronNext),
+                tooltip: nextLabel,
+                iconSize: 22,
+                constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                padding: EdgeInsets.zero,
               ),
             ),
           ),

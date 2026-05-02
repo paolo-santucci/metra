@@ -23,15 +23,20 @@ import '../../../core/widgets/metra_icon.dart';
 /// Single calendar day cell — 48×48 dp rounded square (borderRadius 12).
 ///
 /// State precedence (highest wins): selected > flow > spotting > prediction
-/// > today > default. States are mutually exclusive in decoration; only one
-/// visual treatment is applied at a time.
+/// > today > future > default. States are mutually exclusive in decoration;
+/// only one visual treatment is applied at a time.
+///
+/// When [isFuture] is true the cell renders as faded plain text (0.35 alpha)
+/// and ignores any [onTap] — future dates are read-only. The exception: a
+/// future cell with [hasPrediction] still renders with the prediction outline
+/// (predictions are inherently future).
 ///
 /// Indicator icons (spec § 8.3.2) are rendered below the day number:
-/// - flow/spotting → drop (terracotta)
+/// - flow/spotting → dropFilled (terracotta)
 /// - prediction   → dropOutline (nightLavender) — shown independently, not
 ///   suppressed when flow is also present (CL-01 fix)
-/// - symptom      → starSmall (dustyOchre)
-/// - pain         → small filled circle (malva)
+/// - symptom      → starSmallFilled (dustyOchre)
+/// - pain         → zapFilled / lightning (malva)
 ///
 /// Accessibility: caller provides the full [semanticsLabel] string
 /// (e.g. "Flusso medio, 15 aprile 2026"). Widget never constructs it.
@@ -48,6 +53,7 @@ class CalendarDay extends StatelessWidget {
     this.hasSymptom = false,
     this.isToday = false,
     this.isSelected = false,
+    this.isFuture = false,
     this.onTap,
   });
 
@@ -60,6 +66,7 @@ class CalendarDay extends StatelessWidget {
   final bool hasSymptom;
   final bool isToday;
   final bool isSelected;
+  final bool isFuture;
   final VoidCallback? onTap;
   final String semanticsLabel;
 
@@ -93,6 +100,9 @@ class CalendarDay extends StatelessWidget {
       accentPrediction: accentPrediction,
     );
 
+    // Future cells are read-only — suppress tap regardless of what the caller passes.
+    final effectiveOnTap = isFuture ? null : onTap;
+
     // On a selected cell, indicators use the cell background color (inverted).
     final indicatorFlow = isSelected ? bgPrimary : accentFlow;
     final indicatorPrediction = isSelected ? bgPrimary : accentPrediction;
@@ -106,7 +116,7 @@ class CalendarDay extends StatelessWidget {
     if (isFlow || isSpotting) {
       indicators.add(
         MetraIcon(
-          svgBody: MetraIcons.drop,
+          svgBody: MetraIcons.dropFilled,
           size: _indicatorSize,
           color: indicatorFlow,
         ),
@@ -124,56 +134,69 @@ class CalendarDay extends StatelessWidget {
     if (hasSymptom) {
       indicators.add(
         MetraIcon(
-          svgBody: MetraIcons.starSmall,
+          svgBody: MetraIcons.starSmallFilled,
           size: _indicatorSize,
           color: indicatorSymptom,
         ),
       );
     }
     if (hasPain) {
-      indicators.add(_PainDot(color: indicatorPain));
+      indicators.add(
+        MetraIcon(
+          svgBody: MetraIcons.zapFilled,
+          size: _indicatorSize,
+          color: indicatorPain,
+        ),
+      );
     }
 
     return Semantics(
       label: semanticsLabel,
-      button: onTap != null,
-      enabled: onTap != null,
+      button: effectiveOnTap != null,
+      enabled: effectiveOnTap != null,
       excludeSemantics: true,
       child: GestureDetector(
-        onTap: onTap,
+        onTap: effectiveOnTap,
         behavior: HitTestBehavior.opaque,
-        child: Container(
-          width: _cellSize,
-          height: _cellSize,
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(_borderRadius),
-            border: border,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '${date.day}',
-                style: GoogleFonts.inter(
-                  fontSize: 15,
-                  fontWeight: fontWeight,
-                  color: textColor,
-                ),
+        // Center the 48×48 decorated box within the grid slot so the rounded
+        // background has breathing room, matching the HTML spec's fixed
+        // width:48/height:48 cell inside 1fr columns.
+        child: Center(
+          child: SizedBox(
+            width: _cellSize,
+            height: _cellSize,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: bg,
+                borderRadius: BorderRadius.circular(_borderRadius),
+                border: border,
               ),
-              if (indicators.isNotEmpty) ...[
-                const SizedBox(height: 3),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    for (int i = 0; i < indicators.length; i++) ...[
-                      if (i > 0) const SizedBox(width: 2),
-                      indicators[i],
-                    ],
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '${date.day}',
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: fontWeight,
+                      color: textColor,
+                    ),
+                  ),
+                  if (indicators.isNotEmpty) ...[
+                    const SizedBox(height: 1),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        for (int i = 0; i < indicators.length; i++) ...[
+                          if (i > 0) const SizedBox(width: 2),
+                          indicators[i],
+                        ],
+                      ],
+                    ),
                   ],
-                ),
-              ],
-            ],
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -243,31 +266,23 @@ class CalendarDay extends StatelessWidget {
       );
     }
 
-    // Default
+    // Future dates (date > today) render faded — opacity table 0.35 (Bible § opacity table).
+    if (isFuture) {
+      return (
+        Colors.transparent,
+        null,
+        textPrimary.withValues(alpha: 0.35),
+        FontWeight.w400,
+      );
+    }
+
+    // Default — Bible § 8.3: day number is inchiostro at full opacity.
     return (
       Colors.transparent,
       null,
-      textPrimary.withValues(alpha: 0.60),
+      textPrimary,
       FontWeight.w400,
     );
   }
 }
 
-// ── Pain indicator — small filled circle (no SVG equivalent) ──────────────────
-
-class _PainDot extends StatelessWidget {
-  const _PainDot({required this.color});
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 11,
-      height: 11,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
-    );
-  }
-}

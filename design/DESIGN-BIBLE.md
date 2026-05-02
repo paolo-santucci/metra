@@ -515,8 +515,8 @@ left:
     Moon phase=2 size 14 inchiostro
     Inter 13 rgba(0.68)                      (e.g. "Giorno 14")
 right: row gap 10:
-  Icon chevron_left  22 rgba(0.40)           (idle / disabled = no extra style; only color)
-  Icon chevron_right 22 inchiostro
+  Icon chevron_left  22 inchiostro           (when idle / rgba(0.40) when disabled aka no other months in that direction)
+  Icon chevron_right 22 rgba(0.40)           (when disabledaka no other months in that direction / inchiostro when idle)
 ```
 
 ### 8.2 Day-headers row

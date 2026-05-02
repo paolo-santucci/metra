@@ -66,7 +66,7 @@ class FlowIntensityDots extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(0, 16, 0, 2),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: MainAxisSize.max,
         children: [
           for (var i = 0; i < _levels.length; i++) ...[
             if (i > 0) const SizedBox(width: 10),

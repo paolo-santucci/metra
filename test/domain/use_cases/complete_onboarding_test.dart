@@ -16,20 +16,32 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:metra/domain/entities/flow_intensity.dart';
+import 'package:metra/domain/entities/flow_type.dart';
+import 'package:metra/domain/entities/daily_log_entity.dart';
 import 'package:metra/domain/use_cases/complete_onboarding.dart';
+import 'package:metra/domain/use_cases/recompute_cycle_entries.dart';
 
 import '../../helpers/fake_app_settings_repository.dart';
 import '../../helpers/fake_cycle_entry_repository.dart';
+import '../../helpers/fake_daily_log_repository.dart';
 
 void main() {
   late FakeCycleEntryRepository cycleRepo;
   late FakeAppSettingsRepository settingsRepo;
+  late FakeDailyLogRepository logRepo;
   late CompleteOnboarding useCase;
 
   setUp(() {
     cycleRepo = FakeCycleEntryRepository();
     settingsRepo = FakeAppSettingsRepository();
-    useCase = CompleteOnboarding(cycleRepo, settingsRepo);
+    logRepo = FakeDailyLogRepository();
+    useCase = CompleteOnboarding(
+      cycleRepo,
+      settingsRepo,
+      logRepo,
+      RecomputeCycleEntries(logRepo, cycleRepo),
+    );
   });
 
   final lastPeriod = DateTime.utc(2026, 4, 1);
@@ -79,4 +91,54 @@ void main() {
 
     expect(cycleRepo.entries.first.periodLength, 5);
   });
+
+  test(
+    'given_existing_mestruazioni_logs_when_execute_then_cycle_entries_reflect_all_periods',
+    () async {
+      // Two distinct menstrual periods separated by 28 days.
+      final period1Start = DateTime.utc(2026, 1, 1);
+      final period2Start = DateTime.utc(2026, 1, 29);
+      for (var i = 0; i < 5; i++) {
+        await logRepo.saveDailyLog(
+          DailyLogEntity(
+            date: period1Start.add(Duration(days: i)),
+            flowType: FlowType.mestruazioni,
+            flowIntensity: FlowIntensity.medium,
+          ),
+        );
+        await logRepo.saveDailyLog(
+          DailyLogEntity(
+            date: period2Start.add(Duration(days: i)),
+            flowType: FlowType.mestruazioni,
+            flowIntensity: FlowIntensity.medium,
+          ),
+        );
+      }
+
+      await useCase.execute(
+        lastPeriodDate: lastPeriod,
+        cycleLength: 28,
+        periodLength: 5,
+      );
+
+      // Recompute must have produced 2 entries from the logs (not just 1 seed).
+      expect(cycleRepo.entries, hasLength(2));
+    },
+  );
+
+  test(
+    'given_no_daily_logs_when_execute_then_seed_entry_is_preserved',
+    () async {
+      await useCase.execute(
+        lastPeriodDate: lastPeriod,
+        cycleLength: 28,
+        periodLength: 5,
+      );
+
+      // No logs → recompute is a no-op → seed must survive.
+      expect(cycleRepo.entries, hasLength(1));
+      expect(cycleRepo.entries.first.startDate, lastPeriod);
+      expect(cycleRepo.entries.first.cycleLength, 28);
+    },
+  );
 }

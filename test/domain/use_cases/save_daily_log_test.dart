@@ -150,6 +150,22 @@ void main() {
       final result = await useCase(makeLog(painIntensity: null));
       expect(result, isA<Ok<DailyLogEntity>>());
     });
+
+    // BUG-006: painEnabled=true with null intensity violates domain invariant.
+    test('painEnabled=true with null painIntensity → Err(ValidationException)',
+        () async {
+      final log = DailyLogEntity(
+        date: DateTime.utc(2026, 1, 15),
+        painEnabled: true,
+        painIntensity: null,
+      );
+      final result = await useCase(log);
+      expect(result, isA<Err<DailyLogEntity>>());
+      expect(
+        (result as Err<DailyLogEntity>).error,
+        isA<ValidationException>(),
+      );
+    });
   });
 
   group('date normalization', () {

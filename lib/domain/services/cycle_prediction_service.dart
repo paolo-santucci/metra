@@ -37,7 +37,7 @@ class CyclePredictionService {
     // 2. Need at least 3 complete cycles.
     if (complete.length < 3) return null;
 
-    // 3. Take the most recent min(count, 6) cycles.
+    // 3. Take the most recent min(count, 6) complete cycles for WMA.
     final n = complete.length < 6 ? complete.length : 6;
     final window = complete.sublist(complete.length - n);
 
@@ -51,9 +51,17 @@ class CyclePredictionService {
     }
     final avg = weightedSum / weightTotal;
 
-    // 5. Build the prediction window around the rounded expected start.
-    final lastCycle = window.last;
-    final expectedStart = lastCycle.startDate.add(Duration(days: avg.round()));
+    // 5. Anchor on the most-recent cycle overall (may be incomplete/null length).
+    //    Decoupled from the WMA window so an in-progress cycle doesn't push the
+    //    prediction into the past.
+    // Keep `a` unless `b` is strictly later; ties preserve the iteration-first
+    // entry (deterministic regardless of list ordering).
+    final anchor = cycles.reduce(
+      (a, b) => b.startDate.isBefore(a.startDate) ? a : b,
+    );
+
+    // 6. Build the prediction window around the rounded expected start.
+    final expectedStart = anchor.startDate.add(Duration(days: avg.round()));
     final windowStart = expectedStart.subtract(const Duration(days: 2));
     final windowEnd = expectedStart.add(const Duration(days: 2));
 

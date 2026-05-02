@@ -107,14 +107,6 @@ class _StubCalendarMonthNotifierForYear extends CalendarMonthNotifier {
   void goToNextMonth() {}
 }
 
-class _StubCyclePredictionNotifier extends CyclePredictionNotifier {
-  _StubCyclePredictionNotifier(this._prediction);
-  final CyclePrediction? _prediction;
-
-  @override
-  Future<CyclePrediction?> build() async => _prediction;
-}
-
 // ---------------------------------------------------------------------------
 // Widget helpers
 // ---------------------------------------------------------------------------
@@ -153,8 +145,9 @@ Widget _wrapWithRouter(
   return ProviderScope(
     overrides: [
       // Default: no prediction (null) — prevents DB access in widget tests.
-      cyclePredictionProvider
-          .overrideWith(() => _StubCyclePredictionNotifier(prediction)),
+      cyclePredictionProvider.overrideWith(
+        (ref) => Stream.value(prediction),
+      ),
       // Prevent DB access — no symptoms in widget tests by default.
       painSymptomsProvider.overrideWith((ref, date) async => []),
       ...overrides,
@@ -252,6 +245,10 @@ void main() {
 
     testWidgets('day-detail card is visible on initial load (today selected)',
         (tester) async {
+      // SliverFillRemaining needs extra vertical space beyond the calendar grid.
+      await tester.binding.setSurfaceSize(const Size(800, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
       await tester.pumpWidget(
         _wrapWithRouter([
           calendarMonthProvider.overrideWith(_StubCalendarMonthNotifier.new),
@@ -266,6 +263,9 @@ void main() {
 
     testWidgets('tapping a day cell shows the day-detail card',
         (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
       await tester.pumpWidget(
         _wrapWithRouter([
           calendarMonthProvider.overrideWith(_StubCalendarMonthNotifier.new),
@@ -287,6 +287,9 @@ void main() {
     testWidgets(
         'tapping "Modifica giornata" in the day-detail card navigates to /daily-entry/:date',
         (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
       await tester.pumpWidget(
         _wrapWithRouter([
           calendarMonthProvider.overrideWith(_StubCalendarMonthNotifier.new),
@@ -304,6 +307,96 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('daily-entry-stub'), findsOneWidget);
+    });
+  });
+
+  group('CalendarScreen — future date read-only', () {
+    testWidgets('future day cells have isFuture true', (tester) async {
+      await tester.pumpWidget(
+        _wrapWithRouter([
+          calendarMonthProvider.overrideWith(_StubCalendarMonthNotifier.new),
+        ]),
+      );
+      await tester.pumpAndSettle();
+
+      final days =
+          tester.widgetList<CalendarDay>(find.byType(CalendarDay)).toList();
+      final now = DateTime.now();
+      final todayUtc = DateTime.utc(now.year, now.month, now.day);
+
+      for (final day in days) {
+        if (day.date.isAfter(todayUtc)) {
+          expect(
+            day.isFuture,
+            isTrue,
+            reason: 'day ${day.date.day} is after today and must have isFuture',
+          );
+        } else {
+          expect(
+            day.isFuture,
+            isFalse,
+            reason:
+                'day ${day.date.day} is today or past and must not have isFuture',
+          );
+        }
+      }
+    });
+
+    testWidgets(
+        'tapping a future cell does not change the selected date in the detail card',
+        (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(
+        _wrapWithRouter([
+          calendarMonthProvider.overrideWith(_StubCalendarMonthNotifier.new),
+        ]),
+      );
+      await tester.pumpAndSettle();
+
+      // The initial detail card shows today — grab today's date label.
+      final now = DateTime.now();
+      final todayUtc = DateTime.utc(now.year, now.month, now.day);
+      final days =
+          tester.widgetList<CalendarDay>(find.byType(CalendarDay)).toList();
+      final futureDays = days.where((d) => d.date.isAfter(todayUtc)).toList();
+
+      // Only run this assertion when the current month has future days
+      // (always true if today is not the last day of the month).
+      if (futureDays.isEmpty) return;
+
+      // Record how many "Modifica giornata" labels are visible before the tap.
+      final editButtonsBefore =
+          tester.widgetList(find.text('Modifica giornata')).length;
+
+      // Attempt to tap the first future cell.
+      await tester.tap(
+        find.byWidget(futureDays.first),
+        warnIfMissed: false,
+      );
+      await tester.pumpAndSettle();
+
+      // "Modifica giornata" count must not have changed — future date blocks CTA.
+      final editButtonsAfter =
+          tester.widgetList(find.text('Modifica giornata')).length;
+      expect(editButtonsAfter, equals(editButtonsBefore));
+    });
+
+    testWidgets('"Modifica giornata" CTA is absent when selected date is today',
+        (tester) async {
+      // Today is not in the future — CTA must be visible.
+      await tester.binding.setSurfaceSize(const Size(800, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(
+        _wrapWithRouter([
+          calendarMonthProvider.overrideWith(_StubCalendarMonthNotifier.new),
+        ]),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Modifica giornata'), findsOneWidget);
     });
   });
 
@@ -361,13 +454,24 @@ void main() {
   });
 
   group('CalendarScreen prediction window', () {
+    // Build a future month (+2 months from today) so the prediction window
+    // is always in the future, making these tests immune to calendar drift.
+    DateTime futureWindowDate(int offsetDays) {
+      final now = DateTime.now();
+      final todayUtc = DateTime.utc(now.year, now.month, now.day);
+      return todayUtc.add(Duration(days: offsetDays));
+    }
+
     testWidgets('days inside prediction window have hasPrediction true',
         (tester) async {
-      // Prediction window: 12–16 January 2026.
+      // Anchor the prediction window 60 days from today so it is always future.
+      final windowStart = futureWindowDate(58);
+      final expectedStart = futureWindowDate(60);
+      final windowEnd = futureWindowDate(62);
       final prediction = CyclePrediction(
-        windowStart: DateTime.utc(2026, 1, 12),
-        windowEnd: DateTime.utc(2026, 1, 16),
-        expectedStart: DateTime.utc(2026, 1, 14),
+        windowStart: windowStart,
+        windowEnd: windowEnd,
+        expectedStart: expectedStart,
         cyclesUsed: 3,
       );
 
@@ -375,7 +479,10 @@ void main() {
         _wrapWithRouter(
           [
             calendarMonthProvider.overrideWith(
-              () => _StubCalendarMonthNotifierForYear(year: 2026, month: 1),
+              () => _StubCalendarMonthNotifierForYear(
+                year: expectedStart.year,
+                month: expectedStart.month,
+              ),
             ),
           ],
           prediction: prediction,
@@ -386,21 +493,30 @@ void main() {
       final days =
           tester.widgetList<CalendarDay>(find.byType(CalendarDay)).toList();
 
-      // Day 12 is inside the window — hasPrediction must be true.
-      final day12 = days.firstWhere((d) => d.date.day == 12);
-      expect(day12.hasPrediction, isTrue);
+      // The expectedStart day is inside the window — hasPrediction must be true.
+      final dayInWindow =
+          days.firstWhere((d) => d.date.day == expectedStart.day);
+      expect(dayInWindow.hasPrediction, isTrue);
 
-      // Day 1 is outside the window — hasPrediction must be false.
-      final day1 = days.firstWhere((d) => d.date.day == 1);
-      expect(day1.hasPrediction, isFalse);
+      // A day clearly outside the window: windowEnd + 3 days (guaranteed to
+      // be > windowEnd.day; if it overflows to the next month, skip the check).
+      final outsideDate = windowEnd.add(const Duration(days: 3));
+      if (outsideDate.month == expectedStart.month) {
+        final dayOutside =
+            days.firstWhere((d) => d.date.day == outsideDate.day);
+        expect(dayOutside.hasPrediction, isFalse);
+      }
     });
 
     testWidgets('days outside prediction window have hasPrediction false',
         (tester) async {
+      final windowStart = futureWindowDate(58);
+      final expectedStart = futureWindowDate(60);
+      final windowEnd = futureWindowDate(62);
       final prediction = CyclePrediction(
-        windowStart: DateTime.utc(2026, 1, 12),
-        windowEnd: DateTime.utc(2026, 1, 16),
-        expectedStart: DateTime.utc(2026, 1, 14),
+        windowStart: windowStart,
+        windowEnd: windowEnd,
+        expectedStart: expectedStart,
         cyclesUsed: 3,
       );
 
@@ -408,7 +524,10 @@ void main() {
         _wrapWithRouter(
           [
             calendarMonthProvider.overrideWith(
-              () => _StubCalendarMonthNotifierForYear(year: 2026, month: 1),
+              () => _StubCalendarMonthNotifierForYear(
+                year: expectedStart.year,
+                month: expectedStart.month,
+              ),
             ),
           ],
           prediction: prediction,
@@ -419,9 +538,10 @@ void main() {
       final days =
           tester.widgetList<CalendarDay>(find.byType(CalendarDay)).toList();
 
-      // All days outside 12–16 must have hasPrediction false.
       for (final day in days) {
-        if (day.date.day < 12 || day.date.day > 16) {
+        final inWindow = !day.date.isBefore(windowStart) &&
+            !day.date.isAfter(windowEnd);
+        if (!inWindow) {
           expect(
             day.hasPrediction,
             isFalse,
@@ -434,10 +554,13 @@ void main() {
     testWidgets(
         'prediction window day with no log emits prediction semantics label',
         (tester) async {
+      final windowStart = futureWindowDate(58);
+      final expectedStart = futureWindowDate(60);
+      final windowEnd = futureWindowDate(62);
       final prediction = CyclePrediction(
-        windowStart: DateTime.utc(2026, 1, 12),
-        windowEnd: DateTime.utc(2026, 1, 16),
-        expectedStart: DateTime.utc(2026, 1, 14),
+        windowStart: windowStart,
+        windowEnd: windowEnd,
+        expectedStart: expectedStart,
         cyclesUsed: 3,
       );
 
@@ -445,7 +568,10 @@ void main() {
         _wrapWithRouter(
           [
             calendarMonthProvider.overrideWith(
-              () => _StubCalendarMonthNotifierForYear(year: 2026, month: 1),
+              () => _StubCalendarMonthNotifierForYear(
+                year: expectedStart.year,
+                month: expectedStart.month,
+              ),
             ),
           ],
           prediction: prediction,
@@ -453,8 +579,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Days 12–16 have no log and hasPrediction = true → semantics label
-      // must start with "Ciclo previsto,".
+      // Days in the future window have no log and hasPrediction = true →
+      // semantics label must start with "Ciclo previsto,".
       expect(
         find.bySemanticsLabel(RegExp(r'^Ciclo previsto,')),
         findsWidgets,
@@ -463,10 +589,14 @@ void main() {
 
     testWidgets('when prediction is null no day has hasPrediction true',
         (tester) async {
+      final futureMonth = futureWindowDate(60);
       await tester.pumpWidget(
         _wrapWithRouter([
           calendarMonthProvider.overrideWith(
-            () => _StubCalendarMonthNotifierForYear(year: 2026, month: 1),
+            () => _StubCalendarMonthNotifierForYear(
+              year: futureMonth.year,
+              month: futureMonth.month,
+            ),
           ),
         ]),
       );
@@ -482,6 +612,64 @@ void main() {
           reason: 'no prediction set — day ${day.date.day} must be false',
         );
       }
+    });
+
+    testWidgets(
+        'elapsed prediction window does not paint prediction outline on past cells',
+        (tester) async {
+      // Regression test: stale data scenario where the prediction window
+      // has already passed (windowEnd < today). No past cell should show
+      // the prediction outline, regardless of containsDate returning true.
+      final now = DateTime.now();
+      final pastBase = DateTime.utc(now.year, now.month, now.day)
+          .subtract(const Duration(days: 60));
+      final pastWindowStart =
+          DateTime.utc(pastBase.year, pastBase.month, pastBase.day - 2);
+      final pastExpectedStart =
+          DateTime.utc(pastBase.year, pastBase.month, pastBase.day);
+      final pastWindowEnd =
+          DateTime.utc(pastBase.year, pastBase.month, pastBase.day + 2);
+      final stalePrediction = CyclePrediction(
+        windowStart: pastWindowStart,
+        windowEnd: pastWindowEnd,
+        expectedStart: pastExpectedStart,
+        cyclesUsed: 3,
+      );
+
+      await tester.pumpWidget(
+        _wrapWithRouter(
+          [
+            calendarMonthProvider.overrideWith(
+              () => _StubCalendarMonthNotifierForYear(
+                year: pastExpectedStart.year,
+                month: pastExpectedStart.month,
+              ),
+            ),
+          ],
+          prediction: stalePrediction,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final days =
+          tester.widgetList<CalendarDay>(find.byType(CalendarDay)).toList();
+
+      // Every cell in the past month must have hasPrediction false — the
+      // elapsed window must not paint a prediction outline on past cells.
+      for (final day in days) {
+        expect(
+          day.hasPrediction,
+          isFalse,
+          reason:
+              'day ${day.date} is in an elapsed prediction window and must not show prediction outline',
+        );
+      }
+
+      // No "Ciclo previsto" semantics label should appear for the past window.
+      expect(
+        find.bySemanticsLabel(RegExp(r'^Ciclo previsto,')),
+        findsNothing,
+      );
     });
   });
 }

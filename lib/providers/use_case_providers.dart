@@ -111,6 +111,50 @@ final importDailyLogsProvider = FutureProvider<ImportDailyLogs>((ref) async {
   return ImportDailyLogs(logRepo, recompute);
 });
 
+// ── Calendar: current cycle day ──
+
+/// Returns today's day-of-cycle (1 = period start day), or null if no cycle
+/// entry exists yet.  Day 1 is inclusive: startDate → day 1, startDate+1 → day 2 …
+final currentCycleDayProvider = FutureProvider<int?>((ref) async {
+  final cycleRepo = await ref.watch(cycleEntryRepositoryProvider.future);
+  final recent = await cycleRepo.getRecent(1);
+  if (recent.isEmpty) return null;
+  final startDate = recent.first.startDate;
+  final today = DateTime.utc(
+    DateTime.now().year,
+    DateTime.now().month,
+    DateTime.now().day,
+  );
+  final diff = today.difference(startDate).inDays;
+  if (diff < 0) return null;
+  return diff + 1;
+});
+
+/// Returns the day-of-cycle number for an arbitrary [date], or null when the
+/// date falls before any known cycle start.
+///
+/// Scans all cycle entries in-memory (typically < 100) to find the cycle whose
+/// startDate ≤ date < next cycle's startDate, then returns (date - startDate) + 1.
+final cycleDayForDateProvider =
+    FutureProvider.family<int?, DateTime>((ref, date) async {
+  final cycleRepo = await ref.watch(cycleEntryRepositoryProvider.future);
+  // 256 is a safe upper bound; typical users have < 50 cycle entries.
+  final entries = await cycleRepo.getRecent(256);
+  if (entries.isEmpty) return null;
+
+  // entries are ordered newest-first from getRecent; sort oldest-first for scan.
+  final sorted = [...entries]..sort((a, b) => a.startDate.compareTo(b.startDate));
+
+  for (int i = 0; i < sorted.length; i++) {
+    final start = sorted[i].startDate;
+    if (date.isBefore(start)) continue;
+    final nextStart = (i + 1 < sorted.length) ? sorted[i + 1].startDate : null;
+    if (nextStart != null && !date.isBefore(nextStart)) continue;
+    return date.difference(start).inDays + 1;
+  }
+  return null;
+});
+
 // ── P-7 onboarding ──
 
 final completeOnboardingProvider = FutureProvider<CompleteOnboarding>((
@@ -118,5 +162,7 @@ final completeOnboardingProvider = FutureProvider<CompleteOnboarding>((
 ) async {
   final cycleRepo = await ref.watch(cycleEntryRepositoryProvider.future);
   final settingsRepo = await ref.watch(appSettingsRepositoryProvider.future);
-  return CompleteOnboarding(cycleRepo, settingsRepo);
+  final logRepo = await ref.watch(dailyLogRepositoryProvider.future);
+  final recompute = await ref.watch(recomputeCycleEntriesProvider.future);
+  return CompleteOnboarding(cycleRepo, settingsRepo, logRepo, recompute);
 });

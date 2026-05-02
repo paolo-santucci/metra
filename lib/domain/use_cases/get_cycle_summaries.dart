@@ -38,11 +38,20 @@ class GetCycleSummaries {
 
     final allLogs = await _logRepo.getAllOrderedByDate();
 
+    final today = DateTime.now().toUtc();
+    final todayNorm = DateTime.utc(today.year, today.month, today.day);
+
+    // The trailing (current) cycle is the one with the greatest startDate.
+    // Its range must extend to today so non-period logs recorded after the
+    // last bleed day (endDate) are still included in the summary.
+    final trailingStart =
+        cycles.map((c) => c.startDate).reduce((a, b) => a.isAfter(b) ? a : b);
+
     final summaries = await Future.wait(
       cycles.map((cycle) async {
-        final today = DateTime.now().toUtc();
-        final todayNorm = DateTime.utc(today.year, today.month, today.day);
-        final rangeEnd = cycle.endDate ?? todayNorm;
+        final isTrailing = cycle.startDate == trailingStart;
+        final rangeEnd =
+            isTrailing ? todayNorm : (cycle.endDate ?? todayNorm);
 
         final logsInRange = allLogs
             .where(

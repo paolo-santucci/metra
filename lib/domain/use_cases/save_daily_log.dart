@@ -41,11 +41,17 @@ class SaveDailyLog {
       );
     }
 
-    final today = DateTime.now().toUtc();
-    final todayDay = DateTime.utc(today.year, today.month, today.day);
+    final now = DateTime.now();
+    final todayDay = DateTime.utc(now.year, now.month, now.day);
     final logDay = DateTime.utc(log.date.year, log.date.month, log.date.day);
     if (logDay.isAfter(todayDay)) {
       return const Err(ValidationException('Cannot log a future date'));
+    }
+
+    if (log.painEnabled && log.painIntensity == null) {
+      return const Err(
+        ValidationException('painEnabled=true requires a painIntensity value'),
+      );
     }
 
     if (log.painIntensity != null &&

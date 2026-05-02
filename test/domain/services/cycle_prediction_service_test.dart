@@ -239,6 +239,35 @@ void main() {
     });
 
     test(
+      'prediction anchors on the LATEST cycle even when it has cycleLength=null '
+      '(incomplete current cycle)',
+      () {
+        // Simulates user with 4 cycles Jan-Apr — April is the current/incomplete cycle.
+        final start0 = DateTime(2026, 1, 1);
+        final start1 = start0.add(const Duration(days: 28));
+        final start2 = start1.add(const Duration(days: 28));
+        final start3 = start2.add(const Duration(days: 28)); // most recent, incomplete
+
+        final cycles = [
+          makeEntry(id: 1, startDate: start0, cycleLength: 28),
+          makeEntry(id: 2, startDate: start1, cycleLength: 28),
+          makeEntry(id: 3, startDate: start2, cycleLength: 28),
+          // most recent cycle: incomplete — cycleLength is null
+          CycleEntryEntity(id: 4, startDate: start3),
+        ];
+
+        final result = service.predict(cycles);
+        expect(result, isNotNull);
+        // expectedStart must be anchored on start3, not start2
+        expect(
+          result!.expectedStart,
+          equals(start3.add(const Duration(days: 28))),
+        );
+        expect(result.cyclesUsed, equals(3)); // 3 complete cycles used for WMA
+      },
+    );
+
+    test(
       '6-cycle cap: WMA uses only the most recent 6 when 10 cycles are provided',
       () {
         // First 4 cycles have length 99 (should be ignored).
@@ -265,6 +294,41 @@ void main() {
           result.expectedStart,
           equals(lastStart.add(const Duration(days: 28))),
         );
+      },
+    );
+
+    test(
+      'given_two_cycles_share_startDate_when_predict_called_with_reversed_order_then_expectedStart_is_identical',
+      () {
+        // Regression for tie-break determinism in anchor reduce.
+        // Two cycles share the same startDate: one complete (has cycleLength),
+        // one incomplete (cycleLength null). The reduce tie-break must be
+        // deterministic — both list orderings must produce the same expectedStart.
+        final start0 = anchor;
+        final start1 = start0.add(const Duration(days: 28));
+        final start2 = start1.add(const Duration(days: 28));
+        final tiedDate = start2.add(const Duration(days: 28));
+
+        final completeAtTied =
+            makeEntry(id: 4, startDate: tiedDate, cycleLength: 28);
+        final incompleteAtTied =
+            CycleEntryEntity(id: 5, startDate: tiedDate); // cycleLength null
+
+        final base = [
+          makeEntry(id: 1, startDate: start0, cycleLength: 28),
+          makeEntry(id: 2, startDate: start1, cycleLength: 28),
+          makeEntry(id: 3, startDate: start2, cycleLength: 28),
+        ];
+
+        final forwardOrder = [...base, completeAtTied, incompleteAtTied];
+        final reversedOrder = [...base, incompleteAtTied, completeAtTied];
+
+        final resultForward = service.predict(forwardOrder);
+        final resultReversed = service.predict(reversedOrder);
+
+        expect(resultForward, isNotNull);
+        expect(resultReversed, isNotNull);
+        expect(resultForward!.expectedStart, equals(resultReversed!.expectedStart));
       },
     );
   });

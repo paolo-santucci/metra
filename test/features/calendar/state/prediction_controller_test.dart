@@ -15,9 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
-// NOTE: This test requires T8 to register `watchCyclePredictionProvider` in
-// `use_case_providers.dart` before it can be compiled and run.
-
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,8 +25,8 @@ import 'package:metra/features/calendar/state/prediction_controller.dart';
 import 'package:metra/providers/use_case_providers.dart';
 
 void main() {
-  group('CyclePredictionNotifier', () {
-    test('emits AsyncData with the prediction from the stream', () async {
+  group('cyclePredictionProvider (StreamProvider)', () {
+    test('initial emission propagates to state.value', () async {
       final expectedStart = DateTime.utc(2026, 5, 15);
       final prediction = CyclePrediction(
         windowStart: expectedStart.subtract(const Duration(days: 2)),
@@ -51,7 +48,7 @@ void main() {
       expect(result, equals(prediction));
     });
 
-    test('emits AsyncData(null) when prediction is null', () async {
+    test('emits AsyncData(null) when stream yields null', () async {
       final container = ProviderContainer(
         overrides: [
           watchCyclePredictionProvider.overrideWith(
@@ -65,7 +62,7 @@ void main() {
       expect(result, isNull);
     });
 
-    test('updates state when stream emits a new prediction', () async {
+    test('subsequent stream emission updates state.value', () async {
       final expectedStart = DateTime.utc(2026, 6, 1);
       final first = CyclePrediction(
         windowStart: expectedStart.subtract(const Duration(days: 2)),
@@ -81,6 +78,7 @@ void main() {
       );
 
       final fakeUc = _StreamingWatchCyclePrediction();
+      addTearDown(fakeUc.close);
       final container = ProviderContainer(
         overrides: [
           watchCyclePredictionProvider.overrideWith(
@@ -90,18 +88,60 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      // Prime the stream with the first prediction.
       fakeUc.add(first);
       final initial = await container.read(cyclePredictionProvider.future);
       expect(initial, equals(first));
 
-      // Emit a second prediction and verify state updates.
       fakeUc.add(second);
       await Future<void>.delayed(Duration.zero);
 
       expect(
         container.read(cyclePredictionProvider).valueOrNull,
         equals(second),
+      );
+    });
+
+    // Documents StreamProvider's last-write-wins contract: when the underlying
+    // stream emits null then a valid prediction in rapid succession (e.g. after
+    // a DELETE then INSERT), the final observable state must be the valid
+    // prediction.  The previous Completer-based implementation also produced the
+    // correct result empirically (Dart's FIFO microtask scheduler delivers
+    // events in order), but `StreamProvider` makes the contract explicit and
+    // eliminates the Completer juggling entirely.
+    test(
+        'rapid null→valid emissions leave state as valid, not null',
+        () async {
+      final expectedStart = DateTime.utc(2026, 7, 1);
+      final validPrediction = CyclePrediction(
+        windowStart: expectedStart.subtract(const Duration(days: 2)),
+        windowEnd: expectedStart.add(const Duration(days: 2)),
+        expectedStart: expectedStart,
+        cyclesUsed: 3,
+      );
+
+      final fakeUc = _StreamingWatchCyclePrediction();
+      addTearDown(fakeUc.close);
+      final container = ProviderContainer(
+        overrides: [
+          watchCyclePredictionProvider.overrideWith(
+            (ref) async => fakeUc,
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      // Buffer both events before the provider subscribes; single-subscription
+      // StreamController delivers them in order once the listener attaches.
+      fakeUc.add(null); // A
+      fakeUc.add(validPrediction); // B
+
+      await container.read(cyclePredictionProvider.future);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        container.read(cyclePredictionProvider).valueOrNull,
+        equals(validPrediction),
+        reason: 'StreamProvider last-write-wins: B must be the final state.',
       );
     });
   });
@@ -117,12 +157,16 @@ class _FakeWatchCyclePrediction implements WatchCyclePrediction {
   Stream<CyclePrediction?> call() => Stream.value(_prediction);
 }
 
-/// Fake backed by a broadcast StreamController for multi-emission tests.
+/// Fake backed by a single-subscription StreamController for multi-emission tests.
+/// Single-subscription buffers events until the listener attaches, which is
+/// required because StreamProvider subscribes asynchronously after build() resolves.
 class _StreamingWatchCyclePrediction implements WatchCyclePrediction {
   final _controller = StreamController<CyclePrediction?>();
 
   void add(CyclePrediction? p) => _controller.add(p);
+  void close() => _controller.close();
 
   @override
   Stream<CyclePrediction?> call() => _controller.stream;
 }
+

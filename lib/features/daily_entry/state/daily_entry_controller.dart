@@ -64,9 +64,19 @@ class DailyEntryNotifier
 
     switch (result) {
       case Ok():
+        // Set state synchronously so callers that read state immediately after
+        // await see AsyncData rather than a stale AsyncError. The live stream
+        // subscription in build() will overwrite this with the canonical DB
+        // value once it emits, which is fine.
+        state = AsyncData(log);
         // Cycle entries must be recomputed after every mutation.
         final recompute = await ref.read(recomputeCycleEntriesProvider.future);
         await recompute();
+        // Invalidate cycle-day providers so they re-query the updated cycle
+        // entries. Both are FutureProviders that watch the repo instance (not
+        // its data), so they do not auto-refresh when replaceAll() runs.
+        ref.invalidate(currentCycleDayProvider);
+        ref.invalidate(cycleDayForDateProvider);
       case Err(:final error):
         state = AsyncError(error, StackTrace.current);
     }
@@ -79,6 +89,8 @@ class DailyEntryNotifier
       await repo.deleteDailyLog(arg);
       final recompute = await ref.read(recomputeCycleEntriesProvider.future);
       await recompute();
+      ref.invalidate(currentCycleDayProvider);
+      ref.invalidate(cycleDayForDateProvider);
     } catch (e, st) {
       state = AsyncError(e, st);
     }

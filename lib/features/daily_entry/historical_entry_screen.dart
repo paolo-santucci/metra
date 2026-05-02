@@ -16,9 +16,9 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/theme/metra_colors.dart';
@@ -71,6 +71,7 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
   // null = not logged; 0 = Nessuno (explicit zero); 1-3 = pain levels.
   int? _painIntensity;
   Set<PainSymptomType> _selectedSymptoms = {};
+  List<String> _customSymptomLabels = [];
   bool _addingSymptom = false;
 
   late final TextEditingController _notesController;
@@ -117,11 +118,24 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
     }
   }
 
-  /// Seeds [_selectedSymptoms] from the one-shot [painSymptomsProvider] load.
+  /// Seeds [_selectedSymptoms] and [_customSymptomLabels] from the one-shot
+  /// [painSymptomsProvider] load.
   void _initSymptoms(List<PainSymptomData> symptoms) {
     if (_symptomsInitialized) return;
     _symptomsInitialized = true;
-    _selectedSymptoms = symptoms.map((s) => s.symptomType).toSet();
+    _selectedSymptoms = symptoms
+        .where((s) => s.symptomType != PainSymptomType.custom)
+        .map((s) => s.symptomType)
+        .toSet();
+    _customSymptomLabels = symptoms
+        .where(
+          (s) =>
+              s.symptomType == PainSymptomType.custom &&
+              s.customLabel != null &&
+              s.customLabel!.isNotEmpty,
+        )
+        .map((s) => s.customLabel!)
+        .toList();
   }
 
   DailyLogEntity _buildEntity() {
@@ -157,9 +171,15 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
         final repo = await ref.read(dailyLogRepositoryProvider.future);
         await repo.replacePainSymptoms(
           widget.date,
-          _selectedSymptoms
-              .map((type) => PainSymptomData(symptomType: type))
-              .toList(),
+          <PainSymptomData>[
+            ..._selectedSymptoms.map((t) => PainSymptomData(symptomType: t)),
+            ..._customSymptomLabels.map(
+              (label) => PainSymptomData(
+                symptomType: PainSymptomType.custom,
+                customLabel: label,
+              ),
+            ),
+          ],
         );
       } catch (e) {
         assert(() {
@@ -244,6 +264,11 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
         : MetraColors.light.textSecondary;
     final accentFlow =
         isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
+    final bgSunken =
+        isDark ? MetraColors.dark.bgSunken : MetraColors.light.bgSunken;
+    final borderStrong = isDark
+        ? MetraColors.dark.borderStrong
+        : MetraColors.light.borderStrong;
     final surfaceRaised =
         isDark ? MetraColors.dark.bgSurface : MetraColors.light.surfaceRaised;
     final borderColor = isDark
@@ -365,24 +390,45 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
                     ),
                   ],
                   if (_flowType == FlowType.spotting) ...[
-                    const SizedBox(height: MetraSpacing.s3),
-                    Text(
-                      l10n.daily_entry_spotting_note,
-                      style: MetraTypography.caption.copyWith(
-                        color: textSecondary,
+                    const SizedBox(height: MetraSpacing.sp14),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: MetraSpacing.sp14,
+                        vertical: 11,
+                      ),
+                      decoration: BoxDecoration(
+                        color: accentFlow.withValues(alpha: 0.051),
+                        border: Border.all(
+                          color: accentFlow.withValues(alpha: 0.157),
+                          width: 1,
+                        ),
+                        borderRadius: BorderRadius.circular(MetraRadius.smm),
+                      ),
+                      child: Text(
+                        l10n.daily_entry_spotting_note,
+                        style: MetraTypography.tiny.copyWith(
+                          color: textPrimary.withValues(alpha: 0.65),
+                          fontWeight: FontWeight.w400,
+                          height: 1.55,
+                        ),
                       ),
                     ),
                   ],
                   if (_flowType == FlowType.assente) ...[
-                    const SizedBox(height: MetraSpacing.s3),
+                    const SizedBox(height: MetraSpacing.sp14),
                     Row(
                       children: [
-                        Icon(Icons.check, color: accentFlow, size: 16),
+                        Icon(
+                          Icons.check,
+                          color: textPrimary.withValues(alpha: 0.35),
+                          size: 16,
+                        ),
                         const SizedBox(width: MetraSpacing.s2),
                         Text(
                           l10n.daily_entry_assente_confirmation,
-                          style: MetraTypography.caption.copyWith(
-                            color: textPrimary,
+                          style: MetraTypography.tiny.copyWith(
+                            color: textPrimary.withValues(alpha: 0.45),
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ],
@@ -478,23 +524,23 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
                     style: MetraTypography.body.copyWith(color: textPrimary),
                     decoration: InputDecoration(
                       hintText: l10n.today_notes_hint,
-                      hintStyle: GoogleFonts.inter(
+                      hintStyle: MetraTypography.body.copyWith(
                         fontSize: 15,
-                        color: textSecondary,
+                        color: textPrimary.withValues(alpha: 0.35),
                       ),
                       filled: true,
-                      fillColor: surfaceRaised,
+                      fillColor: bgSunken,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: MetraSpacing.sp14,
                         vertical: MetraSpacing.s3,
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(MetraRadius.md),
-                        borderSide: BorderSide(color: borderColor, width: 1),
+                        borderSide: BorderSide(color: borderStrong, width: 1.5),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(MetraRadius.md),
-                        borderSide: BorderSide(color: borderColor, width: 1),
+                        borderSide: BorderSide(color: borderStrong, width: 1.5),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(MetraRadius.md),
@@ -563,7 +609,7 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
     Color textPrimary,
     Color textSecondary,
   ) {
-    final chips = _symptomTypes.map((type) {
+    final fixedChips = _symptomTypes.map((type) {
       final label = _symptomLabel(type, l10n);
       return ChoiceChipMetra(
         label: label,
@@ -581,7 +627,21 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
           });
         },
       );
-    }).toList();
+    });
+
+    final customChips = _customSymptomLabels.map((label) {
+      return ChoiceChipMetra(
+        label: label,
+        selected: true,
+        semanticsLabel: label,
+        onSelected: (_) {
+          setState(() {
+            _customSymptomLabels =
+                _customSymptomLabels.where((l) => l != label).toList();
+          });
+        },
+      );
+    });
 
     final Widget addWidget = _addingSymptom
         ? Container(
@@ -591,12 +651,21 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
               textSecondary: textSecondary,
               onConfirm: () {
                 final text = _customSymptomController.text.trim();
+                if (text.isEmpty) {
+                  setState(() => _addingSymptom = false);
+                  return;
+                }
+                final fixedLabels = _symptomTypes
+                    .map((t) => _symptomLabel(t, l10n).toLowerCase())
+                    .toSet();
+                final alreadyExists =
+                    _customSymptomLabels.any(
+                      (l) => l.toLowerCase() == text.toLowerCase(),
+                    ) ||
+                    fixedLabels.contains(text.toLowerCase());
                 setState(() {
-                  if (text.isNotEmpty) {
-                    _selectedSymptoms = {
-                      ..._selectedSymptoms,
-                      PainSymptomType.custom,
-                    };
+                  if (!alreadyExists) {
+                    _customSymptomLabels = [..._customSymptomLabels, text];
                   }
                   _addingSymptom = false;
                   _customSymptomController.clear();
@@ -619,7 +688,7 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
             ),
           );
 
-    return [...chips, addWidget];
+    return [...fixedChips, ...customChips, addWidget];
   }
 }
 
@@ -649,6 +718,7 @@ class _InlineSymptomInput extends StatelessWidget {
             controller: controller,
             autofocus: true,
             onSubmitted: (_) => onConfirm(),
+            inputFormatters: [LengthLimitingTextInputFormatter(40)],
             style: MetraTypography.caption.copyWith(color: textSecondary),
             decoration: InputDecoration(
               hintText: 'es. Vertigini',
@@ -699,6 +769,9 @@ class _InlineSymptomInput extends StatelessWidget {
 
 // ── Dashed "add" chip ─────────────────────────────────────────────────────────
 
+/// Dashed-border chip for the "Aggiungi" action.
+/// The '+' icon and label text are styled separately to match the mockup:
+/// '+' at 18px / 0.35 alpha, label at 13px / 0.40 alpha, with 5px gap.
 class _AddSymptomChip extends StatelessWidget {
   const _AddSymptomChip({required this.label, required this.textSecondary});
 
@@ -707,17 +780,37 @@ class _AddSymptomChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final plusColor = textSecondary.withValues(alpha: 0.35);
+    final labelColor = textSecondary.withValues(alpha: 0.40);
     return CustomPaint(
       painter: _DashedBorderPainter(color: textSecondary.withValues(alpha: 0.25)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: MetraSpacing.s4,
-          vertical: MetraSpacing.s2,
-        ),
-        child: Text(
-          label,
-          style: MetraTypography.caption.copyWith(
-            color: textSecondary.withValues(alpha: 0.40),
+      child: SizedBox(
+        height: 36,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                '+',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 18,
+                  color: plusColor,
+                  height: 1,
+                ),
+              ),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 13,
+                  color: labelColor,
+                ),
+              ),
+            ],
           ),
         ),
       ),

@@ -55,6 +55,9 @@ class FlowTypeChips extends StatelessWidget {
     final textSecondary = isDark
         ? MetraColors.dark.textSecondary
         : MetraColors.light.textSecondary;
+    final accentText = isDark
+        ? MetraColors.dark.accentFlowText
+        : MetraColors.light.accentFlowText;
 
     return Row(
       children: [
@@ -64,6 +67,7 @@ class FlowTypeChips extends StatelessWidget {
             flowType: FlowType.assente,
             selected: selected,
             accent: accent,
+            accentText: accentText,
             borderSubtle: borderSubtle,
             textPrimary: textPrimary,
             textSecondary: textSecondary,
@@ -79,6 +83,7 @@ class FlowTypeChips extends StatelessWidget {
             flowType: FlowType.mestruazioni,
             selected: selected,
             accent: accent,
+            accentText: accentText,
             borderSubtle: borderSubtle,
             textPrimary: textPrimary,
             textSecondary: textSecondary,
@@ -94,6 +99,7 @@ class FlowTypeChips extends StatelessWidget {
             flowType: FlowType.spotting,
             selected: selected,
             accent: accent,
+            accentText: accentText,
             borderSubtle: borderSubtle,
             textPrimary: textPrimary,
             textSecondary: textSecondary,
@@ -113,6 +119,7 @@ class _FlowChip extends StatelessWidget {
     required this.flowType,
     required this.selected,
     required this.accent,
+    required this.accentText,
     required this.borderSubtle,
     required this.textPrimary,
     required this.textSecondary,
@@ -123,6 +130,7 @@ class _FlowChip extends StatelessWidget {
   final FlowType flowType;
   final FlowType? selected;
   final Color accent;
+  final Color accentText;
   final Color borderSubtle;
   final Color textPrimary;
   final Color textSecondary;
@@ -148,7 +156,7 @@ class _FlowChip extends StatelessWidget {
             color: textPrimary.withValues(alpha: 0.32),
             radius: MetraRadius.md,
           ),
-          child: _ChipContent(label: label, textColor: textPrimary),
+          child: _ChipContent(label: label, textColor: textPrimary, isSelected: true),
         ),
       );
     } else {
@@ -179,7 +187,8 @@ class _FlowChip extends StatelessWidget {
         ),
         child: _ChipContent(
           label: label,
-          textColor: _isSelected ? textPrimary : textSecondary,
+          textColor: _isSelected ? accentText : textSecondary,
+          isSelected: _isSelected,
         ),
       );
     }
@@ -202,10 +211,13 @@ class _ChipContent extends StatelessWidget {
   const _ChipContent({
     required this.label,
     required this.textColor,
+    required this.isSelected,
   });
 
   final String label;
   final Color textColor;
+
+  final bool isSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -216,7 +228,7 @@ class _ChipContent extends StatelessWidget {
           label,
           style: MetraTypography.caption.copyWith(
             color: textColor,
-            fontWeight: FontWeight.w500,
+            fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
           ),
           textAlign: TextAlign.center,
           maxLines: 1,

@@ -414,7 +414,8 @@ class _DatePickerField extends StatelessWidget {
     final hasDate = selectedDate != null;
 
     return Semantics(
-      label: 'Primo giorno ultima mestruazione, ${hasDate ? displayText : 'non selezionato'}',
+      label:
+          'Primo giorno ultima mestruazione, ${hasDate ? displayText : 'non selezionato'}',
       button: true,
       child: GestureDetector(
         onTap: () => _pickDate(context),
@@ -487,7 +488,8 @@ class _PeriodDurationPicker extends StatelessWidget {
         isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
     // Active text: sabbia (sand) per DESIGN-BIBLE § 5.2.
     // Idle background: ink @ 0.07 per DESIGN-BIBLE § 5.2.
-    final sand = isDark ? MetraColors.dark.textOnAccent : MetraColors.light.sand;
+    final sand =
+        isDark ? MetraColors.dark.textOnAccent : MetraColors.light.sand;
     final idleBg = textPrimary.withAlpha(0x12);
 
     return Row(
@@ -551,7 +553,9 @@ class _StepProgressBar extends StatelessWidget {
                 height: 3,
                 margin: EdgeInsets.only(right: i < total - 1 ? 4 : 0),
                 decoration: BoxDecoration(
-                  color: i < current ? accentColor : accentColor.withValues(alpha: 0.25),
+                  color: i < current
+                      ? accentColor
+                      : accentColor.withValues(alpha: 0.25),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -600,9 +604,9 @@ class _CycleLengthStepper extends StatelessWidget {
 
     return Column(
       children: [
-        // Number + controls row
+        // Number + controls row: minus at left edge, value centred, plus at right edge.
         Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             // Decrement button: 40×40 touch area, radius 10, ink @ 0.07 fill.
             Semantics(
@@ -634,7 +638,6 @@ class _CycleLengthStepper extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: MetraSpacing.s4),
             Semantics(
               label: '$value ${l10n.onboarding_days_unit}',
               child: Row(
@@ -656,7 +659,6 @@ class _CycleLengthStepper extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: MetraSpacing.s4),
             // Increment button: 40×40 touch area, radius 10, ink @ 0.07 fill.
             Semantics(
               button: true,

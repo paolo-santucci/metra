@@ -146,6 +146,7 @@ class _StatsBody extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SummaryGrid(statsData: statsData),
+        const SizedBox(height: MetraSpacing.s4),
         ChartCard(
           title: l10n.stats_chart_cycle_length_title,
           child: MiniBarChart(

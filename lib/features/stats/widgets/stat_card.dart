@@ -75,7 +75,13 @@ class StatSummaryCard extends StatelessWidget {
             children: [
               Text(
                 value,
-                style: MetraTypography.statCard.copyWith(color: valueColor),
+                style: MetraTypography.statCard.copyWith(
+                  color: valueColor,
+                  // Browser renders DM Serif with 'normal' line-height (~1.2).
+                  // The token uses 1.0 (tight) which reduces vertical breathing
+                  // room by ~6px vs the HTML mockup. Matching browser default here.
+                  height: 1.2,
+                ),
               ),
               const SizedBox(width: 4),
               Text(

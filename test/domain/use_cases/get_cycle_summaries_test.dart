@@ -335,5 +335,94 @@ void main() {
         expect(result.first.dominantPainIntensity, 2);
       },
     );
+
+    test(
+      'given_trailing_cycle_endDate_is_last_bleed_day_when_symptom_logged_after_endDate_then_included_in_summary',
+      () async {
+        final logRepo = FakeDailyLogRepository();
+        final cycleRepo = FakeCycleEntryRepository();
+        final today = DateTime.now().toUtc();
+        final todayNorm = DateTime.utc(today.year, today.month, today.day);
+        final d30 = todayNorm.subtract(const Duration(days: 30));
+        final d25 = todayNorm.subtract(const Duration(days: 25));
+        final d3 = todayNorm.subtract(const Duration(days: 3));
+
+        // Trailing cycle: period D-30..D-25; endDate is last bleed day D-25.
+        cycleRepo.entries.add(
+          CycleEntryEntity(
+            id: 1,
+            startDate: d30,
+            endDate: d25,
+            cycleLength: null,
+            periodLength: 6,
+          ),
+        );
+
+        // Period logs D-30..D-25
+        for (var d = d30; !d.isAfter(d25); d = d.add(const Duration(days: 1))) {
+          logRepo.savedLogs.add(
+            DailyLogEntity(date: d, flowType: FlowType.mestruazioni),
+          );
+        }
+
+        // Non-period symptom log at D-3 (after endDate D-25, before today).
+        logRepo.savedLogs.add(DailyLogEntity(date: d3));
+        logRepo.symptoms[d3] = [
+          const PainSymptomData(symptomType: PainSymptomType.cramps),
+        ];
+
+        final uc = GetCycleSummaries(logRepo, cycleRepo);
+        final result = await uc().first;
+        expect(result.first.symptoms, contains(PainSymptomType.cramps));
+      },
+    );
+
+    test(
+      'given_two_cycles_when_non_trailing_cycle_has_log_after_its_endDate_then_log_not_included_in_older_cycle_summary',
+      () async {
+        final logRepo = FakeDailyLogRepository();
+        final cycleRepo = FakeCycleEntryRepository();
+        final today = DateTime.now().toUtc();
+        final todayNorm = DateTime.utc(today.year, today.month, today.day);
+
+        // Older cycle: D-60..D-55
+        final olderStart = todayNorm.subtract(const Duration(days: 60));
+        final olderEnd = todayNorm.subtract(const Duration(days: 55));
+        // Trailing cycle: D-25..D-20
+        final trailingStart = todayNorm.subtract(const Duration(days: 25));
+        final trailingEnd = todayNorm.subtract(const Duration(days: 20));
+
+        cycleRepo.entries.addAll([
+          CycleEntryEntity(
+            id: 1,
+            startDate: olderStart,
+            endDate: olderEnd,
+            cycleLength: 35,
+            periodLength: 6,
+          ),
+          CycleEntryEntity(
+            id: 2,
+            startDate: trailingStart,
+            endDate: trailingEnd,
+            cycleLength: null,
+            periodLength: 6,
+          ),
+        ]);
+
+        // Orphan log at D-50: after olderEnd (D-55) but before trailingStart (D-25).
+        final orphanDate = todayNorm.subtract(const Duration(days: 50));
+        logRepo.savedLogs.add(DailyLogEntity(date: orphanDate));
+        logRepo.symptoms[orphanDate] = [
+          const PainSymptomData(symptomType: PainSymptomType.headache),
+        ];
+
+        final uc = GetCycleSummaries(logRepo, cycleRepo);
+        final result = await uc().first;
+
+        // result is sorted newest-first; older cycle is result.last
+        final olderSummary = result.last;
+        expect(olderSummary.symptoms, isNot(contains(PainSymptomType.headache)));
+      },
+    );
   });
 }

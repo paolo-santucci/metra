@@ -16,8 +16,8 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/theme/metra_colors.dart';
@@ -48,12 +48,15 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
 
   bool _formInitialized = false;
   bool _symptomsInitialized = false;
+  bool _userHasModifiedSymptoms = false;
 
+  DailyLogEntity? _existingLog;
   FlowType? _flowType;
   FlowIntensity? _flowIntensity;
   FlowIntensity? _lastMensIntensity;
   int? _painIntensity;
   Set<PainSymptomType> _selectedSymptoms = {};
+  List<String> _customSymptomLabels = [];
   late final TextEditingController _notesController;
   bool _addingSymptom = false;
   final TextEditingController _customSymptomController =
@@ -87,6 +90,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
   void _initFromLog(DailyLogEntity? log) {
     if (_formInitialized) return;
     _formInitialized = true;
+    _existingLog = log;
     if (log == null) return;
     setState(() {
       _flowType = log.flowType;
@@ -99,9 +103,23 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
   void _initSymptoms(List<PainSymptomData> symptoms) {
     if (_symptomsInitialized) return;
     _symptomsInitialized = true;
-    setState(() {
-      _selectedSymptoms = symptoms.map((s) => s.symptomType).toSet();
-    });
+    if (!_userHasModifiedSymptoms) {
+      setState(() {
+        _selectedSymptoms = symptoms
+            .where((s) => s.symptomType != PainSymptomType.custom)
+            .map((s) => s.symptomType)
+            .toSet();
+        _customSymptomLabels = symptoms
+            .where(
+              (s) =>
+                  s.symptomType == PainSymptomType.custom &&
+                  s.customLabel != null &&
+                  s.customLabel!.isNotEmpty,
+            )
+            .map((s) => s.customLabel!)
+            .toList();
+      });
+    }
   }
 
   Future<void> _save() async {
@@ -109,17 +127,19 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
     final notifier = ref.read(dailyEntryProvider(_today).notifier);
     final notesText = _notesController.text.trim();
 
-    await notifier.save(
-      DailyLogEntity(
-        date: _today,
-        flowType: _flowType,
-        flowIntensity: _flowType == FlowType.mestruazioni ? _flowIntensity : null,
-        painEnabled: _painIntensity != null,
-        painIntensity: _painIntensity,
-        notesEnabled: notesText.isNotEmpty,
-        notes: notesText.isNotEmpty ? notesText : null,
-      ),
+    final log = (_existingLog ?? DailyLogEntity(date: _today)).copyWith(
+      flowType: _flowType,
+      clearFlowType: _flowType == null,
+      flowIntensity: _flowType == FlowType.mestruazioni ? _flowIntensity : null,
+      clearFlowIntensity: _flowType != FlowType.mestruazioni,
+      painEnabled: _painIntensity != null,
+      painIntensity: _painIntensity,
+      clearPainIntensity: _painIntensity == null,
+      notesEnabled: notesText.isNotEmpty,
+      notes: notesText.isNotEmpty ? notesText : null,
+      clearNotes: notesText.isEmpty,
     );
+    await notifier.save(log);
 
     if (!mounted) return;
     if (ref.read(dailyEntryProvider(_today)) is AsyncError) {
@@ -129,22 +149,26 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
       return;
     }
 
-    if (_symptomsInitialized) {
-      try {
-        final repo = await ref.read(dailyLogRepositoryProvider.future);
-        await repo.replacePainSymptoms(
-          _today,
-          _selectedSymptoms
-              .map((t) => PainSymptomData(symptomType: t))
-              .toList(),
-        );
-      } catch (e) {
-        // Symptom persistence failure is non-fatal: surface in debug only.
-        assert(() {
-          debugPrint('replacePainSymptoms failed: $e');
-          return true;
-        }());
-      }
+    try {
+      final repo = await ref.read(dailyLogRepositoryProvider.future);
+      await repo.replacePainSymptoms(
+        _today,
+        <PainSymptomData>[
+          ..._selectedSymptoms.map((t) => PainSymptomData(symptomType: t)),
+          ..._customSymptomLabels.map(
+            (label) => PainSymptomData(
+              symptomType: PainSymptomType.custom,
+              customLabel: label,
+            ),
+          ),
+        ],
+      );
+    } catch (e) {
+      debugPrint('replacePainSymptoms failed: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.common_error_generic)),
+      );
     }
 
     if (!mounted) return;
@@ -192,6 +216,11 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
         isDark ? MetraColors.dark.bgSurface : MetraColors.light.surfaceRaised;
     final accentFlow =
         isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
+    final bgSunken =
+        isDark ? MetraColors.dark.bgSunken : MetraColors.light.bgSunken;
+    final borderStrong = isDark
+        ? MetraColors.dark.borderStrong
+        : MetraColors.light.borderStrong;
     final borderColor = isDark
         ? MetraColors.dark.textPrimary.withAlpha(0x12)
         : MetraColors.light.ink.withAlpha(0x12);
@@ -204,7 +233,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
     final sectionLabelStyle = MetraTypography.caption.copyWith(
       fontWeight: FontWeight.w600,
       letterSpacing: 0.72,
-      color: textSecondary,
+      color: textPrimary.withValues(alpha: 0.40),
     );
 
     final sectionBorder = Border(
@@ -287,24 +316,45 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                       ),
                     ],
                     if (_flowType == FlowType.spotting) ...[
-                      const SizedBox(height: MetraSpacing.s3),
-                      Text(
-                        l10n.daily_entry_spotting_note,
-                        style: MetraTypography.caption.copyWith(
-                          color: textSecondary,
+                      const SizedBox(height: MetraSpacing.sp14),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: MetraSpacing.sp14,
+                          vertical: 11,
+                        ),
+                        decoration: BoxDecoration(
+                          color: accentFlow.withValues(alpha: 0.051),
+                          border: Border.all(
+                            color: accentFlow.withValues(alpha: 0.157),
+                            width: 1,
+                          ),
+                          borderRadius: BorderRadius.circular(MetraRadius.smm),
+                        ),
+                        child: Text(
+                          l10n.daily_entry_spotting_note,
+                          style: MetraTypography.tiny.copyWith(
+                            color: textPrimary.withValues(alpha: 0.65),
+                            fontWeight: FontWeight.w400,
+                            height: 1.55,
+                          ),
                         ),
                       ),
                     ],
                     if (_flowType == FlowType.assente) ...[
-                      const SizedBox(height: MetraSpacing.s3),
+                      const SizedBox(height: MetraSpacing.sp14),
                       Row(
                         children: [
-                          Icon(Icons.check, color: accentFlow, size: 16),
+                          Icon(
+                            Icons.check,
+                            color: textPrimary.withValues(alpha: 0.35),
+                            size: 16,
+                          ),
                           const SizedBox(width: MetraSpacing.s2),
                           Text(
                             l10n.daily_entry_assente_confirmation,
-                            style: MetraTypography.caption.copyWith(
-                              color: textPrimary,
+                            style: MetraTypography.tiny.copyWith(
+                              color: textPrimary.withValues(alpha: 0.45),
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ],
@@ -375,6 +425,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                             semanticsLabel: label,
                             onSelected: (isSelected) {
                               setState(() {
+                                _userHasModifiedSymptoms = true;
                                 final updated = Set<PainSymptomType>.from(
                                   _selectedSymptoms,
                                 );
@@ -384,6 +435,21 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                                   updated.remove(type);
                                 }
                                 _selectedSymptoms = updated;
+                              });
+                            },
+                          );
+                        }),
+                        ..._customSymptomLabels.map((label) {
+                          return ChoiceChipMetra(
+                            label: label,
+                            selected: true,
+                            semanticsLabel: label,
+                            onSelected: (_) {
+                              setState(() {
+                                _userHasModifiedSymptoms = true;
+                                _customSymptomLabels = _customSymptomLabels
+                                    .where((l) => l != label)
+                                    .toList();
                               });
                             },
                           );
@@ -409,12 +475,30 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                               onConfirm: () {
                                 final text =
                                     _customSymptomController.text.trim();
+                                if (text.isEmpty) {
+                                  setState(() => _addingSymptom = false);
+                                  return;
+                                }
+                                final fixedLabels = _symptomTypes
+                                    .map(
+                                      (t) => _symptomLabel(t, l10n)
+                                          .toLowerCase(),
+                                    )
+                                    .toSet();
+                                final alreadyExists =
+                                    _customSymptomLabels.any(
+                                      (l) =>
+                                          l.toLowerCase() ==
+                                          text.toLowerCase(),
+                                    ) ||
+                                    fixedLabels.contains(text.toLowerCase());
                                 setState(() {
-                                  if (text.isNotEmpty) {
-                                    _selectedSymptoms = {
-                                      ..._selectedSymptoms,
-                                      PainSymptomType.custom,
-                                    };
+                                  _userHasModifiedSymptoms = true;
+                                  if (!alreadyExists) {
+                                    _customSymptomLabels = [
+                                      ..._customSymptomLabels,
+                                      text,
+                                    ];
                                   }
                                   _addingSymptom = false;
                                   _customSymptomController.clear();
@@ -459,23 +543,23 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                       style: MetraTypography.body.copyWith(color: textPrimary),
                       decoration: InputDecoration(
                         hintText: l10n.today_notes_hint,
-                        hintStyle: GoogleFonts.inter(
+                        hintStyle: MetraTypography.body.copyWith(
                           fontSize: 15,
-                          color: textSecondary,
+                          color: textPrimary.withValues(alpha: 0.35),
                         ),
                         filled: true,
-                        fillColor: surfaceRaised,
+                        fillColor: bgSunken,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: MetraSpacing.sp14,
                           vertical: MetraSpacing.s3,
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(MetraRadius.md),
-                          borderSide: BorderSide(color: borderColor, width: 1),
+                          borderSide: BorderSide(color: borderStrong, width: 1.5),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(MetraRadius.md),
-                          borderSide: BorderSide(color: borderColor, width: 1),
+                          borderSide: BorderSide(color: borderStrong, width: 1.5),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(MetraRadius.md),
@@ -545,6 +629,7 @@ class _InlineSymptomInput extends StatelessWidget {
             controller: controller,
             autofocus: true,
             onSubmitted: (_) => onConfirm(),
+            inputFormatters: [LengthLimitingTextInputFormatter(40)],
             style: MetraTypography.caption.copyWith(color: textSecondary),
             decoration: InputDecoration(
               hintText: 'es. Vertigini',
@@ -593,7 +678,9 @@ class _InlineSymptomInput extends StatelessWidget {
   }
 }
 
-/// Dashed-border chip for the "+ Aggiungi" action (visual placeholder).
+/// Dashed-border chip for the "Aggiungi" action.
+/// The '+' icon and label text are styled separately to match the mockup:
+/// '+' at 18px / 0.35 alpha, label at 13px / 0.40 alpha, with 5px gap.
 class _AddSymptomChip extends StatelessWidget {
   const _AddSymptomChip({
     required this.label,
@@ -605,16 +692,38 @@ class _AddSymptomChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final plusColor = textSecondary.withValues(alpha: 0.35);
+    final labelColor = textSecondary.withValues(alpha: 0.40);
     return CustomPaint(
-      painter: _DashedBorderPainter(color: textSecondary),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: MetraSpacing.s4,
-          vertical: MetraSpacing.s2,
-        ),
-        child: Text(
-          label,
-          style: MetraTypography.body.copyWith(color: textSecondary),
+      painter: _DashedBorderPainter(color: textSecondary.withValues(alpha: 0.25)),
+      child: SizedBox(
+        height: 36,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                '+',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 18,
+                  color: plusColor,
+                  height: 1,
+                ),
+              ),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 13,
+                  color: labelColor,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

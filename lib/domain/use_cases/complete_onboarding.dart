@@ -16,14 +16,24 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import '../entities/cycle_entry_entity.dart';
+import '../entities/flow_type.dart';
 import '../repositories/app_settings_repository.dart';
 import '../repositories/cycle_entry_repository.dart';
+import '../repositories/daily_log_repository.dart';
+import 'recompute_cycle_entries.dart';
 
 class CompleteOnboarding {
-  const CompleteOnboarding(this._cycleRepo, this._settingsRepo);
+  const CompleteOnboarding(
+    this._cycleRepo,
+    this._settingsRepo,
+    this._logRepo,
+    this._recompute,
+  );
 
   final CycleEntryRepository _cycleRepo;
   final AppSettingsRepository _settingsRepo;
+  final DailyLogRepository _logRepo;
+  final RecomputeCycleEntries _recompute;
 
   Future<void> execute({
     required DateTime lastPeriodDate,
@@ -39,6 +49,9 @@ class CompleteOnboarding {
         periodLength: periodLength,
       ),
     );
+    final logs = await _logRepo.getAllOrderedByDate();
+    final hasFlowLogs = logs.any((l) => l.flowType == FlowType.mestruazioni);
+    if (hasFlowLogs) await _recompute();
     await _settingsRepo.markOnboardingComplete();
   }
 }

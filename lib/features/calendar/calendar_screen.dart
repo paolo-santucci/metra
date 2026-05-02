@@ -16,6 +16,7 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/widget_previews.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -33,6 +34,7 @@ import '../../domain/entities/pain_symptom_data.dart';
 import '../../domain/entities/pain_symptom_type.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/repository_providers.dart';
+import '../../providers/use_case_providers.dart';
 import 'state/calendar_month_controller.dart';
 import 'state/prediction_controller.dart';
 import 'widgets/calendar_day.dart';
@@ -77,6 +79,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
     final calendarAsync = ref.watch(calendarMonthProvider);
     final prediction = ref.watch(cyclePredictionProvider).valueOrNull;
+    final cycleDay = ref.watch(currentCycleDayProvider).valueOrNull;
+    final selectedCycleDay =
+        ref.watch(cycleDayForDateProvider(_selectedDate)).valueOrNull;
     final symptomsAsync = ref.watch(painSymptomsProvider(_selectedDate));
     final symptoms = symptomsAsync.valueOrNull ?? [];
 
@@ -101,31 +106,35 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             final isCurrentMonth =
                 monthState.year == now.year && monthState.month == now.month;
 
-            // Month name only (spec § 8.1); capitalize first letter locale-aware.
+            // Bible § 8.1: "Month Year" — e.g. "Aprile 2025".
             final rawMonth = intl.DateFormat.MMMM(locale).format(
               DateTime(monthState.year, monthState.month),
             );
-            final title = rawMonth.substring(0, 1).toUpperCase() +
-                rawMonth.substring(1);
+            final title =
+                '${rawMonth.substring(0, 1).toUpperCase()}${rawMonth.substring(1)} ${monthState.year}';
 
-            return Column(
-              children: [
-                MonthNavigator(
-                  title: title,
-                  prevLabel: l10n.calendar_prev_month,
-                  nextLabel: l10n.calendar_next_month,
-                  onPrev: () =>
-                      ref.read(calendarMonthProvider.notifier).goToPrevMonth(),
-                  onNext: () =>
-                      ref.read(calendarMonthProvider.notifier).goToNextMonth(),
-                  canGoNext: !isCurrentMonth,
+            return CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: MonthNavigator(
+                    title: title,
+                    prevLabel: l10n.calendar_prev_month,
+                    nextLabel: l10n.calendar_next_month,
+                    onPrev: () =>
+                        ref.read(calendarMonthProvider.notifier).goToPrevMonth(),
+                    onNext: () =>
+                        ref.read(calendarMonthProvider.notifier).goToNextMonth(),
+                    canGoNext: !isCurrentMonth,
+                    cycleDay: isCurrentMonth ? cycleDay : null,
+                  ),
                 ),
-                // Day-of-week header row.
-                _DayOfWeekHeader(
-                  labels: _dayHeaders,
-                  isDark: isDark,
+                SliverToBoxAdapter(
+                  child: _DayOfWeekHeader(
+                    labels: _dayHeaders,
+                    isDark: isDark,
+                  ),
                 ),
-                Expanded(
+                SliverToBoxAdapter(
                   child: _CalendarGrid(
                     year: monthState.year,
                     month: monthState.month,
@@ -140,14 +149,18 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         setState(() => _selectedDate = date),
                   ),
                 ),
-                const CalendarLegend(),
-                _DayDetailCard(
-                  selectedDate: _selectedDate,
-                  log: monthState.logs[_selectedDate],
-                  symptoms: symptoms,
-                  l10n: l10n,
-                  locale: locale,
-                  isDark: isDark,
+                const SliverToBoxAdapter(child: CalendarLegend()),
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: _DayDetailCard(
+                    selectedDate: _selectedDate,
+                    log: monthState.logs[_selectedDate],
+                    symptoms: symptoms,
+                    cycleDay: selectedCycleDay,
+                    l10n: l10n,
+                    locale: locale,
+                    isDark: isDark,
+                  ),
                 ),
               ],
             );
@@ -170,10 +183,9 @@ class _DayOfWeekHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Bible § 8.2: ink @ 35% alpha (0x59 = round(0.35 × 255)).
-    final labelColor = (isDark
-            ? MetraColors.dark.textPrimary
-            : MetraColors.light.textPrimary)
-        .withAlpha(0x59);
+    final labelColor =
+        (isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary)
+            .withAlpha(0x59);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 16, 12, 4),
@@ -272,6 +284,8 @@ class _CalendarGrid extends StatelessWidget {
 
     return GridView.builder(
       padding: const EdgeInsets.symmetric(horizontal: MetraSpacing.s3),
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
         childAspectRatio: 1,
@@ -289,13 +303,17 @@ class _CalendarGrid extends StatelessWidget {
         final date = DateTime.utc(year, month, dayNumber);
         final log = logs[date];
 
+        final todayUtc =
+            DateTime.utc(today.year, today.month, today.day);
         final isToday = today.year == year &&
             today.month == month &&
             today.day == dayNumber;
+        final isFuture = date.isAfter(todayUtc);
         final isFlow = log?.flowType == FlowType.mestruazioni;
         final isSpotting = log?.spotting ?? false;
         final hasNote = log?.notes != null && log!.notes!.isNotEmpty;
-        final hasPrediction = prediction?.containsDate(date) ?? false;
+        final hasPrediction = !date.isBefore(todayUtc)
+            && (prediction?.containsDate(date) ?? false);
         final hasPain = log?.painEnabled ?? false;
         final hasSymptom = daysWithSymptoms.contains(date);
 
@@ -311,7 +329,8 @@ class _CalendarGrid extends StatelessWidget {
           hasSymptom: hasSymptom,
           isToday: isToday,
           isSelected: selectedDate == date,
-          onTap: () => onDaySelected(date),
+          isFuture: isFuture,
+          onTap: isFuture ? null : () => onDaySelected(date),
         );
       },
     );
@@ -326,11 +345,13 @@ class _DayDetailCard extends StatelessWidget {
     required this.locale,
     required this.isDark,
     this.log,
+    this.cycleDay,
   });
 
   final DateTime selectedDate;
   final DailyLogEntity? log;
   final List<PainSymptomData> symptoms;
+  final int? cycleDay;
   final AppLocalizations l10n;
   final String locale;
   final bool isDark;
@@ -360,10 +381,6 @@ class _DayDetailCard extends StatelessWidget {
         : MetraColors.light.textSecondary;
     final accentFlow =
         isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
-    final borderColor = isDark
-        ? MetraColors.dark.borderSubtle
-        : MetraColors.light.borderSubtle;
-
     final hasData = log != null;
     final weekday = intl.DateFormat.EEEE(locale).format(selectedDate);
     final dayMonth = intl.DateFormat('d MMMM', locale).format(selectedDate);
@@ -371,12 +388,11 @@ class _DayDetailCard extends StatelessWidget {
         '${weekday.substring(0, 1).toUpperCase()}${weekday.substring(1)} $dayMonth';
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 0),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         color: bgSurface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: borderColor),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -384,21 +400,37 @@ class _DayDetailCard extends StatelessWidget {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                dateLabel,
-                style: MetraTypography.titleMd.copyWith(color: textPrimary),
-              ),
-              if (!hasData)
-                Text(
-                  l10n.calendar_day_detail_no_data,
-                  style: MetraTypography.caption.copyWith(
-                    color: textSecondary,
-                    fontStyle: FontStyle.italic,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    dateLabel,
+                    style: MetraTypography.titleMd.copyWith(color: textPrimary),
                   ),
-                )
-              else
-                _FlowBadge(log: log!, isDark: isDark),
+                  if (!hasData) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      l10n.calendar_day_detail_no_data,
+                      style: MetraTypography.caption.copyWith(
+                        color: textSecondary,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ] else if (cycleDay != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      l10n.calendar_day_detail_cycle_day(cycleDay!),
+                      style: MetraTypography.caption.copyWith(
+                        color: textSecondary,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              if (hasData) _FlowBadge(log: log!, isDark: isDark),
             ],
           ),
           if (symptoms.isNotEmpty) ...[
@@ -423,41 +455,49 @@ class _DayDetailCard extends StatelessWidget {
               ],
             ),
           ],
-          const SizedBox(height: 12),
-          GestureDetector(
-            onTap: () => context.push(
-              '/daily-entry/${selectedDate.toIso8601String().substring(0, 10)}',
+          if (!selectedDate.isAfter(
+            DateTime.utc(
+              DateTime.now().year,
+              DateTime.now().month,
+              DateTime.now().day,
             ),
-            child: Container(
-              height: 44,
-              decoration: BoxDecoration(
-                color: accentFlow.withValues(alpha: 0.06),
-                border: Border.all(color: accentFlow.withValues(alpha: 0.13)),
-                borderRadius: BorderRadius.circular(12),
+          )) ...[
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () => context.push(
+                '/daily-entry/${selectedDate.toIso8601String().substring(0, 10)}',
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  MetraIcon(
-                    svgBody: MetraIcons.note,
-                    size: 16,
-                    color: accentFlow,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    l10n.calendar_day_detail_edit,
-                    style: MetraTypography.body.copyWith(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: isDark
-                          ? MetraColors.dark.accentFlowStrong
-                          : MetraColors.light.terracottaDeep,
+              child: Container(
+                height: 44,
+                decoration: BoxDecoration(
+                  color: accentFlow.withValues(alpha: 0.06),
+                  border: Border.all(color: accentFlow.withValues(alpha: 0.13)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    MetraIcon(
+                      svgBody: MetraIcons.note,
+                      size: 16,
+                      color: accentFlow,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 6),
+                    Text(
+                      l10n.calendar_day_detail_edit,
+                      style: MetraTypography.body.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: isDark
+                            ? MetraColors.dark.accentFlowStrong
+                            : MetraColors.light.terracottaDeep,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -469,7 +509,7 @@ class _FlowBadge extends StatelessWidget {
 
   final DailyLogEntity log;
   final bool isDark;
-
+  @Preview(name: 'Paperino')
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -479,10 +519,12 @@ class _FlowBadge extends StatelessWidget {
     String? label;
     if (log.flowType == FlowType.mestruazioni && log.flowIntensity != null) {
       label = switch (log.flowIntensity!) {
-        FlowIntensity.light => l10n.daily_entry_flow_light,
-        FlowIntensity.medium => l10n.daily_entry_flow_medium,
-        FlowIntensity.heavy => l10n.daily_entry_flow_heavy,
-        FlowIntensity.veryHeavy => l10n.daily_entry_flow_veryHeavy,
+        FlowIntensity.light => l10n.daily_entry_flow_intensity_light,
+        FlowIntensity.medium => l10n.daily_entry_flow_intensity_medium,
+        // veryHeavy maps to the same badge as heavy — no fourth badge level in design.
+        FlowIntensity.heavy ||
+        FlowIntensity.veryHeavy =>
+          l10n.daily_entry_flow_intensity_heavy,
       };
     } else if (log.flowType == FlowType.spotting) {
       label = l10n.daily_entry_flow_chip_spotting;

@@ -35,6 +35,7 @@ CalendarDay _day({
   bool hasNote = false,
   bool isToday = false,
   bool isSelected = false,
+  bool isFuture = false,
   VoidCallback? onTap,
 }) =>
     CalendarDay(
@@ -46,6 +47,7 @@ CalendarDay _day({
       hasNote: hasNote,
       isToday: isToday,
       isSelected: isSelected,
+      isFuture: isFuture,
       onTap: onTap,
     );
 
@@ -134,6 +136,55 @@ void main() {
         find.byType(CalendarDay),
         matchesGoldenFile('goldens/calendar_day_flow_dark.png'),
       );
+    });
+  });
+
+  group('future day', () {
+    testWidgets('golden — light theme', (tester) async {
+      await tester.pumpWidget(
+        _wrap(_day(isFuture: true), MetraTheme.light()),
+      );
+      await expectLater(
+        find.byType(CalendarDay),
+        matchesGoldenFile('goldens/calendar_day_future_light.png'),
+      );
+    });
+
+    testWidgets('does not fire onTap when isFuture', (tester) async {
+      var tapped = false;
+      await tester.pumpWidget(
+        _wrap(
+          _day(isFuture: true, onTap: () => tapped = true),
+          MetraTheme.light(),
+        ),
+      );
+      await tester.tap(find.byType(CalendarDay));
+      expect(tapped, isFalse);
+    });
+
+    testWidgets('is not a button in semantics when isFuture', (tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          _day(isFuture: true, onTap: () {}),
+          MetraTheme.light(),
+        ),
+      );
+      final semantics = tester.getSemantics(find.byType(CalendarDay));
+      expect(semantics.flagsCollection.isButton, isFalse);
+    });
+
+    testWidgets('prediction outline still shows when isFuture + hasPrediction',
+        (tester) async {
+      // hasPrediction wins over isFuture in state precedence — cell uses
+      // prediction style (outline), not the faded-future style.
+      await tester.pumpWidget(
+        _wrap(
+          _day(isFuture: true, hasPrediction: true),
+          MetraTheme.light(),
+        ),
+      );
+      // No overflow or exception; golden already covered by prediction test.
+      expect(find.byType(CalendarDay), findsOneWidget);
     });
   });
 

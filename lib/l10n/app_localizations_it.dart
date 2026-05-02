@@ -634,7 +634,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get today_save_day => 'Salva giornata';
 
   @override
-  String get today_add_symptom => '+ Aggiungi';
+  String get today_add_symptom => 'Aggiungi';
 
   @override
   String get today_flow_lieve => 'Lieve';

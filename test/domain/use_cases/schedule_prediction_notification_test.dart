@@ -90,16 +90,17 @@ void main() {
 
     // Test 3: notify date in the past → cancel called, no schedule
     test('notify date in the past → cancel called, no schedule', () async {
-      // windowStart = yesterday → notifyAt = yesterday (0 days before) → past
-      final yesterday = DateTime.now().subtract(const Duration(days: 1));
+      // windowStart = 2 days ago, notificationDaysBefore = 3
+      // → notifyAt = windowStart - 3 days = 5 days ago → past
+      final twoDaysAgo = DateTime.now().subtract(const Duration(days: 2));
       final prediction = makePrediction(
-        yesterday.add(const Duration(days: 2)),
-      ); // expectedStart = yesterday+2d, windowStart = yesterday
+        twoDaysAgo.add(const Duration(days: 2)),
+      ); // expectedStart = now, windowStart = twoDaysAgo
       const settings = AppSettingsData(
         languageCode: 'it',
         painEnabled: true,
         notesEnabled: true,
-        notificationDaysBefore: 0,
+        notificationDaysBefore: 3,
         notificationsEnabled: true,
         onboardingCompleted: false,
       );
@@ -152,7 +153,7 @@ void main() {
     });
 
     test(
-        'notificationDaysBefore=0 is clamped to 1 — notification still scheduled',
+        'given_notificationDaysBefore_1_when_execute_then_notifyAt_is_windowStart_minus_1_day',
         () async {
       final notifService = FakeNotificationService();
       final uc = SchedulePredictionNotification(notifService);
@@ -167,7 +168,7 @@ void main() {
         painEnabled: true,
         notesEnabled: true,
         notificationsEnabled: true,
-        notificationDaysBefore: 0, // invalid: below 1
+        notificationDaysBefore: 1, // lower bound
         onboardingCompleted: false,
       );
 
@@ -178,10 +179,78 @@ void main() {
         body: 'b',
       );
 
-      // Clamped to 1: notifyAt = windowStart - 1 day = 2026-05-29
+      // 1 day before windowStart = 2026-05-29
       expect(
         notifService.scheduled.first.notifyAt,
         equals(DateTime.utc(2026, 5, 29)),
+      );
+    });
+
+    test(
+        'given_notificationDaysBefore_4_when_execute_then_notifyAt_is_windowStart_minus_4_days',
+        () async {
+      final notifService = FakeNotificationService();
+      final uc = SchedulePredictionNotification(notifService);
+      final prediction = CyclePrediction(
+        expectedStart: DateTime.utc(2026, 6, 1),
+        windowStart: DateTime.utc(2026, 5, 30),
+        windowEnd: DateTime.utc(2026, 6, 3),
+        cyclesUsed: 3,
+      );
+      const settings = AppSettingsData(
+        languageCode: 'it',
+        painEnabled: true,
+        notesEnabled: true,
+        notificationsEnabled: true,
+        notificationDaysBefore: 4, // mid-range
+        onboardingCompleted: false,
+      );
+
+      await uc.execute(
+        prediction: prediction,
+        settings: settings,
+        title: 't',
+        body: 'b',
+      );
+
+      // 4 days before windowStart = 2026-05-26
+      expect(
+        notifService.scheduled.first.notifyAt,
+        equals(DateTime.utc(2026, 5, 26)),
+      );
+    });
+
+    test(
+        'given_notificationDaysBefore_7_when_execute_then_notifyAt_is_windowStart_minus_7_days',
+        () async {
+      final notifService = FakeNotificationService();
+      final uc = SchedulePredictionNotification(notifService);
+      final prediction = CyclePrediction(
+        expectedStart: DateTime.utc(2026, 6, 1),
+        windowStart: DateTime.utc(2026, 6, 10),
+        windowEnd: DateTime.utc(2026, 6, 13),
+        cyclesUsed: 3,
+      );
+      const settings = AppSettingsData(
+        languageCode: 'it',
+        painEnabled: true,
+        notesEnabled: true,
+        notificationsEnabled: true,
+        notificationDaysBefore: 7, // upper bound
+        onboardingCompleted: false,
+      );
+
+      await uc.execute(
+        prediction: prediction,
+        settings: settings,
+        title: 't',
+        body: 'b',
+      );
+
+      // 7 days before windowStart (2026-06-10) = 2026-06-03
+      expect(
+        notifService.scheduled.first.notifyAt,
+        equals(DateTime.utc(2026, 6, 3)),
       );
     });
   });

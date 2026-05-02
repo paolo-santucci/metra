@@ -49,13 +49,14 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
           isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary,
       body: SafeArea(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 12, 24, 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(l10n.archive_title, style: MetraTypography.titleLg),
+                  Text(l10n.archive_title, style: MetraTypography.screenTitle),
                   const SizedBox(height: 12),
                   SegmentedControlMetra(
                     segments: [l10n.timeline_view_toggle, l10n.table_view_toggle],

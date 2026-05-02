@@ -32,19 +32,24 @@ class MetraIcon extends StatelessWidget {
         .replaceAll('{stroke}', colorHex)
         .replaceAll('{fill}', colorHex)
         .replaceAll('{sw}', strokeWidth.toStringAsFixed(1));
-    final svgString =
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">$body</svg>';
-    return SvgPicture.string(
-      svgString,
+    const svgString =
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">';
+    final svg = SvgPicture.string(
+      '$svgString$body</svg>',
       width: size,
       height: size,
     );
+    final alpha = effectiveColor.a;
+    if (alpha < 0.999) {
+      return Opacity(opacity: alpha, child: svg);
+    }
+    return svg;
   }
 
   static String _colorToHex(Color color) {
-    final r = (color.r * 255).round().toStringRadixPadded(2);
-    final g = (color.g * 255).round().toStringRadixPadded(2);
-    final b = (color.b * 255).round().toStringRadixPadded(2);
+    final r = (color.r * 255).round().toStringRadixPadded(16);
+    final g = (color.g * 255).round().toStringRadixPadded(16);
+    final b = (color.b * 255).round().toStringRadixPadded(16);
     return '#$r$g$b';
   }
 }

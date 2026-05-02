@@ -18,10 +18,12 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/metra_colors.dart';
 import '../../../core/theme/metra_typography.dart';
+import '../../../core/widgets/metra_icon.dart';
 import '../../../l10n/app_localizations.dart';
 
 /// Four-item legend row shown below the calendar grid.
-/// Items: Mestruazioni (drop), Previsione (drop_outline), Sintomi (star), Dolore (bolt).
+/// Items (left→right): Mestruazioni (dropFilled), Sintomi (starSmallFilled),
+/// Dolore (zapFilled), Previsione (dropOutline). All icons are MetraIcons SVG.
 class CalendarLegend extends StatelessWidget {
   const CalendarLegend({super.key});
 
@@ -35,9 +37,8 @@ class CalendarLegend extends StatelessWidget {
     final accentPrediction = isDark
         ? MetraColors.dark.accentPrediction
         : MetraColors.light.accentPrediction;
-    final accentWarmth = isDark
-        ? MetraColors.dark.accentWarmth
-        : MetraColors.light.accentWarmth;
+    final accentWarmth =
+        isDark ? MetraColors.dark.accentWarmth : MetraColors.light.accentWarmth;
     final accentPain =
         isDark ? MetraColors.dark.accentPain : MetraColors.light.accentPain;
     final textSecondary = isDark
@@ -51,33 +52,32 @@ class CalendarLegend extends StatelessWidget {
         Divider(color: dividerColor, thickness: 1, height: 1),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
+          // Wrap prevents overflow on narrow screens; items reflow to a second line.
+          child: Wrap(
+            spacing: 16,
+            runSpacing: 6,
             // Bible CL-01: Previsione must be last.
             children: [
-              _LegendItem(
-                icon: Icons.water_drop,
+              _MetraLegendItem(
+                svgBody: MetraIcons.dropFilled,
                 color: accentFlow,
                 label: l10n.calendar_legend_mestruazioni,
                 textColor: textSecondary,
               ),
-              const SizedBox(width: 16),
-              _LegendItem(
-                icon: Icons.star_border,
+              _MetraLegendItem(
+                svgBody: MetraIcons.starSmallFilled,
                 color: accentWarmth,
                 label: l10n.calendar_legend_sintomi,
                 textColor: textSecondary,
               ),
-              const SizedBox(width: 16),
-              _LegendItem(
-                icon: Icons.bolt,
+              _MetraLegendItem(
+                svgBody: MetraIcons.zapFilled,
                 color: accentPain,
                 label: l10n.calendar_legend_dolore,
                 textColor: textSecondary,
               ),
-              const SizedBox(width: 16),
-              _LegendItem(
-                icon: Icons.water_drop_outlined,
+              _MetraLegendItem(
+                svgBody: MetraIcons.dropOutline,
                 color: accentPrediction,
                 label: l10n.calendar_legend_prediction,
                 textColor: textSecondary,
@@ -90,15 +90,15 @@ class CalendarLegend extends StatelessWidget {
   }
 }
 
-class _LegendItem extends StatelessWidget {
-  const _LegendItem({
-    required this.icon,
+class _MetraLegendItem extends StatelessWidget {
+  const _MetraLegendItem({
+    required this.svgBody,
     required this.color,
     required this.label,
     required this.textColor,
   });
 
-  final IconData icon;
+  final String svgBody;
   final Color color;
   final String label;
   final Color textColor;
@@ -108,7 +108,7 @@ class _LegendItem extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: color),
+        MetraIcon(svgBody: svgBody, size: 14, color: color),
         const SizedBox(width: 4),
         Text(
           label,

@@ -164,6 +164,53 @@ void main() {
       expect(fakeCycleRepo.entries, hasLength(1));
     });
 
+    test('cycleDayForDateProvider resets to day 1 when new cycle starts',
+        () async {
+      // Cycle 1 starts 2026-01-01; cycle 2 starts 2026-02-01 (31d gap > 21d).
+      final cycle1Start = DateTime.utc(2026, 1, 1);
+      final cycle2Start = DateTime.utc(2026, 2, 1);
+
+      final fakeRepo = _StreamableFakeDailyLogRepository();
+      final fakeCycleRepo = FakeCycleEntryRepository();
+      final container = _makeContainer(fakeRepo, fakeCycleRepo);
+      addTearDown(() {
+        container.dispose();
+        fakeRepo.dispose();
+      });
+
+      // Seed cycle 1 log so the provider has a result to cache.
+      final cycle1Log = DailyLogEntity(
+        date: cycle1Start,
+        flowType: FlowType.mestruazioni,
+        flowIntensity: FlowIntensity.medium,
+      );
+      await container.read(dailyEntryProvider(cycle1Start).future);
+      await container
+          .read(dailyEntryProvider(cycle1Start).notifier)
+          .save(cycle1Log);
+
+      // Prime the cache for cycle2Start — currently no cycle entry for it.
+      // Day returned will be null or a large number relative to cycle 1 start.
+      await container.read(cycleDayForDateProvider(cycle2Start).future);
+
+      // Now log a mestruazioni day on cycle2Start to start a new cycle.
+      final cycle2Log = DailyLogEntity(
+        date: cycle2Start,
+        flowType: FlowType.mestruazioni,
+        flowIntensity: FlowIntensity.light,
+      );
+      await container.read(dailyEntryProvider(cycle2Start).future);
+      await container
+          .read(dailyEntryProvider(cycle2Start).notifier)
+          .save(cycle2Log);
+
+      // After save, the provider must have been invalidated and re-evaluated.
+      // cycle2Start is day 1 of the new cycle, so the result must be 1.
+      final cycleDay =
+          await container.read(cycleDayForDateProvider(cycle2Start).future);
+      expect(cycleDay, 1);
+    });
+
     test('sets state to AsyncError on validation failure (future date)',
         () async {
       final fakeRepo = _StreamableFakeDailyLogRepository();

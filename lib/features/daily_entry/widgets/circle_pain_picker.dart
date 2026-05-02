@@ -54,7 +54,7 @@ class CirclePainPicker extends StatelessWidget {
         );
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         paincircle(l10n.today_pain_none, Colors.transparent, 0),
@@ -134,7 +134,7 @@ class _PainCircle extends StatelessWidget {
           Text(
             label,
             textAlign: TextAlign.center,
-            style: MetraTypography.tiny.copyWith(
+            style: MetraTypography.dotLabel.copyWith(
               color: isSelected ? accent : textPrimary.withValues(alpha: 0.38),
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
             ),
