@@ -203,7 +203,6 @@ function TabBar({ active = 'cal' }) {
   const accent = T.accent || C.terracotta;
   const tabs = [
   { id: 'cal', icon: 'calendar', label: 'Calendario' },
-  { id: 'log', icon: 'note', label: 'Oggi' },
   { id: 'history', icon: 'wave', label: 'Archivio' },
   { id: 'stats', icon: 'chart', label: 'Statistiche' },
   { id: 'settings', icon: 'settings', label: 'Impostazioni' }];
@@ -600,6 +599,7 @@ function ScreenCalendario() {
   const selFlowLabel = MONTH_DATA.flowByDay[sel] || null;
   const selDaySymptoms = MONTH_DATA.symptomsByDay[sel] || [];
   const selCycleDay = isSelFlow ? MONTH_DATA.flow.indexOf(sel) + 1 : null;
+  const hasEntry = isSelFlow || selDaySymptoms.length > 0 || MONTH_DATA.pain.includes(sel);
 
   return (
     <Phone>
@@ -683,7 +683,7 @@ function ScreenCalendario() {
             display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
           }}>
             <Icon name="note" size={16} color={C.terracotta} />
-            <span style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 500, color: C.tc_scura, marginLeft: 6 }}>Modifica giornata</span>
+            <span style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 500, color: C.tc_scura, marginLeft: 6 }}>{hasEntry ? 'Modifica giornata' : 'Aggiungi giornata'}</span>
           </div>
         </div>
 
