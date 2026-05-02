@@ -666,6 +666,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendar_day_detail_no_data => 'No data logged';
 
   @override
+  String get calendar_day_detail_add => 'Add day';
+
+  @override
   String get calendar_day_detail_edit => 'Edit day';
 
   @override

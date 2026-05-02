@@ -1280,6 +1280,12 @@ abstract class AppLocalizations {
   /// **'Nessun dato registrato'**
   String get calendar_day_detail_no_data;
 
+  /// Calendar day detail card: button to create a new entry for a day with no log
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiungi giornata'**
+  String get calendar_day_detail_add;
+
   /// Calendar day detail card: button to open historical entry screen
   ///
   /// In it, this message translates to:

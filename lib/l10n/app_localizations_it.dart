@@ -667,6 +667,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get calendar_day_detail_no_data => 'Nessun dato registrato';
 
   @override
+  String get calendar_day_detail_add => 'Aggiungi giornata';
+
+  @override
   String get calendar_day_detail_edit => 'Modifica giornata';
 
   @override
