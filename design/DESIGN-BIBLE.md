@@ -299,12 +299,11 @@ The canonical clock value in the mockup is `20:14`. Do not surface this anywhere
 
 ## 4. Tab bar
 
-Five tabs, in this order:
+Four tabs, in this order:
 
 | ID | Icon | Italian label |
 |---|---|---|
 | `cal` | `calendar` | Calendario |
-| `log` | `note` | Oggi |
 | `history` | `wave` | Archivio |
 | `stats` | `chart` | Statistiche |
 | `settings` | `settings` | Impostazioni |
@@ -611,7 +610,8 @@ Content rows (top to bottom):
    ```
    height 44 · radius 12
    bg ${terracotta}10 · border 1px solid ${terracotta}22
-   centered icon `note` 16 terracotta + label "Modifica giornata" Inter 14 weight 500 tc_scura, gap 6
+   centered icon `note` 16 terracotta + label Inter 14 weight 500 tc_scura, gap 6
+   label: "Modifica giornata" if entry exists for the day; "Aggiungi giornata" otherwise
    ```
 
 There is **no FAB** anywhere on the calendar screen. The only mutation entry point is "Modifica giornata".
@@ -960,7 +960,8 @@ These are **canonical strings**. Surface them in `lib/l10n/app_it.arb` exactly a
 | Symptoms | Sintomi | Section label. |
 | Free note | Nota libera | Section label. |
 | Save day | Salva giornata | Today CTA. |
-| Edit day | Modifica giornata | Calendar day-card CTA. |
+| Edit day | Modifica giornata | Calendar day-card CTA (entry already logged). |
+| Add day | Aggiungi giornata | Calendar day-card CTA (no prior entry). |
 | Continue | Continua | Onboarding 2 CTA. |
 | Start | Inizia | Onboarding 1 CTA. |
 | All set → | Tutto pronto → | Onboarding 3 CTA. The arrow is part of the label. |
@@ -991,7 +992,8 @@ The following are **explicitly forbidden** because the HTML does not contain the
 11. **No animation specs.** The mockup defines `transition: all 0.15s` only on chip and flow-type-chip backgrounds. Everything else is static. Do not invent motion that is not in the mockup.
 12. **No light-mode-only filters / blurs** beyond the tab-bar `blur(16)`. No glassmorphism on cards.
 13. **No bottom sheet** patterns in this bible's scope. (May appear in `Métra Quick Entry.html`, which is out of scope.)
-14. **No center-stage today indicator on the calendar grid.** A subtle 1.5 px ring on today's cell is allowed for usability (the implementation spec calls it out at `C-2`); a separate "today" pill is not.
+14. **No center-stage today indicator on the calendar grid.**
+15. **No Oggi tab.** Daily-log entry is only via the calendar day detail card button. Do not resurface the Oggi tab, a bottom-bar shortcut, or a FAB for log entry. A subtle 1.5 px ring on today's cell is allowed for usability (the implementation spec calls it out at `C-2`); a separate "today" pill is not.
 
 ---
 
