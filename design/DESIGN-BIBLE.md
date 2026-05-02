@@ -594,27 +594,29 @@ padding 16 / 20  · flex 1   (always fills remaining vertical space)
 
 Content rows (top to bottom):
 
-1. **Header row** — `space-between, center`:
-   - Left:
-     - Title `DM Serif Display 20 inchiostro` — `"{Lunedì} {sel} {aprile}"`.
-     - If selected day is in flow window: `Inter 13 rgba(0.68)` `"Giorno {n} del ciclo"` with marginTop 2.
-   - Right (mutually exclusive):
-     - **If flow logged:** pill `paddingInline 12, height 32, radius 10, bg ${terracotta}18, border 1px solid ${terracotta}44`, text `Inter 12 weight 500 tc_scura` carrying the flow label ("Abbondante" / "Moderato" / "Leggero").
-     - **Otherwise:** italic hint `Inter 12 rgba(0.38) italic` reading `"Nessun dato registrato"`.
-2. **Symptom chip row** (only if symptoms exist) — `gap 8 wrap, marginBottom 10`:
-   ```
-   chip: paddingInline 10, height 28, radius 8, bg ${ocra}18, border 1px solid ${ocra}55
-   text Inter 12 tc_scura   (note: text is tc_scura even though chip is ocra-tinted)
-   ```
-3. **Edit-day row CTA**:
+1. **Header** (full-width, no right badge):
+   - `DM Serif Display 20 inchiostro` — `"{Lunedì} {sel} {aprile}"`.
+   - If selected day is in flow window: `Inter 13 rgba(0.68)` `"Giorno {n} del ciclo"` marginTop 2.
+   - If `!hasEntry`: `Inter 12 rgba(0.38) italic` `"Nessun dato registrato"` marginTop 4.
+   - `marginBottom 10` when `hasEntry`, `12` otherwise.
+
+2. **Pills row** (only if `hasEntry` and at least one data point) — `Wrap gap 6 runGap 4, marginBottom 10`:
+   Each pill: `height 24, radius 6, paddingInline 8, DataIcon filled size 11, gap 4, Inter 11`
+   - **Flow pill** (if flow logged): `bg ${terracotta}15`, icon `drop` terracotta, text tc_scura. Label: "Abbondante" / "Moderato" / "Leggero" / "Spotting" / "Assente".
+   - **Pain pill** (if `painIntensity > 0`): `bg ${malva}1F`, icon `zap` malva, text malva. Label: "Lieve" / "Moderato" / "Forte".
+   - **Symptom pills** (one per symptom): `bg ${ocra}18`, icon `star_small` dustyOchre, text tc_scura.
+
+3. **Note text** (if notes non-empty and notes enabled): `Inter 13 rgba(0.68) lineHeight 1.5, marginBottom 10`.
+
+4. **CTA button**:
    ```
    height 44 · radius 12
    bg ${terracotta}10 · border 1px solid ${terracotta}22
    centered icon `note` 16 terracotta + label Inter 14 weight 500 tc_scura, gap 6
-   label: "Modifica giornata" if entry exists for the day; "Aggiungi giornata" otherwise
+   label: "Modifica giornata" if entry exists; "Aggiungi giornata" otherwise
    ```
 
-There is **no FAB** anywhere on the calendar screen. The only mutation entry point is "Modifica giornata".
+There is **no FAB** anywhere on the calendar screen. The only mutation entry point is this CTA.
 
 ### 8.6 Italian L10n (calendar)
 
