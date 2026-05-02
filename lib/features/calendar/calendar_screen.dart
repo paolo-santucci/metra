@@ -16,7 +16,6 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter/material.dart';
-import 'package:flutter/widget_previews.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -381,7 +380,47 @@ class _DayDetailCard extends StatelessWidget {
         : MetraColors.light.textSecondary;
     final accentFlow =
         isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
+    final malva = isDark ? MetraColors.dark.accentPain : MetraColors.light.accentPain;
+    final dustyOchre =
+        isDark ? MetraColors.dark.accentWarmth : MetraColors.light.accentWarmth;
     final hasData = log != null;
+
+    // Flow label — same logic as the removed _FlowBadge.
+    String? flowLabel;
+    if (log != null) {
+      if (log!.flowType == FlowType.mestruazioni && log!.flowIntensity != null) {
+        flowLabel = switch (log!.flowIntensity!) {
+          FlowIntensity.light => l10n.daily_entry_flow_intensity_light,
+          FlowIntensity.medium => l10n.daily_entry_flow_intensity_medium,
+          FlowIntensity.heavy ||
+          FlowIntensity.veryHeavy =>
+            l10n.daily_entry_flow_intensity_heavy,
+        };
+      } else if (log!.flowType == FlowType.spotting) {
+        flowLabel = l10n.daily_entry_flow_chip_spotting;
+      } else if (log!.flowType == FlowType.assente) {
+        flowLabel = l10n.daily_entry_flow_chip_assente;
+      }
+    }
+
+    // Pain label — same l10n keys used by timeline_card.dart.
+    String? painLabel;
+    if (log?.painIntensity != null && log!.painIntensity! > 0) {
+      painLabel = switch (log!.painIntensity!) {
+        1 => l10n.daily_entry_pain_mild,
+        2 => l10n.daily_entry_pain_moderate,
+        _ => l10n.daily_entry_pain_severe,
+      };
+    }
+
+    // Note text — only when notes are enabled and non-empty.
+    final noteText =
+        (log?.notesEnabled == true &&
+            log?.notes != null &&
+            log!.notes!.isNotEmpty)
+        ? log!.notes
+        : null;
+
     final weekday = intl.DateFormat.EEEE(locale).format(selectedDate);
     final dayMonth = intl.DateFormat('d MMMM', locale).format(selectedDate);
     final dateLabel =
@@ -398,63 +437,83 @@ class _DayDetailCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // 1. Header (left-aligned, no right badge).
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    dateLabel,
-                    style: MetraTypography.titleMd.copyWith(color: textPrimary),
-                  ),
-                  if (!hasData) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      l10n.calendar_day_detail_no_data,
-                      style: MetraTypography.caption.copyWith(
-                        color: textSecondary,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ] else if (cycleDay != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      l10n.calendar_day_detail_cycle_day(cycleDay!),
-                      style: MetraTypography.caption.copyWith(
-                        color: textSecondary,
-                      ),
-                    ),
-                  ],
-                ],
+              Text(
+                dateLabel,
+                style: MetraTypography.titleMd.copyWith(color: textPrimary),
               ),
-              if (hasData) _FlowBadge(log: log!, isDark: isDark),
+              if (!hasData) ...[
+                const SizedBox(height: 2),
+                Text(
+                  l10n.calendar_day_detail_no_data,
+                  style: MetraTypography.caption.copyWith(
+                    color: textSecondary,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ] else if (cycleDay != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  l10n.calendar_day_detail_cycle_day(cycleDay!),
+                  style: MetraTypography.caption.copyWith(
+                    color: textSecondary,
+                  ),
+                ),
+              ],
             ],
           ),
-          if (symptoms.isNotEmpty) ...[
+          // 2. Pills row (flow + pain + symptoms).
+          if (flowLabel != null || painLabel != null || symptoms.isNotEmpty) ...[
             const SizedBox(height: 8),
             Wrap(
               spacing: 6,
               runSpacing: 4,
               children: [
-                ...symptoms.take(2).map(
-                      (s) => _SymptomPill(
-                        label: _symptomLabel(s.symptomType, l10n),
-                        isDark: isDark,
-                      ),
-                    ),
-                if (symptoms.length > 2)
-                  Text(
-                    '+${symptoms.length - 2}',
-                    style: MetraTypography.tiny.copyWith(
-                      color: textSecondary,
-                    ),
+                if (flowLabel != null)
+                  _DataPill(
+                    svgBody: MetraIcons.dropFilled,
+                    iconColor: accentFlow,
+                    label: flowLabel,
+                    labelColor: textPrimary,
+                    bg: accentFlow.withValues(alpha: 0.08),
                   ),
+                if (painLabel != null)
+                  _DataPill(
+                    svgBody: MetraIcons.zapFilled,
+                    iconColor: malva,
+                    label: painLabel,
+                    labelColor: malva,
+                    bg: malva.withValues(alpha: 0.12),
+                  ),
+                ...symptoms.map(
+                  (s) => _DataPill(
+                    svgBody: MetraIcons.starSmallFilled,
+                    iconColor: dustyOchre,
+                    label: _symptomLabel(s.symptomType, l10n),
+                    labelColor: textPrimary,
+                    bg: dustyOchre.withValues(alpha: 0.10),
+                  ),
+                ),
               ],
             ),
           ],
+          // 3. Note text.
+          if (noteText != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              noteText,
+              style: MetraTypography.body.copyWith(
+                fontSize: 13,
+                color: textSecondary,
+                height: 1.5,
+              ),
+            ),
+          ],
+          // 4. CTA button.
           if (!selectedDate.isAfter(
             DateTime.utc(
               DateTime.now().year,
@@ -506,83 +565,37 @@ class _DayDetailCard extends StatelessWidget {
   }
 }
 
-class _FlowBadge extends StatelessWidget {
-  const _FlowBadge({required this.log, required this.isDark});
+class _DataPill extends StatelessWidget {
+  const _DataPill({
+    required this.svgBody,
+    required this.iconColor,
+    required this.label,
+    required this.labelColor,
+    required this.bg,
+  });
 
-  final DailyLogEntity log;
-  final bool isDark;
-  @Preview(name: 'Paperino')
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final accentFlow =
-        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
-
-    String? label;
-    if (log.flowType == FlowType.mestruazioni && log.flowIntensity != null) {
-      label = switch (log.flowIntensity!) {
-        FlowIntensity.light => l10n.daily_entry_flow_intensity_light,
-        FlowIntensity.medium => l10n.daily_entry_flow_intensity_medium,
-        // veryHeavy maps to the same badge as heavy — no fourth badge level in design.
-        FlowIntensity.heavy ||
-        FlowIntensity.veryHeavy =>
-          l10n.daily_entry_flow_intensity_heavy,
-      };
-    } else if (log.flowType == FlowType.spotting) {
-      label = l10n.daily_entry_flow_chip_spotting;
-    } else if (log.flowType == FlowType.assente) {
-      label = l10n.daily_entry_flow_chip_assente;
-    }
-
-    if (label == null) return const SizedBox.shrink();
-
-    return Container(
-      height: 32,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: accentFlow.withValues(alpha: 0.09),
-        border: Border.all(color: accentFlow.withValues(alpha: 0.27)),
-        borderRadius: BorderRadius.circular(MetraRadius.smm),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        label,
-        style: MetraTypography.caption.copyWith(
-          fontWeight: FontWeight.w500,
-          color: accentFlow,
-        ),
-      ),
-    );
-  }
-}
-
-class _SymptomPill extends StatelessWidget {
-  const _SymptomPill({required this.label, required this.isDark});
-
+  final String svgBody;
+  final Color iconColor;
   final String label;
-  final bool isDark;
+  final Color labelColor;
+  final Color bg;
 
   @override
   Widget build(BuildContext context) {
-    // Bible § 8.5: symptom chips use ocra (dustyOchre) tints, not terracotta.
-    final bg = MetraColors.light.dustyOchre.withAlpha(0x18);
-    final border = MetraColors.light.dustyOchre.withAlpha(0x55);
-    final textColor = MetraColors.light.terracottaDeep;
     return Container(
-      height: 28,
+      height: 24,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: bg,
-        border: Border.all(color: border),
-        borderRadius: BorderRadius.circular(MetraRadius.sm),
+        borderRadius: BorderRadius.circular(6),
       ),
-      alignment: Alignment.center,
-      child: Text(
-        label,
-        style: GoogleFonts.inter(
-          fontSize: 12,
-          color: textColor,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          MetraIcon(svgBody: svgBody, size: 11, color: iconColor, filled: true),
+          const SizedBox(width: 4),
+          Text(label, style: GoogleFonts.inter(fontSize: 11, color: labelColor)),
+        ],
       ),
     );
   }
