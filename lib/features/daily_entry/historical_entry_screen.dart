@@ -182,6 +182,7 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
             ),
           ],
         );
+        ref.invalidate(painSymptomsProvider(widget.date));
       } catch (e) {
         assert(() {
           debugPrint('replacePainSymptoms failed: $e');

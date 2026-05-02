@@ -164,6 +164,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
           ),
         ],
       );
+      ref.invalidate(painSymptomsProvider(_today));
     } catch (e) {
       debugPrint('replacePainSymptoms failed: $e');
       if (!mounted) return;
