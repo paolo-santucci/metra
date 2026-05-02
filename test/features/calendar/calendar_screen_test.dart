@@ -128,12 +128,6 @@ Widget _wrapWithRouter(
         builder: (_, __) => const CalendarScreen(),
       ),
       GoRoute(
-        path: '/oggi',
-        builder: (_, __) => const Scaffold(
-          body: Center(child: Text('oggi-stub')),
-        ),
-      ),
-      GoRoute(
         path: '/daily-entry/:date',
         builder: (_, __) => const Scaffold(
           body: Center(child: Text('daily-entry-stub')),
@@ -256,9 +250,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // The stub has no logs, so the card shows "Nessun dato registrato".
+      // The stub has no logs, so the card shows "Nessun dato registrato"
+      // and "Aggiungi giornata" (not "Modifica giornata" — no prior entry).
       expect(find.text('Nessun dato registrato'), findsOneWidget);
-      expect(find.text('Modifica giornata'), findsOneWidget);
+      expect(find.text('Aggiungi giornata'), findsOneWidget);
     });
 
     testWidgets('tapping a day cell shows the day-detail card',
@@ -279,13 +274,13 @@ void main() {
       await tester.pumpAndSettle();
 
       // Detail card is visible: the stub has no logs so "Nessun dato registrato"
-      // and the "Modifica giornata" edit button must both appear.
+      // and "Aggiungi giornata" (no prior entry) must both appear.
       expect(find.text('Nessun dato registrato'), findsOneWidget);
-      expect(find.text('Modifica giornata'), findsOneWidget);
+      expect(find.text('Aggiungi giornata'), findsOneWidget);
     });
 
     testWidgets(
-        'tapping "Modifica giornata" in the day-detail card navigates to /daily-entry/:date',
+        'tapping the day-card CTA navigates to /daily-entry/:date',
         (tester) async {
       await tester.binding.setSurfaceSize(const Size(800, 1400));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -302,8 +297,8 @@ void main() {
       await tester.tap(firstDay);
       await tester.pumpAndSettle();
 
-      // Second tap: tap the edit button inside the detail card.
-      await tester.tap(find.text('Modifica giornata'));
+      // Second tap: stub has no logs so the CTA reads "Aggiungi giornata".
+      await tester.tap(find.text('Aggiungi giornata'));
       await tester.pumpAndSettle();
 
       expect(find.text('daily-entry-stub'), findsOneWidget);
@@ -366,9 +361,12 @@ void main() {
       // (always true if today is not the last day of the month).
       if (futureDays.isEmpty) return;
 
-      // Record how many "Modifica giornata" labels are visible before the tap.
-      final editButtonsBefore =
-          tester.widgetList(find.text('Modifica giornata')).length;
+      // Record how many CTA buttons are visible before the tap.
+      // Stub has no logs so the label will be "Aggiungi giornata".
+      int _ctaCount(WidgetTester t) =>
+          t.widgetList(find.text('Aggiungi giornata')).length +
+          t.widgetList(find.text('Modifica giornata')).length;
+      final editButtonsBefore = _ctaCount(tester);
 
       // Attempt to tap the first future cell.
       await tester.tap(
@@ -377,15 +375,14 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // "Modifica giornata" count must not have changed — future date blocks CTA.
-      final editButtonsAfter =
-          tester.widgetList(find.text('Modifica giornata')).length;
-      expect(editButtonsAfter, equals(editButtonsBefore));
+      // CTA count must not have changed — future date blocks the button.
+      expect(_ctaCount(tester), equals(editButtonsBefore));
     });
 
-    testWidgets('"Modifica giornata" CTA is absent when selected date is today',
+    testWidgets('CTA is visible when selected date is today (no future guard)',
         (tester) async {
-      // Today is not in the future — CTA must be visible.
+      // Today is not in the future — CTA must be visible ("Aggiungi giornata"
+      // since the stub has no existing log for today).
       await tester.binding.setSurfaceSize(const Size(800, 1400));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -396,7 +393,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Modifica giornata'), findsOneWidget);
+      expect(find.text('Aggiungi giornata'), findsOneWidget);
     });
   });
 

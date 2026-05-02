@@ -45,11 +45,11 @@ void main() {
       expect(find.byType(NavigationBar), findsNothing);
     });
 
-    testWidgets('shows 5 tab items', (tester) async {
+    testWidgets('shows 4 tab items', (tester) async {
       await tester.pumpWidget(
         _wrap(MetraTabBar(currentIndex: 0, onTabSelected: (_) {})),
       );
-      expect(find.byType(GestureDetector), findsNWidgets(5));
+      expect(find.byType(GestureDetector), findsNWidgets(4));
     });
 
     testWidgets('calls onTabSelected with correct index on tap', (tester) async {
@@ -72,7 +72,7 @@ void main() {
         _wrap(MetraTabBar(currentIndex: 0, onTabSelected: (_) {})),
       );
       expect(find.text('Calendario'), findsOneWidget);
-      expect(find.text('Oggi'), findsOneWidget);
+      expect(find.text('Oggi'), findsNothing);
       expect(find.text('Archivio'), findsOneWidget);
       expect(find.text('Statistiche'), findsOneWidget);
       expect(find.text('Impostazioni'), findsOneWidget);

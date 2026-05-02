@@ -108,7 +108,7 @@ final _settingsOverride = appSettingsRepositoryProvider.overrideWith(
 
 void main() {
   group('Bottom navigation shell', () {
-    testWidgets('renders MetraTabBar with 5 tabs', (tester) async {
+    testWidgets('renders MetraTabBar with 4 tabs', (tester) async {
       await tester.pumpWidget(
         MetraApp(
           overrides: [
@@ -121,13 +121,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Custom tab bar: MetraTabBar with 5 GestureDetector tabs.
+      // Custom tab bar: MetraTabBar with 4 GestureDetector tabs.
       expect(find.byType(MetraTabBar), findsOneWidget);
       final tabTaps = find.descendant(
         of: find.byType(MetraTabBar),
         matching: find.byType(GestureDetector),
       );
-      expect(tabTaps, findsNWidgets(5));
+      expect(tabTaps, findsNWidgets(4));
     });
 
     testWidgets('shows all Italian tab labels', (tester) async {
@@ -144,7 +144,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Calendario'), findsOneWidget);
-      expect(find.text('Oggi'), findsOneWidget);
+      expect(find.text('Oggi'), findsNothing);
       expect(find.text('Archivio'), findsOneWidget);
       expect(find.text('Statistiche'), findsOneWidget);
       expect(find.text('Impostazioni'), findsOneWidget);
@@ -179,12 +179,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Tap the 3rd tab (index 2 = Archivio / Timeline) in MetraTabBar.
+      // Tap the 2nd tab (index 1 = Archivio / Timeline) in MetraTabBar.
       final tabs = find.descendant(
         of: find.byType(MetraTabBar),
         matching: find.byType(GestureDetector),
       );
-      await tester.tap(tabs.at(2));
+      await tester.tap(tabs.at(1));
       await tester.pumpAndSettle();
 
       expect(find.byType(TimelineScreen), findsOneWidget);
@@ -203,12 +203,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Tap the 4th tab (index 3 = Statistiche) in MetraTabBar.
+      // Tap the 3rd tab (index 2 = Statistiche) in MetraTabBar.
       final tabs = find.descendant(
         of: find.byType(MetraTabBar),
         matching: find.byType(GestureDetector),
       );
-      await tester.tap(tabs.at(3));
+      await tester.tap(tabs.at(2));
       await tester.pumpAndSettle();
 
       expect(find.byType(StatsScreen), findsOneWidget);
@@ -227,12 +227,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Tap the 5th tab (index 4 = Impostazioni) in MetraTabBar.
+      // Tap the 4th tab (index 3 = Impostazioni) in MetraTabBar.
       final tabs = find.descendant(
         of: find.byType(MetraTabBar),
         matching: find.byType(GestureDetector),
       );
-      await tester.tap(tabs.at(4));
+      await tester.tap(tabs.at(3));
       await tester.pumpAndSettle();
 
       expect(find.byType(SettingsScreen), findsOneWidget);

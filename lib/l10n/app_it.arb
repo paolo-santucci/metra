@@ -977,6 +977,10 @@
   "@calendar_day_detail_no_data": {
     "description": "Calendar day detail card: empty state when no log exists"
   },
+  "calendar_day_detail_add": "Aggiungi giornata",
+  "@calendar_day_detail_add": {
+    "description": "Calendar day detail card: button to create a new entry for a day with no log"
+  },
   "calendar_day_detail_edit": "Modifica giornata",
   "@calendar_day_detail_edit": {
     "description": "Calendar day detail card: button to open historical entry screen"

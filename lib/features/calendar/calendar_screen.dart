@@ -484,7 +484,9 @@ class _DayDetailCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      l10n.calendar_day_detail_edit,
+                      hasData
+                          ? l10n.calendar_day_detail_edit
+                          : l10n.calendar_day_detail_add,
                       style: MetraTypography.body.copyWith(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,

@@ -37,7 +37,6 @@ class MetraTabBar extends StatelessWidget {
 
   static const _icons = <String>[
     MetraIcons.calendar,
-    MetraIcons.note,
     MetraIcons.wave,
     MetraIcons.chart,
     MetraIcons.settings,
@@ -45,7 +44,6 @@ class MetraTabBar extends StatelessWidget {
 
   static const _labels = <String>[
     'Calendario',
-    'Oggi',
     'Archivio',
     'Statistiche',
     'Impostazioni',
