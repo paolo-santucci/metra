@@ -31,6 +31,7 @@ import '../../domain/entities/pain_symptom_data.dart';
 import '../../domain/entities/pain_symptom_type.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/repository_providers.dart';
+import '../settings/state/settings_notifier.dart';
 import 'state/daily_entry_controller.dart';
 import 'widgets/circle_pain_picker.dart';
 import 'widgets/flow_intensity_dots.dart';
@@ -218,12 +219,15 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
         isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
     final bgSunken =
         isDark ? MetraColors.dark.bgSunken : MetraColors.light.bgSunken;
-    final borderStrong = isDark
-        ? MetraColors.dark.borderStrong
-        : MetraColors.light.borderStrong;
+    final borderStrong =
+        isDark ? MetraColors.dark.borderStrong : MetraColors.light.borderStrong;
     final borderColor = isDark
         ? MetraColors.dark.textPrimary.withAlpha(0x12)
         : MetraColors.light.ink.withAlpha(0x12);
+
+    final settings = ref.watch(settingsNotifierProvider).valueOrNull;
+    final painEnabled = settings?.painEnabled ?? true;
+    final notesEnabled = settings?.notesEnabled ?? true;
 
     final locale = Localizations.localeOf(context).languageCode;
     final rawDate = DateFormat('EEEE d MMMM', locale).format(DateTime.now());
@@ -364,215 +368,225 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                 ),
               ),
 
-              const SizedBox(height: 1),
+              if (painEnabled) ...[
+                const SizedBox(height: 1),
 
-              // ── Pain section frame ────────────────────────────────────────
-              Container(
-                decoration: BoxDecoration(
-                  color: surfaceRaised,
-                  border: sectionBorder,
+                // ── Pain section frame ──────────────────────────────────────
+                Container(
+                  decoration: BoxDecoration(
+                    color: surfaceRaised,
+                    border: sectionBorder,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: MetraSpacing.sp18,
+                    horizontal: MetraSpacing.s6,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.today_pain_intensity_label.toUpperCase(),
+                        style: sectionLabelStyle,
+                      ),
+                      const SizedBox(height: MetraSpacing.s4),
+                      CirclePainPicker(
+                        selected: _painIntensity,
+                        onChanged: (v) => setState(() => _painIntensity = v),
+                      ),
+                    ],
+                  ),
                 ),
-                padding: const EdgeInsets.symmetric(
-                  vertical: MetraSpacing.sp18,
-                  horizontal: MetraSpacing.s6,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.today_pain_intensity_label.toUpperCase(),
-                      style: sectionLabelStyle,
-                    ),
-                    const SizedBox(height: MetraSpacing.s4),
-                    CirclePainPicker(
-                      selected: _painIntensity,
-                      onChanged: (v) => setState(() => _painIntensity = v),
-                    ),
-                  ],
-                ),
-              ),
+              ],
 
-              const SizedBox(height: 1),
+              if (painEnabled) ...[
+                const SizedBox(height: 1),
 
-              // ── Symptoms section frame ────────────────────────────────────
-              Container(
-                decoration: BoxDecoration(
-                  color: surfaceRaised,
-                  border: sectionBorder,
-                ),
-                padding: const EdgeInsets.symmetric(
-                  vertical: MetraSpacing.sp18,
-                  horizontal: MetraSpacing.s6,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.daily_entry_symptoms_label.toUpperCase(),
-                      style: sectionLabelStyle,
-                    ),
-                    const SizedBox(height: MetraSpacing.s4),
-                    Wrap(
-                      spacing: MetraSpacing.s2,
-                      runSpacing: MetraSpacing.s2,
-                      children: [
-                        ..._symptomTypes.map((type) {
-                          final label = _symptomLabel(type, l10n);
-                          final selected = _selectedSymptoms.contains(type);
-                          return ChoiceChipMetra(
-                            label: label,
-                            selected: selected,
-                            semanticsLabel: label,
-                            onSelected: (isSelected) {
-                              setState(() {
-                                _userHasModifiedSymptoms = true;
-                                final updated = Set<PainSymptomType>.from(
-                                  _selectedSymptoms,
-                                );
-                                if (isSelected) {
-                                  updated.add(type);
-                                } else {
-                                  updated.remove(type);
-                                }
-                                _selectedSymptoms = updated;
-                              });
-                            },
-                          );
-                        }),
-                        ..._customSymptomLabels.map((label) {
-                          return ChoiceChipMetra(
-                            label: label,
-                            selected: true,
-                            semanticsLabel: label,
-                            onSelected: (_) {
-                              setState(() {
-                                _userHasModifiedSymptoms = true;
-                                _customSymptomLabels = _customSymptomLabels
-                                    .where((l) => l != label)
-                                    .toList();
-                              });
-                            },
-                          );
-                        }),
-                        if (!_addingSymptom)
-                          GestureDetector(
-                            onTap: () =>
-                                setState(() => _addingSymptom = true),
-                            child: Container(
-                              constraints: const BoxConstraints(minHeight: 44),
-                              child: _AddSymptomChip(
-                                label: l10n.today_add_symptom,
-                                textSecondary: textSecondary,
-                              ),
-                            ),
-                          )
-                        else
-                          Container(
-                            constraints: const BoxConstraints(minHeight: 44),
-                            child: _InlineSymptomInput(
-                              controller: _customSymptomController,
-                              textSecondary: textSecondary,
-                              onConfirm: () {
-                                final text =
-                                    _customSymptomController.text.trim();
-                                if (text.isEmpty) {
-                                  setState(() => _addingSymptom = false);
-                                  return;
-                                }
-                                final fixedLabels = _symptomTypes
-                                    .map(
-                                      (t) => _symptomLabel(t, l10n)
-                                          .toLowerCase(),
-                                    )
-                                    .toSet();
-                                final alreadyExists =
-                                    _customSymptomLabels.any(
-                                      (l) =>
-                                          l.toLowerCase() ==
-                                          text.toLowerCase(),
-                                    ) ||
-                                    fixedLabels.contains(text.toLowerCase());
+                // ── Symptoms section frame ────────────────────────────────
+                Container(
+                  decoration: BoxDecoration(
+                    color: surfaceRaised,
+                    border: sectionBorder,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: MetraSpacing.sp18,
+                    horizontal: MetraSpacing.s6,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.daily_entry_symptoms_label.toUpperCase(),
+                        style: sectionLabelStyle,
+                      ),
+                      const SizedBox(height: MetraSpacing.s4),
+                      Wrap(
+                        spacing: MetraSpacing.s2,
+                        runSpacing: MetraSpacing.s2,
+                        children: [
+                          ..._symptomTypes.map((type) {
+                            final label = _symptomLabel(type, l10n);
+                            final selected = _selectedSymptoms.contains(type);
+                            return ChoiceChipMetra(
+                              label: label,
+                              selected: selected,
+                              semanticsLabel: label,
+                              onSelected: (isSelected) {
                                 setState(() {
                                   _userHasModifiedSymptoms = true;
-                                  if (!alreadyExists) {
-                                    _customSymptomLabels = [
-                                      ..._customSymptomLabels,
-                                      text,
-                                    ];
+                                  final updated = Set<PainSymptomType>.from(
+                                    _selectedSymptoms,
+                                  );
+                                  if (isSelected) {
+                                    updated.add(type);
+                                  } else {
+                                    updated.remove(type);
                                   }
-                                  _addingSymptom = false;
-                                  _customSymptomController.clear();
+                                  _selectedSymptoms = updated;
                                 });
                               },
-                              onCancel: () => setState(() {
-                                _addingSymptom = false;
-                                _customSymptomController.clear();
-                              }),
+                            );
+                          }),
+                          ..._customSymptomLabels.map((label) {
+                            return ChoiceChipMetra(
+                              label: label,
+                              selected: true,
+                              semanticsLabel: label,
+                              onSelected: (_) {
+                                setState(() {
+                                  _userHasModifiedSymptoms = true;
+                                  _customSymptomLabels = _customSymptomLabels
+                                      .where((l) => l != label)
+                                      .toList();
+                                });
+                              },
+                            );
+                          }),
+                          if (!_addingSymptom)
+                            GestureDetector(
+                              onTap: () =>
+                                  setState(() => _addingSymptom = true),
+                              child: Container(
+                                constraints:
+                                    const BoxConstraints(minHeight: 44),
+                                child: _AddSymptomChip(
+                                  label: l10n.today_add_symptom,
+                                  textSecondary: textSecondary,
+                                ),
+                              ),
+                            )
+                          else
+                            Container(
+                              constraints: const BoxConstraints(minHeight: 44),
+                              child: _InlineSymptomInput(
+                                controller: _customSymptomController,
+                                textSecondary: textSecondary,
+                                onConfirm: () {
+                                  final text =
+                                      _customSymptomController.text.trim();
+                                  if (text.isEmpty) {
+                                    setState(() => _addingSymptom = false);
+                                    return;
+                                  }
+                                  final fixedLabels = _symptomTypes
+                                      .map(
+                                        (t) => _symptomLabel(t, l10n)
+                                            .toLowerCase(),
+                                      )
+                                      .toSet();
+                                  final alreadyExists = _customSymptomLabels
+                                          .any(
+                                        (l) =>
+                                            l.toLowerCase() ==
+                                            text.toLowerCase(),
+                                      ) ||
+                                      fixedLabels.contains(text.toLowerCase());
+                                  setState(() {
+                                    _userHasModifiedSymptoms = true;
+                                    if (!alreadyExists) {
+                                      _customSymptomLabels = [
+                                        ..._customSymptomLabels,
+                                        text,
+                                      ];
+                                    }
+                                    _addingSymptom = false;
+                                    _customSymptomController.clear();
+                                  });
+                                },
+                                onCancel: () => setState(() {
+                                  _addingSymptom = false;
+                                  _customSymptomController.clear();
+                                }),
+                              ),
                             ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              if (notesEnabled) ...[
+                const SizedBox(height: 1),
+
+                // ── Notes section frame ─────────────────────────────────────
+                Container(
+                  decoration: BoxDecoration(
+                    color: surfaceRaised,
+                    border: sectionBorder,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: MetraSpacing.sp18,
+                    horizontal: MetraSpacing.s6,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.today_notes_label.toUpperCase(),
+                        style: sectionLabelStyle,
+                      ),
+                      const SizedBox(height: MetraSpacing.s4),
+                      TextField(
+                        controller: _notesController,
+                        minLines: 3,
+                        maxLines: 6,
+                        style:
+                            MetraTypography.body.copyWith(color: textPrimary),
+                        decoration: InputDecoration(
+                          hintText: l10n.today_notes_hint,
+                          hintStyle: MetraTypography.body.copyWith(
+                            fontSize: 15,
+                            color: textPrimary.withValues(alpha: 0.35),
                           ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 1),
-
-              // ── Notes section frame ───────────────────────────────────────
-              Container(
-                decoration: BoxDecoration(
-                  color: surfaceRaised,
-                  border: sectionBorder,
-                ),
-                padding: const EdgeInsets.symmetric(
-                  vertical: MetraSpacing.sp18,
-                  horizontal: MetraSpacing.s6,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.today_notes_label.toUpperCase(),
-                      style: sectionLabelStyle,
-                    ),
-                    const SizedBox(height: MetraSpacing.s4),
-                    TextField(
-                      controller: _notesController,
-                      minLines: 3,
-                      maxLines: 6,
-                      style: MetraTypography.body.copyWith(color: textPrimary),
-                      decoration: InputDecoration(
-                        hintText: l10n.today_notes_hint,
-                        hintStyle: MetraTypography.body.copyWith(
-                          fontSize: 15,
-                          color: textPrimary.withValues(alpha: 0.35),
-                        ),
-                        filled: true,
-                        fillColor: bgSunken,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: MetraSpacing.sp14,
-                          vertical: MetraSpacing.s3,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(MetraRadius.md),
-                          borderSide: BorderSide(color: borderStrong, width: 1.5),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(MetraRadius.md),
-                          borderSide: BorderSide(color: borderStrong, width: 1.5),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(MetraRadius.md),
-                          borderSide: BorderSide(
-                            color: accentFlow,
-                            width: 1.5,
+                          filled: true,
+                          fillColor: bgSunken,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: MetraSpacing.sp14,
+                            vertical: MetraSpacing.s3,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(MetraRadius.md),
+                            borderSide:
+                                BorderSide(color: borderStrong, width: 1.5),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(MetraRadius.md),
+                            borderSide:
+                                BorderSide(color: borderStrong, width: 1.5),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(MetraRadius.md),
+                            borderSide: BorderSide(
+                              color: accentFlow,
+                              width: 1.5,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+              ],
 
               // ── Save CTA ─────────────────────────────────────────────────
               Padding(
@@ -695,7 +709,8 @@ class _AddSymptomChip extends StatelessWidget {
     final plusColor = textSecondary.withValues(alpha: 0.35);
     final labelColor = textSecondary.withValues(alpha: 0.40);
     return CustomPaint(
-      painter: _DashedBorderPainter(color: textSecondary.withValues(alpha: 0.25)),
+      painter:
+          _DashedBorderPainter(color: textSecondary.withValues(alpha: 0.25)),
       child: SizedBox(
         height: 36,
         child: Padding(

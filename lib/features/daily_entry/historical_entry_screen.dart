@@ -32,6 +32,7 @@ import '../../domain/entities/pain_symptom_data.dart';
 import '../../domain/entities/pain_symptom_type.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/repository_providers.dart';
+import '../settings/state/settings_notifier.dart';
 import 'state/daily_entry_controller.dart';
 import 'widgets/circle_pain_picker.dart';
 import 'widgets/flow_intensity_dots.dart';
@@ -232,6 +233,10 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
     final logAsync = ref.watch(dailyEntryProvider(widget.date));
     ref.watch(painSymptomsProvider(widget.date));
 
+    final settings = ref.watch(settingsNotifierProvider).valueOrNull;
+    final painEnabled = settings?.painEnabled ?? true;
+    final notesEnabled = settings?.notesEnabled ?? true;
+
     return Scaffold(
       backgroundColor: bgColor,
       body: logAsync.when(
@@ -251,12 +256,19 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
             ),
           ),
         ),
-        data: (_) => _buildForm(context, l10n, isDark),
+        data: (_) =>
+            _buildForm(context, l10n, isDark, painEnabled, notesEnabled),
       ),
     );
   }
 
-  Widget _buildForm(BuildContext context, AppLocalizations l10n, bool isDark) {
+  Widget _buildForm(
+    BuildContext context,
+    AppLocalizations l10n,
+    bool isDark,
+    bool painEnabled,
+    bool notesEnabled,
+  ) {
     final textPrimary =
         isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
     final textSecondary = isDark
@@ -266,9 +278,8 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
         isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
     final bgSunken =
         isDark ? MetraColors.dark.bgSunken : MetraColors.light.bgSunken;
-    final borderStrong = isDark
-        ? MetraColors.dark.borderStrong
-        : MetraColors.light.borderStrong;
+    final borderStrong =
+        isDark ? MetraColors.dark.borderStrong : MetraColors.light.borderStrong;
     final surfaceRaised =
         isDark ? MetraColors.dark.bgSurface : MetraColors.light.surfaceRaised;
     final borderColor = isDark
@@ -277,7 +288,8 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
 
     final locale = Localizations.localeOf(context).languageCode;
     final rawDate = DateFormat('EEEE d MMMM', locale).format(widget.date);
-    final dateStr = rawDate.substring(0, 1).toUpperCase() + rawDate.substring(1);
+    final dateStr =
+        rawDate.substring(0, 1).toUpperCase() + rawDate.substring(1);
 
     final sectionLabelStyle = MetraTypography.caption.copyWith(
       fontWeight: FontWeight.w600,
@@ -335,12 +347,14 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
                   const SizedBox(height: 4),
                   Text(
                     dateStr,
-                    style: MetraTypography.caption.copyWith(color: textSecondary),
+                    style:
+                        MetraTypography.caption.copyWith(color: textSecondary),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     l10n.today_how_are_you,
-                    style: MetraTypography.screenTitle.copyWith(color: textPrimary),
+                    style: MetraTypography.screenTitle
+                        .copyWith(color: textPrimary),
                   ),
                 ],
               ),
@@ -438,119 +452,127 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
               ),
             ),
 
-            const SizedBox(height: 1),
+            if (painEnabled) ...[
+              const SizedBox(height: 1),
 
-            // ── Dolore section frame ──────────────────────────────────────
-            Container(
-              decoration: BoxDecoration(
-                color: surfaceRaised,
-                border: sectionBorder,
+              // ── Dolore section frame ────────────────────────────────────
+              Container(
+                decoration: BoxDecoration(
+                  color: surfaceRaised,
+                  border: sectionBorder,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  vertical: MetraSpacing.sp18,
+                  horizontal: MetraSpacing.s6,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.today_pain_intensity_label.toUpperCase(),
+                      style: sectionLabelStyle,
+                    ),
+                    const SizedBox(height: MetraSpacing.s4),
+                    CirclePainPicker(
+                      selected: _painIntensity,
+                      onChanged: (v) => setState(() => _painIntensity = v),
+                    ),
+                  ],
+                ),
               ),
-              padding: const EdgeInsets.symmetric(
-                vertical: MetraSpacing.sp18,
-                horizontal: MetraSpacing.s6,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.today_pain_intensity_label.toUpperCase(),
-                    style: sectionLabelStyle,
-                  ),
-                  const SizedBox(height: MetraSpacing.s4),
-                  CirclePainPicker(
-                    selected: _painIntensity,
-                    onChanged: (v) => setState(() => _painIntensity = v),
-                  ),
-                ],
-              ),
-            ),
+            ],
 
-            const SizedBox(height: 1),
+            if (painEnabled) ...[
+              const SizedBox(height: 1),
 
-            // ── Sintomi section frame ─────────────────────────────────────
-            Container(
-              decoration: BoxDecoration(
-                color: surfaceRaised,
-                border: sectionBorder,
+              // ── Sintomi section frame ───────────────────────────────────
+              Container(
+                decoration: BoxDecoration(
+                  color: surfaceRaised,
+                  border: sectionBorder,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  vertical: MetraSpacing.sp18,
+                  horizontal: MetraSpacing.s6,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.daily_entry_symptoms_label.toUpperCase(),
+                      style: sectionLabelStyle,
+                    ),
+                    const SizedBox(height: MetraSpacing.s4),
+                    Wrap(
+                      spacing: MetraSpacing.s2,
+                      runSpacing: MetraSpacing.s2,
+                      children: [
+                        ..._buildSymptomChips(l10n, textPrimary, textSecondary),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              padding: const EdgeInsets.symmetric(
-                vertical: MetraSpacing.sp18,
-                horizontal: MetraSpacing.s6,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.daily_entry_symptoms_label.toUpperCase(),
-                    style: sectionLabelStyle,
-                  ),
-                  const SizedBox(height: MetraSpacing.s4),
-                  Wrap(
-                    spacing: MetraSpacing.s2,
-                    runSpacing: MetraSpacing.s2,
-                    children: [
-                      ..._buildSymptomChips(l10n, textPrimary, textSecondary),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+            ],
 
-            const SizedBox(height: 1),
+            if (notesEnabled) ...[
+              const SizedBox(height: 1),
 
-            // ── Nota libera section frame ─────────────────────────────────
-            Container(
-              decoration: BoxDecoration(
-                color: surfaceRaised,
-                border: sectionBorder,
-              ),
-              padding: const EdgeInsets.symmetric(
-                vertical: MetraSpacing.sp18,
-                horizontal: MetraSpacing.s6,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.today_notes_label.toUpperCase(),
-                    style: sectionLabelStyle,
-                  ),
-                  const SizedBox(height: MetraSpacing.s4),
-                  TextField(
-                    controller: _notesController,
-                    minLines: 3,
-                    maxLines: 6,
-                    style: MetraTypography.body.copyWith(color: textPrimary),
-                    decoration: InputDecoration(
-                      hintText: l10n.today_notes_hint,
-                      hintStyle: MetraTypography.body.copyWith(
-                        fontSize: 15,
-                        color: textPrimary.withValues(alpha: 0.35),
-                      ),
-                      filled: true,
-                      fillColor: bgSunken,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: MetraSpacing.sp14,
-                        vertical: MetraSpacing.s3,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(MetraRadius.md),
-                        borderSide: BorderSide(color: borderStrong, width: 1.5),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(MetraRadius.md),
-                        borderSide: BorderSide(color: borderStrong, width: 1.5),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(MetraRadius.md),
-                        borderSide: BorderSide(color: accentFlow, width: 1.5),
+              // ── Nota libera section frame ───────────────────────────────
+              Container(
+                decoration: BoxDecoration(
+                  color: surfaceRaised,
+                  border: sectionBorder,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  vertical: MetraSpacing.sp18,
+                  horizontal: MetraSpacing.s6,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.today_notes_label.toUpperCase(),
+                      style: sectionLabelStyle,
+                    ),
+                    const SizedBox(height: MetraSpacing.s4),
+                    TextField(
+                      controller: _notesController,
+                      minLines: 3,
+                      maxLines: 6,
+                      style: MetraTypography.body.copyWith(color: textPrimary),
+                      decoration: InputDecoration(
+                        hintText: l10n.today_notes_hint,
+                        hintStyle: MetraTypography.body.copyWith(
+                          fontSize: 15,
+                          color: textPrimary.withValues(alpha: 0.35),
+                        ),
+                        filled: true,
+                        fillColor: bgSunken,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: MetraSpacing.sp14,
+                          vertical: MetraSpacing.s3,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(MetraRadius.md),
+                          borderSide:
+                              BorderSide(color: borderStrong, width: 1.5),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(MetraRadius.md),
+                          borderSide:
+                              BorderSide(color: borderStrong, width: 1.5),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(MetraRadius.md),
+                          borderSide: BorderSide(color: accentFlow, width: 1.5),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+            ],
 
             // ── Save CTA ─────────────────────────────────────────────────
             Padding(
@@ -658,8 +680,7 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
                 final fixedLabels = _symptomTypes
                     .map((t) => _symptomLabel(t, l10n).toLowerCase())
                     .toSet();
-                final alreadyExists =
-                    _customSymptomLabels.any(
+                final alreadyExists = _customSymptomLabels.any(
                       (l) => l.toLowerCase() == text.toLowerCase(),
                     ) ||
                     fixedLabels.contains(text.toLowerCase());
@@ -783,7 +804,8 @@ class _AddSymptomChip extends StatelessWidget {
     final plusColor = textSecondary.withValues(alpha: 0.35);
     final labelColor = textSecondary.withValues(alpha: 0.40);
     return CustomPaint(
-      painter: _DashedBorderPainter(color: textSecondary.withValues(alpha: 0.25)),
+      painter:
+          _DashedBorderPainter(color: textSecondary.withValues(alpha: 0.25)),
       child: SizedBox(
         height: 36,
         child: Padding(
