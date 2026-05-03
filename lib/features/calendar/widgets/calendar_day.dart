@@ -32,7 +32,8 @@ import '../../../core/widgets/metra_icon.dart';
 /// (predictions are inherently future).
 ///
 /// Indicator icons (spec § 8.3.2) are rendered below the day number:
-/// - flow/spotting → dropFilled (terracotta)
+/// - flow → dropFilled (terracotta)
+/// - spotting → background tint only, no icon
 /// - prediction   → dropOutline (nightLavender) — shown independently, not
 ///   suppressed when flow is also present (CL-01 fix)
 /// - symptom      → starSmallFilled (dustyOchre)
@@ -113,7 +114,7 @@ class CalendarDay extends StatelessWidget {
     // Each indicator is independent — prediction is NOT suppressed when flow
     // is also present (CL-01 fix).
     final indicators = <Widget>[];
-    if (isFlow || isSpotting) {
+    if (isFlow) {
       indicators.add(
         MetraIcon(
           svgBody: MetraIcons.dropFilled,
