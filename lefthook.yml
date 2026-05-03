@@ -1,0 +1,16 @@
+# lefthook.yml — local Git hook configuration for Métra
+#
+# Install once per clone:
+#   dart run lefthook install
+#
+# lefthook is a Go binary distributed via a Dart pub package wrapper.
+# It rewrites staged Dart files in-place and re-stages them, so the
+# committed version always matches what `dart format` would produce.
+
+pre-commit:
+  parallel: true
+  commands:
+    format:
+      glob: "*.dart"
+      run: dart format {staged_files}
+      stage_fixed: true

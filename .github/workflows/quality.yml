@@ -23,8 +23,13 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Check formatting
-        run: dart format --set-exit-if-changed .
+      - name: Generate code (build_runner)
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Check formatting and codegen determinism
+        run: |
+          dart format .
+          git diff --exit-code
 
       - name: Analyze
         run: flutter analyze
@@ -55,8 +60,3 @@ jobs:
             exit 1
           fi
           echo "OK: Line coverage ${PCT}% meets the 80% threshold."
-
-      - name: Check build_runner determinism
-        run: |
-          dart run build_runner build --delete-conflicting-outputs
-          git diff --exit-code
