@@ -31,11 +31,14 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-        </activity>
-        <activity
-            android:name="com.linusu.flutter_web_auth_2.CallbackActivity"
-            android:exported="true">
-            <intent-filter android:label="flutter_web_auth_2">
+            <!-- Dropbox OAuth callback. Hosted on MainActivity (not on
+                 flutter_web_auth_2's CallbackActivity) so the redirect lands in
+                 the app's existing task instead of spawning a new one — without
+                 this, Chrome's Custom Tab stayed foreground after consent.
+                 MainActivity.onNewIntent forwards the URL to the plugin's
+                 static callbacks map, then clears intent.data so go_router
+                 doesn't try to navigate to it. -->
+            <intent-filter android:label="oauth_callback">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
