@@ -16,6 +16,7 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widget_previews.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -109,16 +110,20 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
             .load(Locale(currentSettings.languageCode));
         final scheduler =
             await ref.read(schedulePredictionNotificationProvider.future);
-        await scheduler.execute(
-          prediction: prediction,
-          settings: currentSettings,
-          title: l10n.notification_prediction_title,
-          body: prediction != null
-              ? l10n.notification_prediction_body(
-                  currentSettings.notificationDaysBefore,
-                )
-              : '',
-        );
+        try {
+          await scheduler.execute(
+            prediction: prediction,
+            settings: currentSettings,
+            title: l10n.notification_prediction_title,
+            body: prediction != null
+                ? l10n.notification_prediction_body(
+                    currentSettings.notificationDaysBefore,
+                  )
+                : '',
+          );
+        } on PlatformException {
+          // BUG-002: SCHEDULE_EXACT_ALARM revoked; silently no-op.
+        }
       },
     );
 
@@ -126,24 +131,48 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
     // (toggle notificationsEnabled or adjust notificationDaysBefore).
     ref.listen<AsyncValue<AppSettingsData>>(
       settingsNotifierProvider,
-      (_, next) async {
+      (prev, next) async {
         final currentSettings = next.valueOrNull;
         if (currentSettings == null) return;
+
+        // BUG-004 / BUG-001: request OS permission the first time the user
+        // enables notifications. requestPermission() shows the system dialog
+        // when the permission is undetermined; returns false immediately
+        // without a dialog if the user has already denied it.
+        final wasEnabled = prev?.valueOrNull?.notificationsEnabled ?? false;
+        if (currentSettings.notificationsEnabled && !wasEnabled) {
+          final granted = await ref
+              .read(notificationServiceProvider)
+              .requestPermission();
+          if (!granted) {
+            // User denied the OS dialog — revert the toggle so the displayed
+            // state matches reality (no notification will fire while denied).
+            await ref.read(settingsNotifierProvider.notifier).save(
+              currentSettings.copyWith(notificationsEnabled: false),
+            );
+            return;
+          }
+        }
+
         final prediction = ref.read(cyclePredictionProvider).valueOrNull;
         final l10n = await AppLocalizations.delegate
             .load(Locale(currentSettings.languageCode));
         final scheduler =
             await ref.read(schedulePredictionNotificationProvider.future);
-        await scheduler.execute(
-          prediction: prediction,
-          settings: currentSettings,
-          title: l10n.notification_prediction_title,
-          body: prediction != null
-              ? l10n.notification_prediction_body(
-                  currentSettings.notificationDaysBefore,
-                )
-              : '',
-        );
+        try {
+          await scheduler.execute(
+            prediction: prediction,
+            settings: currentSettings,
+            title: l10n.notification_prediction_title,
+            body: prediction != null
+                ? l10n.notification_prediction_body(
+                    currentSettings.notificationDaysBefore,
+                  )
+                : '',
+          );
+        } on PlatformException {
+          // BUG-002: SCHEDULE_EXACT_ALARM revoked; silently no-op.
+        }
       },
     );
 

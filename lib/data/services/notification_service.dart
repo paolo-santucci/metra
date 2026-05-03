@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:metra/domain/services/notification_service.dart';
@@ -96,6 +97,10 @@ class FlutterNotificationService implements NotificationService {
       9, // 09:00
     );
 
+    // BUG-003: the use case guards against past calendar days; guard here
+    // against the same-day case where 09:00 local has already passed.
+    if (scheduledDate.isBefore(tz.TZDateTime.now(tz.local))) return;
+
     const androidDetails = AndroidNotificationDetails(
       _kChannelId,
       _kChannelName,
@@ -108,23 +113,44 @@ class FlutterNotificationService implements NotificationService {
       iOS: iosDetails,
     );
 
-    await _plugin.zonedSchedule(
-      kPredictionNotificationId,
-      title,
-      body,
-      scheduledDate,
-      details,
-      // exactAllowWhileIdle keeps the alarm firing even in Doze mode.
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      // Absolute time — do not reinterpret as wall-clock time.
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: null,
-    );
+    try {
+      await _plugin.zonedSchedule(
+        kPredictionNotificationId,
+        title,
+        body,
+        scheduledDate,
+        details,
+        // exactAllowWhileIdle keeps the alarm firing even in Doze mode.
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        // Absolute time — do not reinterpret as wall-clock time.
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: null,
+      );
+    } on PlatformException {
+      // BUG-002: SCHEDULE_EXACT_ALARM was revoked by the user in Android
+      // Settings → Apps → Special app access. zonedSchedule() throws; swallow
+      // so the caller receives a clean void return.
+    }
   }
 
   @override
   Future<void> cancelPredictionNotifications() async {
     await _plugin.cancel(kPredictionNotificationId);
+  }
+
+  @override
+  Future<bool> requestPermission() async {
+    // On Android 13+ (API 33+), POST_NOTIFICATIONS is a runtime permission.
+    // requestNotificationsPermission() shows the system dialog the first time;
+    // subsequent calls return the persisted result without a dialog.
+    // On iOS, permission is requested via DarwinInitializationSettings in
+    // initialize() — resolvePlatformSpecificImplementation returns null there,
+    // so we return true (already handled).
+    final androidPlugin = _plugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+    if (androidPlugin == null) return true;
+    return await androidPlugin.requestNotificationsPermission() ?? true;
   }
 }

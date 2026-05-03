@@ -93,4 +93,7 @@ class _FakeNotificationService implements NotificationService {
 
   @override
   Future<void> cancelPredictionNotifications() async => cancelCount++;
+
+  @override
+  Future<bool> requestPermission() async => true;
 }

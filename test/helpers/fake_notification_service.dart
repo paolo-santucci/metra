@@ -21,6 +21,7 @@ class FakeNotificationService implements NotificationService {
   bool initialized = false;
   final List<({DateTime notifyAt, String title, String body})> scheduled = [];
   int cancelCount = 0;
+  bool permissionGranted = true;
 
   @override
   Future<void> initialize() async => initialized = true;
@@ -35,4 +36,7 @@ class FakeNotificationService implements NotificationService {
 
   @override
   Future<void> cancelPredictionNotifications() async => cancelCount++;
+
+  @override
+  Future<bool> requestPermission() async => permissionGranted;
 }

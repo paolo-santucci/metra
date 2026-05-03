@@ -38,4 +38,13 @@ abstract class NotificationService {
 
   /// Cancels the prediction-reminder notification if one is scheduled.
   Future<void> cancelPredictionNotifications();
+
+  /// Requests the OS-level notification permission (Android 13+ / API 33+).
+  ///
+  /// Returns [true] if permission is granted (or pre-granted for the current
+  /// OS version / platform).  On iOS, permissions are handled automatically
+  /// during [initialize] — this method returns [true] on that platform.
+  /// Subsequent calls after denial return [false] immediately without showing
+  /// a dialog again; the user must go to Android Settings to re-enable.
+  Future<bool> requestPermission();
 }

@@ -40,7 +40,21 @@ class SchedulePredictionNotification {
     );
     final notifyAt = prediction.windowStart
         .subtract(Duration(days: settings.notificationDaysBefore));
-    if (notifyAt.isBefore(DateTime.now())) return;
+    // BUG-003: compare calendar dates in local time to avoid the UTC/local
+    // mismatch that drops a valid same-day delivery.  `notifyAt` may be a UTC
+    // midnight DateTime while `DateTime.now()` is local; comparing them raw
+    // treats UTC midnight as already past in UTC+ timezones even when 09:00
+    // local (the actual delivery time) has not yet arrived.
+    // Same-day hour-level precision is delegated to the service.
+    final notifyLocal = notifyAt.toLocal();
+    final notifyDay = DateTime(
+      notifyLocal.year,
+      notifyLocal.month,
+      notifyLocal.day,
+    );
+    final now = DateTime.now();
+    final todayDay = DateTime(now.year, now.month, now.day);
+    if (notifyDay.isBefore(todayDay)) return;
     await _notifService.schedulePredictionNotification(notifyAt, title, body);
   }
 }
