@@ -3,7 +3,7 @@ layout: page
 title: First launch — Onboarding
 ---
 
-[← Back to Help](/help/) &nbsp;·&nbsp; [🇮🇹 Italiano](/help/it/onboarding)
+[← Back to Help](/metra/help/) &nbsp;·&nbsp; [🇮🇹 Italiano](/metra/help/it/onboarding)
 
 ## What to expect the first time you open Métra
 
@@ -54,4 +54,4 @@ Yes. Go to **Settings → Notification preferences** to update your cycle-length
 
 ---
 
-[← Back to Help](/help/)
+[← Back to Help](/metra/help/)

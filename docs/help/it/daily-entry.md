@@ -3,7 +3,7 @@ layout: page
 title: Registrare un giorno
 ---
 
-[← Torna alla Guida](/help/it/) &nbsp;·&nbsp; [🇬🇧 English](/help/daily-entry)
+[← Torna alla Guida](/metra/help/it/) &nbsp;·&nbsp; [🇬🇧 English](/metra/help/daily-entry)
 
 Puoi registrare i dati di oggi dalla scheda **Oggi**, oppure registrare o modificare qualsiasi giorno passato dal [Calendario](calendar).
 
@@ -119,4 +119,4 @@ Per rimuovere tutti i dati di un giorno specifico, apri la schermata di modifica
 
 ---
 
-[← Torna alla Guida](/help/it/)
+[← Torna alla Guida](/metra/help/it/)

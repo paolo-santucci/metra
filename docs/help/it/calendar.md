@@ -3,7 +3,7 @@ layout: page
 title: Calendario e linguaggio visivo
 ---
 
-[← Torna alla Guida](/help/it/) &nbsp;·&nbsp; [🇬🇧 English](/help/calendar)
+[← Torna alla Guida](/metra/help/it/) &nbsp;·&nbsp; [🇬🇧 English](/metra/help/calendar)
 
 La scheda **Calendario** è la schermata principale di Métra. Mostra una griglia mensile in cui ogni giorno porta informazioni visive su ciò che hai registrato — o su ciò che l'app prevede.
 
@@ -87,4 +87,4 @@ Toccando un giorno si apre un pannello con:
 
 ---
 
-[← Torna alla Guida](/help/it/)
+[← Torna alla Guida](/metra/help/it/)

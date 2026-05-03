@@ -4,7 +4,7 @@ title: Guida
 subtitle: Tutto quello che devi sapere su Métra.
 ---
 
-[🇬🇧 English version](/help/)
+[🇬🇧 English version](/metra/help/)
 
 Benvenuta nel centro assistenza di Métra. Trova il capitolo che ti serve qui sotto.
 

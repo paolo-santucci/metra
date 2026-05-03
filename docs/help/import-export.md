@@ -3,7 +3,7 @@ layout: page
 title: Import and Export (CSV)
 ---
 
-[← Back to Help](/help/) &nbsp;·&nbsp; [🇮🇹 Italiano](/help/it/import-export)
+[← Back to Help](/metra/help/) &nbsp;·&nbsp; [🇮🇹 Italiano](/metra/help/it/import-export)
 
 Métra can export all your daily logs to a plain CSV file, and import them back. This is useful for:
 
@@ -159,4 +159,4 @@ Rows with errors are skipped; valid rows are still imported.
 
 ---
 
-[← Back to Help](/help/)
+[← Back to Help](/metra/help/)
