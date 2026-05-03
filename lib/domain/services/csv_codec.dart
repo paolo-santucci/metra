@@ -59,30 +59,21 @@ class CsvDecodeResult {
   final List<CsvParseError> errors;
 }
 
-// New format (schema v4): flow_type is FlowType index (0-2); flow is
-// FlowIntensity index (0-3), only meaningful when flowType==mestruazioni.
+// Schema v4: flow_type is FlowType index (0-2); flow is FlowIntensity index
+// (0-3), only meaningful when flowType==mestruazioni. Only date is checked at
+// the header level so that legacy CSVs with a `spotting` column are still
+// accepted; flow_type is enforced per-row instead.
 const _kHeaders = [
   'date',
   'flow_type',
   'flow',
-  'other_discharge',
   'pain_intensity',
   'symptoms',
   'notes',
   'cycle_start',
-  'pain_enabled',
-  'notes_enabled',
 ];
 
-// flow_type and flow are excluded from required headers so legacy CSVs
-// (which have a `spotting` column instead) still decode without error.
-const _kRequiredHeaders = [
-  'date',
-  'other_discharge',
-  'pain_intensity',
-  'symptoms',
-  'notes',
-];
+const _kRequiredHeaders = ['date'];
 
 class CsvCodec {
   const CsvCodec();
@@ -95,15 +86,12 @@ class CsvCodec {
       for (final r in rows)
         [
           _fmtDate(r.log.date),
-          r.log.flowType?.index ?? '', // flow_type column
-          r.log.flowIntensity?.index ?? '', // flow column
-          r.log.otherDischarge ? 1 : 0,
+          r.log.flowType?.index ?? '',
+          r.log.flowIntensity?.index ?? '',
           r.log.painIntensity ?? '',
           _encodeSymptoms(r.symptoms),
           r.log.notes ?? '',
           r.cycleStart ? 1 : 0,
-          r.log.painEnabled ? 1 : 0,
-          r.log.notesEnabled ? 1 : 0,
         ],
     ];
     return const ListToCsvConverter().convert(data);
@@ -229,41 +217,56 @@ class CsvCodec {
       FlowIntensity? flowIntensity;
 
       if (hasFlowType) {
-        // New format: flow_type is FlowType index (0-2).
+        // New format: flow_type is required per row.
         final ftStr = cell(rawRow, 'flow_type');
-        if (ftStr.isNotEmpty) {
-          final idx = int.tryParse(ftStr);
-          if (idx == null || idx < 0 || idx >= FlowType.values.length) {
-            errors.add(
-              CsvParseError(
-                rowNumber: rowNum,
-                column: 'flow_type',
-                rawValue: ftStr,
-                reason: 'Expected 0–${FlowType.values.length - 1} or empty',
-              ),
-            );
-            continue;
-          }
-          flowType = FlowType.values[idx];
+        if (ftStr.isEmpty) {
+          errors.add(
+            CsvParseError(
+              rowNumber: rowNum,
+              column: 'flow_type',
+              rawValue: '',
+              reason: 'flow_type is required',
+            ),
+          );
+          continue;
         }
+        final ftIdx = int.tryParse(ftStr);
+        if (ftIdx == null || ftIdx < 0 || ftIdx >= FlowType.values.length) {
+          errors.add(
+            CsvParseError(
+              rowNumber: rowNum,
+              column: 'flow_type',
+              rawValue: ftStr,
+              reason: 'Expected 0–${FlowType.values.length - 1}',
+            ),
+          );
+          continue;
+        }
+        flowType = FlowType.values[ftIdx];
 
-        // flow is FlowIntensity v4 index (0-3).
-        final flowStr = cell(rawRow, 'flow');
-        if (flowStr.isNotEmpty) {
-          final idx = int.tryParse(flowStr);
-          if (idx == null || idx < 0 || idx >= FlowIntensity.values.length) {
-            errors.add(
-              CsvParseError(
-                rowNumber: rowNum,
-                column: 'flow',
-                rawValue: flowStr,
-                reason:
-                    'Expected 0–${FlowIntensity.values.length - 1} or empty',
-              ),
-            );
-            continue;
+        // flow is only meaningful for mestruazioni; defaults to medium when
+        // the column is omitted or empty.
+        if (flowType == FlowType.mestruazioni) {
+          final flowStr = cell(rawRow, 'flow');
+          if (flowStr.isNotEmpty) {
+            final fIdx = int.tryParse(flowStr);
+            if (fIdx == null ||
+                fIdx < 0 ||
+                fIdx >= FlowIntensity.values.length) {
+              errors.add(
+                CsvParseError(
+                  rowNumber: rowNum,
+                  column: 'flow',
+                  rawValue: flowStr,
+                  reason:
+                      'Expected 0–${FlowIntensity.values.length - 1} or empty',
+                ),
+              );
+              continue;
+            }
+            flowIntensity = FlowIntensity.values[fIdx];
           }
-          flowIntensity = FlowIntensity.values[idx];
+          flowIntensity ??= FlowIntensity.medium;
         }
       } else if (hasSpotting) {
         // Legacy format: spotting is 0/1; flow is v3 index (0-4 where 0=none).
@@ -319,21 +322,6 @@ class CsvCodec {
             rawValue: '',
             reason:
                 'Required column "flow_type" or legacy "spotting" missing from header',
-          ),
-        );
-        continue;
-      }
-
-      // other_discharge
-      final odStr = cell(rawRow, 'other_discharge');
-      final odVal = int.tryParse(odStr);
-      if (odVal == null || (odVal != 0 && odVal != 1)) {
-        errors.add(
-          CsvParseError(
-            rowNumber: rowNum,
-            column: 'other_discharge',
-            rawValue: odStr,
-            reason: 'Expected 0 or 1',
           ),
         );
         continue;
@@ -398,47 +386,6 @@ class CsvCodec {
         notesEnabled = true;
       }
 
-      // BUG-001: explicit pain_enabled / notes_enabled columns override the
-      // inferred values above. Fall back to inference only when the column is
-      // absent (backward-compat with old CSV files).
-      if (header.contains('pain_enabled')) {
-        final peStr = cell(rawRow, 'pain_enabled');
-        if (peStr.isNotEmpty) {
-          final peVal = int.tryParse(peStr);
-          if (peVal == null || (peVal != 0 && peVal != 1)) {
-            errors.add(
-              CsvParseError(
-                rowNumber: rowNum,
-                column: 'pain_enabled',
-                rawValue: peStr,
-                reason: 'Expected 0 or 1',
-              ),
-            );
-            continue;
-          }
-          painEnabled = peVal == 1;
-        }
-      }
-
-      if (header.contains('notes_enabled')) {
-        final neStr = cell(rawRow, 'notes_enabled');
-        if (neStr.isNotEmpty) {
-          final neVal = int.tryParse(neStr);
-          if (neVal == null || (neVal != 0 && neVal != 1)) {
-            errors.add(
-              CsvParseError(
-                rowNumber: rowNum,
-                column: 'notes_enabled',
-                rawValue: neStr,
-                reason: 'Expected 0 or 1',
-              ),
-            );
-            continue;
-          }
-          notesEnabled = neVal == 1;
-        }
-      }
-
       // cycle_start is ignored on decode.
 
       rows.add(
@@ -447,7 +394,6 @@ class CsvCodec {
             date: utcDate,
             flowType: flowType,
             flowIntensity: flowIntensity,
-            otherDischarge: odVal == 1,
             painEnabled: painEnabled,
             painIntensity: painIntensity,
             notesEnabled: notesEnabled,
