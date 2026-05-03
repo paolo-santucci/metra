@@ -110,6 +110,16 @@ The privacy policy is published on [GitHub Pages](../../).
 
 -----
 
+## Support
+
+If you find Métra useful, you can support development:
+
+<div align="center">
+<a href='https://ko-fi.com/D1D31YPYRX' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi3.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+</div>
+
+-----
+
 <div align="center">
 
 *From Ancient Greek μήτρα — womb, measure, origin.*  
