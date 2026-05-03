@@ -54,7 +54,8 @@ final appSettingsRepositoryProvider =
 /// Emits null until the settings row is created (first app launch before
 /// onboarding completes). Used by [cyclePredictionProvider] to read
 /// [AppSettingsData.declaredCycleLength] reactively.
-final appSettingsStreamProvider = StreamProvider<AppSettingsData?>((ref) async* {
+final appSettingsStreamProvider =
+    StreamProvider<AppSettingsData?>((ref) async* {
   final repo = await ref.watch(appSettingsRepositoryProvider.future);
   yield* repo.watchSettings();
 });

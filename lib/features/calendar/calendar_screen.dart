@@ -128,9 +128,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         .read(calendarMonthProvider.notifier)
                         .goToNextMonth(),
                     onToday: () {
-                      ref
-                          .read(calendarMonthProvider.notifier)
-                          .goToToday();
+                      ref.read(calendarMonthProvider.notifier).goToToday();
                       final today = DateTime.now();
                       setState(
                         () => _selectedDate = DateTime.utc(

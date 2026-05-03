@@ -75,7 +75,8 @@ void main() {
     expect(settings.onboardingCompleted, isTrue);
   });
 
-  test('saves declared cycleLength to AppSettings, not to the cycle entry', () async {
+  test('saves declared cycleLength to AppSettings, not to the cycle entry',
+      () async {
     await useCase.execute(
       lastPeriodDate: lastPeriod,
       cycleLength: 35,

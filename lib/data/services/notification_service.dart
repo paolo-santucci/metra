@@ -147,9 +147,8 @@ class FlutterNotificationService implements NotificationService {
     // On iOS, permission is requested via DarwinInitializationSettings in
     // initialize() — resolvePlatformSpecificImplementation returns null there,
     // so we return true (already handled).
-    final androidPlugin = _plugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
     if (androidPlugin == null) return true;
     return await androidPlugin.requestNotificationsPermission() ?? true;
   }

@@ -308,8 +308,7 @@ void main() {
       );
     });
 
-    testWidgets(
-        'unlock mode: empty passphrase keeps submit disabled',
+    testWidgets('unlock mode: empty passphrase keeps submit disabled',
         (tester) async {
       tester.view.physicalSize = const Size(800, 4000);
       addTearDown(() => tester.view.resetPhysicalSize());

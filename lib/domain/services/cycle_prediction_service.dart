@@ -59,8 +59,7 @@ class CyclePredictionService {
       var expectedStart =
           anchor.startDate.add(Duration(days: declaredCycleLength));
       while (expectedStart.isBefore(today)) {
-        expectedStart =
-            expectedStart.add(Duration(days: declaredCycleLength));
+        expectedStart = expectedStart.add(Duration(days: declaredCycleLength));
       }
       return CyclePrediction(
         windowStart: expectedStart.subtract(const Duration(days: 2)),

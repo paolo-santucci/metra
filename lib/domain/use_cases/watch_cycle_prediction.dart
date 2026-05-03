@@ -28,12 +28,11 @@ class WatchCyclePrediction {
   final CycleEntryRepository _cycleRepo;
   final CyclePredictionService _service;
 
-  Stream<CyclePrediction?> call({int? declaredCycleLength}) =>
-      _cycleRepo
-          .watchAll()
-          .map(
-            (cycles) =>
-                _service.predict(cycles, declaredCycleLength: declaredCycleLength),
-          )
-          .distinct();
+  Stream<CyclePrediction?> call({int? declaredCycleLength}) => _cycleRepo
+      .watchAll()
+      .map(
+        (cycles) =>
+            _service.predict(cycles, declaredCycleLength: declaredCycleLength),
+      )
+      .distinct();
 }

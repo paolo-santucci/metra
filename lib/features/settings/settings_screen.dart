@@ -80,8 +80,8 @@ class SettingsScreen extends ConsumerWidget {
                 header: true,
                 child: Text(
                   l10n.settings_screen_title,
-                  style: MetraTypography.screenTitle
-                      .copyWith(color: textPrimary),
+                  style:
+                      MetraTypography.screenTitle.copyWith(color: textPrimary),
                 ),
               ),
             ),
@@ -134,10 +134,9 @@ class SettingsScreen extends ConsumerWidget {
                   label: l10n.settings_advance_label,
                   semanticsLabel:
                       '${l10n.settings_advance_label}: ${l10n.settings_advance_value(settings.notificationDaysBefore)}',
-                  valueText:
-                      l10n.settings_advance_value(settings.notificationDaysBefore),
-                  onTap: () =>
-                      _showAdvancePicker(context, ref, settings, l10n),
+                  valueText: l10n
+                      .settings_advance_value(settings.notificationDaysBefore),
+                  onTap: () => _showAdvancePicker(context, ref, settings, l10n),
                 ),
               ],
             ),
@@ -319,9 +318,8 @@ class SettingsScreen extends ConsumerWidget {
           children: [
             ListTile(
               title: Text(l10n.settings_language_system),
-              trailing: settings.languageCode == ''
-                  ? const Icon(Icons.check)
-                  : null,
+              trailing:
+                  settings.languageCode == '' ? const Icon(Icons.check) : null,
               onTap: () {
                 Navigator.of(sheetCtx).pop();
                 _save(ref, settings.copyWith(languageCode: ''));
@@ -691,7 +689,8 @@ class _MetraToggle extends StatelessWidget {
     final offColor = isDark
         ? MetraColors.dark.bgSunken
         : MetraColors.light.ink.withAlpha(0x14);
-    final dotColor = isDark ? MetraColors.dark.bgSurface : MetraColors.light.bgSurface;
+    final dotColor =
+        isDark ? MetraColors.dark.bgSurface : MetraColors.light.bgSurface;
     final reduceMotion = MediaQuery.of(context).disableAnimations;
     final dur = Duration(
       milliseconds: reduceMotion ? MetraMotion.instant : MetraMotion.fast,
@@ -774,9 +773,8 @@ class _GroupCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg =
         isDark ? MetraColors.dark.bgSurface : MetraColors.light.bgSurface;
-    final border = isDark
-        ? MetraColors.dark.borderSubtle
-        : MetraColors.light.borderSubtle;
+    final border =
+        isDark ? MetraColors.dark.borderSubtle : MetraColors.light.borderSubtle;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: MetraSpacing.s6),
@@ -797,9 +795,8 @@ class _SettingsDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color = isDark
-        ? MetraColors.dark.borderSubtle
-        : MetraColors.light.borderSubtle;
+    final color =
+        isDark ? MetraColors.dark.borderSubtle : MetraColors.light.borderSubtle;
     return Container(height: 1, color: color);
   }
 }
@@ -844,9 +841,7 @@ class _SettingsRow extends StatelessWidget {
             ? MetraColors.dark.textPrimary
             : MetraColors.light.textPrimary);
     final bg = isDestructive
-        ? (isDark
-                ? MetraColors.dark.accentFlow
-                : MetraColors.light.accentFlow)
+        ? (isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow)
             .withAlpha(0x0D)
         : Colors.transparent;
     final secondaryColor = isDark
@@ -887,8 +882,7 @@ class _SettingsRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style:
-                      MetraTypography.listTitle.copyWith(color: labelColor),
+                  style: MetraTypography.listTitle.copyWith(color: labelColor),
                 ),
               ),
               if (trailing != null) trailing,
@@ -909,9 +903,8 @@ class _KoFiPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accentFlow = isDark
-        ? MetraColors.dark.accentFlow
-        : MetraColors.light.accentFlow;
+    final accentFlow =
+        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
     final pillBg = accentFlow.withAlpha(0x14);
     final dotBg = accentFlow.withAlpha(0x28);
     final textColor = isDark

@@ -252,7 +252,8 @@ void main() {
   // ── Decode — field parsing ──────────────────────────────────────────────────
 
   group('decode — field parsing', () {
-    test('flow_type=1 with empty flow column → defaults to FlowIntensity.medium',
+    test(
+        'flow_type=1 with empty flow column → defaults to FlowIntensity.medium',
         () {
       final csv = '$kHeader\r\n'
           '2026-03-01,1,,,,, 0\r\n';
@@ -262,7 +263,8 @@ void main() {
       expect(result.rows.first.log.flowIntensity, FlowIntensity.medium);
     });
 
-    test('flow_type=0 (assente) → flowIntensity is null regardless of flow column',
+    test(
+        'flow_type=0 (assente) → flowIntensity is null regardless of flow column',
         () {
       final csv = '$kHeader\r\n'
           '2026-03-01,0,1,,,, 0\r\n'; // flow=1 present but irrelevant
@@ -346,7 +348,8 @@ void main() {
       expect(result.errors.first.column, 'date');
     });
 
-    test('empty flow_type when flow_type column is present → CsvParseError', () {
+    test('empty flow_type when flow_type column is present → CsvParseError',
+        () {
       final csv = '$kHeader\r\n'
           '2026-03-01,,,,,,0\r\n';
       final result = codec.decode(csv);

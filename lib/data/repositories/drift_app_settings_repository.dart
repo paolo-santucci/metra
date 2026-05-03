@@ -88,8 +88,7 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
       );
 
   @override
-  Future<void> saveDeclaredCycleLength(int cycleLength) =>
-      _dao.updateSettings(
+  Future<void> saveDeclaredCycleLength(int cycleLength) => _dao.updateSettings(
         AppSettingsCompanion(declaredCycleLength: Value(cycleLength)),
       );
 }

@@ -143,15 +143,14 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
         // without a dialog if the user has already denied it.
         final wasEnabled = prev?.valueOrNull?.notificationsEnabled ?? false;
         if (currentSettings.notificationsEnabled && !wasEnabled) {
-          final granted = await ref
-              .read(notificationServiceProvider)
-              .requestPermission();
+          final granted =
+              await ref.read(notificationServiceProvider).requestPermission();
           if (!granted) {
             // User denied the OS dialog — revert the toggle so the displayed
             // state matches reality (no notification will fire while denied).
             await ref.read(settingsNotifierProvider.notifier).save(
-              currentSettings.copyWith(notificationsEnabled: false),
-            );
+                  currentSettings.copyWith(notificationsEnabled: false),
+                );
             return;
           }
         }
@@ -195,10 +194,8 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
   /// language code supported by the app.
   static String _effectiveLangCode(String stored) {
     if (stored.isNotEmpty) return stored;
-    final sys =
-        WidgetsBinding.instance.platformDispatcher.locale.languageCode;
-    return AppLocalizations.supportedLocales
-            .any((l) => l.languageCode == sys)
+    final sys = WidgetsBinding.instance.platformDispatcher.locale.languageCode;
+    return AppLocalizations.supportedLocales.any((l) => l.languageCode == sys)
         ? sys
         : 'it';
   }
