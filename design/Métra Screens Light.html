@@ -145,7 +145,12 @@ function Icon({ name, size = 24, color = C.inchiostro, stroke = 1.5 }) {
     leaf: <path d="M5 19C5 12 8 5 19 5c0 11-7 14-14 14z" {...p} />,
     export: <><path d="M12 16V4M8 8l4-4 4 4" {...p} /><path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2" {...p} /></>,
     moon_crescent: <><path d="M12 3a9 9 0 1 0 9 9 6.5 6.5 0 0 1-9-9z" {...p} /></>,
-    star_small: <path d="M12 4l1.5 4.5H18l-3.75 2.75 1.5 4.5L12 13l-3.75 2.75 1.5-4.5L6 8.5h4.5z" {...p} />
+    star_small: <path d="M12 4l1.5 4.5H18l-3.75 2.75 1.5 4.5L12 13l-3.75 2.75 1.5-4.5L6 8.5h4.5z" {...p} />,
+    today_fold: <>
+      <path d="M5 5 L15 5 L19 9 L19 19 L5 19 Z" {...p} />
+      <path d="M15 5 L19 5 L19 9 Z" {...p} />
+      <rect x="10.5" y="11" width="3" height="3" rx="0.8" fill={color} stroke="none" />
+    </>
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">{icons[name] ?? <circle cx="12" cy="12" r="9" stroke={color} strokeWidth={stroke} />}</svg>;
 }
@@ -587,7 +592,18 @@ function CalDay({ day, offset, monthData, selected, onSelect }) {
 
 function ScreenCalendario() {
   const { fontDisplay: font = "'DM Serif Display', serif" } = useT();
-  const [sel, setSel] = useState(10);
+  const TODAY_DAY = 10;
+  const BASE_MONTH = 3; // April 2025, 0-indexed
+  const BASE_YEAR = 2025;
+  const MONTHS_FULL = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+  const [sel, setSel] = useState(TODAY_DAY);
+  const [monthOffset, setMonthOffset] = useState(0);
+  const absMonth = BASE_MONTH + monthOffset;
+  const displayMonthIdx = ((absMonth % 12) + 12) % 12;
+  const displayYear = BASE_YEAR + Math.floor(absMonth / 12);
+  const atMaxFuture = monthOffset >= 1;
+  const onCurrentMonth = monthOffset === 0;
+
   const { offset, total } = MONTH_DATA;
   const cells = [];
   for (let i = 0; i < offset; i++) cells.push(null);
@@ -611,11 +627,22 @@ function ScreenCalendario() {
         {/* Header */}
         <div style={{ padding: '12px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontFamily: font, fontSize: 26, color: C.inchiostro, lineHeight: 1.1 }}>Aprile 2025</div>
+            <div style={{ fontFamily: font, fontSize: 26, color: C.inchiostro, lineHeight: 1.1 }}>{MONTHS_FULL[displayMonthIdx]} {displayYear}</div>
           </div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <Icon name="chevron_left" size={22} color={C.inchiostro} />
-            <Icon name="chevron_right" size={22} color="rgba(43,37,33,0.4)" />
+          <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <div onClick={() => setMonthOffset(o => o - 1)} style={{ cursor: 'pointer', minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="chevron_left" size={22} color={C.inchiostro} />
+            </div>
+            <span
+              onClick={() => { setMonthOffset(0); setSel(TODAY_DAY); }}
+              style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 500, color: C.inchiostro, cursor: 'pointer', minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', userSelect: 'none' }}
+            >Oggi</span>
+            <div
+              onClick={() => { if (!atMaxFuture) setMonthOffset(o => o + 1); }}
+              style={{ cursor: atMaxFuture ? 'default' : 'pointer', minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: atMaxFuture ? 0.4 : 1 }}
+            >
+              <Icon name="chevron_right" size={22} color={C.inchiostro} />
+            </div>
           </div>
         </div>
 

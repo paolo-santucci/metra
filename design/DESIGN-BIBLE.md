@@ -532,10 +532,15 @@ copy: "Nessun flusso oggi"
 padding 12 / 24 / 0
 left:
   Display 26 inchiostro · line 1.1            (e.g. "Aprile 2025")
-right: row gap 10:
-  Icon chevron_left  22 inchiostro           (when idle / rgba(0.40) when disabled aka no other months in that direction)
-  Icon chevron_right 22 rgba(0.40)           (when disabledaka no other months in that direction / inchiostro when idle)
+right: row gap 2 · alignItems center:
+  Icon chevron_left  22 inchiostro            (always enabled; no past limit)
+  "Oggi" · Inter 13 weight 500 inchiostro     (always visible; minWidth 44 minHeight 44 centered)
+           tap → navigate to current month AND select today's cell
+  Icon chevron_right 22 inchiostro / rgba(0.40) when disabled
+           (disabled only when displayed month = current month + 1; active otherwise)
 ```
+
+Swipe gesture (supplementary to the chevrons): a horizontal drag on the calendar grid navigates prev/next month. Left swipe = next month (guarded by the same right-chevron limit); right swipe = previous month (no limit). Velocity threshold ≥ 200 px/s. This is a progressive-enhancement behavior — no visual affordance is added for it.
 
 ### 8.2 Day-headers row
 
@@ -1036,7 +1041,7 @@ The following are **explicitly forbidden** because the HTML does not contain the
 12. **No light-mode-only filters / blurs** beyond the tab-bar `blur(16)`. No glassmorphism on cards.
 13. **No bottom sheet** patterns in this bible's scope. (May appear in `Métra Quick Entry.html`, which is out of scope.)
 14. **No center-stage today indicator on the calendar grid.**
-15. **No Oggi tab.** Daily-log entry is only via the calendar day detail card button. Do not resurface the Oggi tab, a bottom-bar shortcut, or a FAB for log entry. A subtle 1.5 px ring on today's cell is allowed for usability (the implementation spec calls it out at `C-2`); a separate "today" pill is not.
+15. **No Oggi tab / FAB / pill.** Daily-log entry is only via the calendar day detail card button. Do not resurface the Oggi tab, a bottom-bar shortcut, or a FAB for log entry. A subtle 1.5 px ring on today's cell is allowed for usability. The one approved "jump to today" affordance is the `"Oggi"` Inter 13 weight 500 text button placed **between the two calendar chevrons** (§ 8.1) — no border, no pill shape, no separate row. No other "today" surface is permitted.
 
 ---
 
