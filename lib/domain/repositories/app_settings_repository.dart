@@ -36,4 +36,10 @@ abstract class AppSettingsRepository {
     required String? dropboxEmail,
     required DateTime? lastBackupAt,
   });
+
+  /// Persists the user-declared average cycle length (Strategy B).
+  ///
+  /// Called once from [CompleteOnboarding]. Preserved indefinitely —
+  /// [RecomputeCycleEntries] never touches this value.
+  Future<void> saveDeclaredCycleLength(int cycleLength);
 }

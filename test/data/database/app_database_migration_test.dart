@@ -20,10 +20,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/data/database/app_database.dart';
 
 void main() {
-  test('schema version is 4', () {
+  test('schema version is 5', () {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
-    expect(db.schemaVersion, 4);
+    expect(db.schemaVersion, 5);
   });
 
   test('AppSettings has dropboxEmail and lastBackupAt columns', () async {
@@ -41,4 +41,14 @@ void main() {
     final settings = await db.appSettingsDao.getOrCreateSettings();
     expect(settings.onboardingCompleted, isFalse);
   });
+
+  test(
+    'AppSettings has declaredCycleLength column defaulting to null (Strategy B)',
+    () async {
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      final settings = await db.appSettingsDao.getOrCreateSettings();
+      expect(settings.declaredCycleLength, isNull);
+    },
+  );
 }

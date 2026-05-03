@@ -86,6 +86,9 @@ class _StubAppSettingsRepository implements AppSettingsRepository {
     required String? dropboxEmail,
     required DateTime? lastBackupAt,
   }) async {}
+
+  @override
+  Future<void> saveDeclaredCycleLength(int cycleLength) async {}
 }
 
 /// Provider override that injects [_StubCalendarMonthNotifier].

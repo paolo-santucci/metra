@@ -18,11 +18,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/entities/cycle_prediction.dart';
+import '../../../providers/repository_providers.dart';
 import '../../../providers/use_case_providers.dart';
 
 /// Non-autoDispose provider: the prediction is app-lifetime state consumed by
 /// the calendar and the app-level notification listener.
+///
+/// Watches AppSettings for [declaredCycleLength] (Strategy B) so the prediction
+/// falls back to the user-declared average when fewer than 3 measured cycles
+/// exist. Re-runs whenever settings change.
 final cyclePredictionProvider = StreamProvider<CyclePrediction?>((ref) async* {
   final uc = await ref.watch(watchCyclePredictionProvider.future);
-  yield* uc();
+  // Wait for the settings to load so declaredCycleLength is available.
+  // If settings are still loading, valueOrNull returns null → prediction uses
+  // no fallback until settings settle (harmless; they load in milliseconds).
+  final settings = await ref.watch(appSettingsStreamProvider.future);
+  yield* uc(declaredCycleLength: settings?.declaredCycleLength);
 });

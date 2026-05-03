@@ -39,6 +39,7 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
         dropboxEmail: row.dropboxEmail,
         lastBackupAt: row.lastBackupAt,
         onboardingCompleted: row.onboardingCompleted,
+        declaredCycleLength: row.declaredCycleLength,
       );
 
   static AppSettingsCompanion _toCompanion(AppSettingsData data) =>
@@ -84,5 +85,11 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
           dropboxEmail: Value(dropboxEmail),
           lastBackupAt: Value(lastBackupAt),
         ),
+      );
+
+  @override
+  Future<void> saveDeclaredCycleLength(int cycleLength) =>
+      _dao.updateSettings(
+        AppSettingsCompanion(declaredCycleLength: Value(cycleLength)),
       );
 }

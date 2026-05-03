@@ -26,6 +26,7 @@ class AppSettingsData {
     this.dropboxEmail,
     this.lastBackupAt,
     required this.onboardingCompleted,
+    this.declaredCycleLength,
   });
 
   /// Factory returning the defaults that match DB column defaults.
@@ -50,6 +51,12 @@ class AppSettingsData {
   /// True once the user has completed onboarding.
   final bool onboardingCompleted;
 
+  /// User-declared average cycle length (days), set during onboarding.
+  ///
+  /// Used by [CyclePredictionService] as a fallback when fewer than 3
+  /// measured cycle gaps exist. Null means no value was declared.
+  final int? declaredCycleLength;
+
   AppSettingsData copyWith({
     String? languageCode,
     bool? darkMode,
@@ -72,6 +79,10 @@ class AppSettingsData {
       dropboxEmail: dropboxEmail ?? this.dropboxEmail,
       lastBackupAt: lastBackupAt ?? this.lastBackupAt,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+      // declaredCycleLength intentionally omitted from copyWith — it is
+      // written exclusively via saveDeclaredCycleLength() and never needs
+      // to be reset to null by a general settings update.
+      declaredCycleLength: declaredCycleLength,
     );
   }
 
@@ -88,7 +99,8 @@ class AppSettingsData {
           notificationsEnabled == other.notificationsEnabled &&
           dropboxEmail == other.dropboxEmail &&
           lastBackupAt == other.lastBackupAt &&
-          onboardingCompleted == other.onboardingCompleted;
+          onboardingCompleted == other.onboardingCompleted &&
+          declaredCycleLength == other.declaredCycleLength;
 
   @override
   int get hashCode =>
@@ -100,7 +112,8 @@ class AppSettingsData {
       notificationsEnabled.hashCode ^
       dropboxEmail.hashCode ^
       lastBackupAt.hashCode ^
-      onboardingCompleted.hashCode;
+      onboardingCompleted.hashCode ^
+      declaredCycleLength.hashCode;
 }
 
 class _AppSettingsDataDefaults extends AppSettingsData {

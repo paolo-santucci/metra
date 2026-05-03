@@ -40,18 +40,22 @@ class CompleteOnboarding {
     required int cycleLength,
     required int periodLength,
   }) async {
+    // The cycle entry is an anchor date only — cycleLength is left null so
+    // RecomputeCycleEntries can fill it in from measured gaps over time.
+    // The declared average is stored separately in AppSettings (Strategy B).
     await _cycleRepo.insert(
       CycleEntryEntity(
         id: 0, // ignored by DB — auto-generated
         startDate: lastPeriodDate,
         endDate: null,
-        cycleLength: cycleLength,
+        cycleLength: null,
         periodLength: periodLength,
       ),
     );
     final logs = await _logRepo.getAllOrderedByDate();
     final hasFlowLogs = logs.any((l) => l.flowType == FlowType.mestruazioni);
     if (hasFlowLogs) await _recompute();
+    await _settingsRepo.saveDeclaredCycleLength(cycleLength);
     await _settingsRepo.markOnboardingComplete();
   }
 }

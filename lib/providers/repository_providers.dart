@@ -21,6 +21,7 @@ import '../data/repositories/drift_app_settings_repository.dart';
 import '../data/repositories/drift_cycle_entry_repository.dart';
 import '../data/repositories/drift_daily_log_repository.dart';
 import '../data/repositories/drift_sync_log_repository.dart';
+import '../domain/entities/app_settings_data.dart';
 import '../domain/entities/pain_symptom_data.dart';
 import '../domain/repositories/app_settings_repository.dart';
 import '../domain/repositories/cycle_entry_repository.dart';
@@ -46,6 +47,16 @@ final appSettingsRepositoryProvider =
     FutureProvider<AppSettingsRepository>((ref) async {
   final db = await ref.watch(databaseProvider.future);
   return DriftAppSettingsRepository(db.appSettingsDao);
+});
+
+/// Streams the singleton AppSettings row.
+///
+/// Emits null until the settings row is created (first app launch before
+/// onboarding completes). Used by [cyclePredictionProvider] to read
+/// [AppSettingsData.declaredCycleLength] reactively.
+final appSettingsStreamProvider = StreamProvider<AppSettingsData?>((ref) async* {
+  final repo = await ref.watch(appSettingsRepositoryProvider.future);
+  yield* repo.watchSettings();
 });
 
 final syncLogRepositoryProvider = FutureProvider<SyncLogRepository>((

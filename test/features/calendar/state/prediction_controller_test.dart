@@ -22,6 +22,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/domain/entities/cycle_prediction.dart';
 import 'package:metra/domain/use_cases/watch_cycle_prediction.dart';
 import 'package:metra/features/calendar/state/prediction_controller.dart';
+import 'package:metra/providers/repository_providers.dart';
 import 'package:metra/providers/use_case_providers.dart';
 
 void main() {
@@ -40,6 +41,7 @@ void main() {
           watchCyclePredictionProvider.overrideWith(
             (ref) async => _FakeWatchCyclePrediction(prediction),
           ),
+          appSettingsStreamProvider.overrideWith((ref) => Stream.value(null)),
         ],
       );
       addTearDown(container.dispose);
@@ -54,6 +56,7 @@ void main() {
           watchCyclePredictionProvider.overrideWith(
             (ref) async => _FakeWatchCyclePrediction(null),
           ),
+          appSettingsStreamProvider.overrideWith((ref) => Stream.value(null)),
         ],
       );
       addTearDown(container.dispose);
@@ -84,6 +87,7 @@ void main() {
           watchCyclePredictionProvider.overrideWith(
             (ref) async => fakeUc,
           ),
+          appSettingsStreamProvider.overrideWith((ref) => Stream.value(null)),
         ],
       );
       addTearDown(container.dispose);
@@ -124,6 +128,7 @@ void main() {
           watchCyclePredictionProvider.overrideWith(
             (ref) async => fakeUc,
           ),
+          appSettingsStreamProvider.overrideWith((ref) => Stream.value(null)),
         ],
       );
       addTearDown(container.dispose);
@@ -152,7 +157,8 @@ class _FakeWatchCyclePrediction implements WatchCyclePrediction {
   final CyclePrediction? _prediction;
 
   @override
-  Stream<CyclePrediction?> call() => Stream.value(_prediction);
+  Stream<CyclePrediction?> call({int? declaredCycleLength}) =>
+      Stream.value(_prediction);
 }
 
 /// Fake backed by a single-subscription StreamController for multi-emission tests.
@@ -165,5 +171,6 @@ class _StreamingWatchCyclePrediction implements WatchCyclePrediction {
   void close() => _controller.close();
 
   @override
-  Stream<CyclePrediction?> call() => _controller.stream;
+  Stream<CyclePrediction?> call({int? declaredCycleLength}) =>
+      _controller.stream;
 }

@@ -1394,6 +1394,12 @@ class $AppSettingsTable extends AppSettings
       defaultConstraints: GeneratedColumn.constraintIsAlways(
           'CHECK ("onboarding_completed" IN (0, 1))'),
       defaultValue: const Constant(false));
+  static const VerificationMeta _declaredCycleLengthMeta =
+      const VerificationMeta('declaredCycleLength');
+  @override
+  late final GeneratedColumn<int> declaredCycleLength = GeneratedColumn<int>(
+      'declared_cycle_length', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -1405,7 +1411,8 @@ class $AppSettingsTable extends AppSettings
         notificationsEnabled,
         dropboxEmail,
         lastBackupAt,
-        onboardingCompleted
+        onboardingCompleted,
+        declaredCycleLength
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1472,6 +1479,12 @@ class $AppSettingsTable extends AppSettings
           onboardingCompleted.isAcceptableOrUnknown(
               data['onboarding_completed']!, _onboardingCompletedMeta));
     }
+    if (data.containsKey('declared_cycle_length')) {
+      context.handle(
+          _declaredCycleLengthMeta,
+          declaredCycleLength.isAcceptableOrUnknown(
+              data['declared_cycle_length']!, _declaredCycleLengthMeta));
+    }
     return context;
   }
 
@@ -1502,6 +1515,8 @@ class $AppSettingsTable extends AppSettings
           DriftSqlType.dateTime, data['${effectivePrefix}last_backup_at']),
       onboardingCompleted: attachedDatabase.typeMapping.read(
           DriftSqlType.bool, data['${effectivePrefix}onboarding_completed'])!,
+      declaredCycleLength: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}declared_cycle_length']),
     );
   }
 
@@ -1522,6 +1537,13 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
   final String? dropboxEmail;
   final DateTime? lastBackupAt;
   final bool onboardingCompleted;
+
+  /// User-declared average cycle length (days), stored during onboarding.
+  ///
+  /// Used as a fallback for [CyclePredictionService] when fewer than 3
+  /// measured cycles exist. Null means the user skipped the question or
+  /// no onboarding data was recorded.
+  final int? declaredCycleLength;
   const AppSetting(
       {required this.id,
       required this.languageCode,
@@ -1532,7 +1554,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       required this.notificationsEnabled,
       this.dropboxEmail,
       this.lastBackupAt,
-      required this.onboardingCompleted});
+      required this.onboardingCompleted,
+      this.declaredCycleLength});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -1552,6 +1575,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       map['last_backup_at'] = Variable<DateTime>(lastBackupAt);
     }
     map['onboarding_completed'] = Variable<bool>(onboardingCompleted);
+    if (!nullToAbsent || declaredCycleLength != null) {
+      map['declared_cycle_length'] = Variable<int>(declaredCycleLength);
+    }
     return map;
   }
 
@@ -1573,6 +1599,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           ? const Value.absent()
           : Value(lastBackupAt),
       onboardingCompleted: Value(onboardingCompleted),
+      declaredCycleLength: declaredCycleLength == null && nullToAbsent
+          ? const Value.absent()
+          : Value(declaredCycleLength),
     );
   }
 
@@ -1593,6 +1622,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       lastBackupAt: serializer.fromJson<DateTime?>(json['lastBackupAt']),
       onboardingCompleted:
           serializer.fromJson<bool>(json['onboardingCompleted']),
+      declaredCycleLength:
+          serializer.fromJson<int?>(json['declaredCycleLength']),
     );
   }
   @override
@@ -1609,6 +1640,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       'dropboxEmail': serializer.toJson<String?>(dropboxEmail),
       'lastBackupAt': serializer.toJson<DateTime?>(lastBackupAt),
       'onboardingCompleted': serializer.toJson<bool>(onboardingCompleted),
+      'declaredCycleLength': serializer.toJson<int?>(declaredCycleLength),
     };
   }
 
@@ -1622,7 +1654,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           bool? notificationsEnabled,
           Value<String?> dropboxEmail = const Value.absent(),
           Value<DateTime?> lastBackupAt = const Value.absent(),
-          bool? onboardingCompleted}) =>
+          bool? onboardingCompleted,
+          Value<int?> declaredCycleLength = const Value.absent()}) =>
       AppSetting(
         id: id ?? this.id,
         languageCode: languageCode ?? this.languageCode,
@@ -1637,6 +1670,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
         lastBackupAt:
             lastBackupAt.present ? lastBackupAt.value : this.lastBackupAt,
         onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+        declaredCycleLength: declaredCycleLength.present
+            ? declaredCycleLength.value
+            : this.declaredCycleLength,
       );
   AppSetting copyWithCompanion(AppSettingsCompanion data) {
     return AppSetting(
@@ -1665,6 +1701,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       onboardingCompleted: data.onboardingCompleted.present
           ? data.onboardingCompleted.value
           : this.onboardingCompleted,
+      declaredCycleLength: data.declaredCycleLength.present
+          ? data.declaredCycleLength.value
+          : this.declaredCycleLength,
     );
   }
 
@@ -1680,7 +1719,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           ..write('notificationsEnabled: $notificationsEnabled, ')
           ..write('dropboxEmail: $dropboxEmail, ')
           ..write('lastBackupAt: $lastBackupAt, ')
-          ..write('onboardingCompleted: $onboardingCompleted')
+          ..write('onboardingCompleted: $onboardingCompleted, ')
+          ..write('declaredCycleLength: $declaredCycleLength')
           ..write(')'))
         .toString();
   }
@@ -1696,7 +1736,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       notificationsEnabled,
       dropboxEmail,
       lastBackupAt,
-      onboardingCompleted);
+      onboardingCompleted,
+      declaredCycleLength);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1710,7 +1751,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           other.notificationsEnabled == this.notificationsEnabled &&
           other.dropboxEmail == this.dropboxEmail &&
           other.lastBackupAt == this.lastBackupAt &&
-          other.onboardingCompleted == this.onboardingCompleted);
+          other.onboardingCompleted == this.onboardingCompleted &&
+          other.declaredCycleLength == this.declaredCycleLength);
 }
 
 class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
@@ -1724,6 +1766,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
   final Value<String?> dropboxEmail;
   final Value<DateTime?> lastBackupAt;
   final Value<bool> onboardingCompleted;
+  final Value<int?> declaredCycleLength;
   const AppSettingsCompanion({
     this.id = const Value.absent(),
     this.languageCode = const Value.absent(),
@@ -1735,6 +1778,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     this.dropboxEmail = const Value.absent(),
     this.lastBackupAt = const Value.absent(),
     this.onboardingCompleted = const Value.absent(),
+    this.declaredCycleLength = const Value.absent(),
   });
   AppSettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -1747,6 +1791,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     this.dropboxEmail = const Value.absent(),
     this.lastBackupAt = const Value.absent(),
     this.onboardingCompleted = const Value.absent(),
+    this.declaredCycleLength = const Value.absent(),
   });
   static Insertable<AppSetting> custom({
     Expression<int>? id,
@@ -1759,6 +1804,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     Expression<String>? dropboxEmail,
     Expression<DateTime>? lastBackupAt,
     Expression<bool>? onboardingCompleted,
+    Expression<int>? declaredCycleLength,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1774,6 +1820,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
       if (lastBackupAt != null) 'last_backup_at': lastBackupAt,
       if (onboardingCompleted != null)
         'onboarding_completed': onboardingCompleted,
+      if (declaredCycleLength != null)
+        'declared_cycle_length': declaredCycleLength,
     });
   }
 
@@ -1787,7 +1835,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
       Value<bool>? notificationsEnabled,
       Value<String?>? dropboxEmail,
       Value<DateTime?>? lastBackupAt,
-      Value<bool>? onboardingCompleted}) {
+      Value<bool>? onboardingCompleted,
+      Value<int?>? declaredCycleLength}) {
     return AppSettingsCompanion(
       id: id ?? this.id,
       languageCode: languageCode ?? this.languageCode,
@@ -1800,6 +1849,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
       dropboxEmail: dropboxEmail ?? this.dropboxEmail,
       lastBackupAt: lastBackupAt ?? this.lastBackupAt,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+      declaredCycleLength: declaredCycleLength ?? this.declaredCycleLength,
     );
   }
 
@@ -1837,6 +1887,9 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     if (onboardingCompleted.present) {
       map['onboarding_completed'] = Variable<bool>(onboardingCompleted.value);
     }
+    if (declaredCycleLength.present) {
+      map['declared_cycle_length'] = Variable<int>(declaredCycleLength.value);
+    }
     return map;
   }
 
@@ -1852,7 +1905,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
           ..write('notificationsEnabled: $notificationsEnabled, ')
           ..write('dropboxEmail: $dropboxEmail, ')
           ..write('lastBackupAt: $lastBackupAt, ')
-          ..write('onboardingCompleted: $onboardingCompleted')
+          ..write('onboardingCompleted: $onboardingCompleted, ')
+          ..write('declaredCycleLength: $declaredCycleLength')
           ..write(')'))
         .toString();
   }
@@ -3130,6 +3184,7 @@ typedef $$AppSettingsTableCreateCompanionBuilder = AppSettingsCompanion
   Value<String?> dropboxEmail,
   Value<DateTime?> lastBackupAt,
   Value<bool> onboardingCompleted,
+  Value<int?> declaredCycleLength,
 });
 typedef $$AppSettingsTableUpdateCompanionBuilder = AppSettingsCompanion
     Function({
@@ -3143,6 +3198,7 @@ typedef $$AppSettingsTableUpdateCompanionBuilder = AppSettingsCompanion
   Value<String?> dropboxEmail,
   Value<DateTime?> lastBackupAt,
   Value<bool> onboardingCompleted,
+  Value<int?> declaredCycleLength,
 });
 
 class $$AppSettingsTableFilterComposer
@@ -3185,6 +3241,10 @@ class $$AppSettingsTableFilterComposer
 
   ColumnFilters<bool> get onboardingCompleted => $composableBuilder(
       column: $table.onboardingCompleted,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get declaredCycleLength => $composableBuilder(
+      column: $table.declaredCycleLength,
       builder: (column) => ColumnFilters(column));
 }
 
@@ -3233,6 +3293,10 @@ class $$AppSettingsTableOrderingComposer
   ColumnOrderings<bool> get onboardingCompleted => $composableBuilder(
       column: $table.onboardingCompleted,
       builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get declaredCycleLength => $composableBuilder(
+      column: $table.declaredCycleLength,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$AppSettingsTableAnnotationComposer
@@ -3273,6 +3337,9 @@ class $$AppSettingsTableAnnotationComposer
 
   GeneratedColumn<bool> get onboardingCompleted => $composableBuilder(
       column: $table.onboardingCompleted, builder: (column) => column);
+
+  GeneratedColumn<int> get declaredCycleLength => $composableBuilder(
+      column: $table.declaredCycleLength, builder: (column) => column);
 }
 
 class $$AppSettingsTableTableManager extends RootTableManager<
@@ -3308,6 +3375,7 @@ class $$AppSettingsTableTableManager extends RootTableManager<
             Value<String?> dropboxEmail = const Value.absent(),
             Value<DateTime?> lastBackupAt = const Value.absent(),
             Value<bool> onboardingCompleted = const Value.absent(),
+            Value<int?> declaredCycleLength = const Value.absent(),
           }) =>
               AppSettingsCompanion(
             id: id,
@@ -3320,6 +3388,7 @@ class $$AppSettingsTableTableManager extends RootTableManager<
             dropboxEmail: dropboxEmail,
             lastBackupAt: lastBackupAt,
             onboardingCompleted: onboardingCompleted,
+            declaredCycleLength: declaredCycleLength,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -3332,6 +3401,7 @@ class $$AppSettingsTableTableManager extends RootTableManager<
             Value<String?> dropboxEmail = const Value.absent(),
             Value<DateTime?> lastBackupAt = const Value.absent(),
             Value<bool> onboardingCompleted = const Value.absent(),
+            Value<int?> declaredCycleLength = const Value.absent(),
           }) =>
               AppSettingsCompanion.insert(
             id: id,
@@ -3344,6 +3414,7 @@ class $$AppSettingsTableTableManager extends RootTableManager<
             dropboxEmail: dropboxEmail,
             lastBackupAt: lastBackupAt,
             onboardingCompleted: onboardingCompleted,
+            declaredCycleLength: declaredCycleLength,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

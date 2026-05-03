@@ -98,6 +98,13 @@ class AppSettings extends Table {
   DateTimeColumn get lastBackupAt => dateTime().nullable()();
   BoolColumn get onboardingCompleted =>
       boolean().withDefault(const Constant(false))();
+
+  /// User-declared average cycle length (days), stored during onboarding.
+  ///
+  /// Used as a fallback for [CyclePredictionService] when fewer than 3
+  /// measured cycles exist. Null means the user skipped the question or
+  /// no onboarding data was recorded.
+  IntColumn get declaredCycleLength => integer().nullable()();
 }
 
 /// Local-only audit trail of cloud backup/restore operations.
@@ -131,7 +138,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -186,6 +193,14 @@ class AppDatabase extends _$AppDatabase {
               "UPDATE daily_logs "
               "SET flow_type = 1, flow_intensity = flow_intensity - 1 "
               "WHERE spotting = 0 AND flow_intensity BETWEEN 1 AND 4",
+            );
+          }
+          if (from < 5) {
+            // Strategy B: store user-declared average cycle length separately
+            // from the measured gaps computed by RecomputeCycleEntries.
+            await m.addColumn(
+              appSettings,
+              appSettings.declaredCycleLength,
             );
           }
         },

@@ -167,6 +167,116 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // Group: CyclePredictionService.predict — Strategy B declared fallback
+  // ---------------------------------------------------------------------------
+
+  group('CyclePredictionService.predict — declared fallback (Strategy B)', () {
+    const service = CyclePredictionService();
+    final anchor = DateTime(2026, 1, 1);
+
+    test(
+      'returns null for empty list even with declaredCycleLength provided',
+      () {
+        expect(
+          service.predict([], declaredCycleLength: 28),
+          isNull,
+        );
+      },
+    );
+
+    test(
+      'returns null for 1 cycle when declaredCycleLength is null',
+      () {
+        final cycles = [makeEntry(id: 1, startDate: anchor, cycleLength: 28)];
+        expect(service.predict(cycles), isNull);
+      },
+    );
+
+    test(
+      'returns fallback prediction for 1 cycle anchor with declaredCycleLength',
+      () {
+        // Only one anchor entry (null cycleLength, as inserted by CompleteOnboarding).
+        final cycles = [
+          CycleEntryEntity(id: 1, startDate: anchor),
+        ];
+        final result = service.predict(
+          cycles,
+          declaredCycleLength: 28,
+        );
+
+        expect(result, isNotNull);
+        final expectedStart = anchor.add(const Duration(days: 28));
+        expect(result!.expectedStart, equals(expectedStart));
+        expect(
+          result.windowStart,
+          equals(expectedStart.subtract(const Duration(days: 2))),
+        );
+        expect(
+          result.windowEnd,
+          equals(expectedStart.add(const Duration(days: 2))),
+        );
+        // cyclesUsed == 0 signals "estimated, not measured".
+        expect(result.cyclesUsed, equals(0));
+      },
+    );
+
+    test(
+      'fallback anchors on the most-recent cycle when 2 entries exist',
+      () {
+        final start1 = anchor;
+        final start2 = anchor.add(const Duration(days: 30));
+        final cycles = [
+          CycleEntryEntity(id: 1, startDate: start1),
+          CycleEntryEntity(id: 2, startDate: start2),
+        ];
+        final result = service.predict(
+          cycles,
+          declaredCycleLength: 28,
+        );
+
+        // Anchor must be start2 (most recent).
+        expect(result, isNotNull);
+        expect(
+          result!.expectedStart,
+          equals(start2.add(const Duration(days: 28))),
+        );
+      },
+    );
+
+    test(
+      'WMA path takes over once 3 measured cycles exist, ignoring declaredCycleLength',
+      () {
+        // 3 complete cycles with measured lengths 30, 30, 30.
+        final cycles = [
+          makeEntry(id: 1, startDate: anchor, cycleLength: 30),
+          makeEntry(
+            id: 2,
+            startDate: anchor.add(const Duration(days: 30)),
+            cycleLength: 30,
+          ),
+          makeEntry(
+            id: 3,
+            startDate: anchor.add(const Duration(days: 60)),
+            cycleLength: 30,
+          ),
+        ];
+        // declaredCycleLength is 28 but WMA gives 30 — WMA must win.
+        final result = service.predict(
+          cycles,
+          declaredCycleLength: 28,
+        );
+
+        expect(result, isNotNull);
+        expect(result!.cyclesUsed, equals(3));
+        expect(
+          result.expectedStart,
+          equals(anchor.add(const Duration(days: 90))),
+        );
+      },
+    );
+  });
+
+  // ---------------------------------------------------------------------------
   // Group: CyclePredictionService.predict — core algorithm
   // ---------------------------------------------------------------------------
 

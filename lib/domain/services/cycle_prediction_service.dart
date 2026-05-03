@@ -28,14 +28,47 @@ class CyclePredictionService {
 
   /// Computes a [CyclePrediction] from [cycles].
   ///
-  /// Returns null if fewer than 3 complete cycles are available.
-  CyclePrediction? predict(List<CycleEntryEntity> cycles) {
+  /// When fewer than 3 measured cycles exist, falls back to [declaredCycleLength]
+  /// (Strategy B: the user-declared average stored in AppSettings during
+  /// onboarding). Returns null when both the measured cycles and the declared
+  /// length are insufficient.
+  CyclePrediction? predict(
+    List<CycleEntryEntity> cycles, {
+    int? declaredCycleLength,
+  }) {
     // 1. Filter to complete cycles (cycleLength != null), sort ascending.
     final complete = cycles.where((c) => c.cycleLength != null).toList()
       ..sort((a, b) => a.startDate.compareTo(b.startDate));
 
-    // 2. Need at least 3 complete cycles.
-    if (complete.length < 3) return null;
+    // 2. Fallback path: use user-declared average when fewer than 3 measured
+    //    cycles exist and there is at least one cycle to anchor the prediction.
+    if (complete.length < 3) {
+      if (declaredCycleLength == null || cycles.isEmpty) return null;
+      // Anchor on the most-recent cycle start (cycleLength may be null).
+      final anchor = cycles.reduce(
+        (a, b) => b.startDate.isBefore(a.startDate) ? a : b,
+      );
+      // Advance by whole cycle increments until the prediction is in the future.
+      // Required when the anchor date is older than one cycle length (e.g. the
+      // user opens the app weeks after onboarding).
+      final today = DateTime.utc(
+        DateTime.now().year,
+        DateTime.now().month,
+        DateTime.now().day,
+      );
+      var expectedStart =
+          anchor.startDate.add(Duration(days: declaredCycleLength));
+      while (expectedStart.isBefore(today)) {
+        expectedStart =
+            expectedStart.add(Duration(days: declaredCycleLength));
+      }
+      return CyclePrediction(
+        windowStart: expectedStart.subtract(const Duration(days: 2)),
+        windowEnd: expectedStart.add(const Duration(days: 2)),
+        expectedStart: expectedStart,
+        cyclesUsed: 0, // 0 signals "estimated, not measured"
+      );
+    }
 
     // 3. Take the most recent min(count, 6) complete cycles for WMA.
     final n = complete.length < 6 ? complete.length : 6;

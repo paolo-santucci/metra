@@ -47,7 +47,7 @@ void main() {
   final lastPeriod = DateTime.utc(2026, 4, 1);
 
   test(
-      'inserts seed CycleEntry with given startDate, cycleLength, and periodLength',
+      'inserts seed CycleEntry as anchor (cycleLength null) with given startDate and periodLength',
       () async {
     await useCase.execute(
       lastPeriodDate: lastPeriod,
@@ -57,7 +57,9 @@ void main() {
 
     expect(cycleRepo.entries, hasLength(1));
     expect(cycleRepo.entries.first.startDate, lastPeriod);
-    expect(cycleRepo.entries.first.cycleLength, 28);
+    // Strategy B: anchor entry has no measured length; declared value goes
+    // to AppSettings.declaredCycleLength instead.
+    expect(cycleRepo.entries.first.cycleLength, isNull);
     expect(cycleRepo.entries.first.endDate, isNull);
     expect(cycleRepo.entries.first.periodLength, 3);
   });
@@ -73,14 +75,18 @@ void main() {
     expect(settings.onboardingCompleted, isTrue);
   });
 
-  test('uses provided cycleLength, not a hardcoded default', () async {
+  test('saves declared cycleLength to AppSettings, not to the cycle entry', () async {
     await useCase.execute(
       lastPeriodDate: lastPeriod,
       cycleLength: 35,
       periodLength: 3,
     );
 
-    expect(cycleRepo.entries.first.cycleLength, 35);
+    // Cycle entry must have null cycleLength (anchor only).
+    expect(cycleRepo.entries.first.cycleLength, isNull);
+    // Declared average must be stored in settings.
+    final settings = await settingsRepo.getOrCreate();
+    expect(settings.declaredCycleLength, 35);
   });
 
   test('uses provided periodLength, not a hardcoded default', () async {
@@ -136,10 +142,11 @@ void main() {
         periodLength: 5,
       );
 
-      // No logs → recompute is a no-op → seed must survive.
+      // No logs → recompute is a no-op → anchor entry must survive.
       expect(cycleRepo.entries, hasLength(1));
       expect(cycleRepo.entries.first.startDate, lastPeriod);
-      expect(cycleRepo.entries.first.cycleLength, 28);
+      // Strategy B: anchor entry has null cycleLength; declared value is in settings.
+      expect(cycleRepo.entries.first.cycleLength, isNull);
     },
   );
 }
