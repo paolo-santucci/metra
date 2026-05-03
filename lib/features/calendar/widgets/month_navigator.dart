@@ -34,8 +34,7 @@ class MonthNavigator extends StatelessWidget {
     required this.onPrev,
     required this.onNext,
     this.canGoNext = true,
-    this.cycleDay,
-  });
+    });
 
   final String title;
   final String prevLabel;
@@ -46,17 +45,11 @@ class MonthNavigator extends StatelessWidget {
   /// When false, the next-month button is non-interactive (already at current month).
   final bool canGoNext;
 
-  /// Optional current cycle day number shown below the month name.
-  final int? cycleDay;
-
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final textPrimary =
         isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
-    final textSecondary = isDark
-        ? MetraColors.dark.textSecondary
-        : MetraColors.light.textSecondary;
     // Bible § 8.1: inchiostro when enabled, faded (alpha 0.40) when disabled.
     final chevronPrev = textPrimary;
     final chevronNext =
@@ -84,26 +77,6 @@ class MonthNavigator extends StatelessWidget {
                   style:
                       MetraTypography.screenTitle.copyWith(color: textPrimary),
                 ),
-                if (cycleDay != null) ...[
-                  const SizedBox(height: 3),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.brightness_2_rounded,
-                        size: 14,
-                        color: textPrimary,
-                      ),
-                      const SizedBox(width: MetraSpacing.sp6),
-                      Text(
-                        'Giorno $cycleDay',
-                        style: MetraTypography.caption.copyWith(
-                          color: textSecondary,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
               ],
             ),
           ),

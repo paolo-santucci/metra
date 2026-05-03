@@ -78,7 +78,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
     final calendarAsync = ref.watch(calendarMonthProvider);
     final prediction = ref.watch(cyclePredictionProvider).valueOrNull;
-    final cycleDay = ref.watch(currentCycleDayProvider).valueOrNull;
     final selectedCycleDay =
         ref.watch(cycleDayForDateProvider(_selectedDate)).valueOrNull;
     final symptomsAsync = ref.watch(painSymptomsProvider(_selectedDate));
@@ -126,7 +125,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         .read(calendarMonthProvider.notifier)
                         .goToNextMonth(),
                     canGoNext: !isCurrentMonth,
-                    cycleDay: isCurrentMonth ? cycleDay : null,
                   ),
                 ),
                 SliverToBoxAdapter(
@@ -599,8 +597,10 @@ class _DataPill extends StatelessWidget {
         children: [
           MetraIcon(svgBody: svgBody, size: 11, color: iconColor, filled: true),
           const SizedBox(width: 4),
-          Text(label,
-              style: GoogleFonts.inter(fontSize: 11, color: labelColor)),
+          Text(
+            label,
+            style: GoogleFonts.inter(fontSize: 11, color: labelColor),
+          ),
         ],
       ),
     );

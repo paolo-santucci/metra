@@ -159,7 +159,7 @@ Canonical usage:
 | Date subtitle (Today) | `Inter` | 13 | 400 | default | default | "Mercoledì 23 aprile". |
 | Body secondary | `Inter` | 13 | 400 | 1.5 | default | Privacy-card sub. |
 | Filter / chip label | `Inter` | 13 | 400 (idle) / 500 (selected) | default | default | |
-| Cycle-day caption (Calendar header) | `Inter` | 13 | 400 | default | default | "Giorno 14". |
+| Cycle-day caption (Calendar header) | — | — | — | — | — | Removed: redundant with day-detail card. |
 | Inline note placeholder | `Inter` | 15 | 400 | default | default | |
 | Pill text (flow / pain / symptom) | `Inter` | 11–12 | 500 | default | default | Smaller in archive (`11`), larger in day card (`12`). |
 | Section label (uppercase) | `Inter` | 12 | 600 | default | **0.06–0.07em** | All caps. Color rgba(43,37,33,0.4). |
@@ -510,9 +510,6 @@ copy: "Nessun flusso oggi"
 padding 12 / 24 / 0
 left:
   Display 26 inchiostro · line 1.1            (e.g. "Aprile 2025")
-  row gap 6, marginTop 3:
-    Moon phase=2 size 14 inchiostro
-    Inter 13 rgba(0.68)                      (e.g. "Giorno 14")
 right: row gap 10:
   Icon chevron_left  22 inchiostro           (when idle / rgba(0.40) when disabled aka no other months in that direction)
   Icon chevron_right 22 rgba(0.40)           (when disabledaka no other months in that direction / inchiostro when idle)
