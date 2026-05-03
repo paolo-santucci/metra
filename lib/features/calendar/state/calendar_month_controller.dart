@@ -113,6 +113,15 @@ class CalendarMonthNotifier extends AsyncNotifier<CalendarMonthState> {
     return completer.future;
   }
 
+  void goToToday() {
+    final now = DateTime.now();
+    state = AsyncData(CalendarMonthState(year: now.year, month: now.month));
+    _subscribeToMonth(now.year, now.month).then(
+      (s) => state = AsyncData(s),
+      onError: (Object e, StackTrace st) => state = AsyncError(e, st),
+    );
+  }
+
   void goToPrevMonth() {
     final current = state.valueOrNull;
     if (current == null) return;
@@ -134,9 +143,11 @@ class CalendarMonthNotifier extends AsyncNotifier<CalendarMonthState> {
     final current = state.valueOrNull;
     if (current == null) return;
 
-    // Do not navigate past the current calendar month.
+    // Do not navigate past current month + 1.
     final now = DateTime.now();
-    if (current.year >= now.year && current.month >= now.month) return;
+    final maxMonth = now.month == 12 ? 1 : now.month + 1;
+    final maxYear = now.month == 12 ? now.year + 1 : now.year;
+    if (current.year == maxYear && current.month == maxMonth) return;
 
     int year = current.year;
     int month = current.month + 1;

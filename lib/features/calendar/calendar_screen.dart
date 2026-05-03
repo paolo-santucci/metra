@@ -101,8 +101,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           ),
           data: (monthState) {
             final now = DateTime.now();
-            final isCurrentMonth =
-                monthState.year == now.year && monthState.month == now.month;
+            final maxMonth = now.month == 12 ? 1 : now.month + 1;
+            final maxYear = now.month == 12 ? now.year + 1 : now.year;
+            final isAtMaxFuture =
+                monthState.year == maxYear && monthState.month == maxMonth;
+            final canGoNext = !isAtMaxFuture;
 
             // Bible § 8.1: "Month Year" — e.g. "Aprile 2025".
             final rawMonth = intl.DateFormat.MMMM(locale).format(
@@ -124,7 +127,21 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     onNext: () => ref
                         .read(calendarMonthProvider.notifier)
                         .goToNextMonth(),
-                    canGoNext: !isCurrentMonth,
+                    onToday: () {
+                      ref
+                          .read(calendarMonthProvider.notifier)
+                          .goToToday();
+                      final today = DateTime.now();
+                      setState(
+                        () => _selectedDate = DateTime.utc(
+                          today.year,
+                          today.month,
+                          today.day,
+                        ),
+                      );
+                    },
+                    todayLabel: l10n.calendar_today,
+                    canGoNext: canGoNext,
                   ),
                 ),
                 SliverToBoxAdapter(
@@ -134,18 +151,33 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   ),
                 ),
                 SliverToBoxAdapter(
-                  child: _CalendarGrid(
-                    year: monthState.year,
-                    month: monthState.month,
-                    logs: monthState.logs,
-                    daysWithSymptoms: monthState.daysWithSymptoms,
-                    today: now,
-                    l10n: l10n,
-                    locale: locale,
-                    prediction: prediction,
-                    selectedDate: _selectedDate,
-                    onDaySelected: (date) =>
-                        setState(() => _selectedDate = date),
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onHorizontalDragEnd: (details) {
+                      final velocity = details.primaryVelocity ?? 0;
+                      if (velocity.abs() < 200.0) return;
+                      final notifier = ref.read(calendarMonthProvider.notifier);
+                      if (velocity > 0) {
+                        // Right swipe → previous month (always allowed).
+                        notifier.goToPrevMonth();
+                      } else if (canGoNext) {
+                        // Left swipe → next month (guarded by canGoNext).
+                        notifier.goToNextMonth();
+                      }
+                    },
+                    child: _CalendarGrid(
+                      year: monthState.year,
+                      month: monthState.month,
+                      logs: monthState.logs,
+                      daysWithSymptoms: monthState.daysWithSymptoms,
+                      today: now,
+                      l10n: l10n,
+                      locale: locale,
+                      prediction: prediction,
+                      selectedDate: _selectedDate,
+                      onDaySelected: (date) =>
+                          setState(() => _selectedDate = date),
+                    ),
                   ),
                 ),
                 const SliverToBoxAdapter(child: CalendarLegend()),

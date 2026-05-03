@@ -33,14 +33,18 @@ class MonthNavigator extends StatelessWidget {
     required this.nextLabel,
     required this.onPrev,
     required this.onNext,
+    required this.onToday,
+    required this.todayLabel,
     this.canGoNext = true,
-    });
+  });
 
   final String title;
   final String prevLabel;
   final String nextLabel;
   final VoidCallback onPrev;
   final VoidCallback onNext;
+  final VoidCallback onToday;
+  final String todayLabel;
 
   /// When false, the next-month button is non-interactive (already at current month).
   final bool canGoNext;
@@ -80,7 +84,7 @@ class MonthNavigator extends StatelessWidget {
               ],
             ),
           ),
-          // Right: prev / next buttons — gap 10 (Bible § 8.1).
+          // Right: prev / today / next buttons.
           Semantics(
             label: prevLabel,
             button: true,
@@ -91,6 +95,23 @@ class MonthNavigator extends StatelessWidget {
               iconSize: 22,
               constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
               padding: EdgeInsets.zero,
+            ),
+          ),
+          TextButton(
+            onPressed: onToday,
+            style: TextButton.styleFrom(
+              foregroundColor: textPrimary,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              minimumSize: const Size(44, 44),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: Text(
+              todayLabel,
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
           Semantics(
