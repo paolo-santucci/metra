@@ -24,7 +24,7 @@ jobs:
         run: flutter pub get
 
       - name: Build iOS (no code sign)
-        run: flutter build ios --no-codesign
+        run: flutter build ios --no-codesign --dart-define=DROPBOX_APP_KEY=${{ secrets.DROPBOX_APP_KEY }}
 
   deploy_testflight:
     runs-on: macos-latest
