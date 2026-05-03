@@ -40,7 +40,7 @@ void main() {
     expect(lines, hasLength(1));
     expect(
       lines.first,
-      'date,flow_type,flow,other_discharge,pain_intensity,symptoms,notes,cycle_start',
+      'date,flow_type,flow,other_discharge,pain_intensity,symptoms,notes,cycle_start,pain_enabled,notes_enabled',
     );
   });
 
@@ -93,9 +93,9 @@ void main() {
 
     final csv = await useCase.execute();
     final lines = csv.replaceAll('\r\n', '\n').trim().split('\n');
-    // Both flow days are cycle starts.
-    expect(lines[1].split(',').last, '1'); // 2026-01-01
-    expect(lines[2].split(',').last, '1'); // 2026-02-05
+    // Both flow days are cycle starts (cycle_start is column index 7).
+    expect(lines[1].split(',')[7], '1'); // 2026-01-01
+    expect(lines[2].split(',')[7], '1'); // 2026-02-05
   });
 
   test('non-cycle-start day has cycle_start = 0', () async {
@@ -104,6 +104,6 @@ void main() {
 
     final csv = await useCase.execute();
     final lines = csv.replaceAll('\r\n', '\n').trim().split('\n');
-    expect(lines[1].split(',').last, '0');
+    expect(lines[1].split(',')[7], '0');
   });
 }

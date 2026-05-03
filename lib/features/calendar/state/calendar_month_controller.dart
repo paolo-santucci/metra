@@ -46,27 +46,37 @@ final calendarMonthProvider =
 
 class CalendarMonthNotifier extends AsyncNotifier<CalendarMonthState> {
   StreamSubscription<List<DailyLogEntity>>? _logSub;
+  StreamSubscription<Set<DateTime>>? _symptomSub;
 
   @override
   Future<CalendarMonthState> build() async {
     final now = DateTime.now();
-    ref.onDispose(() => _logSub?.cancel());
+    ref.onDispose(() {
+      _logSub?.cancel();
+      _symptomSub?.cancel();
+    });
     return _subscribeToMonth(now.year, now.month);
   }
 
   Future<CalendarMonthState> _subscribeToMonth(int year, int month) async {
-    // Cancel the previous subscription before creating a new one.
+    // Cancel both subscriptions before creating new ones.
     await _logSub?.cancel();
+    await _symptomSub?.cancel();
     _logSub = null;
+    _symptomSub = null;
 
     final getMonthLogs = await ref.read(getMonthLogsProvider.future);
     final repo = await ref.read(dailyLogRepositoryProvider.future);
 
-    // Load symptom dates once per month navigation (one query, not N per cell).
-    final symptomDates = await repo.getSymptomDatesForMonth(year, month);
+    // One-shot seed so the first log emission has a valid symptomDates set.
+    // The live stream below will then keep this in sync without navigation.
+    final seedDates = await repo.getSymptomDatesForMonth(year, month);
+    // Captured by both closures; symptom stream updates it so the log stream
+    // always sees the latest value even if the two streams fire close together.
+    var currentSymptomDates = seedDates;
 
-    // Seed the initial state, then keep updating via the stream.
     final completer = Completer<CalendarMonthState>();
+
     _logSub = getMonthLogs(year, month).listen((logs) {
       final mapped = <DateTime, DailyLogEntity>{
         for (final l in logs) l.date: l,
@@ -75,13 +85,29 @@ class CalendarMonthNotifier extends AsyncNotifier<CalendarMonthState> {
         year: year,
         month: month,
         logs: mapped,
-        daysWithSymptoms: symptomDates,
+        daysWithSymptoms: currentSymptomDates,
       );
       if (!completer.isCompleted) {
         completer.complete(next);
       } else {
         state = AsyncData(next);
       }
+    });
+
+    // Live symptom updates — re-emitted whenever pain_symptoms rows change
+    // within this month. Keeps daysWithSymptoms fresh without month navigation.
+    _symptomSub = repo.watchSymptomDatesForMonth(year, month).listen((dates) {
+      currentSymptomDates = dates;
+      final current = state.valueOrNull;
+      if (current == null) return;
+      state = AsyncData(
+        CalendarMonthState(
+          year: current.year,
+          month: current.month,
+          logs: current.logs,
+          daysWithSymptoms: dates,
+        ),
+      );
     });
 
     return completer.future;

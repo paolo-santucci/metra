@@ -16,6 +16,7 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import '../entities/daily_log_entity.dart';
+import '../entities/daily_log_with_symptoms.dart';
 import '../entities/pain_symptom_data.dart';
 
 abstract class DailyLogRepository {
@@ -35,6 +36,10 @@ abstract class DailyLogRepository {
   /// least one symptom recorded. Used by the calendar grid for per-day indicators.
   Future<Set<DateTime>> getSymptomDatesForMonth(int year, int month);
 
+  /// Emits an updated set whenever the pain_symptoms table changes within
+  /// [year]/[month]. Used by the calendar grid to stay live without navigation.
+  Stream<Set<DateTime>> watchSymptomDatesForMonth(int year, int month);
+
   Future<void> replacePainSymptoms(
     DateTime date,
     List<PainSymptomData> symptoms,
@@ -49,4 +54,8 @@ abstract class DailyLogRepository {
     List<DailyLogEntity> logs,
     Map<DateTime, List<PainSymptomData>> symptoms,
   );
+
+  /// Upserts [entries] atomically. Existing rows for the same date are
+  /// overwritten; rows not in [entries] are untouched.
+  Future<void> upsertAllLogs(List<DailyLogWithSymptoms> entries);
 }

@@ -96,6 +96,55 @@ void main() {
     expect(runner.backupCalled, isTrue);
   });
 
+  test(
+      'backupWithPassphrase restores old passphrase when backup fails '
+      '(state-corruption guard)', () async {
+    await settingsRepo.updateBackupState(
+      dropboxEmail: 'a@b.com',
+      lastBackupAt: null,
+    );
+    storage.values['metra_backup_passphrase_v1'] = 'old-pass';
+    runner.backupResult = const Err(SyncException('network error'));
+
+    final container = makeContainer();
+    addTearDown(container.dispose);
+    await container.read(backupNotifierProvider.future);
+    await container
+        .read(backupNotifierProvider.notifier)
+        .backupWithPassphrase('new-pass');
+
+    // Cloud still holds a blob encrypted with old-pass — storage must match.
+    expect(storage.values['metra_backup_passphrase_v1'], 'old-pass');
+    final s = container.read(backupNotifierProvider).valueOrNull;
+    expect(s, isA<BackupErrorState>());
+  });
+
+  test(
+      'backupWithPassphrase removes key when backup fails '
+      'and there was no prior passphrase', () async {
+    await settingsRepo.updateBackupState(
+      dropboxEmail: 'a@b.com',
+      lastBackupAt: null,
+    );
+    // No prior passphrase in storage.
+    runner.backupResult = const Err(SyncException('upload failed'));
+
+    final container = makeContainer();
+    addTearDown(container.dispose);
+    await container.read(backupNotifierProvider.future);
+    await container
+        .read(backupNotifierProvider.notifier)
+        .backupWithPassphrase('new-pass');
+
+    // Storage must not hold the new passphrase since the backup never succeeded.
+    expect(
+      storage.values.containsKey('metra_backup_passphrase_v1'),
+      isFalse,
+    );
+    final s = container.read(backupNotifierProvider).valueOrNull;
+    expect(s, isA<BackupErrorState>());
+  });
+
   test('backupSilent does nothing when no passphrase in storage', () async {
     final container = makeContainer();
     addTearDown(container.dispose);

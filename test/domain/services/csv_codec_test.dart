@@ -62,7 +62,8 @@ void main() {
       final csv = codec.encode([]);
       expect(
         normalizedFirstLine(csv),
-        'date,flow_type,flow,other_discharge,pain_intensity,symptoms,notes,cycle_start',
+        'date,flow_type,flow,other_discharge,pain_intensity,symptoms,notes,'
+        'cycle_start,pain_enabled,notes_enabled',
       );
     });
   });
@@ -106,18 +107,18 @@ void main() {
       expect(dataLine.split(',')[1], '2'); // flow_type index for spotting
     });
 
-    test('cycleStart=true encodes as 1 in last column', () {
+    test('cycleStart=true encodes as 1 in cycle_start column (index 7)', () {
       final csv =
           codec.encode([row(date: DateTime.utc(2026, 3, 1), cycleStart: true)]);
       final dataLine = csv.replaceAll('\r\n', '\n').split('\n')[1];
-      expect(dataLine.split(',').last, '1');
+      expect(dataLine.split(',')[7], '1'); // cycle_start is at index 7
     });
 
     test('cycle_start column is present even when false', () {
       final csv = codec
           .encode([row(date: DateTime.utc(2026, 3, 1), cycleStart: false)]);
       final dataLine = csv.replaceAll('\r\n', '\n').split('\n')[1];
-      expect(dataLine.split(',').last, '0');
+      expect(dataLine.split(',')[7], '0'); // cycle_start is at index 7
     });
   });
 
@@ -238,6 +239,37 @@ void main() {
       expect(result.errors, isEmpty);
       expect(result.rows.first.log.notes, 'line one\nline two');
     });
+
+    // BUG-001: pain section opened but no intensity/symptoms entered.
+    test(
+        'painEnabled=true with null painIntensity and empty symptoms survives round-trip',
+        () {
+      final r = row(
+        date: DateTime.utc(2026, 5, 10),
+        painEnabled: true,
+        // painIntensity stays null, symptoms stays empty
+      );
+      final result = codec.decode(codec.encode([r]));
+      expect(result.errors, isEmpty);
+      expect(result.rows, hasLength(1));
+      expect(result.rows.first.log.painEnabled, isTrue);
+      expect(result.rows.first.log.painIntensity, isNull);
+      expect(result.rows.first.symptoms, isEmpty);
+    });
+
+    // BUG-001: notes section opened but no text entered.
+    test('notesEnabled=true with null notes survives round-trip', () {
+      final r = row(
+        date: DateTime.utc(2026, 5, 11),
+        notesEnabled: true,
+        // notes stays null
+      );
+      final result = codec.decode(codec.encode([r]));
+      expect(result.errors, isEmpty);
+      expect(result.rows, hasLength(1));
+      expect(result.rows.first.log.notesEnabled, isTrue);
+      expect(result.rows.first.log.notes, isNull);
+    });
   });
 
   group('decode — field parsing', () {
@@ -304,6 +336,8 @@ void main() {
       final result = codec.decode(csv);
       expect(result.errors, isEmpty);
       expect(result.rows.first.symptoms, isEmpty);
+      // BUG-010: all tokens unknown → painEnabled must NOT be forced true.
+      expect(result.rows.first.log.painEnabled, isFalse);
     });
   });
 
@@ -390,6 +424,34 @@ void main() {
       final result = codec.decode(csv);
       expect(result.rows, hasLength(2));
       expect(result.errors, hasLength(1));
+    });
+  });
+
+  group(
+      'decode — backward-compatibility (no pain_enabled/notes_enabled column)',
+      () {
+    test(
+        'old CSV without pain_enabled column infers painEnabled from painIntensity',
+        () {
+      // 8-column format without pain_enabled or notes_enabled
+      const csv =
+          'date,flow_type,flow,other_discharge,pain_intensity,symptoms,notes,cycle_start\r\n'
+          '2026-03-01,,,0,2,,, 0\r\n';
+      final result = codec.decode(csv);
+      expect(result.errors, isEmpty);
+      expect(result.rows.first.log.painEnabled, isTrue);
+      expect(result.rows.first.log.painIntensity, 2);
+    });
+
+    test(
+        'old CSV without pain_enabled column leaves painEnabled false when no intensity or symptoms',
+        () {
+      const csv =
+          'date,flow_type,flow,other_discharge,pain_intensity,symptoms,notes,cycle_start\r\n'
+          '2026-03-01,,,0,,,, 0\r\n';
+      final result = codec.decode(csv);
+      expect(result.errors, isEmpty);
+      expect(result.rows.first.log.painEnabled, isFalse);
     });
   });
 

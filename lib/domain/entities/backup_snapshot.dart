@@ -101,87 +101,96 @@ class BackupSnapshot {
   }
 
   static DailyLogWithSymptoms _parseLog(dynamic e, int snapshotVersion) {
-    if (e is! Map<String, dynamic>) {
-      throw const BackupFormatException('Each log must be an object');
-    }
-    final date = DateTime.tryParse(e['date'] as String? ?? '');
-    if (date == null) {
-      throw const BackupFormatException('log.date missing or invalid');
-    }
+    try {
+      if (e is! Map<String, dynamic>) {
+        throw const BackupFormatException('Each log must be an object');
+      }
+      final date = DateTime.tryParse(e['date'] as String? ?? '');
+      if (date == null) {
+        throw const BackupFormatException('log.date missing or invalid');
+      }
 
-    final symptomsRaw = e['pain_symptoms'];
-    if (symptomsRaw is! List) {
-      throw const BackupFormatException('pain_symptoms must be a list');
-    }
-    final symptoms = symptomsRaw.map((s) {
-      if (s is! Map<String, dynamic>) {
-        throw const BackupFormatException('Each symptom must be an object');
+      final symptomsRaw = e['pain_symptoms'];
+      if (symptomsRaw is! List) {
+        throw const BackupFormatException('pain_symptoms must be a list');
       }
-      final typeIdx = s['symptom_type'] as int?;
-      if (typeIdx == null ||
-          typeIdx < 0 ||
-          typeIdx >= PainSymptomType.values.length) {
-        throw const BackupFormatException('Invalid symptom_type index');
-      }
-      return PainSymptomData(
-        symptomType: PainSymptomType.values[typeIdx],
-        customLabel: s['custom_label'] as String?,
-      );
-    }).toList();
+      final symptoms = symptomsRaw.map((s) {
+        if (s is! Map<String, dynamic>) {
+          throw const BackupFormatException('Each symptom must be an object');
+        }
+        final typeIdx = s['symptom_type'] as int?;
+        if (typeIdx == null ||
+            typeIdx < 0 ||
+            typeIdx >= PainSymptomType.values.length) {
+          throw const BackupFormatException('Invalid symptom_type index');
+        }
+        return PainSymptomData(
+          symptomType: PainSymptomType.values[typeIdx],
+          customLabel: s['custom_label'] as String?,
+        );
+      }).toList();
 
-    final flowIdxRaw = e['flow_intensity'] as int?;
-    FlowType? flowType;
-    FlowIntensity? flow;
+      final flowIdxRaw = e['flow_intensity'] as int?;
+      FlowType? flowType;
+      FlowIntensity? flow;
 
-    if (snapshotVersion >= 2) {
-      // v2: flow_type is authoritative; flow_intensity uses the v4 enum.
-      final ftIdx = e['flow_type'] as int?;
-      if (ftIdx != null) {
-        if (ftIdx < 0 || ftIdx >= FlowType.values.length) {
-          throw const BackupFormatException('Invalid flow_type index');
+      if (snapshotVersion >= 2) {
+        // v2: flow_type is authoritative; flow_intensity uses the v4 enum.
+        final ftIdx = e['flow_type'] as int?;
+        if (ftIdx != null) {
+          if (ftIdx < 0 || ftIdx >= FlowType.values.length) {
+            throw const BackupFormatException('Invalid flow_type index');
+          }
+          flowType = FlowType.values[ftIdx];
         }
-        flowType = FlowType.values[ftIdx];
-      }
-      if (flowIdxRaw != null) {
-        if (flowIdxRaw < 0 || flowIdxRaw >= FlowIntensity.values.length) {
-          throw const BackupFormatException('Invalid flow_intensity index');
+        if (flowIdxRaw != null) {
+          if (flowIdxRaw < 0 || flowIdxRaw >= FlowIntensity.values.length) {
+            throw const BackupFormatException('Invalid flow_intensity index');
+          }
+          flow = FlowIntensity.values[flowIdxRaw];
         }
-        flow = FlowIntensity.values[flowIdxRaw];
-      }
-    } else {
-      // v1 → derive new fields from legacy {spotting, flow_intensity v3-enum}.
-      final spotting = e['spotting'] as bool? ?? false;
-      if (spotting) {
-        flowType = FlowType.spotting;
-        flow = null;
-      } else if (flowIdxRaw != null) {
-        // v3 enum: 0=none, 1=light, 2=medium, 3=heavy, 4=veryHeavy
-        if (flowIdxRaw < 0 || flowIdxRaw > 4) {
-          throw const BackupFormatException(
-            'Invalid v1 flow_intensity index',
-          );
-        }
-        if (flowIdxRaw == 0) {
-          flowType = FlowType.assente;
+      } else {
+        // v1 → derive new fields from legacy {spotting, flow_intensity v3-enum}.
+        final spotting = e['spotting'] as bool? ?? false;
+        if (spotting) {
+          flowType = FlowType.spotting;
           flow = null;
-        } else {
-          flowType = FlowType.mestruazioni;
-          // Shift v3 index → v4 index (drop `none`).
-          flow = FlowIntensity.values[flowIdxRaw - 1];
+        } else if (flowIdxRaw != null) {
+          // v3 enum: 0=none, 1=light, 2=medium, 3=heavy, 4=veryHeavy
+          if (flowIdxRaw < 0 || flowIdxRaw > 4) {
+            throw const BackupFormatException(
+              'Invalid v1 flow_intensity index',
+            );
+          }
+          if (flowIdxRaw == 0) {
+            flowType = FlowType.assente;
+            flow = null;
+          } else {
+            flowType = FlowType.mestruazioni;
+            // Shift v3 index → v4 index (drop `none`).
+            flow = FlowIntensity.values[flowIdxRaw - 1];
+          }
         }
       }
-    }
 
-    final log = DailyLogEntity(
-      date: date,
-      flowType: flowType,
-      flowIntensity: flow,
-      otherDischarge: e['other_discharge'] as bool? ?? false,
-      painEnabled: e['pain_enabled'] as bool? ?? false,
-      painIntensity: e['pain_intensity'] as int?,
-      notesEnabled: e['notes_enabled'] as bool? ?? false,
-      notes: e['notes'] as String?,
-    );
-    return DailyLogWithSymptoms(log: log, symptoms: symptoms);
+      // DM-02: intensity is only meaningful for mestruazioni.
+      if (flowType != FlowType.mestruazioni) {
+        flow = null;
+      }
+
+      final log = DailyLogEntity(
+        date: date,
+        flowType: flowType,
+        flowIntensity: flow,
+        otherDischarge: e['other_discharge'] as bool? ?? false,
+        painEnabled: e['pain_enabled'] as bool? ?? false,
+        painIntensity: e['pain_intensity'] as int?,
+        notesEnabled: e['notes_enabled'] as bool? ?? false,
+        notes: e['notes'] as String?,
+      );
+      return DailyLogWithSymptoms(log: log, symptoms: symptoms);
+    } on TypeError catch (err) {
+      throw BackupFormatException('Type error in log entry: $err');
+    }
   }
 }

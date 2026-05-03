@@ -24,6 +24,7 @@ import '../../../core/theme/metra_typography.dart';
 import '../../../core/widgets/metra_icon.dart';
 import '../../../domain/entities/cycle_summary.dart';
 import '../../../domain/entities/flow_intensity.dart';
+import '../../../domain/entities/pain_symptom_data.dart';
 import '../../../domain/entities/pain_symptom_type.dart';
 import '../../../l10n/app_localizations.dart';
 
@@ -166,9 +167,8 @@ class _ChipRow extends StatelessWidget {
           summary.dominantPainIntensity! > 0)
         _PainPill(intensity: summary.dominantPainIntensity!, l10n: l10n),
       ...summary.symptoms
-          .where((t) => t != PainSymptomType.custom)
           .take(2)
-          .map((t) => _SymptomPill(type: t, l10n: l10n)),
+          .map((s) => _SymptomPill(symptom: s, l10n: l10n)),
     ];
 
     return Wrap(
@@ -228,9 +228,9 @@ class _PainPill extends StatelessWidget {
 }
 
 class _SymptomPill extends StatelessWidget {
-  const _SymptomPill({required this.type, required this.l10n});
+  const _SymptomPill({required this.symptom, required this.l10n});
 
-  final PainSymptomType type;
+  final PainSymptomData symptom;
   final AppLocalizations l10n;
 
   @override
@@ -238,14 +238,14 @@ class _SymptomPill extends StatelessWidget {
     return _MiniChip(
       svgBody: MetraIcons.starSmallFilled,
       iconColor: MetraColors.light.dustyOchre,
-      label: _symptomLabel(l10n, type),
+      label: _symptomLabel(l10n, symptom),
       labelColor: MetraColors.light.ink.withValues(alpha: 0.60),
       bg: MetraColors.light.dustyOchre.withValues(alpha: 0x18 / 255),
     );
   }
 
-  static String _symptomLabel(AppLocalizations l10n, PainSymptomType type) =>
-      switch (type) {
+  static String _symptomLabel(AppLocalizations l10n, PainSymptomData symptom) =>
+      switch (symptom.symptomType) {
         PainSymptomType.cramps => l10n.daily_entry_symptom_cramps,
         PainSymptomType.backPain => l10n.daily_entry_symptom_backPain,
         PainSymptomType.headache => l10n.daily_entry_symptom_headache,
@@ -255,7 +255,8 @@ class _SymptomPill extends StatelessWidget {
         PainSymptomType.nausea => l10n.daily_entry_symptom_nausea,
         PainSymptomType.breastTenderness =>
           l10n.daily_entry_symptom_breastTenderness,
-        PainSymptomType.custom => '',
+        PainSymptomType.custom =>
+          symptom.customLabel ?? l10n.daily_entry_symptom_custom,
       };
 }
 

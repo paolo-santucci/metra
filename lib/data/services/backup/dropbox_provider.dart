@@ -64,6 +64,10 @@ class DropboxProvider implements CloudBackupProvider {
       _webAuth;
   final Random _random;
 
+  // Holds the CSRF state token generated at the start of each authorize() call.
+  // Compared against the value returned in the OAuth callback to detect CSRF.
+  String? _oauthState;
+
   static Future<String> _defaultWebAuth(
     String url, {
     required String callbackUrlScheme,
@@ -79,6 +83,7 @@ class DropboxProvider implements CloudBackupProvider {
   Future<void> authorize() async {
     final verifier = _generateCodeVerifier();
     final challenge = _codeChallenge(verifier);
+    _oauthState = _generateOauthState();
     final authUrl = Uri.https('www.dropbox.com', '/oauth2/authorize', {
       'client_id': _appKey,
       'response_type': 'code',
@@ -86,10 +91,16 @@ class DropboxProvider implements CloudBackupProvider {
       'code_challenge': challenge,
       'code_challenge_method': 'S256',
       'token_access_type': 'offline',
+      'state': _oauthState!,
     });
     final result =
         await _webAuth(authUrl.toString(), callbackUrlScheme: 'metra');
-    final code = Uri.parse(result).queryParameters['code'];
+    final callbackParams = Uri.parse(result).queryParameters;
+    final returnedState = callbackParams['state'];
+    if (returnedState != _oauthState) {
+      throw const SyncException('OAuth state mismatch — possible CSRF attack');
+    }
+    final code = callbackParams['code'];
     if (code == null) {
       throw const SyncException('OAuth callback missing code');
     }
@@ -155,8 +166,7 @@ class DropboxProvider implements CloudBackupProvider {
         'Content-Type': 'application/octet-stream',
         'Dropbox-API-Arg': jsonEncode({
           'path': '/$filename',
-          'mode': 'add',
-          'autorename': false,
+          'mode': 'overwrite',
           'mute': true,
         }),
       },
@@ -195,10 +205,26 @@ class DropboxProvider implements CloudBackupProvider {
     if (res.statusCode != 200) {
       throw SyncException('List failed: ${res.statusCode}');
     }
-    final data = jsonDecode(res.body) as Map<String, dynamic>;
-    final entries = data['entries'] as List<dynamic>;
-    return entries
+    var data = jsonDecode(res.body) as Map<String, dynamic>;
+    final entries = (data['entries'] as List<dynamic>)
         .cast<Map<String, dynamic>>()
+        .toList();
+    while (data['has_more'] == true) {
+      final continueRes = await _authenticatedPost(
+        Uri.parse('https://api.dropboxapi.com/2/files/list_folder/continue'),
+        body: jsonEncode({'cursor': data['cursor'] as String}),
+        headers: {'Content-Type': 'application/json'},
+      );
+      if (continueRes.statusCode != 200) {
+        break; // best-effort; partial list is acceptable
+      }
+      final nextData = jsonDecode(continueRes.body) as Map<String, dynamic>;
+      entries.addAll(
+        (nextData['entries'] as List<dynamic>).cast<Map<String, dynamic>>(),
+      );
+      data = nextData;
+    }
+    return entries
         .where((e) => e['.tag'] == 'file')
         .map((e) => e['name'] as String)
         .where((n) => n.startsWith(_filePrefix) && n.endsWith(_fileSuffix))
@@ -260,6 +286,11 @@ class DropboxProvider implements CloudBackupProvider {
     final access = tokens['access_token'] as String;
     await _storage.write(key: _accessTokenKey, value: access);
     return access;
+  }
+
+  String _generateOauthState() {
+    final bytes = List<int>.generate(16, (_) => _random.nextInt(256));
+    return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
   }
 
   String _generateCodeVerifier() {

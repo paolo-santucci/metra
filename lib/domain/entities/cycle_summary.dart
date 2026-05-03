@@ -17,7 +17,7 @@
 
 import 'cycle_entry_entity.dart';
 import 'flow_intensity.dart';
-import 'pain_symptom_type.dart';
+import 'pain_symptom_data.dart';
 
 /// A cycle together with the aggregated data derived from its date range.
 class CycleSummary {
@@ -30,9 +30,9 @@ class CycleSummary {
 
   final CycleEntryEntity cycle;
 
-  /// Distinct fixed symptom types seen across this cycle's date range.
-  /// Never contains [PainSymptomType.custom].
-  final List<PainSymptomType> symptoms;
+  /// Distinct symptom entries seen across this cycle's date range.
+  /// Includes custom symptoms with their [PainSymptomData.customLabel].
+  final List<PainSymptomData> symptoms;
 
   /// Most-frequent non-null [FlowIntensity]; highest ordinal wins on ties.
   /// Null if no flow was logged for this cycle.

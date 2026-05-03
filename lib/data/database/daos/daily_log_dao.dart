@@ -80,6 +80,21 @@ class DailyLogDao extends DatabaseAccessor<AppDatabase>
     return {for (final r in rows) r.dailyLogDate.toUtc()};
   }
 
+  /// Emits the set of UTC-midnight dates in [year]/[month] that have at least
+  /// one pain-symptom row, re-emitting whenever those rows change.
+  Stream<Set<DateTime>> watchSymptomDatesForMonth(int year, int month) {
+    final start = DateTime.utc(year, month);
+    final end = DateTime.utc(year, month + 1);
+    return (select(painSymptoms)
+          ..where(
+            (t) =>
+                t.dailyLogDate.isBiggerOrEqualValue(start) &
+                t.dailyLogDate.isSmallerThanValue(end),
+          ))
+        .watch()
+        .map((rows) => {for (final r in rows) r.dailyLogDate.toUtc()});
+  }
+
   Stream<List<PainSymptom>> watchPainSymptoms(DateTime date) =>
       (select(painSymptoms)
             ..where((t) => t.dailyLogDate.equals(_toUtcDay(date))))

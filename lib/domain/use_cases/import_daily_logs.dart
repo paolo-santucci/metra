@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
+import '../entities/daily_log_with_symptoms.dart';
 import '../repositories/daily_log_repository.dart';
 import '../services/csv_codec.dart';
 import 'recompute_cycle_entries.dart';
@@ -54,10 +55,13 @@ class ImportDailyLogs {
         return ImportResult(imported: rows.length, skipped: 0);
 
       case ImportMode.overwrite:
-        for (final r in rows) {
-          await _logRepo.saveDailyLog(r.log);
-          await _logRepo.replacePainSymptoms(r.log.date, r.symptoms);
-        }
+        await _logRepo.upsertAllLogs(
+          rows
+              .map(
+                (r) => DailyLogWithSymptoms(log: r.log, symptoms: r.symptoms),
+              )
+              .toList(),
+        );
         await _recompute();
         return ImportResult(imported: rows.length, skipped: 0);
 

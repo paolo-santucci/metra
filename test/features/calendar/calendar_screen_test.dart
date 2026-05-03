@@ -256,8 +256,7 @@ void main() {
       expect(find.text('Aggiungi giornata'), findsOneWidget);
     });
 
-    testWidgets('tapping a day cell shows the day-detail card',
-        (tester) async {
+    testWidgets('tapping a day cell shows the day-detail card', (tester) async {
       await tester.binding.setSurfaceSize(const Size(800, 1400));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -279,8 +278,7 @@ void main() {
       expect(find.text('Aggiungi giornata'), findsOneWidget);
     });
 
-    testWidgets(
-        'tapping the day-card CTA navigates to /daily-entry/:date',
+    testWidgets('tapping the day-card CTA navigates to /daily-entry/:date',
         (tester) async {
       await tester.binding.setSurfaceSize(const Size(800, 1400));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -536,8 +534,8 @@ void main() {
           tester.widgetList<CalendarDay>(find.byType(CalendarDay)).toList();
 
       for (final day in days) {
-        final inWindow = !day.date.isBefore(windowStart) &&
-            !day.date.isAfter(windowEnd);
+        final inWindow =
+            !day.date.isBefore(windowStart) && !day.date.isAfter(windowEnd);
         if (!inWindow) {
           expect(
             day.hasPrediction,

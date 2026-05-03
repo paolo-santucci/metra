@@ -119,10 +119,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     title: title,
                     prevLabel: l10n.calendar_prev_month,
                     nextLabel: l10n.calendar_next_month,
-                    onPrev: () =>
-                        ref.read(calendarMonthProvider.notifier).goToPrevMonth(),
-                    onNext: () =>
-                        ref.read(calendarMonthProvider.notifier).goToNextMonth(),
+                    onPrev: () => ref
+                        .read(calendarMonthProvider.notifier)
+                        .goToPrevMonth(),
+                    onNext: () => ref
+                        .read(calendarMonthProvider.notifier)
+                        .goToNextMonth(),
                     canGoNext: !isCurrentMonth,
                     cycleDay: isCurrentMonth ? cycleDay : null,
                   ),
@@ -302,8 +304,7 @@ class _CalendarGrid extends StatelessWidget {
         final date = DateTime.utc(year, month, dayNumber);
         final log = logs[date];
 
-        final todayUtc =
-            DateTime.utc(today.year, today.month, today.day);
+        final todayUtc = DateTime.utc(today.year, today.month, today.day);
         final isToday = today.year == year &&
             today.month == month &&
             today.day == dayNumber;
@@ -311,8 +312,8 @@ class _CalendarGrid extends StatelessWidget {
         final isFlow = log?.flowType == FlowType.mestruazioni;
         final isSpotting = log?.spotting ?? false;
         final hasNote = log?.notes != null && log!.notes!.isNotEmpty;
-        final hasPrediction = !date.isBefore(todayUtc)
-            && (prediction?.containsDate(date) ?? false);
+        final hasPrediction = !date.isBefore(todayUtc) &&
+            (prediction?.containsDate(date) ?? false);
         final hasPain = log?.painEnabled ?? false;
         final hasSymptom = daysWithSymptoms.contains(date);
 
@@ -355,14 +356,15 @@ class _DayDetailCard extends StatelessWidget {
   final String locale;
   final bool isDark;
 
-  String _symptomLabel(PainSymptomType type, AppLocalizations l10n) =>
-      switch (type) {
+  String _symptomLabel(PainSymptomData symptom, AppLocalizations l10n) =>
+      switch (symptom.symptomType) {
         PainSymptomType.cramps => l10n.daily_entry_symptom_cramps,
         PainSymptomType.headache => l10n.daily_entry_symptom_headache,
         PainSymptomType.bloating => l10n.daily_entry_symptom_bloating,
         PainSymptomType.backPain => l10n.daily_entry_symptom_backPain,
         PainSymptomType.migraine => l10n.daily_entry_symptom_migraine,
-        PainSymptomType.custom => l10n.daily_entry_symptom_custom,
+        PainSymptomType.custom =>
+          symptom.customLabel ?? l10n.daily_entry_symptom_custom,
         PainSymptomType.fatigue => l10n.daily_entry_symptom_fatigue,
         PainSymptomType.nausea => l10n.daily_entry_symptom_nausea,
         PainSymptomType.breastTenderness =>
@@ -380,7 +382,8 @@ class _DayDetailCard extends StatelessWidget {
         : MetraColors.light.textSecondary;
     final accentFlow =
         isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
-    final malva = isDark ? MetraColors.dark.accentPain : MetraColors.light.accentPain;
+    final malva =
+        isDark ? MetraColors.dark.accentPain : MetraColors.light.accentPain;
     final dustyOchre =
         isDark ? MetraColors.dark.accentWarmth : MetraColors.light.accentWarmth;
     final hasData = log != null;
@@ -388,7 +391,8 @@ class _DayDetailCard extends StatelessWidget {
     // Flow label — same logic as the removed _FlowBadge.
     String? flowLabel;
     if (log != null) {
-      if (log!.flowType == FlowType.mestruazioni && log!.flowIntensity != null) {
+      if (log!.flowType == FlowType.mestruazioni &&
+          log!.flowIntensity != null) {
         flowLabel = switch (log!.flowIntensity!) {
           FlowIntensity.light => l10n.daily_entry_flow_intensity_light,
           FlowIntensity.medium => l10n.daily_entry_flow_intensity_medium,
@@ -414,8 +418,7 @@ class _DayDetailCard extends StatelessWidget {
     }
 
     // Note text — only when notes are enabled and non-empty.
-    final noteText =
-        (log?.notesEnabled == true &&
+    final noteText = (log?.notesEnabled == true &&
             log?.notes != null &&
             log!.notes!.isNotEmpty)
         ? log!.notes
@@ -467,7 +470,9 @@ class _DayDetailCard extends StatelessWidget {
             ],
           ),
           // 2. Pills row (flow + pain + symptoms).
-          if (flowLabel != null || painLabel != null || symptoms.isNotEmpty) ...[
+          if (flowLabel != null ||
+              painLabel != null ||
+              symptoms.isNotEmpty) ...[
             const SizedBox(height: 8),
             Wrap(
               spacing: 6,
@@ -493,7 +498,7 @@ class _DayDetailCard extends StatelessWidget {
                   (s) => _DataPill(
                     svgBody: MetraIcons.starSmallFilled,
                     iconColor: dustyOchre,
-                    label: _symptomLabel(s.symptomType, l10n),
+                    label: _symptomLabel(s, l10n),
                     labelColor: textPrimary,
                     bg: dustyOchre.withValues(alpha: 0.10),
                   ),
@@ -594,7 +599,8 @@ class _DataPill extends StatelessWidget {
         children: [
           MetraIcon(svgBody: svgBody, size: 11, color: iconColor, filled: true),
           const SizedBox(width: 4),
-          Text(label, style: GoogleFonts.inter(fontSize: 11, color: labelColor)),
+          Text(label,
+              style: GoogleFonts.inter(fontSize: 11, color: labelColor)),
         ],
       ),
     );

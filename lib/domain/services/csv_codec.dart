@@ -70,6 +70,8 @@ const _kHeaders = [
   'symptoms',
   'notes',
   'cycle_start',
+  'pain_enabled',
+  'notes_enabled',
 ];
 
 // flow_type and flow are excluded from required headers so legacy CSVs
@@ -93,13 +95,15 @@ class CsvCodec {
       for (final r in rows)
         [
           _fmtDate(r.log.date),
-          r.log.flowType?.index ?? '',      // flow_type column
+          r.log.flowType?.index ?? '', // flow_type column
           r.log.flowIntensity?.index ?? '', // flow column
           r.log.otherDischarge ? 1 : 0,
           r.log.painIntensity ?? '',
           _encodeSymptoms(r.symptoms),
           r.log.notes ?? '',
           r.cycleStart ? 1 : 0,
+          r.log.painEnabled ? 1 : 0,
+          r.log.notesEnabled ? 1 : 0,
         ],
     ];
     return const ListToCsvConverter().convert(data);
@@ -253,7 +257,8 @@ class CsvCodec {
                 rowNumber: rowNum,
                 column: 'flow',
                 rawValue: flowStr,
-                reason: 'Expected 0–${FlowIntensity.values.length - 1} or empty',
+                reason:
+                    'Expected 0–${FlowIntensity.values.length - 1} or empty',
               ),
             );
             continue;
@@ -312,7 +317,8 @@ class CsvCodec {
             rowNumber: rowNum,
             column: 'flow_type',
             rawValue: '',
-            reason: 'Required column "flow_type" or legacy "spotting" missing from header',
+            reason:
+                'Required column "flow_type" or legacy "spotting" missing from header',
           ),
         );
         continue;
@@ -354,11 +360,12 @@ class CsvCodec {
         painEnabled = true;
       }
 
-      // symptoms
+      // symptoms — BUG-010: only enable pain section when at least one
+      // recognized symptom token was parsed; unknown-only tokens must not
+      // set painEnabled via this path.
       final symptoms = <PainSymptomData>[];
       final sympStr = cell(rawRow, 'symptoms');
       if (sympStr.isNotEmpty) {
-        painEnabled = true;
         for (final part in sympStr.split(';')) {
           final t = part.trim();
           if (t.isEmpty) continue;
@@ -379,6 +386,7 @@ class CsvCodec {
             }
           }
         }
+        if (symptoms.isNotEmpty) painEnabled = true;
       }
 
       // notes
@@ -388,6 +396,47 @@ class CsvCodec {
       if (notesStr.isNotEmpty) {
         notes = notesStr;
         notesEnabled = true;
+      }
+
+      // BUG-001: explicit pain_enabled / notes_enabled columns override the
+      // inferred values above. Fall back to inference only when the column is
+      // absent (backward-compat with old CSV files).
+      if (header.contains('pain_enabled')) {
+        final peStr = cell(rawRow, 'pain_enabled');
+        if (peStr.isNotEmpty) {
+          final peVal = int.tryParse(peStr);
+          if (peVal == null || (peVal != 0 && peVal != 1)) {
+            errors.add(
+              CsvParseError(
+                rowNumber: rowNum,
+                column: 'pain_enabled',
+                rawValue: peStr,
+                reason: 'Expected 0 or 1',
+              ),
+            );
+            continue;
+          }
+          painEnabled = peVal == 1;
+        }
+      }
+
+      if (header.contains('notes_enabled')) {
+        final neStr = cell(rawRow, 'notes_enabled');
+        if (neStr.isNotEmpty) {
+          final neVal = int.tryParse(neStr);
+          if (neVal == null || (neVal != 0 && neVal != 1)) {
+            errors.add(
+              CsvParseError(
+                rowNumber: rowNum,
+                column: 'notes_enabled',
+                rawValue: neStr,
+                reason: 'Expected 0 or 1',
+              ),
+            );
+            continue;
+          }
+          notesEnabled = neVal == 1;
+        }
       }
 
       // cycle_start is ignored on decode.

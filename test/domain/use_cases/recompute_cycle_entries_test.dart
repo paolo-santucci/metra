@@ -23,6 +23,7 @@ import 'package:metra/domain/entities/cycle_entry_entity.dart';
 import 'package:metra/domain/entities/daily_log_entity.dart';
 import 'package:metra/domain/entities/flow_intensity.dart';
 import 'package:metra/domain/entities/flow_type.dart';
+import 'package:metra/domain/entities/daily_log_with_symptoms.dart';
 import 'package:metra/domain/entities/pain_symptom_data.dart';
 import 'package:metra/domain/repositories/cycle_entry_repository.dart';
 import 'package:metra/domain/repositories/daily_log_repository.dart';
@@ -182,7 +183,7 @@ void main() {
           _flowDay(DateTime.utc(2026, 1, 1)),
           _flowDay(DateTime.utc(2026, 1, 2)),
           _flowDay(DateTime.utc(2026, 1, 3)),
-          _flowDay(DateTime.utc(2026, 1, 8)),  // +5 days gap
+          _flowDay(DateTime.utc(2026, 1, 8)), // +5 days gap
           _flowDay(DateTime.utc(2026, 1, 14)), // +6 days gap
         ];
         final entries = RecomputeCycleEntries.compute(logs);
@@ -296,6 +297,9 @@ class _SerializationFakeLogRepo implements DailyLogRepository {
   Future<Set<DateTime>> getSymptomDatesForMonth(int year, int month) async =>
       {};
   @override
+  Stream<Set<DateTime>> watchSymptomDatesForMonth(int year, int month) =>
+      const Stream.empty();
+  @override
   Future<void> replacePainSymptoms(
     DateTime date,
     List<PainSymptomData> newSymptoms,
@@ -307,6 +311,8 @@ class _SerializationFakeLogRepo implements DailyLogRepository {
     List<DailyLogEntity> logs,
     Map<DateTime, List<PainSymptomData>> newSymptoms,
   ) async {}
+  @override
+  Future<void> upsertAllLogs(List<DailyLogWithSymptoms> entries) async {}
 }
 
 class _SerializationFakeCycleRepo implements CycleEntryRepository {

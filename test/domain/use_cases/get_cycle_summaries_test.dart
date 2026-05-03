@@ -100,7 +100,10 @@ void main() {
 
       expect(
         result.first.symptoms,
-        containsAll([PainSymptomType.cramps, PainSymptomType.backPain]),
+        containsAll([
+          const PainSymptomData(symptomType: PainSymptomType.cramps),
+          const PainSymptomData(symptomType: PainSymptomType.backPain),
+        ]),
       );
       expect(result.first.symptoms, hasLength(2));
     });
@@ -120,10 +123,22 @@ void main() {
       );
       // 2 × light, 2 × medium → tie → medium wins (higher ordinal)
       logRepo.savedLogs.addAll([
-        DailyLogEntity(date: jan15, flowType: FlowType.mestruazioni, flowIntensity: FlowIntensity.light),
-        DailyLogEntity(date: jan16, flowType: FlowType.mestruazioni, flowIntensity: FlowIntensity.light),
-        DailyLogEntity(date: jan17, flowType: FlowType.mestruazioni, flowIntensity: FlowIntensity.medium),
-        DailyLogEntity(date: jan18, flowType: FlowType.mestruazioni, flowIntensity: FlowIntensity.medium),
+        DailyLogEntity(
+            date: jan15,
+            flowType: FlowType.mestruazioni,
+            flowIntensity: FlowIntensity.light),
+        DailyLogEntity(
+            date: jan16,
+            flowType: FlowType.mestruazioni,
+            flowIntensity: FlowIntensity.light),
+        DailyLogEntity(
+            date: jan17,
+            flowType: FlowType.mestruazioni,
+            flowIntensity: FlowIntensity.medium),
+        DailyLogEntity(
+            date: jan18,
+            flowType: FlowType.mestruazioni,
+            flowIntensity: FlowIntensity.medium),
       ]);
 
       final uc = GetCycleSummaries(logRepo, cycleRepo);
@@ -171,7 +186,10 @@ void main() {
         ),
       );
       logRepo.savedLogs.add(
-        DailyLogEntity(date: todayNorm, flowType: FlowType.mestruazioni, flowIntensity: FlowIntensity.heavy),
+        DailyLogEntity(
+            date: todayNorm,
+            flowType: FlowType.mestruazioni,
+            flowIntensity: FlowIntensity.heavy),
       );
 
       final uc = GetCycleSummaries(logRepo, cycleRepo);
@@ -180,7 +198,7 @@ void main() {
       expect(result.first.dominantFlow, FlowIntensity.heavy);
     });
 
-    test('does not include custom symptom type', () async {
+    test('includes custom symptom with its label', () async {
       final logRepo = FakeDailyLogRepository();
       final cycleRepo = FakeCycleEntryRepository();
       cycleRepo.entries.add(
@@ -204,7 +222,14 @@ void main() {
 
       final uc = GetCycleSummaries(logRepo, cycleRepo);
       final result = await uc().first;
-      expect(result.first.symptoms, isEmpty);
+      expect(result.first.symptoms, hasLength(1));
+      expect(
+        result.first.symptoms.first,
+        const PainSymptomData(
+          symptomType: PainSymptomType.custom,
+          customLabel: 'nausea',
+        ),
+      );
     });
 
     test(
@@ -373,7 +398,10 @@ void main() {
 
         final uc = GetCycleSummaries(logRepo, cycleRepo);
         final result = await uc().first;
-        expect(result.first.symptoms, contains(PainSymptomType.cramps));
+        expect(
+          result.first.symptoms,
+          contains(const PainSymptomData(symptomType: PainSymptomType.cramps)),
+        );
       },
     );
 
@@ -421,7 +449,14 @@ void main() {
 
         // result is sorted newest-first; older cycle is result.last
         final olderSummary = result.last;
-        expect(olderSummary.symptoms, isNot(contains(PainSymptomType.headache)));
+        expect(
+          olderSummary.symptoms,
+          isNot(
+            contains(
+              const PainSymptomData(symptomType: PainSymptomType.headache),
+            ),
+          ),
+        );
       },
     );
   });

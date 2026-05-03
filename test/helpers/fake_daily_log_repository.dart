@@ -16,6 +16,7 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:metra/domain/entities/daily_log_entity.dart';
+import 'package:metra/domain/entities/daily_log_with_symptoms.dart';
 import 'package:metra/domain/entities/pain_symptom_data.dart';
 import 'package:metra/domain/repositories/daily_log_repository.dart';
 
@@ -73,6 +74,12 @@ class FakeDailyLogRepository implements DailyLogRepository {
   }
 
   @override
+  Stream<Set<DateTime>> watchSymptomDatesForMonth(int year, int month) =>
+      Stream.value(
+        symptoms.keys.where((d) => d.year == year && d.month == month).toSet(),
+      );
+
+  @override
   Future<void> replacePainSymptoms(
     DateTime date,
     List<PainSymptomData> newSymptoms,
@@ -104,5 +111,13 @@ class FakeDailyLogRepository implements DailyLogRepository {
     symptoms
       ..clear()
       ..addAll(newSymptoms);
+  }
+
+  @override
+  Future<void> upsertAllLogs(List<DailyLogWithSymptoms> entries) async {
+    for (final e in entries) {
+      await saveDailyLog(e.log);
+      await replacePainSymptoms(e.log.date, e.symptoms);
+    }
   }
 }

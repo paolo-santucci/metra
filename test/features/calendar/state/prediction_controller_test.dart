@@ -108,9 +108,7 @@ void main() {
     // correct result empirically (Dart's FIFO microtask scheduler delivers
     // events in order), but `StreamProvider` makes the contract explicit and
     // eliminates the Completer juggling entirely.
-    test(
-        'rapid null→valid emissions leave state as valid, not null',
-        () async {
+    test('rapid null→valid emissions leave state as valid, not null', () async {
       final expectedStart = DateTime.utc(2026, 7, 1);
       final validPrediction = CyclePrediction(
         windowStart: expectedStart.subtract(const Duration(days: 2)),
@@ -169,4 +167,3 @@ class _StreamingWatchCyclePrediction implements WatchCyclePrediction {
   @override
   Stream<CyclePrediction?> call() => _controller.stream;
 }
-

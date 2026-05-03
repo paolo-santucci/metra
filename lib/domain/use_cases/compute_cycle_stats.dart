@@ -60,7 +60,9 @@ class ComputeCycleStats {
 
     final counts = <PainSymptomType, int>{
       for (final type in fixedTypes)
-        type: complete.where((s) => s.symptoms.contains(type)).length,
+        type: complete
+            .where((s) => s.symptoms.any((d) => d.symptomType == type))
+            .length,
     };
 
     final cycleLengths = points.map((p) => p.cycleLength).toList();

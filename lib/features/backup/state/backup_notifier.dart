@@ -77,11 +77,27 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
   }
 
   Future<void> backupWithPassphrase(String passphrase) async {
-    await ref.read(secureStorageProvider).write(
-          key: _passphraseKey,
-          value: passphrase,
-        );
+    final storage = ref.read(secureStorageProvider);
+    // Read the old passphrase so it can be restored if the upload fails.
+    // The invariant: after a failed backup the cloud blob is still encrypted
+    // with the old key, so secure storage must keep the old passphrase.
+    final oldPassphrase = await storage.read(key: _passphraseKey);
+
+    // Write the new passphrase so the orchestrator picks it up during backup.
+    await storage.write(key: _passphraseKey, value: passphrase);
+
     await _runBackup();
+
+    // If the backup failed, _runBackup sets an error state but does not throw.
+    // We must detect the failure by inspecting state and restore the old value.
+    final currentState = state.valueOrNull;
+    if (currentState is BackupErrorState) {
+      if (oldPassphrase != null) {
+        await storage.write(key: _passphraseKey, value: oldPassphrase);
+      } else {
+        await storage.delete(key: _passphraseKey);
+      }
+    }
   }
 
   Future<void> backupSilent() async {

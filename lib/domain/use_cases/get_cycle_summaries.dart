@@ -19,7 +19,7 @@ import '../entities/cycle_entry_entity.dart';
 import '../entities/cycle_summary.dart';
 import '../entities/flow_intensity.dart';
 import '../entities/flow_type.dart';
-import '../entities/pain_symptom_type.dart';
+import '../entities/pain_symptom_data.dart';
 import '../repositories/cycle_entry_repository.dart';
 import '../repositories/daily_log_repository.dart';
 
@@ -50,8 +50,7 @@ class GetCycleSummaries {
     final summaries = await Future.wait(
       cycles.map((cycle) async {
         final isTrailing = cycle.startDate == trailingStart;
-        final rangeEnd =
-            isTrailing ? todayNorm : (cycle.endDate ?? todayNorm);
+        final rangeEnd = isTrailing ? todayNorm : (cycle.endDate ?? todayNorm);
 
         final logsInRange = allLogs
             .where(
@@ -61,15 +60,11 @@ class GetCycleSummaries {
             )
             .toList();
 
-        // Collect distinct fixed symptom types; custom is excluded per spec.
-        final symptomSet = <PainSymptomType>{};
+        // Collect distinct symptom entries across the cycle (including custom).
+        final symptomSet = <PainSymptomData>{};
         for (final log in logsInRange) {
           final symptoms = await _logRepo.getPainSymptoms(log.date);
-          for (final s in symptoms) {
-            if (s.symptomType != PainSymptomType.custom) {
-              symptomSet.add(s.symptomType);
-            }
-          }
+          symptomSet.addAll(symptoms);
         }
 
         // Compute dominant flow: mode with highest ordinal winning ties.

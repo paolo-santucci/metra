@@ -21,6 +21,7 @@ import '../../core/errors/metra_exception.dart';
 import '../../data/database/app_database.dart';
 import '../../data/database/daos/daily_log_dao.dart';
 import '../../domain/entities/daily_log_entity.dart';
+import '../../domain/entities/daily_log_with_symptoms.dart';
 import '../../domain/entities/flow_intensity.dart';
 import '../../domain/entities/flow_type.dart';
 import '../../domain/entities/pain_symptom_data.dart';
@@ -163,6 +164,10 @@ class DriftDailyLogRepository implements DailyLogRepository {
       _dao.getSymptomDatesForMonth(year, month);
 
   @override
+  Stream<Set<DateTime>> watchSymptomDatesForMonth(int year, int month) =>
+      _dao.watchSymptomDatesForMonth(year, month);
+
+  @override
   Future<void> replacePainSymptoms(
     DateTime date,
     List<PainSymptomData> symptoms,
@@ -193,6 +198,18 @@ class DriftDailyLogRepository implements DailyLogRepository {
           if (companions.isNotEmpty) {
             await _dao.replacePainSymptoms(entry.key, companions);
           }
+        }
+      });
+
+  @override
+  Future<void> upsertAllLogs(List<DailyLogWithSymptoms> entries) =>
+      _dao.transaction(() async {
+        for (final e in entries) {
+          await _dao.upsertDailyLog(_toCompanion(e.log));
+          await _dao.replacePainSymptoms(
+            e.log.date,
+            e.symptoms.map((s) => _symptomToCompanion(e.log.date, s)).toList(),
+          );
         }
       });
 }

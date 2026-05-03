@@ -558,9 +558,15 @@ class SettingsScreen extends ConsumerWidget {
     try {
       final path = picked.files.first.path;
       final bytes = picked.files.first.bytes;
-      csvString = path != null
-          ? await File(path).readAsString(encoding: utf8)
-          : utf8.decode(bytes!);
+      if (path != null) {
+        csvString = await File(path).readAsString(encoding: utf8);
+      } else if (bytes != null) {
+        csvString = utf8.decode(bytes);
+      } else {
+        throw const FormatException(
+          'File content unavailable: unable to read path or bytes',
+        );
+      }
     } catch (_) {
       messenger.showSnackBar(
         SnackBar(content: Text(l10n.common_error_generic)),
