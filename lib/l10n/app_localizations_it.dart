@@ -591,6 +591,15 @@ class AppLocalizationsIt extends AppLocalizations {
   String get settings_privacy_policy => 'Informativa sulla privacy';
 
   @override
+  String get settings_help_label => 'Centro assistenza';
+
+  @override
+  String get settings_github_label => 'Codice sorgente';
+
+  @override
+  String get settings_support_label => 'Sostieni il progetto';
+
+  @override
   String get daily_entry_flow_chip_assente => 'Assente';
 
   @override

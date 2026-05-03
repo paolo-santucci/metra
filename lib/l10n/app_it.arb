@@ -891,6 +891,21 @@
     "description": "Settings row label: link to the privacy policy"
   },
 
+  "settings_help_label": "Centro assistenza",
+  "@settings_help_label": {
+    "description": "Settings row label: link to the help centre"
+  },
+
+  "settings_github_label": "Codice sorgente",
+  "@settings_github_label": {
+    "description": "Settings row label: link to GitHub source code"
+  },
+
+  "settings_support_label": "Sostieni il progetto",
+  "@settings_support_label": {
+    "description": "Settings footer label above the Ko-Fi donation button"
+  },
+
   "daily_entry_flow_chip_assente": "Assente",
   "@daily_entry_flow_chip_assente": {
     "description": "Chip label for no flow (user explicitly confirmed no bleeding)"

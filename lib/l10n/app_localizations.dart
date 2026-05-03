@@ -1130,6 +1130,24 @@ abstract class AppLocalizations {
   /// **'Informativa sulla privacy'**
   String get settings_privacy_policy;
 
+  /// Settings row label: link to the help centre
+  ///
+  /// In it, this message translates to:
+  /// **'Centro assistenza'**
+  String get settings_help_label;
+
+  /// Settings row label: link to GitHub source code
+  ///
+  /// In it, this message translates to:
+  /// **'Codice sorgente'**
+  String get settings_github_label;
+
+  /// Settings footer label above the Ko-Fi donation button
+  ///
+  /// In it, this message translates to:
+  /// **'Sostieni il progetto'**
+  String get settings_support_label;
+
   /// Chip label for no flow (user explicitly confirmed no bleeding)
   ///
   /// In it, this message translates to:

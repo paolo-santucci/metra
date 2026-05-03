@@ -590,6 +590,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings_privacy_policy => 'Privacy policy';
 
   @override
+  String get settings_help_label => 'Help centre';
+
+  @override
+  String get settings_github_label => 'Source code';
+
+  @override
+  String get settings_support_label => 'Support the project';
+
+  @override
   String get daily_entry_flow_chip_assente => 'Absent';
 
   @override

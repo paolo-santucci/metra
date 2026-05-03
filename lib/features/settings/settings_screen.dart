@@ -231,13 +231,30 @@ class SettingsScreen extends ConsumerWidget {
             _GroupCard(
               children: [
                 ListRowMetra(
+                  title: l10n.settings_help_label,
+                  semanticsLabel: l10n.settings_help_label,
+                  trailing: const Icon(Icons.open_in_new, size: 16),
+                  onTap: () => launchUrl(
+                    Uri.parse(AppConstants.kUrlHelp),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                ),
+                ListRowMetra(
+                  title: l10n.settings_github_label,
+                  semanticsLabel:
+                      '${l10n.settings_github_label} — GPL-3.0',
+                  trailing: const Icon(Icons.open_in_new, size: 16),
+                  onTap: () => launchUrl(
+                    Uri.parse(AppConstants.kUrlGitHub),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                ),
+                ListRowMetra(
                   title: l10n.settings_privacy_policy,
                   semanticsLabel: l10n.settings_privacy_policy,
                   trailing: const Icon(Icons.open_in_new, size: 16),
                   onTap: () => launchUrl(
-                    Uri.parse(
-                      'https://paolosantucci.github.io/metra/privacy',
-                    ),
+                    Uri.parse(AppConstants.kUrlPrivacy),
                     mode: LaunchMode.externalApplication,
                   ),
                 ),
@@ -257,11 +274,27 @@ class SettingsScreen extends ConsumerWidget {
                       color: textSecondary,
                     ),
                   ),
-                  const SizedBox(height: MetraSpacing.s2),
+                  const SizedBox(height: MetraSpacing.s4),
                   Text(
-                    'GPL-3.0',
+                    l10n.settings_support_label,
                     style: MetraTypography.caption.copyWith(
                       color: textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: MetraSpacing.s3),
+                  Semantics(
+                    label: 'Ko-Fi — ${l10n.settings_support_label}',
+                    button: true,
+                    child: GestureDetector(
+                      onTap: () => launchUrl(
+                        Uri.parse(AppConstants.kUrlKoFi),
+                        mode: LaunchMode.externalApplication,
+                      ),
+                      child: Image.network(
+                        AppConstants.kUrlKoFiBadge,
+                        height: 36,
+                        semanticLabel: '',
+                      ),
                     ),
                   ),
                 ],
