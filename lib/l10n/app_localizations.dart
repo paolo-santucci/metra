@@ -536,6 +536,12 @@ abstract class AppLocalizations {
   /// **'{n, plural, =1{1 giorno prima} other{{n} giorni prima}}'**
   String settings_advance_value(int n);
 
+  /// Language option: follow system locale
+  ///
+  /// In it, this message translates to:
+  /// **'Automatica'**
+  String get settings_language_system;
+
   /// Language option: Italian
   ///
   /// In it, this message translates to:

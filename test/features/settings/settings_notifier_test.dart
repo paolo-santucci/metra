@@ -59,7 +59,7 @@ void main() {
 
     final settings = await container.read(settingsNotifierProvider.future);
 
-    expect(settings.languageCode, equals('it'));
+    expect(settings.languageCode, equals(''));
     expect(settings.painEnabled, isTrue);
     expect(settings.notificationsEnabled, isFalse);
   });

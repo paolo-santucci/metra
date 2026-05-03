@@ -383,6 +383,11 @@
     }
   },
 
+  "settings_language_system": "Automatica",
+  "@settings_language_system": {
+    "description": "Language option: follow system locale"
+  },
+
   "settings_language_it": "Italiano",
   "@settings_language_it": {
     "description": "Language option: Italian"

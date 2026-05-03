@@ -146,6 +146,32 @@ void main() {
     });
   });
 
+  group('SettingsScreen — language name helper', () {
+    testWidgets(
+      '_languageName returns settings_language_system label when languageCode is empty',
+      (tester) async {
+        const systemLocale = AppSettingsData(
+          languageCode: '',
+          darkMode: null,
+          painEnabled: true,
+          notesEnabled: true,
+          notificationDaysBefore: 2,
+          notificationsEnabled: false,
+          onboardingCompleted: false,
+        );
+
+        final stub = _StubSettingsNotifier(systemLocale);
+        await tester.pumpWidget(
+          _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+        );
+        await tester.pumpAndSettle();
+
+        // The language row subtitle must show "Automatica" (IT locale).
+        expect(find.text('Automatica'), findsOneWidget);
+      },
+    );
+  });
+
   group('SettingsScreen — toggles', () {
     testWidgets('toggling pain switch calls save with flipped painEnabled',
         (tester) async {

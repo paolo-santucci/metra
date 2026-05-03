@@ -119,7 +119,7 @@ class AppSettingsData {
 class _AppSettingsDataDefaults extends AppSettingsData {
   const _AppSettingsDataDefaults()
       : super(
-          languageCode: 'it',
+          languageCode: '',
           darkMode: null,
           painEnabled: true,
           notesEnabled: true,

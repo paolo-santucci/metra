@@ -242,6 +242,9 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
+  String get settings_language_system => 'Automatica';
+
+  @override
   String get settings_language_it => 'Italiano';
 
   @override

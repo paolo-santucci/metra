@@ -155,6 +155,11 @@
     }
   },
 
+  "settings_language_system": "Automatic",
+  "@settings_language_system": {
+    "description": "Language option: follow system locale"
+  },
+
   "settings_language_it": "Italian",
   "@settings_language_it": {
     "description": "Language option: Italian"

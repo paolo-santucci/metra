@@ -292,7 +292,11 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   static String _languageName(AppLocalizations l10n, String code) =>
-      code == 'it' ? l10n.settings_language_it : l10n.settings_language_en;
+      switch (code) {
+        'it' => l10n.settings_language_it,
+        'en' => l10n.settings_language_en,
+        _ => l10n.settings_language_system,
+      };
 
   static String _themeName(AppLocalizations l10n, bool? darkMode) =>
       switch (darkMode) {
@@ -313,6 +317,16 @@ class SettingsScreen extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            ListTile(
+              title: Text(l10n.settings_language_system),
+              trailing: settings.languageCode == ''
+                  ? const Icon(Icons.check)
+                  : null,
+              onTap: () {
+                Navigator.of(sheetCtx).pop();
+                _save(ref, settings.copyWith(languageCode: ''));
+              },
+            ),
             ListTile(
               title: Text(l10n.settings_language_it),
               trailing: settings.languageCode == 'it'

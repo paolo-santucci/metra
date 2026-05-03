@@ -38,7 +38,9 @@ class AppSettingsDao extends DatabaseAccessor<AppDatabase>
       final existing = await (select(appSettings)..where((t) => t.id.equals(1)))
           .getSingleOrNull();
       if (existing != null) return existing;
-      await into(appSettings).insert(const AppSettingsCompanion(id: Value(1)));
+      await into(appSettings).insert(
+        const AppSettingsCompanion(id: Value(1), languageCode: Value('')),
+      );
       return (select(appSettings)..where((t) => t.id.equals(1))).getSingle();
     });
   }

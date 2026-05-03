@@ -97,7 +97,9 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
       true => ThemeMode.dark,
     };
 
-    final locale = settings != null ? Locale(settings.languageCode) : null;
+    final locale = (settings == null || settings.languageCode.isEmpty)
+        ? null
+        : Locale(settings.languageCode);
 
     // Reschedule notification whenever the predicted next cycle date changes.
     ref.listen<AsyncValue<CyclePrediction?>>(
@@ -107,7 +109,7 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
         final currentSettings = ref.read(settingsNotifierProvider).valueOrNull;
         if (currentSettings == null) return;
         final l10n = await AppLocalizations.delegate
-            .load(Locale(currentSettings.languageCode));
+            .load(Locale(_effectiveLangCode(currentSettings.languageCode)));
         final scheduler =
             await ref.read(schedulePredictionNotificationProvider.future);
         try {
@@ -156,7 +158,7 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
 
         final prediction = ref.read(cyclePredictionProvider).valueOrNull;
         final l10n = await AppLocalizations.delegate
-            .load(Locale(currentSettings.languageCode));
+            .load(Locale(_effectiveLangCode(currentSettings.languageCode)));
         final scheduler =
             await ref.read(schedulePredictionNotificationProvider.future);
         try {
@@ -187,5 +189,17 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
       routerConfig: ref.watch(appRouterProvider),
       debugShowCheckedModeBanner: false,
     );
+  }
+
+  /// Resolves an empty [stored] code (= "follow system") to an actual
+  /// language code supported by the app.
+  static String _effectiveLangCode(String stored) {
+    if (stored.isNotEmpty) return stored;
+    final sys =
+        WidgetsBinding.instance.platformDispatcher.locale.languageCode;
+    return AppLocalizations.supportedLocales
+            .any((l) => l.languageCode == sys)
+        ? sys
+        : 'it';
   }
 }
