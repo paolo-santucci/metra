@@ -3,7 +3,7 @@ layout: page
 title: Logging a day
 ---
 
-[← Back to Help](.) &nbsp;·&nbsp; [🇮🇹 Italiano](it/daily-entry)
+[← Back to Help](/help/) &nbsp;·&nbsp; [🇮🇹 Italiano](/help/it/daily-entry)
 
 You can log today's data from the **Today** tab, or log or edit any past day from the [Calendar](calendar).
 
@@ -119,4 +119,4 @@ To remove all data for a specific day, open the edit screen for that day and cle
 
 ---
 
-[← Back to Help](.)
+[← Back to Help](/help/)

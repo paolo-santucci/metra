@@ -3,7 +3,7 @@ layout: page
 title: Primo avvio — Benvenuta in Métra
 ---
 
-[← Torna alla Guida](.) &nbsp;·&nbsp; [🇬🇧 English](../onboarding)
+[← Torna alla Guida](/help/it/) &nbsp;·&nbsp; [🇬🇧 English](/help/onboarding)
 
 ## Cosa succede al primo avvio
 
@@ -54,4 +54,4 @@ Sì. Vai in **Impostazioni → Notifiche** per aggiornare la tua lunghezza del c
 
 ---
 
-[← Torna alla Guida](.)
+[← Torna alla Guida](/help/it/)

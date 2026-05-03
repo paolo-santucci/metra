@@ -3,7 +3,7 @@ layout: page
 title: Backup su cloud
 ---
 
-[← Torna alla Guida](.) &nbsp;·&nbsp; [🇬🇧 English](../backup)
+[← Torna alla Guida](/help/it/) &nbsp;·&nbsp; [🇬🇧 English](/help/backup)
 
 ## Come funziona il backup di Métra
 
@@ -91,4 +91,4 @@ Puoi verificare tutto questo leggendo il codice sorgente in `lib/data/services/e
 
 ---
 
-[← Torna alla Guida](.)
+[← Torna alla Guida](/help/it/)

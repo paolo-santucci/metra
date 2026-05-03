@@ -4,7 +4,7 @@ title: Help
 subtitle: Everything you need to know about Métra.
 ---
 
-[🇮🇹 Versione italiana](it/)
+[🇮🇹 Versione italiana](/help/it/)
 
 Welcome to the Métra help centre. Find the topic you need below.
 

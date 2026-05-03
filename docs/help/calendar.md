@@ -3,7 +3,7 @@ layout: page
 title: Calendar and visual language
 ---
 
-[← Back to Help](.) &nbsp;·&nbsp; [🇮🇹 Italiano](it/calendar)
+[← Back to Help](/help/) &nbsp;·&nbsp; [🇮🇹 Italiano](/help/it/calendar)
 
 The **Calendar** tab is the main screen of Métra. It shows a monthly grid where every day carries visual information about what you logged — or what the app predicts.
 
@@ -87,4 +87,4 @@ Tapping a day slides up a card with:
 
 ---
 
-[← Back to Help](.)
+[← Back to Help](/help/)

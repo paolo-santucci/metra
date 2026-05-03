@@ -3,7 +3,7 @@ layout: page
 title: Archivio e Statistiche
 ---
 
-[← Torna alla Guida](.) &nbsp;·&nbsp; [🇬🇧 English](../archive-stats)
+[← Torna alla Guida](/help/it/) &nbsp;·&nbsp; [🇬🇧 English](/help/archive-stats)
 
 ## Scheda Archivio
 
@@ -89,4 +89,4 @@ Un grafico a barre orizzontale che mostra con quale frequenza ogni sintomo è co
 
 ---
 
-[← Torna alla Guida](.)
+[← Torna alla Guida](/help/it/)

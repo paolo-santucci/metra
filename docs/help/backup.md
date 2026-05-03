@@ -3,7 +3,7 @@ layout: page
 title: Cloud backup
 ---
 
-[← Back to Help](.) &nbsp;·&nbsp; [🇮🇹 Italiano](it/backup)
+[← Back to Help](/help/) &nbsp;·&nbsp; [🇮🇹 Italiano](/help/it/backup)
 
 ## How Métra backup works
 
@@ -91,4 +91,4 @@ You can verify all of this by reading the source code in `lib/data/services/encr
 
 ---
 
-[← Back to Help](.)
+[← Back to Help](/help/)

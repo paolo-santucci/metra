@@ -3,7 +3,7 @@ layout: page
 title: Importa ed esporta (CSV)
 ---
 
-[← Torna alla Guida](.) &nbsp;·&nbsp; [🇬🇧 English](../import-export)
+[← Torna alla Guida](/help/it/) &nbsp;·&nbsp; [🇬🇧 English](/help/import-export)
 
 Métra può esportare tutte le tue registrazioni giornaliere in un file CSV semplice e reimportarle. È utile per:
 
@@ -113,7 +113,7 @@ La colonna `symptoms` è una lista di token separata da punto e virgola. I token
 symptoms
 cramps;custom:Dolore alla schiena
 ```
-
+.
 Più sintomi nella stessa cella:
 
 ```
@@ -159,4 +159,4 @@ Le righe con errori vengono saltate; le righe valide vengono comunque importate.
 
 ---
 
-[← Torna alla Guida](.)
+[← Torna alla Guida](/help/it/)

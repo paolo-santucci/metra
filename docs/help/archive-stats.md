@@ -3,7 +3,7 @@ layout: page
 title: Archive and Statistics
 ---
 
-[← Back to Help](.) &nbsp;·&nbsp; [🇮🇹 Italiano](it/archive-stats)
+[← Back to Help](/help/) &nbsp;·&nbsp; [🇮🇹 Italiano](/help/it/archive-stats)
 
 ## Archive tab
 
@@ -89,4 +89,4 @@ A horizontal bar chart showing how often each symptom has appeared across your r
 
 ---
 
-[← Back to Help](.)
+[← Back to Help](/help/)
