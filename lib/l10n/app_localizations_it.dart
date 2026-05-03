@@ -198,7 +198,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get settings_export_csv => 'Esporta CSV';
 
   @override
-  String get settings_delete_all => 'Cancella tutti i dati';
+  String get settings_delete_all => 'Elimina tutti i dati';
 
   @override
   String get settings_screen_title => 'Impostazioni';
@@ -213,19 +213,19 @@ class AppLocalizationsIt extends AppLocalizations {
   String get settings_section_notifications => 'Notifiche';
 
   @override
-  String get settings_section_privacy => 'Privacy e dati';
+  String get settings_section_privacy => 'Dati';
 
   @override
-  String get settings_section_danger => 'Zona pericolosa';
+  String get settings_section_danger => 'Azioni irreversibili';
 
   @override
-  String get settings_pain_label => 'Traccia dolore';
+  String get settings_pain_label => 'Dolore';
 
   @override
   String get settings_notes_label => 'Note giornaliere';
 
   @override
-  String get settings_advance_label => 'Anticipo';
+  String get settings_advance_label => 'Preavviso';
 
   @override
   String settings_advance_value(int n) {
@@ -245,7 +245,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get settings_language_en => 'Inglese';
 
   @override
-  String get settings_delete_all_confirm_title => 'Cancella tutti i dati';
+  String get settings_delete_all_confirm_title => 'Elimina tutti i dati';
 
   @override
   String get settings_delete_all_confirm_body =>
@@ -591,13 +591,16 @@ class AppLocalizationsIt extends AppLocalizations {
   String get settings_privacy_policy => 'Informativa sulla privacy';
 
   @override
-  String get settings_help_label => 'Centro assistenza';
+  String get settings_help_label => 'Guida';
 
   @override
   String get settings_github_label => 'Codice sorgente';
 
   @override
   String get settings_support_label => 'Sostieni il progetto';
+
+  @override
+  String get settings_kofi_label => 'Ko-fi · Sostieni il progetto';
 
   @override
   String get daily_entry_flow_chip_assente => 'Assente';

@@ -121,17 +121,17 @@
     "description": "Settings group header: notification options"
   },
 
-  "settings_section_privacy": "Privacy & data",
+  "settings_section_privacy": "Data",
   "@settings_section_privacy": {
     "description": "Settings group header: privacy and data"
   },
 
-  "settings_section_danger": "Danger zone",
+  "settings_section_danger": "Irreversible actions",
   "@settings_section_danger": {
     "description": "Settings group header: danger zone (destructive actions)"
   },
 
-  "settings_pain_label": "Track pain",
+  "settings_pain_label": "Pain",
   "@settings_pain_label": {
     "description": "Settings toggle label: enable pain tracking in daily log"
   },
@@ -141,7 +141,7 @@
     "description": "Settings toggle label: enable daily notes in daily log"
   },
 
-  "settings_advance_label": "Advance",
+  "settings_advance_label": "Advance notice",
   "@settings_advance_label": {
     "description": "Settings row label: days before predicted cycle start for notification"
   },
@@ -497,7 +497,7 @@
 
   "settings_privacy_policy": "Privacy policy",
 
-  "settings_help_label": "Help centre",
+  "settings_help_label": "Guide",
   "@settings_help_label": {
     "description": "Settings row label: link to the help centre"
   },
@@ -511,6 +511,8 @@
   "@settings_support_label": {
     "description": "Settings footer label above the Ko-Fi donation button"
   },
+
+  "settings_kofi_label": "Ko-fi · Support the project",
 
   "daily_entry_flow_chip_assente": "Absent",
   "@daily_entry_flow_chip_assente": {

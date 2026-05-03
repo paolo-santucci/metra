@@ -467,7 +467,7 @@ abstract class AppLocalizations {
   /// Settings danger-zone action to delete all user data
   ///
   /// In it, this message translates to:
-  /// **'Cancella tutti i dati'**
+  /// **'Elimina tutti i dati'**
   String get settings_delete_all;
 
   /// Settings screen page title
@@ -497,19 +497,19 @@ abstract class AppLocalizations {
   /// Settings group header: privacy and data
   ///
   /// In it, this message translates to:
-  /// **'Privacy e dati'**
+  /// **'Dati'**
   String get settings_section_privacy;
 
   /// Settings group header: danger zone (destructive actions)
   ///
   /// In it, this message translates to:
-  /// **'Zona pericolosa'**
+  /// **'Azioni irreversibili'**
   String get settings_section_danger;
 
   /// Settings toggle label: enable pain tracking in daily log
   ///
   /// In it, this message translates to:
-  /// **'Traccia dolore'**
+  /// **'Dolore'**
   String get settings_pain_label;
 
   /// Settings toggle label: enable daily notes in daily log
@@ -521,7 +521,7 @@ abstract class AppLocalizations {
   /// Settings row label: days before predicted cycle start for notification
   ///
   /// In it, this message translates to:
-  /// **'Anticipo'**
+  /// **'Preavviso'**
   String get settings_advance_label;
 
   /// Current value displayed for the advance notification setting
@@ -545,7 +545,7 @@ abstract class AppLocalizations {
   /// Title of the delete-all confirmation dialog
   ///
   /// In it, this message translates to:
-  /// **'Cancella tutti i dati'**
+  /// **'Elimina tutti i dati'**
   String get settings_delete_all_confirm_title;
 
   /// Body text of the delete-all confirmation dialog
@@ -1133,7 +1133,7 @@ abstract class AppLocalizations {
   /// Settings row label: link to the help centre
   ///
   /// In it, this message translates to:
-  /// **'Centro assistenza'**
+  /// **'Guida'**
   String get settings_help_label;
 
   /// Settings row label: link to GitHub source code
@@ -1147,6 +1147,12 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Sostieni il progetto'**
   String get settings_support_label;
+
+  /// Ko-fi pill label in settings footer
+  ///
+  /// In it, this message translates to:
+  /// **'Ko-fi · Sostieni il progetto'**
+  String get settings_kofi_label;
 
   /// Chip label for no flow (user explicitly confirmed no bleeding)
   ///

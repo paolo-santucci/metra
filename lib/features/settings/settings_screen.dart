@@ -30,8 +30,6 @@ import '../../core/constants/app_constants.dart';
 import '../../core/theme/metra_colors.dart';
 import '../../core/theme/metra_spacing.dart';
 import '../../core/theme/metra_typography.dart';
-import '../../core/widgets/button_ghost.dart';
-import '../../core/widgets/list_row_metra.dart';
 import '../../domain/entities/app_settings_data.dart';
 import '../../domain/services/csv_codec.dart';
 import '../../domain/use_cases/import_daily_logs.dart';
@@ -53,8 +51,6 @@ class SettingsScreen extends ConsumerWidget {
     final textSecondary = isDark
         ? MetraColors.dark.textSecondary
         : MetraColors.light.textSecondary;
-    final stateError =
-        isDark ? MetraColors.dark.stateError : MetraColors.light.stateError;
     final settings = ref.watch(settingsNotifierProvider).valueOrNull ??
         const AppSettingsData.defaults();
 
@@ -65,194 +61,159 @@ class SettingsScreen extends ConsumerWidget {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                MetraSpacing.s4,
                 MetraSpacing.s6,
-                MetraSpacing.s4,
+                MetraSpacing.s6,
+                MetraSpacing.s6,
                 MetraSpacing.s2,
               ),
               child: Semantics(
                 header: true,
                 child: Text(
                   l10n.settings_screen_title,
-                  style: MetraTypography.titleLg.copyWith(
-                    color: textPrimary,
-                  ),
+                  style: MetraTypography.screenTitle
+                      .copyWith(color: textPrimary),
                 ),
               ),
             ),
 
-            // ── Preferenze ──────────────────────────────────────────────────
-            _SectionHeader(l10n.settings_section_preferences),
+            // ── Preferenze ────────────────────────────────────────────
+            _SectionHeader(l10n.settings_section_preferences, first: true),
             _GroupCard(
               children: [
-                ListRowMetra(
-                  title: l10n.settings_language_label,
+                _SettingsRow(
+                  label: l10n.settings_language_label,
                   semanticsLabel:
                       '${l10n.settings_language_label}: ${_languageName(l10n, settings.languageCode)}',
-                  trailing: _ChevronTrailing(
-                    _languageName(l10n, settings.languageCode),
-                  ),
+                  valueText: _languageName(l10n, settings.languageCode),
                   onTap: () =>
                       _showLanguagePicker(context, ref, settings, l10n),
                 ),
-                ListRowMetra(
-                  title: l10n.settings_theme_label,
+                const _SettingsDivider(),
+                _SettingsRow(
+                  label: l10n.settings_theme_label,
                   semanticsLabel:
                       '${l10n.settings_theme_label}: ${_themeName(l10n, settings.darkMode)}',
-                  trailing: _ChevronTrailing(
-                    _themeName(l10n, settings.darkMode),
-                  ),
+                  valueText: _themeName(l10n, settings.darkMode),
                   onTap: () => _showThemePicker(context, ref, settings, l10n),
                 ),
               ],
             ),
 
-            // ── Registro ────────────────────────────────────────────────────
-            _SectionHeader(l10n.settings_section_log),
-            _GroupCard(
-              children: [
-                SwitchListTile.adaptive(
-                  value: settings.painEnabled,
-                  onChanged: (v) =>
-                      _save(ref, settings.copyWith(painEnabled: v)),
-                  title: Text(
-                    l10n.settings_pain_label,
-                    style: MetraTypography.body.copyWith(
-                      color: textPrimary,
-                    ),
-                  ),
-                ),
-                SwitchListTile.adaptive(
-                  value: settings.notesEnabled,
-                  onChanged: (v) =>
-                      _save(ref, settings.copyWith(notesEnabled: v)),
-                  title: Text(
-                    l10n.settings_notes_label,
-                    style: MetraTypography.body.copyWith(
-                      color: textPrimary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            // ── Notifiche ───────────────────────────────────────────────────
+            // ── Notifiche ─────────────────────────────────────────────
             _SectionHeader(l10n.settings_section_notifications),
             _GroupCard(
               children: [
-                SwitchListTile.adaptive(
-                  value: settings.notificationsEnabled,
-                  onChanged: (v) => _save(
-                    ref,
-                    settings.copyWith(notificationsEnabled: v),
+                _SettingsRow(
+                  label: l10n.settings_notifications_label,
+                  semanticsLabel:
+                      '${l10n.settings_notifications_label}: ${settings.notificationsEnabled ? l10n.settings_notifications_on : l10n.settings_notifications_off}',
+                  toggle: _MetraToggle(
+                    value: settings.notificationsEnabled,
+                    onChanged: (v) =>
+                        _save(ref, settings.copyWith(notificationsEnabled: v)),
                   ),
-                  title: Text(
-                    l10n.settings_notifications_label,
-                    style: MetraTypography.body.copyWith(
-                      color: textPrimary,
+                  onTap: () => _save(
+                    ref,
+                    settings.copyWith(
+                      notificationsEnabled: !settings.notificationsEnabled,
                     ),
                   ),
                 ),
-                ListRowMetra(
-                  title: l10n.settings_advance_label,
+                const _SettingsDivider(),
+                _SettingsRow(
+                  label: l10n.settings_advance_label,
                   semanticsLabel:
                       '${l10n.settings_advance_label}: ${l10n.settings_advance_value(settings.notificationDaysBefore)}',
-                  trailing: _ChevronTrailing(
-                    l10n.settings_advance_value(
-                      settings.notificationDaysBefore,
-                    ),
-                  ),
-                  onTap: () => _showAdvancePicker(context, ref, settings, l10n),
+                  valueText:
+                      l10n.settings_advance_value(settings.notificationDaysBefore),
+                  onTap: () =>
+                      _showAdvancePicker(context, ref, settings, l10n),
                 ),
               ],
             ),
 
-            // ── Privacy e dati ───────────────────────────────────────────────
+            // ── Registro ──────────────────────────────────────────────
+            _SectionHeader(l10n.settings_section_log),
+            _GroupCard(
+              children: [
+                _SettingsRow(
+                  label: l10n.settings_pain_label,
+                  toggle: _MetraToggle(
+                    value: settings.painEnabled,
+                    onChanged: (v) =>
+                        _save(ref, settings.copyWith(painEnabled: v)),
+                  ),
+                  onTap: () => _save(
+                    ref,
+                    settings.copyWith(painEnabled: !settings.painEnabled),
+                  ),
+                ),
+                const _SettingsDivider(),
+                _SettingsRow(
+                  label: l10n.settings_notes_label,
+                  toggle: _MetraToggle(
+                    value: settings.notesEnabled,
+                    onChanged: (v) =>
+                        _save(ref, settings.copyWith(notesEnabled: v)),
+                  ),
+                  onTap: () => _save(
+                    ref,
+                    settings.copyWith(notesEnabled: !settings.notesEnabled),
+                  ),
+                ),
+              ],
+            ),
+
+            // ── Dati ──────────────────────────────────────────────────
             _SectionHeader(l10n.settings_section_privacy),
             _GroupCard(
               children: [
-                ListRowMetra(
-                  title: l10n.settings_backup_label,
+                _SettingsRow(
+                  label: l10n.settings_backup_label,
                   semanticsLabel:
                       '${l10n.settings_backup_label}: ${l10n.settings_backup_not_configured}',
-                  trailing: _ChevronTrailing(
-                    l10n.settings_backup_not_configured,
-                  ),
+                  valueText: l10n.settings_backup_not_configured,
                   onTap: () => context.push('/backup'),
                 ),
-              ],
-            ),
-
-            // ── CSV export / import ──────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: MetraSpacing.s4,
-                vertical: MetraSpacing.s3,
-              ),
-              child: ButtonGhost(
-                label: l10n.settings_export_csv,
-                semanticsLabel: l10n.settings_export_csv,
-                onPressed: () => _handleExport(context, ref, l10n),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: MetraSpacing.s4,
-                vertical: MetraSpacing.s3,
-              ),
-              child: ButtonGhost(
-                label: l10n.settings_import_csv,
-                semanticsLabel: l10n.settings_import_csv,
-                onPressed: () => _handleImport(context, ref, l10n),
-              ),
-            ),
-
-            // ── Zona pericolosa ──────────────────────────────────────────────
-            _SectionHeader(l10n.settings_section_danger),
-            _GroupCard(
-              children: [
-                ListRowMetra(
-                  title: l10n.settings_delete_all,
-                  semanticsLabel:
-                      '${l10n.settings_delete_all} — ${l10n.settings_delete_all_confirm_body}',
-                  leading: Icon(
-                    Icons.delete_outline,
-                    color: stateError,
-                    size: 20,
-                  ),
-                  trailing: null,
-                  onTap: () => _showDeleteConfirmation(context, ref, l10n),
+                const _SettingsDivider(),
+                _SettingsRow(
+                  label: l10n.settings_export_csv,
+                  onTap: () => _handleExport(context, ref, l10n),
+                ),
+                const _SettingsDivider(),
+                _SettingsRow(
+                  label: l10n.settings_import_csv,
+                  onTap: () => _handleImport(context, ref, l10n),
                 ),
               ],
             ),
 
-            // ── Informazioni ─────────────────────────────────────────────────
+            // ── Informazioni ──────────────────────────────────────────
             _SectionHeader(l10n.settings_section_about),
             _GroupCard(
               children: [
-                ListRowMetra(
-                  title: l10n.settings_help_label,
-                  semanticsLabel: l10n.settings_help_label,
-                  trailing: const Icon(Icons.open_in_new, size: 16),
+                _SettingsRow(
+                  label: l10n.settings_help_label,
+                  showChevron: true,
                   onTap: () => launchUrl(
                     Uri.parse(AppConstants.kUrlHelp),
                     mode: LaunchMode.externalApplication,
                   ),
                 ),
-                ListRowMetra(
-                  title: l10n.settings_github_label,
-                  semanticsLabel:
-                      '${l10n.settings_github_label} — GPL-3.0',
-                  trailing: const Icon(Icons.open_in_new, size: 16),
+                const _SettingsDivider(),
+                _SettingsRow(
+                  label: l10n.settings_github_label,
+                  semanticsLabel: '${l10n.settings_github_label} — GPL-3.0',
+                  showChevron: true,
                   onTap: () => launchUrl(
                     Uri.parse(AppConstants.kUrlGitHub),
                     mode: LaunchMode.externalApplication,
                   ),
                 ),
-                ListRowMetra(
-                  title: l10n.settings_privacy_policy,
-                  semanticsLabel: l10n.settings_privacy_policy,
-                  trailing: const Icon(Icons.open_in_new, size: 16),
+                const _SettingsDivider(),
+                _SettingsRow(
+                  label: l10n.settings_privacy_policy,
+                  showChevron: true,
                   onTap: () => launchUrl(
                     Uri.parse(AppConstants.kUrlPrivacy),
                     mode: LaunchMode.externalApplication,
@@ -261,40 +222,48 @@ class SettingsScreen extends ConsumerWidget {
               ],
             ),
 
-            // ── Footer ───────────────────────────────────────────────────────
+            // ── Azioni irreversibili ──────────────────────────────────
+            _SectionHeader(l10n.settings_section_danger),
+            _GroupCard(
+              children: [
+                _SettingsRow(
+                  label: l10n.settings_delete_all,
+                  semanticsLabel:
+                      '${l10n.settings_delete_all} — ${l10n.settings_delete_all_confirm_body}',
+                  isDestructive: true,
+                  onTap: () => _showDeleteConfirmation(context, ref, l10n),
+                ),
+              ],
+            ),
+
+            // ── Footer ────────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.symmetric(
-                vertical: MetraSpacing.s6,
+              padding: const EdgeInsets.fromLTRB(
+                MetraSpacing.s6,
+                MetraSpacing.s6,
+                MetraSpacing.s6,
+                MetraSpacing.s6,
               ),
               child: Column(
                 children: [
                   Text(
-                    '${MetraTypography.wordmark} ${AppConstants.kAppVersion}',
-                    style: MetraTypography.caption.copyWith(
-                      color: textSecondary,
-                    ),
+                    MetraTypography.wordmark,
+                    style: MetraTypography.dayDetailTitle
+                        .copyWith(color: textPrimary),
                   ),
-                  const SizedBox(height: MetraSpacing.s4),
+                  const SizedBox(height: MetraSpacing.s2),
                   Text(
-                    l10n.settings_support_label,
-                    style: MetraTypography.caption.copyWith(
+                    AppConstants.kAppVersion,
+                    style: MetraTypography.sectionLabel.copyWith(
                       color: textSecondary,
                     ),
                   ),
-                  const SizedBox(height: MetraSpacing.s3),
-                  Semantics(
-                    label: 'Ko-Fi — ${l10n.settings_support_label}',
-                    button: true,
-                    child: GestureDetector(
-                      onTap: () => launchUrl(
-                        Uri.parse(AppConstants.kUrlKoFi),
-                        mode: LaunchMode.externalApplication,
-                      ),
-                      child: Image.network(
-                        AppConstants.kUrlKoFiBadge,
-                        height: 36,
-                        semanticLabel: '',
-                      ),
+                  const SizedBox(height: MetraSpacing.s6),
+                  _KoFiPill(
+                    label: l10n.settings_kofi_label,
+                    onTap: () => launchUrl(
+                      Uri.parse(AppConstants.kUrlKoFi),
+                      mode: LaunchMode.externalApplication,
                     ),
                   ),
                 ],
@@ -683,31 +652,88 @@ class SettingsScreen extends ConsumerWidget {
 // Private sub-widgets
 // ---------------------------------------------------------------------------
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader(this.text);
+class _MetraToggle extends StatelessWidget {
+  const _MetraToggle({required this.value, required this.onChanged});
 
-  final String text;
+  final bool value;
+  final ValueChanged<bool> onChanged;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textSecondary = isDark
+    final onColor =
+        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
+    // Off track: terracotta@8% in light, sunken bg in dark.
+    final offColor = isDark
+        ? MetraColors.dark.bgSunken
+        : MetraColors.light.ink.withAlpha(0x14);
+    final dotColor = isDark ? MetraColors.dark.bgSurface : MetraColors.light.bgSurface;
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    final dur = Duration(
+      milliseconds: reduceMotion ? MetraMotion.instant : MetraMotion.fast,
+    );
+
+    return Semantics(
+      toggled: value,
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: () => onChanged(!value),
+        child: AnimatedContainer(
+          duration: dur,
+          width: 48,
+          height: 28,
+          decoration: BoxDecoration(
+            color: value ? onColor : offColor,
+            borderRadius: BorderRadius.circular(MetraRadius.mmd), // 14
+          ),
+          child: Stack(
+            children: [
+              AnimatedPositioned(
+                duration: dur,
+                top: 3,
+                left: value ? 23.0 : 3.0,
+                child: Container(
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    color: dotColor,
+                    borderRadius: BorderRadius.circular(11),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader(this.text, {this.first = false});
+
+  final String text;
+  final bool first;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = isDark
         ? MetraColors.dark.textSecondary
         : MetraColors.light.textSecondary;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        MetraSpacing.s4,
-        MetraSpacing.s5,
-        MetraSpacing.s4,
-        MetraSpacing.s2,
+      padding: EdgeInsets.fromLTRB(
+        MetraSpacing.s6,
+        first ? 8.0 : MetraSpacing.s6,
+        MetraSpacing.s6,
+        12.0,
       ),
       child: Semantics(
         header: true,
         child: Text(
-          text,
-          style: MetraTypography.caption.copyWith(
-            color: textSecondary,
-          ),
+          text.toUpperCase(),
+          style: MetraTypography.sectionLabel.copyWith(color: color),
         ),
       ),
     );
@@ -722,13 +748,18 @@ class _GroupCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgSurface =
+    final bg =
         isDark ? MetraColors.dark.bgSurface : MetraColors.light.bgSurface;
+    final border = isDark
+        ? MetraColors.dark.borderSubtle
+        : MetraColors.light.borderSubtle;
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: MetraSpacing.s4),
+      margin: const EdgeInsets.symmetric(horizontal: MetraSpacing.s6),
       decoration: BoxDecoration(
-        color: bgSurface,
-        borderRadius: BorderRadius.circular(12),
+        color: bg,
+        borderRadius: BorderRadius.circular(MetraRadius.lg), // 16
+        border: Border.all(color: border, width: 1),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(children: children),
@@ -736,33 +767,170 @@ class _GroupCard extends StatelessWidget {
   }
 }
 
-class _ChevronTrailing extends StatelessWidget {
-  const _ChevronTrailing(this.label);
-
-  final String label;
+class _SettingsDivider extends StatelessWidget {
+  const _SettingsDivider();
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textSecondary = isDark
+    final color = isDark
+        ? MetraColors.dark.borderSubtle
+        : MetraColors.light.borderSubtle;
+    return Container(height: 1, color: color);
+  }
+}
+
+class _SettingsRow extends StatelessWidget {
+  const _SettingsRow({
+    required this.label,
+    this.semanticsLabel,
+    this.valueText,
+    this.toggle,
+    this.showChevron = false,
+    this.isDestructive = false,
+    required this.onTap,
+  });
+
+  final String label;
+  final String? semanticsLabel;
+
+  /// Value rows: shows text + chevron on the right.
+  final String? valueText;
+
+  /// Toggle rows: shows a _MetraToggle on the right.
+  final Widget? toggle;
+
+  /// Link rows: shows a bare chevron with no value text.
+  final bool showChevron;
+
+  /// Destructive rows: terracotta-tinted background and accentFlowStrong label.
+  final bool isDestructive;
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final labelColor = isDestructive
+        ? (isDark
+            ? MetraColors.dark.accentFlowStrong
+            : MetraColors.light.accentFlowStrong)
+        : (isDark
+            ? MetraColors.dark.textPrimary
+            : MetraColors.light.textPrimary);
+    final bg = isDestructive
+        ? (isDark
+                ? MetraColors.dark.accentFlow
+                : MetraColors.light.accentFlow)
+            .withAlpha(0x0D)
+        : Colors.transparent;
+    final secondaryColor = isDark
         ? MetraColors.dark.textSecondary
         : MetraColors.light.textSecondary;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          label,
-          style: MetraTypography.body.copyWith(
-            color: textSecondary,
+    final chevronColor = secondaryColor;
+
+    Widget? trailing;
+    if (toggle != null) {
+      trailing = toggle;
+    } else if (valueText != null || showChevron) {
+      trailing = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (valueText != null) ...[
+            Text(
+              valueText!,
+              style: MetraTypography.listDate.copyWith(color: secondaryColor),
+            ),
+            const SizedBox(width: MetraSpacing.s2),
+          ],
+          Icon(Icons.chevron_right, size: 16, color: chevronColor),
+        ],
+      );
+    }
+
+    return Semantics(
+      label: semanticsLabel ?? label,
+      button: true,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          height: 56,
+          padding: const EdgeInsets.symmetric(horizontal: MetraSpacing.s5),
+          color: bg,
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style:
+                      MetraTypography.listTitle.copyWith(color: labelColor),
+                ),
+              ),
+              if (trailing != null) trailing,
+            ],
           ),
         ),
-        const SizedBox(width: MetraSpacing.s2),
-        Icon(
-          Icons.chevron_right,
-          size: 16,
-          color: textSecondary,
+      ),
+    );
+  }
+}
+
+class _KoFiPill extends StatelessWidget {
+  const _KoFiPill({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accentFlow = isDark
+        ? MetraColors.dark.accentFlow
+        : MetraColors.light.accentFlow;
+    final pillBg = accentFlow.withAlpha(0x14);
+    final dotBg = accentFlow.withAlpha(0x28);
+    final textColor = isDark
+        ? MetraColors.dark.accentFlowStrong
+        : MetraColors.light.accentFlowStrong;
+
+    return Semantics(
+      label: label,
+      button: true,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: MetraSpacing.s2,
+          ),
+          decoration: BoxDecoration(
+            color: pillBg,
+            borderRadius: BorderRadius.circular(MetraSpacing.s5),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: dotBg,
+                  borderRadius: BorderRadius.circular(MetraSpacing.s2),
+                ),
+              ),
+              const SizedBox(width: MetraSpacing.s2),
+              Text(
+                label,
+                style: MetraTypography.listDate.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: textColor,
+                ),
+              ),
+            ],
+          ),
         ),
-      ],
+      ),
     );
   }
 }

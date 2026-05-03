@@ -320,7 +320,7 @@
     "description": "Settings action to export data as a CSV file"
   },
 
-  "settings_delete_all": "Cancella tutti i dati",
+  "settings_delete_all": "Elimina tutti i dati",
   "@settings_delete_all": {
     "description": "Settings danger-zone action to delete all user data"
   },
@@ -345,17 +345,17 @@
     "description": "Settings group header: notification options"
   },
 
-  "settings_section_privacy": "Privacy e dati",
+  "settings_section_privacy": "Dati",
   "@settings_section_privacy": {
     "description": "Settings group header: privacy and data"
   },
 
-  "settings_section_danger": "Zona pericolosa",
+  "settings_section_danger": "Azioni irreversibili",
   "@settings_section_danger": {
     "description": "Settings group header: danger zone (destructive actions)"
   },
 
-  "settings_pain_label": "Traccia dolore",
+  "settings_pain_label": "Dolore",
   "@settings_pain_label": {
     "description": "Settings toggle label: enable pain tracking in daily log"
   },
@@ -365,7 +365,7 @@
     "description": "Settings toggle label: enable daily notes in daily log"
   },
 
-  "settings_advance_label": "Anticipo",
+  "settings_advance_label": "Preavviso",
   "@settings_advance_label": {
     "description": "Settings row label: days before predicted cycle start for notification"
   },
@@ -388,7 +388,7 @@
     "description": "Language option: English"
   },
 
-  "settings_delete_all_confirm_title": "Cancella tutti i dati",
+  "settings_delete_all_confirm_title": "Elimina tutti i dati",
   "@settings_delete_all_confirm_title": {
     "description": "Title of the delete-all confirmation dialog"
   },
@@ -891,7 +891,7 @@
     "description": "Settings row label: link to the privacy policy"
   },
 
-  "settings_help_label": "Centro assistenza",
+  "settings_help_label": "Guida",
   "@settings_help_label": {
     "description": "Settings row label: link to the help centre"
   },
@@ -904,6 +904,11 @@
   "settings_support_label": "Sostieni il progetto",
   "@settings_support_label": {
     "description": "Settings footer label above the Ko-Fi donation button"
+  },
+
+  "settings_kofi_label": "Ko-fi · Sostieni il progetto",
+  "@settings_kofi_label": {
+    "description": "Ko-fi pill label in settings footer"
   },
 
   "daily_entry_flow_chip_assente": "Assente",

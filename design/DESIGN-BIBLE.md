@@ -265,6 +265,8 @@ wifi · battery · filter · info
 leaf · export · moon_crescent · star_small
 ```
 
+**Catalog gap — external-link glyph.** The catalog has no `open_in_new` / `arrow_up_right`. The Impostazioni external-link rows (§19) use `chevron_right` uniformly, identical to internal-navigation rows; the row label disambiguates the destination. If a future revision needs to distinguish internal vs external clearly, add a glyph here first — never inline a Material `Icons.open_in_new` in the product.
+
 ### 2.2 Filled data icons (`DataIcon` component, line 154)
 
 12–14 px default · viewBox 24×24 · `fill = color` (single colour pass).
@@ -426,6 +428,26 @@ placeholder "Scrivi qualcosa…" Inter 15 rgba(0.35)
 ### 6.6 Privacy-card checkbox
 
 `36×36` outer SVG · circle radius `16`. Checked = fill `terracotta`, stroke `terracotta`, white check path (stroke `sabbia`, weight 1.8). Unchecked = transparent fill, stroke `rgba(43,37,33,0.20)`. Tap toggles in-place; no animation specified.
+
+### 6.7 MetraToggle (binary state)
+
+The settings-screen on/off control. Used wherever a setting is a true binary state (Mostra dolore, Mostra note, Promemoria ciclo).
+
+```
+track:      48 × 28 · radius 14                       (chip rule: ½ × height)
+dot:        22 × 22 · radius 11 · fill C.surface      (sits 3 px inside the track)
+dot offset: off → translateX(3) · on → translateX(23)
+track on:   background C.terracotta
+track off:  background rgba(43,37,33,0.08)            // §1.1.1 segmented-control track stop
+transitions:
+  - track background 0.15s
+  - dot horizontal position 0.15s
+no shadow, no halo, no checkmark glyph
+```
+
+Tap inverts state; no long-press or drag affordance.
+
+There is no third state (no indeterminate, no "off-but-temporarily-locked"). If a setting requires a three-state UX, model it as a value-row with a chevron — not a toggle.
 
 ---
 
@@ -971,6 +993,27 @@ These are **canonical strings**. Surface them in `lib/l10n/app_it.arb` exactly a
 | Spotting | Spotting | Flow type (loanword — keep English). |
 | Leggero / Moderato / Abbondante | — | Flow intensity labels. |
 | Nessuno / Lieve / Moderato / Intenso | — | Pain levels (NB pain has 0 = Nessuno; flow intensity does not). |
+| Preferenze | Preferenze | Impostazioni section: Lingua + Tema. |
+| Notifiche | Notifiche | Impostazioni section: Promemoria + Preavviso. |
+| Registro | Registro | Impostazioni section: daily-screen sections (Dolore, Note giornaliere). |
+| Dati | Dati | Impostazioni section: Backup + CSV import/export. |
+| Informazioni | Informazioni | Impostazioni section: Guida, Codice sorgente, Privacy policy. |
+| Azioni irreversibili | Azioni irreversibili | Impostazioni section header for destructive controls. **Never** "Zona pericolosa" — alarmist register conflicts with the *quaderno silenzioso* voice. |
+| Promemoria ciclo | Promemoria ciclo | Toggle row label. |
+| Preavviso | Preavviso | Notification-advance row label. **Never** "Anticipo" alone — under-specified without value. |
+| Dolore | Dolore | Toggle row label. **Never** "Traccia dolore" — toggles take nouns, actions take verbs. |
+| Note giornaliere | Note giornaliere | Toggle row label. |
+| Backup | Backup | Loanword. Value-row label. |
+| Esporta CSV / Importa CSV | Esporta CSV / Importa CSV | Action-row labels (imperative). |
+| Elimina tutti i dati | Elimina tutti i dati | Destructive-row label. **Never** "Cancella tutti i dati" — the app verb for delete is `Elimina` (consistent with `common_delete`). |
+| Guida | Guida | External-link row label. **Never** "Centro assistenza" — implies SaaS help-desk, but the link is a static page. |
+| Codice sorgente | Codice sorgente | External-link row label (GitHub). |
+| Privacy policy | Privacy policy | External-link row label (loanword). |
+| Sostieni il progetto | Sostieni il progetto | Footer support-CTA copy (paired with "Ko-fi" identifier on the affordance itself). |
+| Non configurato | Non configurato | Backup-row default value. Flat-descriptive — never imperative ("Aggiungi") or alarming ("Nessuna connessione"). |
+| Italiano / Inglese | — | Lingua-row values. |
+| Sistema / Chiaro / Scuro | — | Tema-row values. |
+| 1 giorno prima / {n} giorni prima | — | Preavviso-row value. The trailing "prima" makes the temporal relation explicit. |
 
 ---
 
@@ -988,7 +1031,7 @@ The following are **explicitly forbidden** because the HTML does not contain the
 8. **No "Métra" with acute** in product hero contexts. Always `Mētra` (macron).
 9. **No swipe-to-archive / long-press menus** on archive cards. Cards are display-only in this bible.
 10. **No `999px` pill radius.** Use `½ × height` (chips: `18` for `36`-tall).
-11. **No animation specs.** The mockup defines `transition: all 0.15s` only on chip and flow-type-chip backgrounds. Everything else is static. Do not invent motion that is not in the mockup.
+11. **No animation specs.** Sanctioned motion is enumerated and exhaustive: (a) `transition: all 0.15s` on chip and flow-type-chip backgrounds (§6.1, §7.1); (b) `transition: background 0.15s` and `transition: left 0.15s` on the MetraToggle (§6.7) — track tint and dot position. Everything else is static. Do not invent motion that is not in this list.
 12. **No light-mode-only filters / blurs** beyond the tab-bar `blur(16)`. No glassmorphism on cards.
 13. **No bottom sheet** patterns in this bible's scope. (May appear in `Métra Quick Entry.html`, which is out of scope.)
 14. **No center-stage today indicator on the calendar grid.**
@@ -1026,5 +1069,125 @@ A change is bible-compliant only if every box below can be ticked:
 | Pain picker | `lib/features/daily_entry/widgets/circle_pain_picker.dart` |
 | Choice chip | `lib/core/widgets/choice_chip_metra.dart` |
 | Onboarding screens | `lib/features/onboarding/onboarding_screen.dart` |
+| MetraToggle | (not yet implemented in Flutter) |
+| Impostazioni screen | `lib/features/settings/settings_screen.dart` |
 
 The bible is the orthodox layer above all of these. A token in `app_colors.dart` that contradicts § 1.1 is wrong by definition — patch the Flutter, not the bible.
+
+---
+
+## 18. Impostazioni screen
+
+> Numbering note: this section was appended in 2026-05-03 to keep prior § anchors stable. Conceptually it belongs alongside the other main-app screen sections (§ 8–§ 11); a future bible reorganisation may renumber it.
+
+### 18.1 Container
+
+```
+overflow-y auto · padding-bottom 100
+bg sabbia
+```
+
+The tab bar overlays the bottom 84 px (active tab `settings`); 100 px bottom padding gives breathing room. The screen always exceeds the viewport — design for scroll.
+
+### 18.2 Header
+
+Same pattern as Today (§ 9.2) and Statistiche (§ 11.1), no subtitle:
+
+```
+padding 12 / 24 / 16
+DM Serif Display 26 inchiostro line-height 1.1   "Impostazioni"
+```
+
+### 18.3 Section label
+
+Reuses the § 9.3 micro-label recipe verbatim, with screen-specific outer spacing:
+
+```
+Inter 12 weight 600 letter-spacing 0.06em UPPERCASE color rgba(43,37,33,0.40)
+padding 24 / 24 / 12       (top 24 between sections; first section padding-top 8)
+```
+
+### 18.4 GroupCard
+
+Container that stacks list rows. Distinct from the Today section frame (§ 9.3) — that uses borderTop/Bottom on a flush surface; this one is a free-standing card with all four corners rounded.
+
+```
+margin 0 / 24                                   (matches screen-edge horizontal padding)
+bg surface · radius 16 · border 1px rgba(43,37,33,0.07)
+overflow hidden                                 (so the first/last row inherit the rounded edge)
+```
+
+Radius 16 (§ 1.4) is shared with stat cards and the privacy info card — cards-of-cards layer. Radius 12 belongs to atom-level surfaces (chips, day cells, the day-detail CTA).
+
+### 18.5 Row geometry
+
+All variants share:
+
+```
+height 56 · paddingInline 20 · alignItems center · justifyContent space-between
+label: Inter 15 weight 500 inchiostro
+between rows in the same card: 1px solid rgba(43,37,33,0.07) divider (full-width inside the card)
+cursor pointer
+```
+
+#### 18.5.1 Variants
+
+| Variant | Trailing | Background | Label color |
+|---|---|---|---|
+| **value** | `<value-text>` Inter 14 rgba(0.68) + `chevron_right 16 rgba(0.40)` | transparent | inchiostro |
+| **toggle** | `MetraToggle` (§ 6.7) | transparent | inchiostro |
+| **action** | nothing | transparent | inchiostro |
+| **destructive** | nothing | `${terracotta}0D` | `tc_scura` |
+| **link** | `chevron_right 16 rgba(0.40)` (no value text) | transparent | inchiostro |
+
+The destructive variant communicates "proceed with care" through warm-tint background and dark-accent label only — never red, never an alarm icon, never a stripe. The catalog has no destructive icon (§ 2.1) and none should be added.
+
+`action` rows (Esporta / Importa) are left-aligned by virtue of `space-between` collapsing onto a single child. No leading icon; the verb carries the meaning.
+
+`link` rows use `chevron_right` even for external destinations — see § 2.1 catalog gap note.
+
+### 18.6 Section structure
+
+Top-to-bottom order on screen, with verbatim Italian section labels (uppercase rendering applied by the section-label atom):
+
+| # | Section | Rows |
+|---|---|---|
+| 1 | **Preferenze** | Lingua (value) · Tema (value) |
+| 2 | **Notifiche** | Promemoria ciclo (toggle) · Preavviso (value) |
+| 3 | **Registro** | Dolore (toggle) · Note giornaliere (toggle) |
+| 4 | **Dati** | Backup (value) · Esporta CSV (action) · Importa CSV (action) |
+| 5 | **Informazioni** | Guida (link) · Codice sorgente (link) · Privacy policy (link) |
+| 6 | **Azioni irreversibili** | Elimina tutti i dati (destructive) |
+
+Above-the-fold (visible viewport ≈ 622 px): header + Preferenze + Notifiche + Registro card visible; Dati label entering at the bottom of the canvas snapshot.
+
+Section ordering rationale (recorded so future iterations don't drift):
+- **Preferenze first** — matches Settings convention; orientation aid for first-open.
+- **Notifiche second** — highest steady-state revisit (cycle-length changes, schedule shifts).
+- **Registro third** — preferences-cluster, lower frequency.
+- **Dati fourth** — Backup + CSV merged into one group; ghost CSV buttons promoted to standard rows.
+- **Informazioni fifth** — read-only buffer between active sections and the destructive group.
+- **Azioni irreversibili last** — maximum scroll distance from entry point.
+
+### 18.7 Footer
+
+Below the last GroupCard. Centered column, no card chrome.
+
+```
+paddingTop 32 · paddingBottom 0 · paddingInline 24
+display flex · flexDirection column · alignItems center · gap 6
+```
+
+Content (top to bottom):
+
+1. Wordmark `Mētra` (U+0113 — § 0.3) · DM Serif Display 20 inchiostro.
+2. Version `0.1.0` · Inter 12 rgba(0.40).
+3. Support pill (marginTop 14): height 36, paddingInline 18, radius 18, bg `${terracotta}14`, border `1px solid ${terracotta}28`. Label Inter 13 weight 500 `tc_scura`: `Ko-fi · Sostieni il progetto`. The "Ko-fi" prefix preserves the destination signal that the live Flutter conveys via the Ko-Fi PNG badge — which is replaced in the mockup by this bible-coherent pill.
+
+The tab bar's 84 px frosted overlay sits below this footer; the screen's container `paddingBottom 100` (§ 18.1) absorbs the clearance.
+
+### 18.8 What the screen does NOT contain
+
+- No bottom sheets, modals, or confirm dialogs (the mockup never renders these for any screen). Pickers and confirmations are implementation-side concerns.
+- No FAB (§ 15.1). No badges (§ 15.7). No drop shadows (§ 15.3). No checkmarks on toggles (§ 15.2 spirit — selection by colour and position).
+- No Material `SwitchListTile`, no Material `Icons.chevron_right` / `Icons.open_in_new` in product code. The Flutter implementation must use the catalog (§ 2.1) and the MetraToggle (§ 6.7).

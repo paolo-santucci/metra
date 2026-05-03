@@ -94,11 +94,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Preferenze'), findsOneWidget);
-      expect(find.text('Registro'), findsOneWidget);
-      expect(find.text('Notifiche'), findsOneWidget);
-      expect(find.text('Privacy e dati'), findsOneWidget);
-      expect(find.text('Zona pericolosa'), findsOneWidget);
+      expect(find.text('PREFERENZE'), findsOneWidget);
+      expect(find.text('REGISTRO'), findsOneWidget);
+      expect(find.text('NOTIFICHE'), findsOneWidget);
+      expect(find.text('DATI'), findsOneWidget);
+      expect(find.text('AZIONI IRREVERSIBILI'), findsOneWidget);
     });
 
     testWidgets('renders language and theme rows', (tester) async {
@@ -119,7 +119,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Traccia dolore'), findsOneWidget);
+      expect(find.text('Dolore'), findsOneWidget);
       expect(find.text('Note giornaliere'), findsOneWidget);
     });
   });
@@ -134,8 +134,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // First Switch in the list is the pain toggle (under "Registro")
-      await tester.tap(find.byType(Switch).first);
+      // Tap the pain row label — the row's InkWell flips painEnabled.
+      await tester.tap(find.text('Dolore'));
       await tester.pumpAndSettle();
 
       expect(stub.savedSettings?.painEnabled, isFalse);
@@ -156,7 +156,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Cancella tutti i dati').first);
+      await tester.tap(find.text('Elimina tutti i dati').first);
       await tester.pumpAndSettle();
 
       expect(
@@ -179,7 +179,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Cancella tutti i dati').first);
+      await tester.tap(find.text('Elimina tutti i dati').first);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Annulla'));
       await tester.pumpAndSettle();
@@ -212,7 +212,7 @@ void main() {
 
       // The row label and the confirm-dialog title share the same text.
       // At this point only the row is present (no dialog).
-      await tester.tap(find.text('Cancella tutti i dati').first);
+      await tester.tap(find.text('Elimina tutti i dati').first);
       await tester.pumpAndSettle();
 
       // Tap the destructive confirm button.

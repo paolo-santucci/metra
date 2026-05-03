@@ -1056,6 +1056,175 @@ function ScreenStatistiche() {
 
 }
 
+/* ══════════════════════════════════════
+   IMPOSTAZIONI — settings
+   New atom: MetraToggle (§6.7 candidate — bible patch required)
+══════════════════════════════════════ */
+
+/* ─── METRA TOGGLE ─── */
+function MetraToggle({ on, onChange }) {
+  return (
+    <div onClick={() => onChange(!on)} style={{
+      width: 48, height: 28, borderRadius: 14,
+      background: on ? C.terracotta : 'rgba(43,37,33,0.08)',
+      transition: 'background 0.15s',
+      position: 'relative', cursor: 'pointer', flexShrink: 0
+    }}>
+      <div style={{
+        position: 'absolute', top: 3, left: on ? 23 : 3,
+        width: 22, height: 22, borderRadius: 11,
+        background: C.surface,
+        transition: 'left 0.15s'
+      }} />
+    </div>);
+
+}
+
+/* ─── SETTINGS ATOMS ─── */
+function SettingsLabel({ children, first = false }) {
+  return (
+    <div style={{
+      fontFamily: 'Inter', fontSize: 12, fontWeight: 600,
+      letterSpacing: '0.06em', textTransform: 'uppercase',
+      color: 'rgba(43,37,33,0.4)',
+      padding: `${first ? 8 : 24}px 24px 12px`
+    }}>{children}</div>);
+
+}
+
+function SettingsCard({ children }) {
+  return (
+    <div style={{
+      margin: '0 24px',
+      background: C.surface,
+      borderRadius: 16,
+      border: '1px solid rgba(43,37,33,0.07)',
+      overflow: 'hidden'
+    }}>{children}</div>);
+
+}
+
+function SettingsDivider() {
+  return <div style={{ height: 1, background: 'rgba(43,37,33,0.07)' }} />;
+}
+
+function SettingsRow({ label, value, toggle, action = false, destructive = false }) {
+  const labelColor = destructive ? C.tc_scura : C.inchiostro;
+  const bg = destructive ? `${C.terracotta}0D` : 'transparent';
+  const showRight = !action && !destructive;
+  return (
+    <div style={{
+      height: 56, paddingInline: 20,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      background: bg, cursor: 'pointer'
+    }}>
+      <span style={{
+        fontFamily: 'Inter', fontSize: 15, fontWeight: 500, color: labelColor
+      }}>{label}</span>
+      {showRight && (
+        toggle ? toggle :
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {value && <span style={{
+            fontFamily: 'Inter', fontSize: 14, color: 'rgba(43,37,33,0.68)'
+          }}>{value}</span>}
+          <Icon name="chevron_right" size={16} color="rgba(43,37,33,0.4)" />
+        </div>
+      )}
+    </div>);
+
+}
+
+function ScreenImpostazioni() {
+  const { fontDisplay: font = "'DM Serif Display', serif" } = useT();
+  const [painEnabled, setPainEnabled] = useState(true);
+  const [notesEnabled, setNotesEnabled] = useState(true);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  return (
+    <Phone>
+      <div style={{ height: '100%', background: C.sabbia, overflowY: 'auto', paddingBottom: 100 }}>
+        {/* Header — same pattern as Today / Statistiche */}
+        <div style={{ padding: '12px 24px 16px' }}>
+          <div style={{ fontFamily: font, fontSize: 26, color: C.inchiostro, lineHeight: 1.1 }}>Impostazioni</div>
+        </div>
+
+        {/* ── Preferenze ── */}
+        <SettingsLabel first>Preferenze</SettingsLabel>
+        <SettingsCard>
+          <SettingsRow label="Lingua" value="Italiano" />
+          <SettingsDivider />
+          <SettingsRow label="Tema" value="Sistema" />
+        </SettingsCard>
+
+        {/* ── Notifiche ── */}
+        <SettingsLabel>Notifiche</SettingsLabel>
+        <SettingsCard>
+          <SettingsRow
+            label="Promemoria ciclo"
+            toggle={<MetraToggle on={notificationsEnabled} onChange={setNotificationsEnabled} />} />
+          <SettingsDivider />
+          <SettingsRow label="Preavviso" value="3 giorni prima" />
+        </SettingsCard>
+
+        {/* ── Registro ── */}
+        <SettingsLabel>Registro</SettingsLabel>
+        <SettingsCard>
+          <SettingsRow
+            label="Dolore"
+            toggle={<MetraToggle on={painEnabled} onChange={setPainEnabled} />} />
+          <SettingsDivider />
+          <SettingsRow
+            label="Note giornaliere"
+            toggle={<MetraToggle on={notesEnabled} onChange={setNotesEnabled} />} />
+        </SettingsCard>
+
+        {/* ── Dati ── */}
+        <SettingsLabel>Dati</SettingsLabel>
+        <SettingsCard>
+          <SettingsRow label="Backup" value="Non configurato" />
+          <SettingsDivider />
+          <SettingsRow label="Esporta CSV" action />
+          <SettingsDivider />
+          <SettingsRow label="Importa CSV" action />
+        </SettingsCard>
+
+        {/* ── Informazioni ── */}
+        <SettingsLabel>Informazioni</SettingsLabel>
+        <SettingsCard>
+          <SettingsRow label="Guida" />
+          <SettingsDivider />
+          <SettingsRow label="Codice sorgente" />
+          <SettingsDivider />
+          <SettingsRow label="Privacy policy" />
+        </SettingsCard>
+
+        {/* ── Azioni irreversibili ── */}
+        <SettingsLabel>Azioni irreversibili</SettingsLabel>
+        <SettingsCard>
+          <SettingsRow label="Elimina tutti i dati" destructive />
+        </SettingsCard>
+
+        {/* Footer */}
+        <div style={{
+          paddingTop: 32, paddingBottom: 0, paddingInline: 24,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6
+        }}>
+          <span style={{ fontFamily: font, fontSize: 20, color: C.inchiostro }}>Mētra</span>
+          <span style={{ fontFamily: 'Inter', fontSize: 12, color: 'rgba(43,37,33,0.40)' }}>0.1.0</span>
+          <div style={{
+            marginTop: 14, height: 36, paddingInline: 18, borderRadius: 18,
+            background: `${C.terracotta}14`, border: `1px solid ${C.terracotta}28`,
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center'
+          }}>
+            <span style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 500, color: C.tc_scura }}>Ko-fi · Sostieni il progetto</span>
+          </div>
+        </div>
+
+        <TabBar active="settings" />
+      </div>
+    </Phone>);
+
+}
+
 /* ─── SCREEN WRAP ─── */
 function Scr({ label, children }) {
   return (
@@ -1094,13 +1263,14 @@ function App() {
       <div>
         <div className="row-header">
           <div className="row-label">02 — Schermate principali</div>
-          <div className="row-title">Calendario · Registrazione · Archivio · Statistiche</div>
+          <div className="row-title">Calendario · Registrazione · Archivio · Statistiche · Impostazioni</div>
         </div>
         <div className="screens-row">
           <Scr label="Calendario"><ScreenCalendario /></Scr>
           <Scr label="Registrazione giornaliera"><ScreenRegistrazione /></Scr>
           <Scr label="Archivio (timeline + tabella)"><ScreenArchivio /></Scr>
           <Scr label="Statistiche"><ScreenStatistiche /></Scr>
+          <Scr label="Impostazioni"><ScreenImpostazioni /></Scr>
         </div>
       </div>
 

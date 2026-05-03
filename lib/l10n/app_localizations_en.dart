@@ -213,19 +213,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings_section_notifications => 'Notifications';
 
   @override
-  String get settings_section_privacy => 'Privacy & data';
+  String get settings_section_privacy => 'Data';
 
   @override
-  String get settings_section_danger => 'Danger zone';
+  String get settings_section_danger => 'Irreversible actions';
 
   @override
-  String get settings_pain_label => 'Track pain';
+  String get settings_pain_label => 'Pain';
 
   @override
   String get settings_notes_label => 'Daily notes';
 
   @override
-  String get settings_advance_label => 'Advance';
+  String get settings_advance_label => 'Advance notice';
 
   @override
   String settings_advance_value(int n) {
@@ -590,13 +590,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings_privacy_policy => 'Privacy policy';
 
   @override
-  String get settings_help_label => 'Help centre';
+  String get settings_help_label => 'Guide';
 
   @override
   String get settings_github_label => 'Source code';
 
   @override
   String get settings_support_label => 'Support the project';
+
+  @override
+  String get settings_kofi_label => 'Ko-fi · Support the project';
 
   @override
   String get daily_entry_flow_chip_assente => 'Absent';
