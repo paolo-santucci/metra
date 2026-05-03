@@ -57,6 +57,12 @@ The project is in its early stages. You can find it on [GitHub](https://github.c
 
 -----
 
+## Help
+
+Looking for instructions on how to use the app? Visit the **[Help centre](./help)**.
+
+---
+
 ## License
 
 Métra is distributed under the **GPL-3.0** license.  
