@@ -11,26 +11,26 @@
 This bible is a verbatim transcription of the visual language defined in:
 
 ```
-design/Métra Screens Light.html
+wiki/design/Métra Screens Light.html
 ```
 
 Three rules govern its use:
 
 1. **The HTML is canon.** If this bible and the HTML diverge, the HTML wins. Patch the bible to match — never the reverse.
-2. **Deviation requires upstream change first.** Any UI change that does not match what is in `Métra Screens Light.html` is forbidden until the HTML mockup itself is updated, reviewed, and committed. Code follows mockup, mockup follows decision — never the reverse.
+2. **Deviation requires upstream change first.** Any UI change that does not match what is in `wiki/design/Métra Screens Light.html` is forbidden until the HTML mockup itself is updated, reviewed, and committed. Code follows mockup, mockup follows decision — never the reverse.
 3. **Read at session start.** Every Claude Code session MUST load this file via `CLAUDE.md` § *Session boot*. No work on UI may begin without it being loaded into context.
 
 ### 0.1 Scope
 
-This bible documents the **Light theme** as expressed in `Métra Screens Light.html`. The following files are explicitly **out of scope** for this document:
+This bible documents the **Light theme** as expressed in `wiki/design/Métra Screens Light.html`. The following files are explicitly **out of scope** for this document:
 
 | File | Status |
 |---|---|
 | `design/Métra Screens Dark.html` | Future bible (dark variant) — not yet canonised. |
 | `design/Métra Quick Entry.html` | Companion sub-flow — derive its tokens from this bible; do not invent new ones. |
-| `design/Métra Design System.html` | Reference catalog — superseded by this bible for any conflict. |
+| `wiki/design/Métra Design System.html` | Reference catalog — superseded by this bible for any conflict. |
 | `design/Métra Prototype.html` | Historical exploration — non-authoritative. |
-| `design/Métra App Icon.html` | Icon-only — separate concern. |
+| `wiki/design/Métra App Icon.html` | Icon-only — separate concern. |
 
 ### 0.2 The Tweaks panel is **exploration, not canon**
 
@@ -1064,7 +1064,7 @@ A change is bible-compliant only if every box below can be ticked:
 
 | Concern | File |
 |---|---|
-| Source HTML (canon) | `design/Métra Screens Light.html` |
+| Source HTML (canon) | `wiki/design/Métra Screens Light.html` |
 | Active alignment fixes (Sprint 2) | `design/implementation-spec-2026-05-01.md` |
 | Older-task ledger (DM/UX/CL/ON/AR/ST codes) | `design/design-review-tasks.md` |
 | Theme tokens (Flutter) | `lib/theme/app_colors.dart`, `lib/theme/app_typography.dart` |
