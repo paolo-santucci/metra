@@ -53,9 +53,6 @@ class _QuickEntryModalState extends ConsumerState<QuickEntryModal> {
   FlowIntensity? _lastMensIntensity;
   bool _initialized = false;
 
-  /// Retains the full loaded entity so _save() can preserve pain/notes fields.
-  DailyLogEntity? _existingLog;
-
   @override
   void initState() {
     super.initState();
@@ -67,7 +64,6 @@ class _QuickEntryModalState extends ConsumerState<QuickEntryModal> {
   void _initFromLog(DailyLogEntity? log) {
     if (_initialized) return;
     _initialized = true;
-    _existingLog = log;
     if (log == null) return;
     _flowType = log.flowType;
     _flowIntensity = log.flowIntensity;
@@ -78,12 +74,14 @@ class _QuickEntryModalState extends ConsumerState<QuickEntryModal> {
         AppLocalizations.of(context)!; // safe: delegates registered in MetraApp
     final notifier = ref.read(dailyEntryProvider(_today).notifier);
 
-    // Merge flow changes onto the existing entity so pain, notes, and
-    // other fields set via HistoricalEntryScreen are not silently destroyed.
+    // Read fresh to avoid a TOCTOU where _existingLog was captured at open-time
+    // but the row was mutated before save (pain/notes would be silently lost).
+    final currentLog = ref.read(dailyEntryProvider(_today)).valueOrNull;
+
     final effectiveIntensity =
         _flowType == FlowType.mestruazioni ? _flowIntensity : null;
 
-    final log = _existingLog?.copyWith(
+    final log = currentLog?.copyWith(
           flowType: _flowType,
           clearFlowType: _flowType == null,
           flowIntensity: effectiveIntensity,

@@ -59,6 +59,27 @@ class _FakeDailyEntryNotifier extends DailyEntryNotifier {
   Future<void> delete() async {}
 }
 
+/// Fake with a non-null initial log that can be mutated mid-flight.
+class _MutableDailyEntryNotifier extends DailyEntryNotifier {
+  _MutableDailyEntryNotifier(this._initialLog);
+  final DailyLogEntity _initialLog;
+  DailyLogEntity? lastSaved;
+
+  @override
+  Future<DailyLogEntity?> build(DateTime arg) async => _initialLog;
+
+  void pushUpdate(DailyLogEntity log) => state = AsyncData(log);
+
+  @override
+  Future<void> save(DailyLogEntity log) async {
+    lastSaved = log;
+    state = AsyncData(log);
+  }
+
+  @override
+  Future<void> delete() async {}
+}
+
 /// Fake that stays loading indefinitely.
 class _LoadingDailyEntryNotifier extends DailyEntryNotifier {
   @override
@@ -180,6 +201,47 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       // The loading notifier never resolves, so the modal is in loading state.
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
+
+    testWidgets(
+        'save merges onto latest provider state, not stale open-time snapshot',
+        (tester) async {
+      final today = DateTime.utc(
+        DateTime.now().year,
+        DateTime.now().month,
+        DateTime.now().day,
+      );
+      final initialLog = DailyLogEntity(
+        date: today,
+        flowType: FlowType.assente,
+        notes: 'initial notes',
+      );
+      final mutableNotifier = _MutableDailyEntryNotifier(initialLog);
+
+      await tester.pumpWidget(
+        _wrapWithRouter([
+          dailyEntryProvider.overrideWith(() => mutableNotifier),
+        ]),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('open-modal'));
+      await tester.pumpAndSettle();
+
+      // Simulate a concurrent mutation after the modal opened.
+      final updatedLog = initialLog.copyWith(notes: 'updated notes');
+      mutableNotifier.pushUpdate(updatedLog);
+      await tester.pump();
+
+      // Change flow type in the modal UI.
+      await tester.tap(find.text('Mestruazioni'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Salva'));
+      await tester.pumpAndSettle();
+
+      // notes must come from the updated state, not the stale open-time log.
+      expect(mutableNotifier.lastSaved, isNotNull);
+      expect(mutableNotifier.lastSaved!.notes, equals('updated notes'));
     });
 
     testWidgets('shows error snackbar when save fails', (tester) async {
