@@ -59,11 +59,14 @@ class CirclePainPicker extends StatelessWidget {
       children: [
         paincircle(l10n.today_pain_none, Colors.transparent, 0),
         const SizedBox(width: 14),
-        paincircle(l10n.daily_entry_pain_mild, accent.withValues(alpha: 0.28), 1),
+        paincircle(
+            l10n.daily_entry_pain_mild, accent.withValues(alpha: 0.28), 1),
         const SizedBox(width: 14),
-        paincircle(l10n.daily_entry_pain_moderate, accent.withValues(alpha: 0.60), 2),
+        paincircle(
+            l10n.daily_entry_pain_moderate, accent.withValues(alpha: 0.60), 2),
         const SizedBox(width: 14),
-        paincircle(l10n.daily_entry_pain_severe, accent.withValues(alpha: 0.92), 3),
+        paincircle(
+            l10n.daily_entry_pain_severe, accent.withValues(alpha: 0.92), 3),
       ],
     );
   }

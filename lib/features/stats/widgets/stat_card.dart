@@ -43,9 +43,8 @@ class StatSummaryCard extends StatelessWidget {
     final borderColor = isAccent
         ? MetraColors.light.terracotta.withAlpha(0x44)
         : MetraColors.light.borderSubtle;
-    final valueColor = isAccent
-        ? MetraColors.light.terracotta
-        : MetraColors.light.textPrimary;
+    final valueColor =
+        isAccent ? MetraColors.light.terracotta : MetraColors.light.textPrimary;
 
     return Container(
       decoration: BoxDecoration(

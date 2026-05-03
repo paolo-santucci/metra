@@ -86,8 +86,7 @@ void main() {
       expect(lastValue, null);
     });
 
-    testWidgets(
-        'tapping circle 0 (Nessuno) when unselected calls onChanged(0)',
+    testWidgets('tapping circle 0 (Nessuno) when unselected calls onChanged(0)',
         (tester) async {
       int? lastValue = -1;
 

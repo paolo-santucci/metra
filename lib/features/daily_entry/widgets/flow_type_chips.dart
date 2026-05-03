@@ -47,9 +47,8 @@ class FlowTypeChips extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accent =
         isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
-    final borderSubtle = isDark
-        ? MetraColors.dark.borderSubtle
-        : MetraColors.light.borderSubtle;
+    final borderSubtle =
+        isDark ? MetraColors.dark.borderSubtle : MetraColors.light.borderSubtle;
     final textPrimary =
         isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
     final textSecondary = isDark
@@ -156,12 +155,14 @@ class _FlowChip extends StatelessWidget {
             color: textPrimary.withValues(alpha: 0.32),
             radius: MetraRadius.md,
           ),
-          child: _ChipContent(label: label, textColor: textPrimary, isSelected: true),
+          child: _ChipContent(
+              label: label, textColor: textPrimary, isSelected: true),
         ),
       );
     } else {
       // Solid border chip.
-      final (bgColor, borderColor, borderWidth) = switch ((flowType, _isSelected)) {
+      final (bgColor, borderColor, borderWidth) =
+          switch ((flowType, _isSelected)) {
         // ${terracotta}22 bg, ${terracotta}BB border, 1.5px
         (FlowType.mestruazioni, true) => (
             accent.withValues(alpha: 0.133),

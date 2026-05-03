@@ -115,7 +115,8 @@ void main() {
 
         // Same list twice → same prediction → duplicate, must be suppressed.
         controller.add(threeCompleteCycles);
-        controller.add(List.from(threeCompleteCycles)); // equal but different object
+        controller
+            .add(List.from(threeCompleteCycles)); // equal but different object
         await Future<void>.microtask(() {});
 
         await controller.close();

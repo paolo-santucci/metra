@@ -49,7 +49,8 @@ void main() {
       );
 
   group('flowIntensity + flowType validation (DM-02)', () {
-    test('flowIntensity set with non-mestruazioni flowType → Err(ValidationException)',
+    test(
+        'flowIntensity set with non-mestruazioni flowType → Err(ValidationException)',
         () async {
       final result = await useCase(
         makeLog(flowType: FlowType.spotting, flow: FlowIntensity.medium),
@@ -185,7 +186,8 @@ void main() {
   });
 
   test('valid log is persisted to repository', () async {
-    final log = makeLog(flowType: FlowType.mestruazioni, flow: FlowIntensity.medium);
+    final log =
+        makeLog(flowType: FlowType.mestruazioni, flow: FlowIntensity.medium);
     await useCase(log);
     expect(repo.savedLogs, hasLength(1));
   });

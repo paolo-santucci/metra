@@ -56,14 +56,14 @@ abstract final class MetraSpacing {
 // Allowed values: 6, 8, 10, 12, 14, 16, 18, 20, 44.
 // Chip-pill rule: radius = ½ × height — never use a fixed large value.
 abstract final class MetraRadius {
-  static const double xs = 6;     // sharp inner elements
+  static const double xs = 6; // sharp inner elements
   static const double sm = 8;
-  static const double smm = 10;   // segmented track, stepper micro-buttons
+  static const double smm = 10; // segmented track, stepper micro-buttons
   static const double md = 12;
-  static const double mmd = 14;   // timeline card, flow pill
+  static const double mmd = 14; // timeline card, flow pill
   static const double lg = 16;
   static const double lgg = 18;
-  static const double xl = 20;    // year-label pill (calendar)
+  static const double xl = 20; // year-label pill (calendar)
   static const double phone = 44; // phone-corner large elements
 }
 

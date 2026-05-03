@@ -35,9 +35,8 @@ class MiniBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final semanticsLabel = points
-        .map((p) => '${p.label}: ${_formatValue(p.value)}')
-        .join(', ');
+    final semanticsLabel =
+        points.map((p) => '${p.label}: ${_formatValue(p.value)}').join(', ');
 
     return Semantics(
       label: semanticsLabel,
@@ -78,9 +77,8 @@ class _BarColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final barHeight = maxValue > 0
-        ? (point.value / maxValue * 80).clamp(0.0, 80.0)
-        : 0.0;
+    final barHeight =
+        maxValue > 0 ? (point.value / maxValue * 80).clamp(0.0, 80.0) : 0.0;
     final displayValue = _formatValue(point.value);
 
     return Expanded(

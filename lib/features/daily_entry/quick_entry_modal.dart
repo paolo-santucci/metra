@@ -195,8 +195,7 @@ class _QuickEntryModalState extends ConsumerState<QuickEntryModal> {
                   }
                   _flowType = newType;
                   if (newType == FlowType.mestruazioni) {
-                    _flowIntensity =
-                        _lastMensIntensity ?? FlowIntensity.medium;
+                    _flowIntensity = _lastMensIntensity ?? FlowIntensity.medium;
                   } else {
                     _flowIntensity = null;
                   }

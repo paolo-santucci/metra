@@ -120,26 +120,28 @@ class _StatsBody extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).toString();
 
-    final cycleLengthPoints = statsData.points
-        .reversed
+    final cycleLengthPoints = statsData.points.reversed
         .take(6)
         .toList()
         .reversed
-        .map((p) => (
-              label: intl.DateFormat.MMM(locale).format(p.startDate),
-              value: p.cycleLength.toDouble(),
-            ),)
+        .map(
+          (p) => (
+            label: intl.DateFormat.MMM(locale).format(p.startDate),
+            value: p.cycleLength.toDouble(),
+          ),
+        )
         .toList();
 
-    final painPoints = statsData.points
-        .reversed
+    final painPoints = statsData.points.reversed
         .take(6)
         .toList()
         .reversed
-        .map((p) => (
-              label: intl.DateFormat.MMM(locale).format(p.startDate),
-              value: (p.dominantPainIntensity ?? 0).toDouble(),
-            ),)
+        .map(
+          (p) => (
+            label: intl.DateFormat.MMM(locale).format(p.startDate),
+            value: (p.dominantPainIntensity ?? 0).toDouble(),
+          ),
+        )
         .toList();
 
     return Column(
@@ -184,13 +186,13 @@ class _SummaryGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    final periodSub = statsData.periodLengthMin != null &&
-            statsData.periodLengthMax != null
-        ? l10n.stats_card_period_length_sub(
-            statsData.periodLengthMin!,
-            statsData.periodLengthMax!,
-          )
-        : null;
+    final periodSub =
+        statsData.periodLengthMin != null && statsData.periodLengthMax != null
+            ? l10n.stats_card_period_length_sub(
+                statsData.periodLengthMin!,
+                statsData.periodLengthMax!,
+              )
+            : null;
 
     final periodValue = statsData.periodLengthAvg != null
         ? statsData.periodLengthAvg!.toStringAsFixed(1)

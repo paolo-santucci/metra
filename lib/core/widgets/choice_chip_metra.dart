@@ -63,9 +63,7 @@ class ChoiceChipMetra extends StatelessWidget {
         child: Container(
           constraints: const BoxConstraints(minHeight: 44),
           decoration: BoxDecoration(
-            color: selected
-                ? bgSelected
-                : textPrimary.withValues(alpha: 0.07),
+            color: selected ? bgSelected : textPrimary.withValues(alpha: 0.07),
             borderRadius: BorderRadius.circular(MetraRadius.lgg),
             border: selected
                 ? Border.all(color: Colors.transparent)

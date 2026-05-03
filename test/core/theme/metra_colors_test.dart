@@ -96,7 +96,8 @@ void main() {
       expect(MetraColors.dark.bgOverlay, MetraColors.dark.overlayScrim);
     });
 
-    test('light textDisabledColor is inchiostro @ 0.68 per DESIGN-BIBLE § 1.1', () {
+    test('light textDisabledColor is inchiostro @ 0.68 per DESIGN-BIBLE § 1.1',
+        () {
       // ink.withAlpha(0xAD) = rgba(43,37,33, 0xAD/255 ≈ 0.68)
       expect(MetraColors.light.textDisabledColor, const Color(0xAD2B2521));
     });

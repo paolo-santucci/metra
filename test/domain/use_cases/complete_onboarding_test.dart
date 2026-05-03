@@ -46,7 +46,8 @@ void main() {
 
   final lastPeriod = DateTime.utc(2026, 4, 1);
 
-  test('inserts seed CycleEntry with given startDate, cycleLength, and periodLength',
+  test(
+      'inserts seed CycleEntry with given startDate, cycleLength, and periodLength',
       () async {
     await useCase.execute(
       lastPeriodDate: lastPeriod,

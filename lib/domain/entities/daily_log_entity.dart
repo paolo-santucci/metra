@@ -69,14 +69,12 @@ class DailyLogEntity {
     return DailyLogEntity(
       date: date ?? this.date,
       flowType: clearFlowType ? null : (flowType ?? this.flowType),
-      flowIntensity: clearFlowIntensity
-          ? null
-          : (flowIntensity ?? this.flowIntensity),
+      flowIntensity:
+          clearFlowIntensity ? null : (flowIntensity ?? this.flowIntensity),
       otherDischarge: otherDischarge ?? this.otherDischarge,
       painEnabled: painEnabled ?? this.painEnabled,
-      painIntensity: clearPainIntensity
-          ? null
-          : (painIntensity ?? this.painIntensity),
+      painIntensity:
+          clearPainIntensity ? null : (painIntensity ?? this.painIntensity),
       notesEnabled: notesEnabled ?? this.notesEnabled,
       notes: clearNotes ? null : (notes ?? this.notes),
     );

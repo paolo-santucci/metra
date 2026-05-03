@@ -36,11 +36,10 @@ class SymptomFrequencyChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    final nonZero =
-        counts.entries
-            .where((e) => e.key != PainSymptomType.custom && e.value > 0)
-            .toList()
-          ..sort((a, b) => b.value.compareTo(a.value));
+    final nonZero = counts.entries
+        .where((e) => e.key != PainSymptomType.custom && e.value > 0)
+        .toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
 
     if (nonZero.isEmpty || totalCycles == 0) {
       return Text(

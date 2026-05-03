@@ -143,7 +143,8 @@ final cycleDayForDateProvider =
   if (entries.isEmpty) return null;
 
   // entries are ordered newest-first from getRecent; sort oldest-first for scan.
-  final sorted = [...entries]..sort((a, b) => a.startDate.compareTo(b.startDate));
+  final sorted = [...entries]
+    ..sort((a, b) => a.startDate.compareTo(b.startDate));
 
   for (int i = 0; i < sorted.length; i++) {
     final start = sorted[i].startDate;

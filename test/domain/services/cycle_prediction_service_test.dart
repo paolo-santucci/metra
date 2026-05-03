@@ -246,7 +246,8 @@ void main() {
         final start0 = DateTime(2026, 1, 1);
         final start1 = start0.add(const Duration(days: 28));
         final start2 = start1.add(const Duration(days: 28));
-        final start3 = start2.add(const Duration(days: 28)); // most recent, incomplete
+        final start3 =
+            start2.add(const Duration(days: 28)); // most recent, incomplete
 
         final cycles = [
           makeEntry(id: 1, startDate: start0, cycleLength: 28),
@@ -328,7 +329,8 @@ void main() {
 
         expect(resultForward, isNotNull);
         expect(resultReversed, isNotNull);
-        expect(resultForward!.expectedStart, equals(resultReversed!.expectedStart));
+        expect(resultForward!.expectedStart,
+            equals(resultReversed!.expectedStart));
       },
     );
   });

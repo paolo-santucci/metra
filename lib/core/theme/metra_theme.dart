@@ -40,12 +40,12 @@ abstract final class MetraTheme {
         onTertiary: colors.sand,
         surface: colors.surfaceRaised,
         onSurface: colors.ink,
-        onSurfaceVariant: colors.textSecondary,   // ink @ 0x66 — § 1.1
-        outline: colors.borderSubtle,              // ink @ 0x12 — § 1.5
-        outlineVariant: colors.borderStrong,       // ink @ 0x24 — § 1.5
+        onSurfaceVariant: colors.textSecondary, // ink @ 0x66 — § 1.1
+        outline: colors.borderSubtle, // ink @ 0x12 — § 1.5
+        outlineVariant: colors.borderStrong, // ink @ 0x24 — § 1.5
         error: colors.terracottaDeep,
         onError: colors.sand,
-        shadow: const Color(0x1F2B2521),           // rgba(43,37,33,0.12) — § 1.6
+        shadow: const Color(0x1F2B2521), // rgba(43,37,33,0.12) — § 1.6
         scrim: colors.overlayScrim,
       ),
       textTheme: MetraTypography.toTextTheme(colors.ink),
@@ -54,18 +54,18 @@ abstract final class MetraTheme {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: colors.borderSubtle),  // ink @ 0x12 — § 1.5
+          side: BorderSide(color: colors.borderSubtle), // ink @ 0x12 — § 1.5
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: colors.bgSunken,                // ink @ 0x0A — § 1.1
+        fillColor: colors.bgSunken, // ink @ 0x0A — § 1.1
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
       ),
-      dividerColor: colors.borderSubtle,            // ink @ 0x12 — § 1.5
+      dividerColor: colors.borderSubtle, // ink @ 0x12 — § 1.5
       navigationBarTheme: NavigationBarThemeData(
         // Wave 0.2 will replace NavigationBar with a custom BackdropFilter tab bar.
         // These styles are transitional until that rebuild lands.

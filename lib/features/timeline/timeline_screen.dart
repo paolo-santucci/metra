@@ -59,9 +59,13 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                   Text(l10n.archive_title, style: MetraTypography.screenTitle),
                   const SizedBox(height: 12),
                   SegmentedControlMetra(
-                    segments: [l10n.timeline_view_toggle, l10n.table_view_toggle],
+                    segments: [
+                      l10n.timeline_view_toggle,
+                      l10n.table_view_toggle
+                    ],
                     selectedIndex: _mode.index,
-                    onChanged: (i) => setState(() => _mode = _ViewMode.values[i]),
+                    onChanged: (i) =>
+                        setState(() => _mode = _ViewMode.values[i]),
                   ),
                 ],
               ),

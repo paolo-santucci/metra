@@ -52,7 +52,8 @@ void main() {
       expect(find.byType(GestureDetector), findsNWidgets(4));
     });
 
-    testWidgets('calls onTabSelected with correct index on tap', (tester) async {
+    testWidgets('calls onTabSelected with correct index on tap',
+        (tester) async {
       int? tapped;
       await tester.pumpWidget(
         _wrap(

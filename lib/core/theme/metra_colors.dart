@@ -27,16 +27,16 @@ final class _LightPalette {
   const _LightPalette();
 
   // ── 10 canonical primitives per DESIGN-BIBLE § 1.1 ──────────────────────────
-  final Color sand = const Color(0xFFF4EDE2);           // sabbia
-  final Color surfaceRaised = const Color(0xFFFAF5EE);  // surface (#FAF5EE)
-  final Color bianco = const Color(0xFFFDFAF6);          // bianco
-  final Color ink = const Color(0xFF2B2521);             // inchiostro
-  final Color terracotta = const Color(0xFFC87456);      // terracotta
-  final Color terracottaDeep = const Color(0xFF9A4D32);  // tc_scura (#9A4D32)
-  final Color dustyOchre = const Color(0xFFD4A26A);     // ocra
-  final Color nightLavender = const Color(0xFF5B4E7A);  // lavanda
-  final Color malva = const Color(0xFF9E7488);           // malva
-  final Color moss = const Color(0xFF7A8471);            // muschio
+  final Color sand = const Color(0xFFF4EDE2); // sabbia
+  final Color surfaceRaised = const Color(0xFFFAF5EE); // surface (#FAF5EE)
+  final Color bianco = const Color(0xFFFDFAF6); // bianco
+  final Color ink = const Color(0xFF2B2521); // inchiostro
+  final Color terracotta = const Color(0xFFC87456); // terracotta
+  final Color terracottaDeep = const Color(0xFF9A4D32); // tc_scura (#9A4D32)
+  final Color dustyOchre = const Color(0xFFD4A26A); // ocra
+  final Color nightLavender = const Color(0xFF5B4E7A); // lavanda
+  final Color malva = const Color(0xFF9E7488); // malva
+  final Color moss = const Color(0xFF7A8471); // muschio
 
   // ── Off-catalog primitives — pending deletion after consumer sweep ───────────
   // Do not add new references. Replace usages with bible alpha-tints:
@@ -60,9 +60,9 @@ final class _LightPalette {
   // ── Semantic aliases — use these in widgets, not the primitives above ────────
   Color get bgPrimary => sand;
   Color get bgSurface => surfaceRaised;
-  Color get bgSunken => ink.withAlpha(0x0A);            // inchiostro @ 0.04 — § 1.1
+  Color get bgSunken => ink.withAlpha(0x0A); // inchiostro @ 0.04 — § 1.1
   Color get textPrimary => ink;
-  Color get textSecondary => ink.withAlpha(0x66);        // inchiostro @ 0.40 — § 1.1
+  Color get textSecondary => ink.withAlpha(0x66); // inchiostro @ 0.40 — § 1.1
   Color get textOnSand => terracottaDeep;
   Color get textOnAccent => sand;
   Color get accentFlow => terracotta;
@@ -75,14 +75,15 @@ final class _LightPalette {
   Color get accentPain => malva;
   Color get accentConfirmation => moss;
   Color get accentConfirmationStrong => moss;
-  Color get borderSubtle => ink.withAlpha(0x12);         // inchiostro @ 0.07 — § 1.5
-  Color get borderStrong => ink.withAlpha(0x24);         // inchiostro @ 0.14 — § 1.5
+  Color get borderSubtle => ink.withAlpha(0x12); // inchiostro @ 0.07 — § 1.5
+  Color get borderStrong => ink.withAlpha(0x24); // inchiostro @ 0.14 — § 1.5
   Color get stateError => terracottaDeep;
   Color get stateSuccess => moss;
   Color get stateWarning => dustyOchre;
   Color get focusRing => nightLavender;
   Color get bgOverlay => overlayScrim;
-  Color get textDisabledColor => ink.withAlpha(0xAD);   // inchiostro @ 0.68 — § 1.1
+  Color get textDisabledColor =>
+      ink.withAlpha(0xAD); // inchiostro @ 0.68 — § 1.1
 }
 
 @immutable

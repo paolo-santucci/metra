@@ -23,13 +23,13 @@ class MetraMoon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveColor =
-        color ?? IconTheme.of(context).color ?? Colors.black;
+    final effectiveColor = color ?? IconTheme.of(context).color ?? Colors.black;
     final hex = _colorToHex(effectiveColor);
     final clampedPhase = phase.clamp(0, 4);
 
     final fillFragment = _fills[clampedPhase];
-    final svgString = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
+    final svgString =
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
         '<circle cx="12" cy="12" r="9" stroke="$hex" stroke-width="1.3" fill="none"/>'
         '${fillFragment.replaceAll('{fill}', hex)}'
         '</svg>';
@@ -56,6 +56,5 @@ class MetraMoon extends StatelessWidget {
 }
 
 extension on int {
-  String toStringRadixPadded(int radix) =>
-      toRadixString(radix).padLeft(2, '0');
+  String toStringRadixPadded(int radix) => toRadixString(radix).padLeft(2, '0');
 }

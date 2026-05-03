@@ -106,7 +106,8 @@ class RecomputeCycleEntries {
     for (var i = 1; i < flowDays.length; i++) {
       final gap = flowDays[i].date.difference(groupEnd).inDays;
       if (gap >= _kNewCycleGapDays) {
-        groups.add((start: groupStart, end: groupEnd, flowDayCount: flowDayCount));
+        groups.add(
+            (start: groupStart, end: groupEnd, flowDayCount: flowDayCount));
         groupStart = flowDays[i].date;
         flowDayCount = 1;
       } else {

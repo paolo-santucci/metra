@@ -59,9 +59,8 @@ class MonthNavigator extends StatelessWidget {
         : MetraColors.light.textSecondary;
     // Bible § 8.1: inchiostro when enabled, faded (alpha 0.40) when disabled.
     final chevronPrev = textPrimary;
-    final chevronNext = canGoNext
-        ? textPrimary
-        : textPrimary.withValues(alpha: 0.40);
+    final chevronNext =
+        canGoNext ? textPrimary : textPrimary.withValues(alpha: 0.40);
 
     return Padding(
       // Bible § 8.1: padding 12 / 24 / 0 → top 12, sides 24, bottom 0.
@@ -82,7 +81,8 @@ class MonthNavigator extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: MetraTypography.screenTitle.copyWith(color: textPrimary),
+                  style:
+                      MetraTypography.screenTitle.copyWith(color: textPrimary),
                 ),
                 if (cycleDay != null) ...[
                   const SizedBox(height: 3),
