@@ -21,6 +21,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/theme/metra_theme.dart';
 import 'package:metra/domain/entities/app_settings_data.dart';
 import 'package:metra/domain/use_cases/delete_all_data.dart';
+import 'package:metra/features/backup/state/backup_notifier.dart';
+import 'package:metra/features/backup/state/backup_state.dart';
 import 'package:metra/features/settings/settings_screen.dart';
 import 'package:metra/features/settings/state/settings_notifier.dart';
 import 'package:metra/l10n/app_localizations.dart';
@@ -49,13 +51,33 @@ class _StubSettingsNotifier extends SettingsNotifier {
   }
 }
 
+class _StubBackupNotifier extends BackupNotifier {
+  _StubBackupNotifier(this._initial);
+
+  final BackupState _initial;
+
+  @override
+  Future<BackupState> build() async => _initial;
+}
+
 // ---------------------------------------------------------------------------
 // Test helper
 // ---------------------------------------------------------------------------
 
-Widget _wrap(List<Override> overrides) {
+Widget _wrap(
+  List<Override> overrides, {
+  BackupState backupState = const BackupNotConnected(),
+}) {
+  // The settings screen reads backupNotifierProvider for the Backup-row
+  // value text (Design Bible § 18.6). The real notifier's build() touches
+  // appSettingsRepositoryProvider — not seeded in widget tests — so every
+  // test must override this provider with a stub.
   return ProviderScope(
-    overrides: overrides,
+    overrides: [
+      backupNotifierProvider
+          .overrideWith(() => _StubBackupNotifier(backupState)),
+      ...overrides,
+    ],
     child: MaterialApp(
       theme: MetraTheme.light(),
       locale: const Locale('it'),
@@ -331,5 +353,89 @@ void main() {
 
       expect(find.text('Backup cloud'), findsOneWidget);
     });
+
+    testWidgets(
+      'value text is "Non configurato" when backup state is BackupNotConnected',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        final stub = _StubSettingsNotifier(defaults);
+        await tester.pumpWidget(
+          _wrap(
+            [settingsNotifierProvider.overrideWith(() => stub)],
+            backupState: const BackupNotConnected(),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Non configurato'), findsOneWidget);
+        expect(find.text('Configurato'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'value text is "Configurato" when backup state is BackupConnected',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        final stub = _StubSettingsNotifier(defaults);
+        await tester.pumpWidget(
+          _wrap(
+            [settingsNotifierProvider.overrideWith(() => stub)],
+            backupState: const BackupConnected(email: 'user@example.com'),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Configurato'), findsOneWidget);
+        expect(find.text('Non configurato'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'value text falls back to "Non configurato" for BackupRunning',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        final stub = _StubSettingsNotifier(defaults);
+        await tester.pumpWidget(
+          _wrap(
+            [settingsNotifierProvider.overrideWith(() => stub)],
+            backupState: const BackupRunning(BackupOperation.backingUp),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Non configurato'), findsOneWidget);
+        expect(find.text('Configurato'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'value text falls back to "Non configurato" for BackupErrorState',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        final stub = _StubSettingsNotifier(defaults);
+        await tester.pumpWidget(
+          _wrap(
+            [settingsNotifierProvider.overrideWith(() => stub)],
+            backupState: const BackupErrorState('boom'),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Non configurato'), findsOneWidget);
+        expect(find.text('Configurato'), findsNothing);
+      },
+    );
   });
 }

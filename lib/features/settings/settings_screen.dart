@@ -35,6 +35,8 @@ import '../../domain/services/csv_codec.dart';
 import '../../domain/use_cases/import_daily_logs.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/use_case_providers.dart';
+import '../backup/state/backup_notifier.dart';
+import '../backup/state/backup_state.dart';
 import 'state/settings_notifier.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -53,6 +55,14 @@ class SettingsScreen extends ConsumerWidget {
         : MetraColors.light.textSecondary;
     final settings = ref.watch(settingsNotifierProvider).valueOrNull ??
         const AppSettingsData.defaults();
+    // Backup-row value is state-aware (Design Bible § 18.6): only
+    // BackupConnected resolves to "Configurato"; every other state
+    // (loading, NotConnected, Running, ErrorState) falls back to
+    // "Non configurato" — full backup state lives on the Backup screen.
+    final backupValueText =
+        ref.watch(backupNotifierProvider).valueOrNull is BackupConnected
+            ? l10n.settings_backup_configured
+            : l10n.settings_backup_not_configured;
 
     return Scaffold(
       backgroundColor: bgPrimary,
@@ -171,8 +181,8 @@ class SettingsScreen extends ConsumerWidget {
                 _SettingsRow(
                   label: l10n.settings_backup_label,
                   semanticsLabel:
-                      '${l10n.settings_backup_label}: ${l10n.settings_backup_not_configured}',
-                  valueText: l10n.settings_backup_not_configured,
+                      '${l10n.settings_backup_label}: $backupValueText',
+                  valueText: backupValueText,
                   onTap: () => context.push('/backup'),
                 ),
                 const _SettingsDivider(),

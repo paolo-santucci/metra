@@ -1180,6 +1180,7 @@ function ScreenImpostazioni() {
         {/* ── Dati ── */}
         <SettingsLabel>Dati</SettingsLabel>
         <SettingsCard>
+          {/* state-aware: BackupConnected → value="Configurato"; all other states → "Non configurato" */}
           <SettingsRow label="Backup" value="Non configurato" />
           <SettingsDivider />
           <SettingsRow label="Esporta CSV" action />

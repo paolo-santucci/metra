@@ -182,7 +182,22 @@ class _ConnectedBodyState extends ConsumerState<_ConnectedBody> {
     );
     if (confirmed != true) return;
     if (!mounted) return;
-    unawaited(ref.read(backupNotifierProvider.notifier).restore());
+
+    final messenger = ScaffoldMessenger.of(context);
+    await PassphraseDialog.show(
+      context,
+      mode: PassphraseDialogMode.unlock,
+      onConfirmed: (passphrase) {
+        unawaited(
+          ref
+              .read(backupNotifierProvider.notifier)
+              .restoreWithPassphrase(passphrase),
+        );
+        messenger.showSnackBar(
+          SnackBar(content: Text(widget.l10n.backup_restore_in_progress)),
+        );
+      },
+    );
   }
 
   Future<void> _handleDisconnect() async {

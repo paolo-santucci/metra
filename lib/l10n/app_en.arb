@@ -98,6 +98,7 @@
   "settings_notifications_off": "Off",
   "settings_backup_label": "Cloud backup",
   "settings_backup_not_configured": "Not configured",
+  "settings_backup_configured": "Configured",
   "settings_export_csv": "Export CSV",
   "settings_delete_all": "Delete all data",
 
@@ -457,6 +458,9 @@
   "backup_passphrase_mismatch": "Passphrases do not match.",
   "backup_passphrase_too_short": "Passphrase must be at least 8 characters.",
   "backup_passphrase_confirm_button": "I understand — save and back up",
+  "backup_passphrase_unlock_title": "Enter passphrase",
+  "backup_passphrase_unlock_body": "Enter the passphrase used to encrypt the backup. Without the correct passphrase the backup cannot be decrypted.",
+  "backup_passphrase_unlock_button": "Unlock and restore",
   "backup_restore_confirm_title": "Restore backup?",
   "backup_restore_confirm_body": "This will replace all current data. This cannot be undone.",
   "backup_restore_confirm_button": "Restore",

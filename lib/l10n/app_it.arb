@@ -315,6 +315,11 @@
     "description": "Settings backup row value when cloud backup has not been set up"
   },
 
+  "settings_backup_configured": "Configurato",
+  "@settings_backup_configured": {
+    "description": "Settings backup row value when cloud backup is connected (BackupConnected). Flat-descriptive mirror of settings_backup_not_configured — never 'Connesso' or 'Attivo', never the account email."
+  },
+
   "settings_export_csv": "Esporta CSV",
   "@settings_export_csv": {
     "description": "Settings action to export data as a CSV file"
@@ -775,6 +780,21 @@
   "backup_passphrase_confirm_button": "Ho capito — salva e fai il backup",
   "@backup_passphrase_confirm_button": {
     "description": "Confirm button in the passphrase setup dialog; acknowledges the no-reset warning"
+  },
+
+  "backup_passphrase_unlock_title": "Inserisci la passphrase",
+  "@backup_passphrase_unlock_title": {
+    "description": "Title of the passphrase prompt shown before restoring a backup. The user must re-enter the passphrase used to encrypt the cloud backup."
+  },
+
+  "backup_passphrase_unlock_body": "Inserisci la passphrase usata per cifrare il backup. Senza la passphrase corretta il backup non può essere decifrato.",
+  "@backup_passphrase_unlock_body": {
+    "description": "Explanatory body text in the passphrase unlock dialog (restore flow)"
+  },
+
+  "backup_passphrase_unlock_button": "Sblocca e ripristina",
+  "@backup_passphrase_unlock_button": {
+    "description": "Confirm button in the passphrase unlock dialog (restore flow)"
   },
 
   "backup_restore_confirm_title": "Ripristinare il backup?",

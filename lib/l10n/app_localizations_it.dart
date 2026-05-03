@@ -195,6 +195,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get settings_backup_not_configured => 'Non configurato';
 
   @override
+  String get settings_backup_configured => 'Configurato';
+
+  @override
   String get settings_export_csv => 'Esporta CSV';
 
   @override
@@ -508,6 +511,16 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get backup_passphrase_confirm_button =>
       'Ho capito — salva e fai il backup';
+
+  @override
+  String get backup_passphrase_unlock_title => 'Inserisci la passphrase';
+
+  @override
+  String get backup_passphrase_unlock_body =>
+      'Inserisci la passphrase usata per cifrare il backup. Senza la passphrase corretta il backup non può essere decifrato.';
+
+  @override
+  String get backup_passphrase_unlock_button => 'Sblocca e ripristina';
 
   @override
   String get backup_restore_confirm_title => 'Ripristinare il backup?';

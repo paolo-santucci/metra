@@ -458,6 +458,12 @@ abstract class AppLocalizations {
   /// **'Non configurato'**
   String get settings_backup_not_configured;
 
+  /// Settings backup row value when cloud backup is connected (BackupConnected). Flat-descriptive mirror of settings_backup_not_configured — never 'Connesso' or 'Attivo', never the account email.
+  ///
+  /// In it, this message translates to:
+  /// **'Configurato'**
+  String get settings_backup_configured;
+
   /// Settings action to export data as a CSV file
   ///
   /// In it, this message translates to:
@@ -985,6 +991,24 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Ho capito — salva e fai il backup'**
   String get backup_passphrase_confirm_button;
+
+  /// Title of the passphrase prompt shown before restoring a backup. The user must re-enter the passphrase used to encrypt the cloud backup.
+  ///
+  /// In it, this message translates to:
+  /// **'Inserisci la passphrase'**
+  String get backup_passphrase_unlock_title;
+
+  /// Explanatory body text in the passphrase unlock dialog (restore flow)
+  ///
+  /// In it, this message translates to:
+  /// **'Inserisci la passphrase usata per cifrare il backup. Senza la passphrase corretta il backup non può essere decifrato.'**
+  String get backup_passphrase_unlock_body;
+
+  /// Confirm button in the passphrase unlock dialog (restore flow)
+  ///
+  /// In it, this message translates to:
+  /// **'Sblocca e ripristina'**
+  String get backup_passphrase_unlock_button;
 
   /// Title of the restore confirmation dialog
   ///

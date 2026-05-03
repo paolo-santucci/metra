@@ -197,6 +197,71 @@ void main() {
     expect((s as BackupErrorState).message, contains('disk full'));
   });
 
+  test('restoreWithPassphrase stores passphrase and calls restore runner',
+      () async {
+    await settingsRepo.updateBackupState(
+      dropboxEmail: 'a@b.com',
+      lastBackupAt: null,
+    );
+    final container = makeContainer();
+    addTearDown(container.dispose);
+    await container.read(backupNotifierProvider.future);
+    await container
+        .read(backupNotifierProvider.notifier)
+        .restoreWithPassphrase('test-pass');
+    expect(storage.values['metra_backup_passphrase_v1'], 'test-pass');
+    expect(runner.restoreCalled, isTrue);
+  });
+
+  test(
+      'restoreWithPassphrase restores old passphrase when restore fails '
+      '(state-corruption guard)', () async {
+    await settingsRepo.updateBackupState(
+      dropboxEmail: 'a@b.com',
+      lastBackupAt: null,
+    );
+    storage.values['metra_backup_passphrase_v1'] = 'old-pass';
+    runner.restoreResult = const Err(SyncException('wrong passphrase'));
+
+    final container = makeContainer();
+    addTearDown(container.dispose);
+    await container.read(backupNotifierProvider.future);
+    await container
+        .read(backupNotifierProvider.notifier)
+        .restoreWithPassphrase('typo-pass');
+
+    // Restore failed — secure storage must keep the previously-working pass.
+    expect(storage.values['metra_backup_passphrase_v1'], 'old-pass');
+    final s = container.read(backupNotifierProvider).valueOrNull;
+    expect(s, isA<BackupErrorState>());
+  });
+
+  test(
+      'restoreWithPassphrase removes key when restore fails '
+      'and there was no prior passphrase', () async {
+    await settingsRepo.updateBackupState(
+      dropboxEmail: 'a@b.com',
+      lastBackupAt: null,
+    );
+    // No prior passphrase in storage.
+    runner.restoreResult = const Err(SyncException('decryption failed'));
+
+    final container = makeContainer();
+    addTearDown(container.dispose);
+    await container.read(backupNotifierProvider.future);
+    await container
+        .read(backupNotifierProvider.notifier)
+        .restoreWithPassphrase('typo-pass');
+
+    // Storage must not hold the new passphrase since the restore never succeeded.
+    expect(
+      storage.values.containsKey('metra_backup_passphrase_v1'),
+      isFalse,
+    );
+    final s = container.read(backupNotifierProvider).valueOrNull;
+    expect(s, isA<BackupErrorState>());
+  });
+
   test('disconnect clears email, lastBackupAt, and passphrase', () async {
     await settingsRepo.updateBackupState(
       dropboxEmail: 'a@b.com',

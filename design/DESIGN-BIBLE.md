@@ -1011,6 +1011,7 @@ These are **canonical strings**. Surface them in `lib/l10n/app_it.arb` exactly a
 | Privacy policy | Privacy policy | External-link row label (loanword). |
 | Sostieni il progetto | Sostieni il progetto | Footer support-CTA copy (paired with "Ko-fi" identifier on the affordance itself). |
 | Non configurato | Non configurato | Backup-row default value. Flat-descriptive — never imperative ("Aggiungi") or alarming ("Nessuna connessione"). |
+| Configurato | Configurato | Backup-row connected value. Flat-descriptive mirror of "Non configurato" — same register, opposite polarity. **Never** "Connesso" (alarmist/intimate-register clash with the *quaderno silenzioso* voice), **never** "Attivo" (battery-icon connotation), **never** the email address (privacy + length). The full account email and last-backup timestamp live on the Backup screen — the Settings row is only a navigation handle. |
 | Italiano / Inglese | — | Lingua-row values. |
 | Sistema / Chiaro / Scuro | — | Tema-row values. |
 | 1 giorno prima / {n} giorni prima | — | Preavviso-row value. The trailing "prima" makes the temporal relation explicit. |
@@ -1158,6 +1159,8 @@ Top-to-bottom order on screen, with verbatim Italian section labels (uppercase r
 | 4 | **Dati** | Backup (value) · Esporta CSV (action) · Importa CSV (action) |
 | 5 | **Informazioni** | Guida (link) · Codice sorgente (link) · Privacy policy (link) |
 | 6 | **Azioni irreversibili** | Elimina tutti i dati (destructive) |
+
+The **Backup** value row is the only state-aware row on the screen: its trailing value-text reflects `backupNotifierProvider`. `BackupConnected` → `Configurato`. All other states (loading/`AsyncLoading`, `BackupNotConnected`, `BackupRunning`, `BackupErrorState`) → `Non configurato`. The row is purely a navigation handle to the Backup screen, where the email, last-backup timestamp, and operation controls live; the Settings row never surfaces those details.
 
 Above-the-fold (visible viewport ≈ 622 px): header + Preferenze + Notifiche + Registro card visible; Dati label entering at the bottom of the canvas snapshot.
 

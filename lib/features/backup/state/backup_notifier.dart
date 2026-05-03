@@ -150,6 +150,30 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
       );
     }
   }
+
+  Future<void> restoreWithPassphrase(String passphrase) async {
+    final storage = ref.read(secureStorageProvider);
+    // Read the old passphrase so it can be restored if the download or
+    // decryption fails. Invariant: a failed restore must not overwrite
+    // a previously-working passphrase in secure storage.
+    final oldPassphrase = await storage.read(key: _passphraseKey);
+
+    // Write the new passphrase so the orchestrator picks it up during restore.
+    await storage.write(key: _passphraseKey, value: passphrase);
+
+    await restore();
+
+    // If the restore failed, restore() sets an error state but does not throw.
+    // Detect failure via state and roll back the secure-storage value.
+    final currentState = state.valueOrNull;
+    if (currentState is BackupErrorState) {
+      if (oldPassphrase != null) {
+        await storage.write(key: _passphraseKey, value: oldPassphrase);
+      } else {
+        await storage.delete(key: _passphraseKey);
+      }
+    }
+  }
 }
 
 final backupNotifierProvider =
