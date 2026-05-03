@@ -61,7 +61,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                   SegmentedControlMetra(
                     segments: [
                       l10n.timeline_view_toggle,
-                      l10n.table_view_toggle
+                      l10n.table_view_toggle,
                     ],
                     selectedIndex: _mode.index,
                     onChanged: (i) =>

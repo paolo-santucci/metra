@@ -156,7 +156,10 @@ class _FlowChip extends StatelessWidget {
             radius: MetraRadius.md,
           ),
           child: _ChipContent(
-              label: label, textColor: textPrimary, isSelected: true),
+            label: label,
+            textColor: textPrimary,
+            isSelected: true,
+          ),
         ),
       );
     } else {

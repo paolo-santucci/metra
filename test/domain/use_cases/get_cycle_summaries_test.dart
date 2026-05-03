@@ -124,21 +124,25 @@ void main() {
       // 2 × light, 2 × medium → tie → medium wins (higher ordinal)
       logRepo.savedLogs.addAll([
         DailyLogEntity(
-            date: jan15,
-            flowType: FlowType.mestruazioni,
-            flowIntensity: FlowIntensity.light),
+          date: jan15,
+          flowType: FlowType.mestruazioni,
+          flowIntensity: FlowIntensity.light,
+        ),
         DailyLogEntity(
-            date: jan16,
-            flowType: FlowType.mestruazioni,
-            flowIntensity: FlowIntensity.light),
+          date: jan16,
+          flowType: FlowType.mestruazioni,
+          flowIntensity: FlowIntensity.light,
+        ),
         DailyLogEntity(
-            date: jan17,
-            flowType: FlowType.mestruazioni,
-            flowIntensity: FlowIntensity.medium),
+          date: jan17,
+          flowType: FlowType.mestruazioni,
+          flowIntensity: FlowIntensity.medium,
+        ),
         DailyLogEntity(
-            date: jan18,
-            flowType: FlowType.mestruazioni,
-            flowIntensity: FlowIntensity.medium),
+          date: jan18,
+          flowType: FlowType.mestruazioni,
+          flowIntensity: FlowIntensity.medium,
+        ),
       ]);
 
       final uc = GetCycleSummaries(logRepo, cycleRepo);
@@ -187,9 +191,10 @@ void main() {
       );
       logRepo.savedLogs.add(
         DailyLogEntity(
-            date: todayNorm,
-            flowType: FlowType.mestruazioni,
-            flowIntensity: FlowIntensity.heavy),
+          date: todayNorm,
+          flowType: FlowType.mestruazioni,
+          flowIntensity: FlowIntensity.heavy,
+        ),
       );
 
       final uc = GetCycleSummaries(logRepo, cycleRepo);

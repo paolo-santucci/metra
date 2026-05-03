@@ -439,8 +439,10 @@ void main() {
 
         expect(resultForward, isNotNull);
         expect(resultReversed, isNotNull);
-        expect(resultForward!.expectedStart,
-            equals(resultReversed!.expectedStart));
+        expect(
+          resultForward!.expectedStart,
+          equals(resultReversed!.expectedStart),
+        );
       },
     );
   });

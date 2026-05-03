@@ -361,10 +361,10 @@ void main() {
 
       // Record how many CTA buttons are visible before the tap.
       // Stub has no logs so the label will be "Aggiungi giornata".
-      int _ctaCount(WidgetTester t) =>
+      int ctaCount(WidgetTester t) =>
           t.widgetList(find.text('Aggiungi giornata')).length +
           t.widgetList(find.text('Modifica giornata')).length;
-      final editButtonsBefore = _ctaCount(tester);
+      final editButtonsBefore = ctaCount(tester);
 
       // Attempt to tap the first future cell.
       await tester.tap(
@@ -374,7 +374,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // CTA count must not have changed — future date blocks the button.
-      expect(_ctaCount(tester), equals(editButtonsBefore));
+      expect(ctaCount(tester), equals(editButtonsBefore));
     });
 
     testWidgets('CTA is visible when selected date is today (no future guard)',

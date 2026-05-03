@@ -255,7 +255,7 @@ void main() {
     test(
         'flow_type=1 with empty flow column → defaults to FlowIntensity.medium',
         () {
-      final csv = '$kHeader\r\n'
+      const csv = '$kHeader\r\n'
           '2026-03-01,1,,,,, 0\r\n';
       final result = codec.decode(csv);
       expect(result.errors, isEmpty);
@@ -266,7 +266,7 @@ void main() {
     test(
         'flow_type=0 (assente) → flowIntensity is null regardless of flow column',
         () {
-      final csv = '$kHeader\r\n'
+      const csv = '$kHeader\r\n'
           '2026-03-01,0,1,,,, 0\r\n'; // flow=1 present but irrelevant
       final result = codec.decode(csv);
       expect(result.errors, isEmpty);
@@ -275,7 +275,7 @@ void main() {
     });
 
     test('empty pain_intensity → null painIntensity, painEnabled false', () {
-      final csv = '$kHeader\r\n'
+      const csv = '$kHeader\r\n'
           '2026-03-01,0,,,,,0\r\n';
       final result = codec.decode(csv);
       expect(result.rows.first.log.painIntensity, isNull);
@@ -283,7 +283,7 @@ void main() {
     });
 
     test('non-empty pain_intensity → painEnabled true', () {
-      final csv = '$kHeader\r\n'
+      const csv = '$kHeader\r\n'
           '2026-03-01,0,,2,,,0\r\n';
       final result = codec.decode(csv);
       expect(result.errors, isEmpty);
@@ -292,7 +292,7 @@ void main() {
     });
 
     test('non-empty symptoms → painEnabled true', () {
-      final csv = '$kHeader\r\n'
+      const csv = '$kHeader\r\n'
           '2026-03-01,0,,,cramps,,0\r\n';
       final result = codec.decode(csv);
       expect(result.errors, isEmpty);
@@ -300,7 +300,7 @@ void main() {
     });
 
     test('non-empty notes → notesEnabled true', () {
-      final csv = '$kHeader\r\n'
+      const csv = '$kHeader\r\n'
           '2026-03-01,0,,,,hello,0\r\n';
       final result = codec.decode(csv);
       expect(result.errors, isEmpty);
@@ -309,7 +309,7 @@ void main() {
     });
 
     test('unknown symptom name silently skipped (forward-compat)', () {
-      final csv = '$kHeader\r\n'
+      const csv = '$kHeader\r\n'
           '2026-03-01,0,,,unknownFutureSymptom,,0\r\n';
       final result = codec.decode(csv);
       expect(result.errors, isEmpty);
@@ -323,7 +323,7 @@ void main() {
 
   group('decode — parse errors', () {
     test('missing date → CsvParseError with column: date', () {
-      final csv = '$kHeader\r\n'
+      const csv = '$kHeader\r\n'
           ',0,,,,, \r\n';
       final result = codec.decode(csv);
       expect(result.rows, isEmpty);
@@ -333,7 +333,7 @@ void main() {
     });
 
     test('malformed date → CsvParseError with column: date', () {
-      final csv = '$kHeader\r\n'
+      const csv = '$kHeader\r\n'
           'not-a-date,0,,,,,0\r\n';
       final result = codec.decode(csv);
       expect(result.rows, isEmpty);
@@ -341,7 +341,7 @@ void main() {
     });
 
     test('overflow date 2026-02-30 → CsvParseError', () {
-      final csv = '$kHeader\r\n'
+      const csv = '$kHeader\r\n'
           '2026-02-30,0,,,,,0\r\n';
       final result = codec.decode(csv);
       expect(result.rows, isEmpty);
@@ -350,7 +350,7 @@ void main() {
 
     test('empty flow_type when flow_type column is present → CsvParseError',
         () {
-      final csv = '$kHeader\r\n'
+      const csv = '$kHeader\r\n'
           '2026-03-01,,,,,,0\r\n';
       final result = codec.decode(csv);
       expect(result.rows, isEmpty);
@@ -358,7 +358,7 @@ void main() {
     });
 
     test('unknown flow_type value → CsvParseError with column: flow_type', () {
-      final csv = '$kHeader\r\n'
+      const csv = '$kHeader\r\n'
           '2026-03-01,9,,,,,0\r\n';
       final result = codec.decode(csv);
       expect(result.rows, isEmpty);
@@ -366,7 +366,7 @@ void main() {
     });
 
     test('unknown flow value → CsvParseError with column: flow', () {
-      final csv = '$kHeader\r\n'
+      const csv = '$kHeader\r\n'
           '2026-03-01,1,9,,,,0\r\n';
       final result = codec.decode(csv);
       expect(result.rows, isEmpty);
@@ -374,7 +374,7 @@ void main() {
     });
 
     test('pain_intensity out of range → CsvParseError', () {
-      final csv = '$kHeader\r\n'
+      const csv = '$kHeader\r\n'
           '2026-03-01,0,,5,,,0\r\n';
       final result = codec.decode(csv);
       expect(result.rows, isEmpty);
@@ -394,7 +394,7 @@ void main() {
     });
 
     test('valid and invalid rows: valid rows included, invalid excluded', () {
-      final csv = '$kHeader\r\n'
+      const csv = '$kHeader\r\n'
           '2026-03-01,0,,,,,0\r\n' // valid
           'bad-date,0,,,,,0\r\n' // invalid date
           '2026-03-03,0,,,,,0\r\n'; // valid
