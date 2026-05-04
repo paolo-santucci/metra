@@ -49,8 +49,7 @@ final _penFinder = find.byWidgetPredicate(
 
 void main() {
   group('CalendarDay — note indicator (pen icon)', () {
-    testWidgets(
-        'should_show_pen_icon_when_hasNote_is_true', (tester) async {
+    testWidgets('should_show_pen_icon_when_hasNote_is_true', (tester) async {
       // Arrange
       final widget = _wrap(_day(hasNote: true), MetraTheme.light());
 
