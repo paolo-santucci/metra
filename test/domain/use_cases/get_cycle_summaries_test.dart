@@ -412,6 +412,70 @@ void main() {
       },
     );
 
+    test('hasNote is false when no log in range has a note', () async {
+      final logRepo = FakeDailyLogRepository();
+      final cycleRepo = FakeCycleEntryRepository();
+      cycleRepo.entries.add(
+        CycleEntryEntity(
+          id: 1,
+          startDate: jan15,
+          endDate: jan20,
+          cycleLength: 28,
+          periodLength: 6,
+        ),
+      );
+      logRepo.savedLogs.add(
+        DailyLogEntity(date: jan15, notes: null),
+      );
+
+      final uc = GetCycleSummaries(logRepo, cycleRepo);
+      final result = await uc().first;
+      expect(result.first.hasNote, isFalse);
+    });
+
+    test('hasNote is true when at least one log in range has a note', () async {
+      final logRepo = FakeDailyLogRepository();
+      final cycleRepo = FakeCycleEntryRepository();
+      cycleRepo.entries.add(
+        CycleEntryEntity(
+          id: 1,
+          startDate: jan15,
+          endDate: jan20,
+          cycleLength: 28,
+          periodLength: 6,
+        ),
+      );
+      logRepo.savedLogs.addAll([
+        DailyLogEntity(date: jan15, notes: null),
+        DailyLogEntity(date: jan16, notes: 'felt off'),
+      ]);
+
+      final uc = GetCycleSummaries(logRepo, cycleRepo);
+      final result = await uc().first;
+      expect(result.first.hasNote, isTrue);
+    });
+
+    test('hasNote ignores empty string notes', () async {
+      final logRepo = FakeDailyLogRepository();
+      final cycleRepo = FakeCycleEntryRepository();
+      cycleRepo.entries.add(
+        CycleEntryEntity(
+          id: 1,
+          startDate: jan15,
+          endDate: jan20,
+          cycleLength: 28,
+          periodLength: 6,
+        ),
+      );
+      logRepo.savedLogs.add(
+        DailyLogEntity(date: jan15, notes: ''),
+      );
+
+      final uc = GetCycleSummaries(logRepo, cycleRepo);
+      final result = await uc().first;
+      expect(result.first.hasNote, isFalse);
+    });
+
     test(
       'given_two_cycles_when_non_trailing_cycle_has_log_after_its_endDate_then_log_not_included_in_older_cycle_summary',
       () async {

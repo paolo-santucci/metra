@@ -107,11 +107,16 @@ class GetCycleSummaries {
           }
         }
 
+        final hasNote = logsInRange.any(
+          (l) => l.notes != null && l.notes!.isNotEmpty,
+        );
+
         return CycleSummary(
           cycle: cycle,
           symptoms: symptomSet.toList(),
           dominantFlow: dominant,
           dominantPainIntensity: dominantPain,
+          hasNote: hasNote,
         );
       }),
     );

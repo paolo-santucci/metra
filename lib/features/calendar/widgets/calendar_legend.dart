@@ -21,9 +21,9 @@ import '../../../core/theme/metra_typography.dart';
 import '../../../core/widgets/metra_icon.dart';
 import '../../../l10n/app_localizations.dart';
 
-/// Four-item legend row shown below the calendar grid.
+/// Five-item legend row shown below the calendar grid.
 /// Items (left→right): Mestruazioni (dropFilled), Sintomi (starSmallFilled),
-/// Dolore (zapFilled), Previsione (dropOutline). All icons are MetraIcons SVG.
+/// Dolore (zapFilled), Note (pen), Previsione (dropOutline). All icons are MetraIcons SVG.
 class CalendarLegend extends StatelessWidget {
   const CalendarLegend({super.key});
 
@@ -37,6 +37,7 @@ class CalendarLegend extends StatelessWidget {
     final accentWarmth = colors.accentWarmth;
     final accentPain = colors.accentPain;
     final textSecondary = colors.textSecondary;
+    final textPrimary = colors.textPrimary;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final dividerColor = isDark ? Colors.white12 : Colors.black12;
 
@@ -68,6 +69,12 @@ class CalendarLegend extends StatelessWidget {
                 svgBody: MetraIcons.zapFilled,
                 color: accentPain,
                 label: l10n.calendar_legend_dolore,
+                textColor: textSecondary,
+              ),
+              _MetraLegendItem(
+                svgBody: MetraIcons.pen,
+                color: textPrimary.withValues(alpha: 0.68),
+                label: l10n.calendar_legend_notes,
                 textColor: textSecondary,
               ),
               _MetraLegendItem(

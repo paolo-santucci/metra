@@ -287,7 +287,7 @@ abstract class AppLocalizations {
   /// Placeholder text inside the notes text field
   ///
   /// In it, this message translates to:
-  /// **'Aggiungi una nota…'**
+  /// **'Circostanze, colore, consistenza…'**
   String get daily_entry_notes_placeholder;
 
   /// Save button on the daily entry screen
@@ -1187,8 +1187,8 @@ abstract class AppLocalizations {
   /// Chip label for menstrual flow
   ///
   /// In it, this message translates to:
-  /// **'Mestruazioni'**
-  String get daily_entry_flow_chip_mestruazioni;
+  /// **'Intensità'**
+  String get daily_entry_flow_chip_intensita;
 
   /// Chip label for spotting. 'Spotting' is an established medical loanword in Italian — do not translate.
   ///

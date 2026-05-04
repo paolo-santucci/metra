@@ -42,12 +42,14 @@ void main() {
     List<PainSymptomData> symptoms = const [],
     FlowIntensity? dominantFlow = FlowIntensity.medium,
     int? dominantPainIntensity = 2,
+    bool hasNote = false,
   }) =>
       CycleSummary(
         cycle: cycleEntry ?? cycle,
         symptoms: symptoms,
         dominantFlow: dominantFlow,
         dominantPainIntensity: dominantPainIntensity,
+        hasNote: hasNote,
       );
 
   group('CycleSummary construction', () {
@@ -57,12 +59,26 @@ void main() {
         symptoms: [symptom],
         dominantFlow: FlowIntensity.heavy,
         dominantPainIntensity: 3,
+        hasNote: true,
       );
 
       expect(summary.cycle, cycle);
       expect(summary.symptoms, [symptom]);
       expect(summary.dominantFlow, FlowIntensity.heavy);
       expect(summary.dominantPainIntensity, 3);
+      expect(summary.hasNote, isTrue);
+    });
+
+    test('hasNote defaults to false', () {
+      final summary = makeSummary();
+
+      expect(summary.hasNote, isFalse);
+    });
+
+    test('hasNote is true when cycle has a note', () {
+      final summary = makeSummary(hasNote: true);
+
+      expect(summary.hasNote, isTrue);
     });
 
     test('accepts null dominantFlow', () {
@@ -139,6 +155,13 @@ void main() {
     test('instances with different dominantPainIntensity are not equal', () {
       final a = makeSummary(dominantPainIntensity: 1);
       final b = makeSummary(dominantPainIntensity: 3);
+
+      expect(a, isNot(equals(b)));
+    });
+
+    test('instances with different hasNote are not equal', () {
+      final a = makeSummary(hasNote: false);
+      final b = makeSummary(hasNote: true);
 
       expect(a, isNot(equals(b)));
     });

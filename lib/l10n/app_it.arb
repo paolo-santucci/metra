@@ -157,7 +157,7 @@
     "description": "Section heading for the notes field"
   },
 
-  "daily_entry_notes_placeholder": "Aggiungi una nota…",
+  "daily_entry_notes_placeholder": "Circostanze, colore, consistenza…",
   "@daily_entry_notes_placeholder": {
     "description": "Placeholder text inside the notes text field"
   },
@@ -936,8 +936,8 @@
     "description": "Chip label for no flow (user explicitly confirmed no bleeding)"
   },
 
-  "daily_entry_flow_chip_mestruazioni": "Mestruazioni",
-  "@daily_entry_flow_chip_mestruazioni": {
+  "daily_entry_flow_chip_intensita": "Intensità",
+  "@daily_entry_flow_chip_intensita": {
     "description": "Chip label for menstrual flow"
   },
 

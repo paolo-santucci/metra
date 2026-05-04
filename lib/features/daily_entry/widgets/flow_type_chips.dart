@@ -71,7 +71,7 @@ class FlowTypeChips extends StatelessWidget {
         const SizedBox(width: MetraSpacing.s2),
         Expanded(
           child: _FlowChip(
-            label: l10n.daily_entry_flow_chip_mestruazioni,
+            label: l10n.daily_entry_flow_chip_intensita,
             flowType: FlowType.mestruazioni,
             selected: selected,
             accent: accent,

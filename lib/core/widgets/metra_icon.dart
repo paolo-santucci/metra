@@ -174,4 +174,7 @@ abstract final class MetraIcons {
 
   static const String zapFilled =
       '<path d="M13 3L5 14L11 14L9 21L19 11L13 11Z" fill="{fill}"/>';
+
+  static const String pen =
+      '<path d="M13 2 C19 5 19 14 13 19 L10 22 L11 19 C8 14 9 6 13 2 Z" fill="{fill}"/>';
 }

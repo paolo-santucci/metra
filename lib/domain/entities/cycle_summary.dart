@@ -26,6 +26,7 @@ class CycleSummary {
     required this.symptoms,
     required this.dominantPainIntensity,
     this.dominantFlow,
+    this.hasNote = false,
   });
 
   final CycleEntryEntity cycle;
@@ -43,6 +44,10 @@ class CycleSummary {
   /// On tie, the highest value wins.
   final int? dominantPainIntensity;
 
+  /// True when at least one daily log in this cycle's date range has a
+  /// non-empty note.
+  final bool hasNote;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -51,14 +56,16 @@ class CycleSummary {
           cycle == other.cycle &&
           _listEquals(symptoms, other.symptoms) &&
           dominantFlow == other.dominantFlow &&
-          dominantPainIntensity == other.dominantPainIntensity;
+          dominantPainIntensity == other.dominantPainIntensity &&
+          hasNote == other.hasNote;
 
   @override
   int get hashCode =>
       cycle.hashCode ^
       Object.hashAll(symptoms) ^
       dominantFlow.hashCode ^
-      dominantPainIntensity.hashCode;
+      dominantPainIntensity.hashCode ^
+      hasNote.hashCode;
 
   static bool _listEquals<T>(List<T> a, List<T> b) {
     if (identical(a, b)) return true;

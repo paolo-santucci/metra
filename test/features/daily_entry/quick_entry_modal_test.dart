@@ -149,13 +149,13 @@ void main() {
       // FlowTypeChips section label.
       expect(find.text('Flusso'), findsOneWidget);
       // FlowTypeChips are rendered.
-      expect(find.text('Mestruazioni'), findsOneWidget);
+      expect(find.text('Intensità'), findsOneWidget);
       // Save button.
       expect(find.text('Salva'), findsOneWidget);
     });
 
     testWidgets(
-        'selecting Mestruazioni then Leggero and tapping Salva saves correct flow',
+        'selecting Intensità then Leggero and tapping Salva saves correct flow',
         (tester) async {
       final fakeNotifier = _FakeDailyEntryNotifier();
 
@@ -168,8 +168,8 @@ void main() {
       await tester.tap(find.text('open-modal'));
       await tester.pumpAndSettle();
 
-      // Select "Mestruazioni" chip — FlowIntensityDots appear with medium default.
-      await tester.tap(find.text('Mestruazioni'));
+      // Select "Intensità" chip — FlowIntensityDots appear with medium default.
+      await tester.tap(find.text('Intensità'));
       await tester.pumpAndSettle();
 
       // Select "Leggero" dot to override the default medium intensity.
@@ -233,7 +233,7 @@ void main() {
       await tester.pump();
 
       // Change flow type in the modal UI.
-      await tester.tap(find.text('Mestruazioni'));
+      await tester.tap(find.text('Intensità'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Salva'));

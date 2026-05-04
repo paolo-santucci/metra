@@ -172,6 +172,7 @@ class _ChipRow extends StatelessWidget {
       ...summary.symptoms
           .take(2)
           .map((s) => _SymptomPill(symptom: s, l10n: l10n)),
+      if (summary.hasNote) const _NotaPill(),
     ];
 
     return Wrap(
@@ -330,6 +331,22 @@ class _Footer extends StatelessWidget {
           color: colors.ink.withValues(alpha: 0.40),
         ),
       ),
+    );
+  }
+}
+
+class _NotaPill extends StatelessWidget {
+  const _NotaPill();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = MetraColors.of(context);
+    return _MiniChip(
+      svgBody: MetraIcons.pen,
+      iconColor: colors.ink.withValues(alpha: 0.68),
+      label: 'Nota',
+      labelColor: colors.ink.withValues(alpha: 0.65),
+      bg: colors.ink.withValues(alpha: 0.06),
     );
   }
 }

@@ -101,8 +101,10 @@ class CalendarDay extends StatelessWidget {
     final indicatorPrediction = isSelected ? bgPrimary : accentPrediction;
     final indicatorSymptom = isSelected ? bgPrimary : accentWarmth;
     final indicatorPain = isSelected ? bgPrimary : accentPain;
+    final indicatorNote =
+        isSelected ? bgPrimary : textPrimary.withValues(alpha: 0.68);
 
-    // Indicator order: flow, prediction, symptom, pain (Bible § 8.3.2).
+    // Indicator order: flow, prediction, symptom, pain, note (Bible § 8.3.2).
     // Each indicator is independent — prediction is NOT suppressed when flow
     // is also present (CL-01 fix).
     final indicators = <Widget>[];
@@ -139,6 +141,15 @@ class CalendarDay extends StatelessWidget {
           svgBody: MetraIcons.zapFilled,
           size: _indicatorSize,
           color: indicatorPain,
+        ),
+      );
+    }
+    if (hasNote) {
+      indicators.add(
+        MetraIcon(
+          svgBody: MetraIcons.pen,
+          size: _indicatorSize,
+          color: indicatorNote,
         ),
       );
     }
@@ -181,7 +192,8 @@ class CalendarDay extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         for (int i = 0; i < indicators.length; i++) ...[
-                          if (i > 0) const SizedBox(width: 2),
+                          if (i > 0)
+                            SizedBox(width: indicators.length >= 4 ? 1 : 2),
                           indicators[i],
                         ],
                       ],

@@ -43,7 +43,7 @@
   },
   "daily_entry_symptom_custom_placeholder": "Symptom name…",
   "daily_entry_notes_label": "Notes",
-  "daily_entry_notes_placeholder": "Add a note…",
+  "daily_entry_notes_placeholder": "Circumstances, colour, consistency…",
   "daily_entry_save": "Save",
   "daily_entry_cancel": "Cancel",
   "daily_entry_delete_confirmation_title": "Delete log",
@@ -527,8 +527,8 @@
     "description": "Chip label for no flow (user explicitly confirmed no bleeding)"
   },
 
-  "daily_entry_flow_chip_mestruazioni": "Menstruation",
-  "@daily_entry_flow_chip_mestruazioni": {
+  "daily_entry_flow_chip_intensita": "Intensity",
+  "@daily_entry_flow_chip_intensita": {
     "description": "Chip label for menstrual flow"
   },
 

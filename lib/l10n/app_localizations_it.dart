@@ -102,7 +102,8 @@ class AppLocalizationsIt extends AppLocalizations {
   String get daily_entry_notes_label => 'Note';
 
   @override
-  String get daily_entry_notes_placeholder => 'Aggiungi una nota…';
+  String get daily_entry_notes_placeholder =>
+      'Circostanze, colore, consistenza…';
 
   @override
   String get daily_entry_save => 'Salva';
@@ -619,7 +620,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get daily_entry_flow_chip_assente => 'Assente';
 
   @override
-  String get daily_entry_flow_chip_mestruazioni => 'Mestruazioni';
+  String get daily_entry_flow_chip_intensita => 'Intensità';
 
   @override
   String get daily_entry_flow_chip_spotting => 'Spotting';

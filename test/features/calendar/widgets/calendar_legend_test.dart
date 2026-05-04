@@ -68,7 +68,16 @@ void main() {
     );
 
     testWidgets(
-      'given_dark_theme_when_rendered_then_all_four_labels_are_visible',
+      'given_light_theme_when_rendered_then_note_label_is_visible',
+      (tester) async {
+        await tester.pumpWidget(_wrap(MetraTheme.light()));
+        await tester.pump();
+        expect(find.text('Note'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'given_dark_theme_when_rendered_then_all_five_labels_are_visible',
       (tester) async {
         await tester.pumpWidget(_wrap(MetraTheme.dark()));
         await tester.pump();
@@ -76,6 +85,7 @@ void main() {
         expect(find.text('Previsione'), findsOneWidget);
         expect(find.text('Sintomi'), findsOneWidget);
         expect(find.text('Dolore'), findsOneWidget);
+        expect(find.text('Note'), findsOneWidget);
       },
     );
   });
