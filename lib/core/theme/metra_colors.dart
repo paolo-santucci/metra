@@ -167,11 +167,15 @@ final class _DarkPalette implements MetraPalette {
 
   // ── Canonical dark primitives — from HTML const C ───────────────────────────
   final Color deepNight = const Color(0xFF1A1410); // sabbia dark (notte)
-  final Color deepNightRaised = const Color(0xFF251D18); // surface dark (surface_d)
+  final Color deepNightRaised =
+      const Color(0xFF251D18); // surface dark (surface_d)
   final Color ivory = const Color(0xFFEDE4D3); // inchiostro dark (avorio)
-  final Color mutedTerracotta = const Color(0xFFB86848); // terracotta dark (tc_spenta)
-  final Color mutedTerracottaSoft = const Color(0xFFD4906A); // tc_scura dark (tc_chiara)
-  final Color lightLavender = const Color(0xFF9B8FBF); // lavanda dark (lav_chiara)
+  final Color mutedTerracotta =
+      const Color(0xFFB86848); // terracotta dark (tc_spenta)
+  final Color mutedTerracottaSoft =
+      const Color(0xFFD4906A); // tc_scura dark (tc_chiara)
+  final Color lightLavender =
+      const Color(0xFF9B8FBF); // lavanda dark (lav_chiara)
   final Color malvaLight = const Color(0xFFC4A0B4); // malva dark (malva_chiara)
   final Color warmOchreDark = const Color(0xFFC4924A); // ocra dark
   final Color mossDark = const Color(0xFF9FA896); // muschio dark
@@ -201,7 +205,8 @@ final class _DarkPalette implements MetraPalette {
   @override
   Color get textPrimary => ivory;
   @override
-  Color get textSecondary => ivory.withAlpha(0xA6); // avorio @ 0.65 — sub text dark
+  Color get textSecondary =>
+      ivory.withAlpha(0xA6); // avorio @ 0.65 — sub text dark
   @override
   Color get textOnSand => mutedTerracottaSoft;
   @override

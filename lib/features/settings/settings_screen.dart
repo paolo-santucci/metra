@@ -820,10 +820,10 @@ class _SettingsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = MetraColors.of(context);
 
-    final labelColor = isDestructive ? colors.accentFlowStrong : colors.textPrimary;
-    final bg = isDestructive
-        ? colors.accentFlow.withAlpha(0x0D)
-        : Colors.transparent;
+    final labelColor =
+        isDestructive ? colors.accentFlowStrong : colors.textPrimary;
+    final bg =
+        isDestructive ? colors.accentFlow.withAlpha(0x0D) : Colors.transparent;
     final secondaryColor = colors.textSecondary;
     final chevronColor = secondaryColor;
 
