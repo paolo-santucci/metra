@@ -27,9 +27,9 @@ Widget _wrap(Widget child, ThemeData theme) => MaterialApp(
       home: Scaffold(body: Center(child: child)),
     );
 
-const _testLabel = 'Crampi';
-const _testSemantics = 'Crampi, selezionato';
-const _testSemanticsUnselected = 'Crampi, non selezionato';
+const _testLabel = 'Stanchezza';
+const _testSemantics = 'Stanchezza, selezionato';
+const _testSemanticsUnselected = 'Stanchezza, non selezionato';
 
 void main() {
   testWidgets('golden — light unselected', (tester) async {

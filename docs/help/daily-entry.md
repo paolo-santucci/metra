@@ -72,7 +72,6 @@ Leave the section collapsed to record no pain for the day.
 
 A row of tappable chips. Tap to toggle a symptom on or off. Available symptoms:
 
-- Cramps (Crampi)
 - Back pain (Mal di schiena)
 - Headache (Mal di testa)
 - Migraine (Emicrania)

@@ -107,11 +107,6 @@
     "description": "Section heading for the symptom chips"
   },
 
-  "daily_entry_symptom_cramps": "Crampi",
-  "@daily_entry_symptom_cramps": {
-    "description": "Symptom chip: menstrual cramps"
-  },
-
   "daily_entry_symptom_backPain": "Mal di schiena",
   "@daily_entry_symptom_backPain": {
     "description": "Symptom chip: back pain"

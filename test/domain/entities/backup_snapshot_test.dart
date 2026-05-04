@@ -36,7 +36,7 @@ void main() {
         painIntensity: 2,
       );
       final symptoms = [
-        const PainSymptomData(symptomType: PainSymptomType.cramps),
+        const PainSymptomData(symptomType: PainSymptomType.headache),
         const PainSymptomData(
           symptomType: PainSymptomType.custom,
           customLabel: 'jaw',

@@ -712,7 +712,7 @@ Label: `SINTOMI`. Content: `wrap, gap 8`:
 Default symptom list (preserve order):
 
 ```
-Crampi · Mal di testa · Stanchezza · Mal di schiena · Nausea · Gonfiore · Tensione mammaria
+Mal di testa · Stanchezza · Mal di schiena · Nausea · Gonfiore · Tensione mammaria
 ```
 
 Custom symptoms append after the predefined list.
@@ -788,11 +788,11 @@ rows:   same grid · padding 14 / 12 · bg surface · radius 12 · marginBottom 
 ### 10.5 Sample fixture data (for visual QA only)
 
 ```
-Apr 2025 · day 10 · len 28 · dur 5 · flow Abbondante · pain 3 · symptoms [Crampi, Stanchezza]
+Apr 2025 · day 10 · len 28 · dur 5 · flow Abbondante · pain 3 · symptoms [Stanchezza, Mal di testa]
 Mar 2025 · day 11 · len 27 · dur 4 · flow Moderato   · pain 2 · symptoms [Mal di testa]
-Feb 2025 · day 12 · len 29 · dur 5 · flow Moderato   · pain 3 · symptoms [Crampi, Mal di schiena]
+Feb 2025 · day 12 · len 29 · dur 5 · flow Moderato   · pain 3 · symptoms [Mal di schiena, Stanchezza]
 Gen 2025 · day 14 · len 28 · dur 4 · flow Leggero    · pain 1 · symptoms []
-Dic 2024 · day 17 · len 30 · dur 6 · flow Abbondante · pain 3 · symptoms [Crampi, Nausea]
+Dic 2024 · day 17 · len 30 · dur 6 · flow Abbondante · pain 3 · symptoms [Nausea, Mal di testa]
 ```
 
 ---
@@ -883,7 +883,6 @@ fill:  height 6 · radius 3 · bg ocra · width = count / max × 100 %
 Series:
 
 ```
-Crampi          5/6
 Stanchezza      4/6
 Mal di testa    3/6
 Mal di schiena  2/6

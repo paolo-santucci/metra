@@ -548,7 +548,7 @@ const MONTH_DATA = (() => {
   const symptoms = [13, 16, 17];   // day 13: flow+symptom+pain; 16-17: symptom only or +pain
   const pain = [11, 12, 13, 16];   // day 11-12: flow+pain; 13: flow+symptom+pain; 16: symptom+pain
   const flowByDay = { 10: 'Abbondante', 11: 'Abbondante', 12: 'Moderato', 13: 'Leggero', 14: 'Leggero' };
-  const symptomsByDay = { 13: ['Crampi', 'Stanchezza'], 16: ['Mal di testa'], 17: ['Stanchezza'] };
+  const symptomsByDay = { 13: ['Stanchezza'], 16: ['Mal di testa'], 17: ['Stanchezza'] };
   const painByDay = { 11: 'Moderato', 12: 'Moderato', 13: 'Forte', 16: 'Lieve' };
   const notesByDay = { 13: 'Ciclo molto doloroso oggi', 16: 'Emicrania intensa' };
   return { offset, total, flow, pred, symptoms, pain, flowByDay, symptomsByDay, painByDay, notesByDay };
@@ -736,7 +736,7 @@ function ScreenRegistrazione() {
   const [flowType, setFlowType] = useState('mestruazioni');
   const [flowIntensity, setFlowIntensity] = useState(2);
   const [pain, setPain] = useState(null);
-  const [symptoms, setSymptoms] = useState(new Set(['Crampi']));
+  const [symptoms, setSymptoms] = useState(new Set(['Stanchezza']));
   const lastMensIntensityRef = React.useRef(2);
   const handleFlowType = t => {
     const next = t === flowType ? null : t;
@@ -751,7 +751,7 @@ function ScreenRegistrazione() {
   const [customSymptoms, setCustomSymptoms] = useState([]);
   const [addingSymptom, setAddingSymptom] = useState(false);
   const [newSymptomText, setNewSymptomText] = useState('');
-  const SYMPTOMS = ['Crampi', 'Mal di testa', 'Stanchezza', 'Mal di schiena', 'Nausea', 'Gonfiore', 'Tensione mammaria'];
+  const SYMPTOMS = ['Mal di testa', 'Stanchezza', 'Mal di schiena', 'Nausea', 'Gonfiore', 'Tensione mammaria'];
   const allSymptoms = [...SYMPTOMS, ...customSymptoms];
   const toggleSym = (s) => setSymptoms((prev) => {
     const n = new Set(prev);
@@ -880,11 +880,11 @@ function ScreenRegistrazione() {
    ARCHIVIO — Timeline & Tabella
 ══════════════════════════════════════ */
 const ARCHIVIO_DATA = [
-{ month: 'Apr 2025', day: 10, len: 28, dur: 5, flow: 'Abbondante', pain: 3, symptoms: ['Crampi', 'Stanchezza'] },
+{ month: 'Apr 2025', day: 10, len: 28, dur: 5, flow: 'Abbondante', pain: 3, symptoms: ['Stanchezza', 'Mal di testa'] },
 { month: 'Mar 2025', day: 11, len: 27, dur: 4, flow: 'Moderato',   pain: 2, symptoms: ['Mal di testa'] },
-{ month: 'Feb 2025', day: 12, len: 29, dur: 5, flow: 'Moderato',   pain: 3, symptoms: ['Crampi', 'Mal di schiena'] },
+{ month: 'Feb 2025', day: 12, len: 29, dur: 5, flow: 'Moderato',   pain: 3, symptoms: ['Mal di schiena', 'Stanchezza'] },
 { month: 'Gen 2025', day: 14, len: 28, dur: 4, flow: 'Leggero',    pain: 1, symptoms: [] },
-{ month: 'Dic 2024', day: 17, len: 30, dur: 6, flow: 'Abbondante', pain: 3, symptoms: ['Crampi', 'Nausea'] }];
+{ month: 'Dic 2024', day: 17, len: 30, dur: 6, flow: 'Abbondante', pain: 3, symptoms: ['Nausea', 'Mal di testa'] }];
 
 
 function ScreenArchivio() {
@@ -1059,7 +1059,6 @@ function ScreenStatistiche() {
           <div style={{ background: C.surface, borderRadius: 16, border: '1px solid rgba(43,37,33,0.07)', padding: '18px 16px' }}>
             <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 500, color: C.inchiostro, marginBottom: 14 }}>Sintomi più frequenti</div>
             {[
-            { label: 'Crampi', count: 5, max: 6 },
             { label: 'Stanchezza', count: 4, max: 6 },
             { label: 'Mal di testa', count: 3, max: 6 },
             { label: 'Mal di schiena', count: 2, max: 6 }].

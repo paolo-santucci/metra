@@ -224,12 +224,6 @@ abstract class AppLocalizations {
   /// **'Sintomi'**
   String get daily_entry_symptoms_label;
 
-  /// Symptom chip: menstrual cramps
-  ///
-  /// In it, this message translates to:
-  /// **'Crampi'**
-  String get daily_entry_symptom_cramps;
-
   /// Symptom chip: back pain
   ///
   /// In it, this message translates to:

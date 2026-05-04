@@ -138,7 +138,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -201,6 +201,34 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(
               appSettings,
               appSettings.declaredCycleLength,
+            );
+          }
+          if (from < 6) {
+            // Drop PainSymptomType.cramps (was index 0). Existing cramps rows
+            // are preserved as custom-label rows; remaining indices shift down
+            // by one to match the new enum.
+            //
+            // Old: cramps=0, backPain=1, headache=2, migraine=3, bloating=4,
+            //      custom=5, fatigue=6, nausea=7, breastTenderness=8.
+            // New: backPain=0, headache=1, migraine=2, bloating=3, custom=4,
+            //      fatigue=5, nausea=6, breastTenderness=7.
+            //
+            // The transient sentinel (-1) prevents the just-converted rows
+            // from being shifted again by the BETWEEN 1 AND 8 update.
+            await customStatement(
+              "UPDATE pain_symptoms "
+              "SET symptom_type = -1, custom_label = 'Crampi' "
+              "WHERE symptom_type = 0",
+            );
+            await customStatement(
+              "UPDATE pain_symptoms "
+              "SET symptom_type = symptom_type - 1 "
+              "WHERE symptom_type BETWEEN 1 AND 8",
+            );
+            await customStatement(
+              "UPDATE pain_symptoms "
+              "SET symptom_type = 4 "
+              "WHERE symptom_type = -1",
             );
           }
         },

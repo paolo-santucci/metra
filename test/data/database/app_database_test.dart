@@ -110,11 +110,11 @@ void main() {
         [
           PainSymptomsCompanion(
             dailyLogDate: Value(date),
-            symptomType: const Value(0), // cramps
+            symptomType: const Value(0), // backPain
           ),
           PainSymptomsCompanion(
             dailyLogDate: Value(date),
-            symptomType: const Value(1), // back
+            symptomType: const Value(1), // headache
           ),
         ],
       );
@@ -124,7 +124,7 @@ void main() {
         [
           PainSymptomsCompanion(
             dailyLogDate: Value(date),
-            symptomType: const Value(2), // headache
+            symptomType: const Value(2), // migraine
           ),
         ],
       );

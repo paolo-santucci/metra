@@ -99,7 +99,7 @@ void main() {
       () async {
     await repo.saveDailyLog(makeEntity(day1));
     await repo.replacePainSymptoms(day1, [
-      const PainSymptomData(symptomType: PainSymptomType.cramps),
+      const PainSymptomData(symptomType: PainSymptomType.bloating),
       const PainSymptomData(symptomType: PainSymptomType.headache),
     ]);
 

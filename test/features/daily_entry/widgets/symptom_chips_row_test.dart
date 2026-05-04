@@ -66,8 +66,7 @@ void main() {
       await tester.pumpWidget(_wrap());
       await tester.pumpAndSettle();
 
-      // SymptomChipsRow shows 7 fixed types (migraine and custom are excluded).
-      expect(find.text('Crampi'), findsOneWidget);
+      // SymptomChipsRow shows 6 fixed types (migraine and custom are excluded).
       expect(find.text('Mal di testa'), findsOneWidget);
       expect(find.text('Stanchezza'), findsOneWidget);
       expect(find.text('Mal di schiena'), findsOneWidget);
@@ -95,10 +94,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Crampi'));
+      await tester.tap(find.text('Stanchezza'));
       await tester.pumpAndSettle();
 
-      expect(lastChanged, contains(PainSymptomType.cramps));
+      expect(lastChanged, contains(PainSymptomType.fatigue));
     });
 
     testWidgets('tapping a selected chip removes it from the selection',
@@ -113,7 +112,7 @@ void main() {
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: SymptomChipsRow(
-              selected: const {PainSymptomType.cramps},
+              selected: const {PainSymptomType.fatigue},
               onChanged: (s) => lastChanged = s,
             ),
           ),
@@ -121,11 +120,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Crampi'));
+      await tester.tap(find.text('Stanchezza'));
       await tester.pumpAndSettle();
 
       expect(lastChanged, isNotNull);
-      expect(lastChanged!, isNot(contains(PainSymptomType.cramps)));
+      expect(lastChanged!, isNot(contains(PainSymptomType.fatigue)));
     });
 
     testWidgets('multiple chips can be selected simultaneously',
@@ -133,16 +132,16 @@ void main() {
       await tester.pumpWidget(_wrap());
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Crampi'));
+      await tester.tap(find.text('Stanchezza'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Nausea'));
       await tester.pumpAndSettle();
 
       // Verify both ChoiceChipMetra widgets report selected=true.
       // This distinguishes genuine multi-select from a radio (single-select) implementation.
-      final crampsChip = tester.widget<ChoiceChipMetra>(
+      final fatigueChip = tester.widget<ChoiceChipMetra>(
         find.ancestor(
-          of: find.text('Crampi'),
+          of: find.text('Stanchezza'),
           matching: find.byType(ChoiceChipMetra),
         ),
       );
@@ -152,7 +151,7 @@ void main() {
           matching: find.byType(ChoiceChipMetra),
         ),
       );
-      expect(crampsChip.selected, isTrue);
+      expect(fatigueChip.selected, isTrue);
       expect(nauseaChip.selected, isTrue);
     });
   });

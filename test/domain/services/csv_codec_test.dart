@@ -119,12 +119,12 @@ void main() {
         row(
           date: DateTime.utc(2026, 3, 1),
           symptoms: [
-            const PainSymptomData(symptomType: PainSymptomType.cramps),
+            const PainSymptomData(symptomType: PainSymptomType.headache),
             const PainSymptomData(symptomType: PainSymptomType.backPain),
           ],
         ),
       ]);
-      expect(csv, contains('cramps;backPain'));
+      expect(csv, contains('headache;backPain'));
     });
 
     test('custom symptom encoded as custom:Label', () {
@@ -164,7 +164,7 @@ void main() {
         painIntensity: 2,
         notes: 'some note with, a comma',
         symptoms: [
-          const PainSymptomData(symptomType: PainSymptomType.cramps),
+          const PainSymptomData(symptomType: PainSymptomType.headache),
           const PainSymptomData(
             symptomType: PainSymptomType.custom,
             customLabel: 'Nausea',
@@ -186,7 +186,7 @@ void main() {
       expect(decoded.log.notes, 'some note with, a comma');
       expect(decoded.log.notesEnabled, isTrue);
       expect(decoded.symptoms, hasLength(2));
-      expect(decoded.symptoms.first.symptomType, PainSymptomType.cramps);
+      expect(decoded.symptoms.first.symptomType, PainSymptomType.headache);
       expect(decoded.symptoms.last.symptomType, PainSymptomType.custom);
       expect(decoded.symptoms.last.customLabel, 'Nausea');
     });
@@ -293,7 +293,7 @@ void main() {
 
     test('non-empty symptoms → painEnabled true', () {
       const csv = '$kHeader\r\n'
-          '2026-03-01,0,,,cramps,,0\r\n';
+          '2026-03-01,0,,,headache,,0\r\n';
       final result = codec.decode(csv);
       expect(result.errors, isEmpty);
       expect(result.rows.first.log.painEnabled, isTrue);
@@ -451,6 +451,44 @@ void main() {
       expect(result.errors, isEmpty);
       expect(result.rows, hasLength(1));
       expect(result.rows.first.log.flowType, FlowType.assente);
+    });
+
+    test(
+        'legacy `cramps` symptom token decodes as custom-label "Crampi" '
+        '(v0.1 enum was removed in v0.2)', () {
+      const csv = '$kHeader\r\n'
+          '2026-03-01,1,1,,cramps,,0\r\n';
+      final result = codec.decode(csv);
+      expect(result.errors, isEmpty);
+      expect(result.rows, hasLength(1));
+      expect(result.rows.first.symptoms, hasLength(1));
+      final s = result.rows.first.symptoms.first;
+      expect(s.symptomType, PainSymptomType.custom);
+      expect(s.customLabel, 'Crampi');
+    });
+
+    test(
+        'legacy `cramps` mixed with current symptom names: cramps becomes '
+        'custom, others decode normally', () {
+      const csv = '$kHeader\r\n'
+          '2026-03-01,1,1,,cramps;backPain;headache,,0\r\n';
+      final result = codec.decode(csv);
+      expect(result.errors, isEmpty);
+      expect(result.rows, hasLength(1));
+      expect(result.rows.first.symptoms, hasLength(3));
+      final types = result.rows.first.symptoms.map((s) => s.symptomType);
+      expect(
+        types,
+        containsAll([
+          PainSymptomType.custom,
+          PainSymptomType.backPain,
+          PainSymptomType.headache,
+        ]),
+      );
+      // The custom one carries the legacy label.
+      final custom = result.rows.first.symptoms
+          .firstWhere((s) => s.symptomType == PainSymptomType.custom);
+      expect(custom.customLabel, 'Crampi');
     });
   });
 }

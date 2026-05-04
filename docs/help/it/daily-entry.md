@@ -72,7 +72,6 @@ Lascia la sezione chiusa per registrare nessun dolore nel giorno.
 
 Una fila di chip toccabili. Tocca per attivare o disattivare un sintomo. Sintomi disponibili:
 
-- Crampi
 - Mal di schiena
 - Mal di testa
 - Emicrania

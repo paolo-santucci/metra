@@ -96,7 +96,6 @@ The `symptoms` column is a semicolon-separated list of tokens. Tokens are case-s
 
 | Token | Meaning |
 |---|---|
-| `cramps` | Crampi (Cramps) |
 | `backPain` | Mal di schiena (Back pain) |
 | `headache` | Mal di testa (Headache) |
 | `migraine` | Emicrania (Migraine) |
@@ -107,17 +106,19 @@ The `symptoms` column is a semicolon-separated list of tokens. Tokens are case-s
 
 **Custom symptoms** use the prefix `custom:` followed by the label text, e.g. `custom:Dolore pelvico`. The label is reproduced exactly as typed.
 
+> **Backward compatibility.** Pre-v0.2 exports of Métra used a `cramps` built-in token. On import, that token is automatically converted to a custom-label entry (`custom:Crampi`); the data is preserved.
+
 **Example** — a row with two symptoms, one built-in and one custom:
 
 ```
 symptoms
-cramps;custom:Dolore alla schiena
+headache;custom:Dolore alla schiena
 ```
 
 Multiple symptoms in one cell:
 
 ```
-cramps;headache;bloating
+headache;backPain;bloating
 ```
 
 ---
@@ -126,8 +127,8 @@ cramps;headache;bloating
 
 ```csv
 date,flow_type,flow,pain_intensity,symptoms,notes,cycle_start
-2025-05-01,1,0,2,cramps;bloating,First day,1
-2025-05-02,1,1,1,cramps,,0
+2025-05-01,1,0,2,headache;bloating,First day,1
+2025-05-02,1,1,1,headache,,0
 2025-05-03,1,1,,,, 0
 2025-05-04,1,0,,,Feeling better,0
 2025-05-05,0,,,,, 0

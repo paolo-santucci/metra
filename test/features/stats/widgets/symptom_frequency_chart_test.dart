@@ -34,7 +34,6 @@ Widget _wrap(Widget child) {
 
 // All symptoms with zero count — the "empty" case.
 const _allZeroCounts = {
-  PainSymptomType.cramps: 0,
   PainSymptomType.backPain: 0,
   PainSymptomType.headache: 0,
   PainSymptomType.migraine: 0,
@@ -66,7 +65,7 @@ void main() {
       await tester.pumpWidget(
         _wrap(
           const SymptomFrequencyChart(
-            counts: {PainSymptomType.cramps: 3},
+            counts: {PainSymptomType.headache: 3},
             totalCycles: 0,
           ),
         ),
@@ -81,11 +80,11 @@ void main() {
         _wrap(
           const SymptomFrequencyChart(
             counts: {
-              PainSymptomType.cramps: 3,
+              PainSymptomType.headache: 3,
               PainSymptomType.backPain: 2,
-              PainSymptomType.headache: 0,
-              PainSymptomType.bloating: 1,
               PainSymptomType.fatigue: 0,
+              PainSymptomType.bloating: 1,
+              PainSymptomType.nausea: 0,
             },
             totalCycles: 6,
           ),
@@ -93,14 +92,14 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Three non-zero symptoms: cramps (3), backPain (2), bloating (1).
-      expect(find.text('Crampi'), findsOneWidget);
+      // Three non-zero symptoms: headache (3), backPain (2), bloating (1).
+      expect(find.text('Mal di testa'), findsOneWidget);
       expect(find.text('Mal di schiena'), findsOneWidget);
       expect(find.text('Gonfiore'), findsOneWidget);
 
       // Zero-count symptoms must not appear.
-      expect(find.text('Mal di testa'), findsNothing);
       expect(find.text('Stanchezza'), findsNothing);
+      expect(find.text('Nausea'), findsNothing);
     });
 
     testWidgets('renders count/totalCycles fraction text correctly',
@@ -108,7 +107,7 @@ void main() {
       await tester.pumpWidget(
         _wrap(
           const SymptomFrequencyChart(
-            counts: {PainSymptomType.cramps: 3},
+            counts: {PainSymptomType.headache: 3},
             totalCycles: 6,
           ),
         ),
@@ -124,7 +123,7 @@ void main() {
         _wrap(
           const SymptomFrequencyChart(
             counts: {
-              PainSymptomType.cramps: 4,
+              PainSymptomType.headache: 4,
               PainSymptomType.backPain: 2,
               PainSymptomType.nausea: 1,
             },
@@ -147,7 +146,7 @@ void main() {
           const SymptomFrequencyChart(
             counts: {
               PainSymptomType.nausea: 1,
-              PainSymptomType.cramps: 4,
+              PainSymptomType.headache: 4,
               PainSymptomType.backPain: 2,
             },
             totalCycles: 5,
@@ -157,25 +156,25 @@ void main() {
       await tester.pumpAndSettle();
 
       // Collect top-level positions to verify rendering order.
-      final crampsFinder = find.text('Crampi');
+      final headacheFinder = find.text('Mal di testa');
       final backPainFinder = find.text('Mal di schiena');
       final nauseaFinder = find.text('Nausea');
 
       // All three are present.
-      expect(crampsFinder, findsOneWidget);
+      expect(headacheFinder, findsOneWidget);
       expect(backPainFinder, findsOneWidget);
       expect(nauseaFinder, findsOneWidget);
 
-      // Vertical position: cramps (4) must appear above backPain (2),
+      // Vertical position: headache (4) must appear above backPain (2),
       // which must appear above nausea (1).
-      final crampsY = tester.getTopLeft(crampsFinder).dy;
+      final headacheY = tester.getTopLeft(headacheFinder).dy;
       final backPainY = tester.getTopLeft(backPainFinder).dy;
       final nauseaY = tester.getTopLeft(nauseaFinder).dy;
 
       expect(
-        crampsY,
+        headacheY,
         lessThan(backPainY),
-        reason: 'cramps (count=4) must render above backPain (count=2)',
+        reason: 'headache (count=4) must render above backPain (count=2)',
       );
       expect(
         backPainY,
@@ -189,7 +188,7 @@ void main() {
       await tester.pumpWidget(
         _wrap(
           const SymptomFrequencyChart(
-            counts: {PainSymptomType.cramps: 2},
+            counts: {PainSymptomType.headache: 2},
             totalCycles: 4,
           ),
         ),

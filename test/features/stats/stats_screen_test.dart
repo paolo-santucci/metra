@@ -88,8 +88,7 @@ CycleStatsData _makeStatsData() => CycleStatsData(
       painTrend: null,
       cyclesTrackedCount: 3,
       symptomCounts: {
-        PainSymptomType.cramps: 2,
-        PainSymptomType.backPain: 1,
+        PainSymptomType.backPain: 2,
         PainSymptomType.headache: 0,
         PainSymptomType.migraine: 0,
         PainSymptomType.bloating: 1,

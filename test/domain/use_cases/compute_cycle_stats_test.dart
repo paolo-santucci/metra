@@ -183,7 +183,6 @@ void main() {
       expect(
         result!.symptomCounts.keys,
         containsAll([
-          PainSymptomType.cramps,
           PainSymptomType.backPain,
           PainSymptomType.headache,
           PainSymptomType.migraine,
@@ -218,12 +217,12 @@ void main() {
         DailyLogEntity(date: start, flowIntensity: FlowIntensity.medium),
       );
       logRepo.symptoms[start] = [
-        const PainSymptomData(symptomType: PainSymptomType.cramps),
+        const PainSymptomData(symptomType: PainSymptomType.headache),
       ];
 
       final uc = ComputeCycleStats(GetCycleSummaries(logRepo, cycleRepo));
       final result = await uc().first;
-      expect(result!.symptomCounts[PainSymptomType.cramps], 1);
+      expect(result!.symptomCounts[PainSymptomType.headache], 1);
     });
 
     test('cycleLengthAvg computed correctly for one complete cycle', () async {

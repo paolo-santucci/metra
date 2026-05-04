@@ -96,7 +96,6 @@ La colonna `symptoms` è una lista di token separata da punto e virgola. I token
 
 | Token | Significato |
 |---|---|
-| `cramps` | Crampi |
 | `backPain` | Mal di schiena |
 | `headache` | Mal di testa |
 | `migraine` | Emicrania |
@@ -107,17 +106,19 @@ La colonna `symptoms` è una lista di token separata da punto e virgola. I token
 
 **Sintomi personalizzati** usano il prefisso `custom:` seguito dal testo dell'etichetta, es. `custom:Dolore pelvico`. L'etichetta viene riprodotta esattamente come digitata.
 
+> **Compatibilità con esportazioni precedenti.** Le esportazioni di Métra precedenti alla v0.2 usavano il token predefinito `cramps`. All'importazione, quel token viene convertito automaticamente in una voce con etichetta personalizzata (`custom:Crampi`); il dato è preservato.
+
 **Esempio** — una riga con due sintomi, uno predefinito e uno personalizzato:
 
 ```
 symptoms
-cramps;custom:Dolore alla schiena
+headache;custom:Dolore alla schiena
 ```
 .
 Più sintomi nella stessa cella:
 
 ```
-cramps;headache;bloating
+headache;backPain;bloating
 ```
 
 ---
@@ -126,8 +127,8 @@ cramps;headache;bloating
 
 ```csv
 date,flow_type,flow,pain_intensity,symptoms,notes,cycle_start
-2025-05-01,1,0,2,cramps;bloating,Primo giorno,1
-2025-05-02,1,1,1,cramps,,0
+2025-05-01,1,0,2,headache;bloating,Primo giorno,1
+2025-05-02,1,1,1,headache,,0
 2025-05-03,1,1,,,, 0
 2025-05-04,1,0,,,Mi sento meglio,0
 2025-05-05,0,,,,, 0

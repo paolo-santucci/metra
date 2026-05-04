@@ -48,7 +48,6 @@ class ComputeCycleStats {
         .toList();
 
     const fixedTypes = [
-      PainSymptomType.cramps,
       PainSymptomType.backPain,
       PainSymptomType.headache,
       PainSymptomType.migraine,

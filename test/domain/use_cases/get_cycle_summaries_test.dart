@@ -86,10 +86,10 @@ void main() {
         );
       }
       logRepo.symptoms[jan15] = [
-        const PainSymptomData(symptomType: PainSymptomType.cramps),
+        const PainSymptomData(symptomType: PainSymptomType.headache),
       ];
       logRepo.symptoms[jan16] = [
-        const PainSymptomData(symptomType: PainSymptomType.cramps),
+        const PainSymptomData(symptomType: PainSymptomType.headache),
       ];
       logRepo.symptoms[jan17] = [
         const PainSymptomData(symptomType: PainSymptomType.backPain),
@@ -101,7 +101,7 @@ void main() {
       expect(
         result.first.symptoms,
         containsAll([
-          const PainSymptomData(symptomType: PainSymptomType.cramps),
+          const PainSymptomData(symptomType: PainSymptomType.headache),
           const PainSymptomData(symptomType: PainSymptomType.backPain),
         ]),
       );
@@ -398,14 +398,16 @@ void main() {
         // Non-period symptom log at D-3 (after endDate D-25, before today).
         logRepo.savedLogs.add(DailyLogEntity(date: d3));
         logRepo.symptoms[d3] = [
-          const PainSymptomData(symptomType: PainSymptomType.cramps),
+          const PainSymptomData(symptomType: PainSymptomType.headache),
         ];
 
         final uc = GetCycleSummaries(logRepo, cycleRepo);
         final result = await uc().first;
         expect(
           result.first.symptoms,
-          contains(const PainSymptomData(symptomType: PainSymptomType.cramps)),
+          contains(
+            const PainSymptomData(symptomType: PainSymptomType.headache),
+          ),
         );
       },
     );

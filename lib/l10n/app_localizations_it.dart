@@ -72,9 +72,6 @@ class AppLocalizationsIt extends AppLocalizations {
   String get daily_entry_symptoms_label => 'Sintomi';
 
   @override
-  String get daily_entry_symptom_cramps => 'Crampi';
-
-  @override
   String get daily_entry_symptom_backPain => 'Mal di schiena';
 
   @override

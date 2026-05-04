@@ -16,7 +16,6 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 enum PainSymptomType {
-  cramps,
   backPain,
   headache,
   migraine,

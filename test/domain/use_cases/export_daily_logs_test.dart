@@ -64,7 +64,7 @@ void main() {
     );
     await fakeRepo.replacePainSymptoms(
       DateTime.utc(2026, 1, 1),
-      [const PainSymptomData(symptomType: PainSymptomType.cramps)],
+      [const PainSymptomData(symptomType: PainSymptomType.headache)],
     );
 
     final csv = await useCase.execute();

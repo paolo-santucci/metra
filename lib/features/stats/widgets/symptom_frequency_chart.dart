@@ -66,8 +66,6 @@ class SymptomFrequencyChart extends StatelessWidget {
 
   String _symptomLabel(AppLocalizations l10n, PainSymptomType type) {
     switch (type) {
-      case PainSymptomType.cramps:
-        return l10n.daily_entry_symptom_cramps;
       case PainSymptomType.backPain:
         return l10n.daily_entry_symptom_backPain;
       case PainSymptomType.headache:

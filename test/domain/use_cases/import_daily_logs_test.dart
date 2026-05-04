@@ -43,7 +43,9 @@ void main() {
 
   DailyLogRow makeRowWithSymptom(DateTime date) => DailyLogRow(
         log: DailyLogEntity(date: date, painEnabled: true),
-        symptoms: [const PainSymptomData(symptomType: PainSymptomType.cramps)],
+        symptoms: [
+          const PainSymptomData(symptomType: PainSymptomType.headache),
+        ],
       );
 
   setUp(() {
@@ -83,7 +85,7 @@ void main() {
 
       final storedSymptoms = await fakeLogRepo.getPainSymptoms(date1);
       expect(storedSymptoms, hasLength(1));
-      expect(storedSymptoms.first.symptomType, PainSymptomType.cramps);
+      expect(storedSymptoms.first.symptomType, PainSymptomType.headache);
     });
   });
 

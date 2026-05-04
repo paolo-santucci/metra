@@ -188,10 +188,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // The inline input closes, + Aggiungi returns, no new chip text visible
-      // except the 7 fixed labels. Custom chip "Vertigini" (or anything) absent.
+      // except the 6 fixed labels. Custom chip "Vertigini" (or anything) absent.
       expect(find.text('Aggiungi'), findsOneWidget);
-      // Chip count should be exactly the 7 fixed labels.
-      expect(find.text('Crampi'), findsOneWidget);
+      // Chip count should be exactly the 6 fixed labels.
+      expect(find.text('Stanchezza'), findsOneWidget);
     });
 
     testWidgets('duplicate label (case-insensitive) is silently rejected',
@@ -244,13 +244,13 @@ void main() {
 
       await tester.tap(find.text('Aggiungi'));
       await tester.pumpAndSettle();
-      // 'crampi' matches the fixed label 'Crampi'.
-      await tester.enterText(find.byType(TextField).first, 'crampi');
+      // 'stanchezza' matches the fixed label 'Stanchezza'.
+      await tester.enterText(find.byType(TextField).first, 'stanchezza');
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
 
-      // Only one 'Crampi' chip (the fixed one), no custom chip added.
-      expect(find.text('Crampi'), findsOneWidget);
+      // Only one 'Stanchezza' chip (the fixed one), no custom chip added.
+      expect(find.text('Stanchezza'), findsOneWidget);
     });
   });
 

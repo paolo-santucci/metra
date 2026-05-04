@@ -364,6 +364,16 @@ class CsvCodec {
                 customLabel: t.substring('custom:'.length),
               ),
             );
+          } else if (t == 'cramps') {
+            // Backward compat: pre-v0.2 exports used `cramps` as a fixed-enum
+            // symptom name. The enum value was removed; preserve the data as
+            // a custom-label entry (mirrors the v5→v6 DB migration).
+            symptoms.add(
+              const PainSymptomData(
+                symptomType: PainSymptomType.custom,
+                customLabel: 'Crampi',
+              ),
+            );
           } else {
             try {
               final type =

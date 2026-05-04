@@ -28,7 +28,7 @@ void main() {
       painEnabled: true,
     );
     final symptoms2 = [
-      const PainSymptomData(symptomType: PainSymptomType.cramps),
+      const PainSymptomData(symptomType: PainSymptomType.headache),
     ];
     repo.savedLogs.addAll([log1, log2]);
     repo.symptoms[log2.date] = symptoms2;

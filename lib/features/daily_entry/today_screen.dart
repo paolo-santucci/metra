@@ -180,7 +180,6 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
   }
 
   static const List<PainSymptomType> _symptomTypes = [
-    PainSymptomType.cramps,
     PainSymptomType.headache,
     PainSymptomType.fatigue,
     PainSymptomType.backPain,
@@ -191,7 +190,6 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
 
   String _symptomLabel(PainSymptomType type, AppLocalizations l10n) =>
       switch (type) {
-        PainSymptomType.cramps => l10n.daily_entry_symptom_cramps,
         PainSymptomType.headache => l10n.daily_entry_symptom_headache,
         PainSymptomType.bloating => l10n.daily_entry_symptom_bloating,
         PainSymptomType.backPain => l10n.daily_entry_symptom_backPain,

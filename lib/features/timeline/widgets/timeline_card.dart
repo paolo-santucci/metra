@@ -246,7 +246,6 @@ class _SymptomPill extends StatelessWidget {
 
   static String _symptomLabel(AppLocalizations l10n, PainSymptomData symptom) =>
       switch (symptom.symptomType) {
-        PainSymptomType.cramps => l10n.daily_entry_symptom_cramps,
         PainSymptomType.backPain => l10n.daily_entry_symptom_backPain,
         PainSymptomType.headache => l10n.daily_entry_symptom_headache,
         PainSymptomType.migraine => l10n.daily_entry_symptom_migraine,
