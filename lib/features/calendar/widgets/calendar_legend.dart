@@ -22,8 +22,8 @@ import '../../../core/widgets/metra_icon.dart';
 import '../../../l10n/app_localizations.dart';
 
 /// Five-item legend row shown below the calendar grid.
-/// Items (left→right): Mestruazioni (dropFilled), Sintomi (starSmallFilled),
-/// Dolore (zapFilled), Note (pen), Previsione (dropOutline). All icons are MetraIcons SVG.
+/// Items (left→right): Flusso (dropFilled), Sintomi (starSmallFilled),
+/// Dolore (zapFilled), Previsione (dropOutline), Note (pen). All icons are MetraIcons SVG.
 class CalendarLegend extends StatelessWidget {
   const CalendarLegend({super.key});
 
@@ -51,12 +51,12 @@ class CalendarLegend extends StatelessWidget {
           child: Wrap(
             spacing: 16,
             runSpacing: 6,
-            // Bible CL-01: Previsione must be last.
+            // Order: Flusso, Sintomi, Dolore, Previsione, Note (Note is last).
             children: [
               _MetraLegendItem(
                 svgBody: MetraIcons.dropFilled,
                 color: accentFlow,
-                label: l10n.calendar_legend_mestruazioni,
+                label: l10n.calendar_legend_flow,
                 textColor: textSecondary,
               ),
               _MetraLegendItem(
@@ -72,15 +72,15 @@ class CalendarLegend extends StatelessWidget {
                 textColor: textSecondary,
               ),
               _MetraLegendItem(
-                svgBody: MetraIcons.pen,
-                color: textPrimary.withValues(alpha: 0.68),
-                label: l10n.calendar_legend_notes,
-                textColor: textSecondary,
-              ),
-              _MetraLegendItem(
                 svgBody: MetraIcons.dropOutline,
                 color: accentPrediction,
                 label: l10n.calendar_legend_prediction,
+                textColor: textSecondary,
+              ),
+              _MetraLegendItem(
+                svgBody: MetraIcons.pen,
+                color: textPrimary.withValues(alpha: 0.68),
+                label: l10n.calendar_legend_notes,
                 textColor: textSecondary,
               ),
             ],

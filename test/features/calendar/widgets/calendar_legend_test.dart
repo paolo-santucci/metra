@@ -32,11 +32,11 @@ Widget _wrap(ThemeData theme) => MaterialApp(
 void main() {
   group('CalendarLegend', () {
     testWidgets(
-      'given_light_theme_when_rendered_then_mestruazioni_label_is_visible',
+      'given_light_theme_when_rendered_then_flusso_label_is_visible',
       (tester) async {
         await tester.pumpWidget(_wrap(MetraTheme.light()));
         await tester.pump();
-        expect(find.text('Mestruazioni'), findsOneWidget);
+        expect(find.text('Flusso'), findsOneWidget);
       },
     );
 
@@ -81,7 +81,7 @@ void main() {
       (tester) async {
         await tester.pumpWidget(_wrap(MetraTheme.dark()));
         await tester.pump();
-        expect(find.text('Mestruazioni'), findsOneWidget);
+        expect(find.text('Flusso'), findsOneWidget);
         expect(find.text('Previsione'), findsOneWidget);
         expect(find.text('Sintomi'), findsOneWidget);
         expect(find.text('Dolore'), findsOneWidget);
