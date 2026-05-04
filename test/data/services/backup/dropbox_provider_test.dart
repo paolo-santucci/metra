@@ -1,4 +1,4 @@
-// Copyright (C) 2026 Paolo Santucci
+// Copyright (C) 2026  Paolo Santucci
 //
 // This file is part of Métra.
 //
