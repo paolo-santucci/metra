@@ -45,7 +45,12 @@ jobs:
 
       - name: Coverage gate (80% line coverage minimum)
         run: |
-          SUMMARY=$(lcov --summary coverage/lcov.info 2>&1)
+          # Strip generated files (Drift .g.dart, l10n) before measuring
+          lcov --remove coverage/lcov.info \
+            '*.g.dart' \
+            '*/l10n/*' \
+            -o coverage/lcov_filtered.info
+          SUMMARY=$(lcov --summary coverage/lcov_filtered.info 2>&1)
           echo "$SUMMARY"
           # Extract the line coverage percentage (e.g. "85.3%")
           PCT=$(echo "$SUMMARY" | grep -E 'lines\.*:' | awk '{print $2}' | tr -d '%')
