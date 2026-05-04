@@ -154,7 +154,7 @@ abstract final class MetraIcons {
       '<path d="M12 3a9 9 0 1 0 9 9 6.5 6.5 0 0 1-9-9z" $_sc/>';
 
   static const String starSmall =
-      '<path d="M12 4l1.5 4.5H18l-3.75 2.75 1.5 4.5L12 13l-3.75 2.75 1.5-4.5L6 8.5h4.5z" $_sc/>';
+      '<path d="M12 3L14 9.2L20.6 9.2L15.3 13.1L17.3 19.3L12 15.4L6.7 19.3L8.7 13.1L3.4 9.2L10 9.2Z" $_sc/>';
 
   // ── DataIcons (filled, viewBox 24×24) ────────────────────────────────────
 
@@ -170,7 +170,7 @@ abstract final class MetraIcons {
       '<path d="M12 3a9 9 0 1 0 9 9 6.5 6.5 0 0 1-9-9z" fill="{fill}"/>';
 
   static const String starSmallFilled =
-      '<path d="M12 4l1.5 4.5H18l-3.75 2.75 1.5 4.5L12 13l-3.75 2.75 1.5-4.5L6 8.5h4.5z" fill="{fill}"/>';
+      '<path d="M12 3L14 9.2L20.6 9.2L15.3 13.1L17.3 19.3L12 15.4L6.7 19.3L8.7 13.1L3.4 9.2L10 9.2Z" fill="{fill}"/>';
 
   static const String zapFilled =
       '<path d="M13 3L5 14L11 14L9 21L19 11L13 11Z" fill="{fill}"/>';

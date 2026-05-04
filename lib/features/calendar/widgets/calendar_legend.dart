@@ -47,10 +47,8 @@ class CalendarLegend extends StatelessWidget {
         Divider(color: dividerColor, thickness: 1, height: 1),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          // Wrap prevents overflow on narrow screens; items reflow to a second line.
-          child: Wrap(
-            spacing: 16,
-            runSpacing: 6,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             // Order: Flusso, Sintomi, Dolore, Previsione, Note (Note is last).
             children: [
               _MetraLegendItem(
