@@ -45,18 +45,12 @@ class TextFieldMetra extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final fillColor =
-        isDark ? MetraColors.dark.bgSurface : MetraColors.light.bgSurface;
-    final textColor =
-        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
-    final hintColor = isDark
-        ? MetraColors.dark.textSecondary
-        : MetraColors.light.textSecondary;
-    final borderSubtle =
-        isDark ? MetraColors.dark.borderSubtle : MetraColors.light.borderSubtle;
-    final focusRing =
-        isDark ? MetraColors.dark.focusRing : MetraColors.light.focusRing;
+    final colors = MetraColors.of(context);
+    final fillColor = colors.bgSurface;
+    final textColor = colors.textPrimary;
+    final hintColor = colors.textSecondary;
+    final borderSubtle = colors.borderSubtle;
+    final focusRing = colors.focusRing;
 
     // Multi-line (textarea) uses larger radius and more padding per spec §7.
     final bool isMultiline = maxLines == null || maxLines! > 1;
@@ -97,20 +91,11 @@ class TextFieldMetra extends StatelessWidget {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radius),
-          borderSide: BorderSide(
-            color: isDark
-                ? MetraColors.dark.stateError
-                : MetraColors.light.stateError,
-          ),
+          borderSide: BorderSide(color: colors.stateError),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radius),
-          borderSide: BorderSide(
-            color: isDark
-                ? MetraColors.dark.stateError
-                : MetraColors.light.stateError,
-            width: 2,
-          ),
+          borderSide: BorderSide(color: colors.stateError, width: 2),
         ),
       ),
     );

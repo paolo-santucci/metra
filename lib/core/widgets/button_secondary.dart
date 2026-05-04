@@ -38,13 +38,9 @@ class ButtonSecondary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final borderColor = isDark
-        ? MetraColors.dark.accentFlowStrong
-        : MetraColors.light.accentFlowStrong;
-    final fgColor = isDark
-        ? MetraColors.dark.accentFlowStrong
-        : MetraColors.light.accentFlowStrong;
+    final colors = MetraColors.of(context);
+    final borderColor = colors.accentFlowStrong;
+    final fgColor = colors.accentFlowStrong;
 
     return Semantics(
       label: semanticsLabel,

@@ -204,25 +204,15 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textPrimary =
-        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
-    final textSecondary = isDark
-        ? MetraColors.dark.textSecondary
-        : MetraColors.light.textSecondary;
-    final bgPrimary =
-        isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
-    final surfaceRaised =
-        isDark ? MetraColors.dark.bgSurface : MetraColors.light.surfaceRaised;
-    final accentFlow =
-        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
-    final bgSunken =
-        isDark ? MetraColors.dark.bgSunken : MetraColors.light.bgSunken;
-    final borderStrong =
-        isDark ? MetraColors.dark.borderStrong : MetraColors.light.borderStrong;
-    final borderColor = isDark
-        ? MetraColors.dark.textPrimary.withAlpha(0x12)
-        : MetraColors.light.ink.withAlpha(0x12);
+    final colors = MetraColors.of(context);
+    final textPrimary = colors.textPrimary;
+    final textSecondary = colors.textSecondary;
+    final bgPrimary = colors.bgPrimary;
+    final surfaceRaised = colors.bgSurface;
+    final accentFlow = colors.accentFlow;
+    final bgSunken = colors.bgSunken;
+    final borderStrong = colors.borderStrong;
+    final borderColor = colors.ink.withAlpha(0x12);
 
     final settings = ref.watch(settingsNotifierProvider).valueOrNull;
     final painEnabled = settings?.painEnabled ?? true;

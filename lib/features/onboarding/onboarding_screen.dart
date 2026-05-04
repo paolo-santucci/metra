@@ -77,16 +77,11 @@ class _WelcomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accentFlow =
-        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
-    final textPrimary =
-        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
-    final textSecondary = isDark
-        ? MetraColors.dark.textSecondary
-        : MetraColors.light.textSecondary;
-    final bgPrimary =
-        isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
+    final colors = MetraColors.of(context);
+    final accentFlow = colors.accentFlow;
+    final textPrimary = colors.textPrimary;
+    final textSecondary = colors.textSecondary;
+    final bgPrimary = colors.bgPrimary;
 
     return SafeArea(
       child: Column(
@@ -251,16 +246,11 @@ class _DataPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textPrimary =
-        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
-    final textSecondary = isDark
-        ? MetraColors.dark.textSecondary
-        : MetraColors.light.textSecondary;
-    final accentFlow =
-        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
-    final bgPrimary =
-        isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
+    final colors = MetraColors.of(context);
+    final textPrimary = colors.textPrimary;
+    final textSecondary = colors.textSecondary;
+    final accentFlow = colors.accentFlow;
+    final bgPrimary = colors.bgPrimary;
     final state = ref.watch(onboardingNotifierProvider);
     final notifier = ref.read(onboardingNotifierProvider.notifier);
     final locale = Localizations.localeOf(context).toString();
@@ -402,11 +392,9 @@ class _DatePickerField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textPrimary =
-        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
-    final bgSurface =
-        isDark ? MetraColors.dark.bgSurface : MetraColors.light.bgSurface;
+    final colors = MetraColors.of(context);
+    final textPrimary = colors.textPrimary;
+    final bgSurface = colors.bgSurface;
 
     final displayText = selectedDate != null
         ? _formatDate(selectedDate!)
@@ -481,15 +469,12 @@ class _PeriodDurationPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accentFlow =
-        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
-    final textPrimary =
-        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
+    final colors = MetraColors.of(context);
+    final accentFlow = colors.accentFlow;
+    final textPrimary = colors.textPrimary;
     // Active text: sabbia (sand) per DESIGN-BIBLE § 5.2.
     // Idle background: ink @ 0.07 per DESIGN-BIBLE § 5.2.
-    final sand =
-        isDark ? MetraColors.dark.textOnAccent : MetraColors.light.sand;
+    final sand = colors.textOnAccent;
     final idleBg = textPrimary.withAlpha(0x12);
 
     return Row(

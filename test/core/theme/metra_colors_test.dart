@@ -92,8 +92,8 @@ void main() {
       expect(MetraColors.light.bgOverlay, MetraColors.light.overlayScrim);
     });
 
-    test('dark bgOverlay maps to overlayScrim', () {
-      expect(MetraColors.dark.bgOverlay, MetraColors.dark.overlayScrim);
+    test('dark bgOverlay is rgba(0,0,0,0.56)', () {
+      expect(MetraColors.dark.bgOverlay, const Color(0x8F000000));
     });
 
     test('light textDisabledColor is inchiostro @ 0.68 per DESIGN-BIBLE § 1.1',
@@ -102,8 +102,9 @@ void main() {
       expect(MetraColors.light.textDisabledColor, const Color(0xAD2B2521));
     });
 
-    test('dark textDisabledColor maps to textDisabled primitive', () {
-      expect(MetraColors.dark.textDisabledColor, const Color(0xFF6B6358));
+    test('dark textDisabledColor is avorio @ 0.68', () {
+      // ivory.withAlpha(0xAD) = rgba(237,228,211, 0xAD/255 ≈ 0.68)
+      expect(MetraColors.dark.textDisabledColor, const Color(0xADEDE4D3));
     });
   });
 }

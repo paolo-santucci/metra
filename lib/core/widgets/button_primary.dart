@@ -40,12 +40,9 @@ class ButtonPrimary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark
-        ? MetraColors.dark.accentFlowStrong
-        : MetraColors.light.accentFlowStrong;
-    final fgColor =
-        isDark ? MetraColors.dark.textOnAccent : MetraColors.light.textOnAccent;
+    final colors = MetraColors.of(context);
+    final bgColor = colors.accentFlowStrong;
+    final fgColor = colors.textOnAccent;
     final disabledBg = bgColor.withValues(alpha: 0.5);
 
     return Semantics(

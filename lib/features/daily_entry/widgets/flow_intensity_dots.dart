@@ -47,14 +47,10 @@ class FlowIntensityDots extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accentFlow =
-        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
-    final accentFlowStrong = isDark
-        ? MetraColors.dark.accentFlowStrong
-        : MetraColors.light.accentFlowStrong;
-    final textPrimary =
-        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
+    final colors = MetraColors.of(context);
+    final accentFlow = colors.accentFlow;
+    final accentFlowStrong = colors.accentFlowStrong;
+    final textPrimary = colors.textPrimary;
 
     final labels = [
       l10n.daily_entry_flow_intensity_light,

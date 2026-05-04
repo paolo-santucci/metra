@@ -110,9 +110,7 @@ class _QuickEntryModalState extends ConsumerState<QuickEntryModal> {
   Widget build(BuildContext context) {
     // safe: delegates registered in MetraApp
     final l10n = AppLocalizations.of(context)!;
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor =
-        isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
+    final bgColor = MetraColors.of(context).bgPrimary;
 
     final duration = MediaQuery.of(context).disableAnimations
         ? const Duration(milliseconds: 80)

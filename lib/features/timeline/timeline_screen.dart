@@ -40,13 +40,12 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = MetraColors.of(context);
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final summariesAsync = ref.watch(timelineProvider);
 
     return Scaffold(
-      backgroundColor:
-          isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary,
+      backgroundColor: colors.bgPrimary,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -81,11 +80,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                 error: (_, __) => Center(
                   child: Text(
                     l10n.common_error_generic,
-                    style: TextStyle(
-                      color: isDark
-                          ? MetraColors.dark.textSecondary
-                          : MetraColors.light.textSecondary,
-                    ),
+                    style: TextStyle(color: colors.textSecondary),
                   ),
                 ),
                 data: (summaries) => _mode == _ViewMode.timeline

@@ -33,12 +33,13 @@ class ChartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = MetraColors.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: MetraColors.light.bgSurface,
+        color: colors.bgSurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: MetraColors.light.borderSubtle),
+        border: Border.all(color: colors.borderSubtle),
       ),
       padding: const EdgeInsets.symmetric(
         vertical: MetraSpacing.sp18,
@@ -52,7 +53,7 @@ class ChartCard extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: MetraColors.light.textPrimary,
+              color: colors.textPrimary,
             ),
           ),
           const SizedBox(height: MetraSpacing.s4),

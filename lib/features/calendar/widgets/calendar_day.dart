@@ -77,21 +77,13 @@ class CalendarDay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final Color accentFlow =
-        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
-    final Color textPrimary =
-        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
-    final Color bgPrimary =
-        isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
-    final Color accentPrediction = isDark
-        ? MetraColors.dark.accentPrediction
-        : MetraColors.light.accentPrediction;
-    final Color accentWarmth =
-        isDark ? MetraColors.dark.accentWarmth : MetraColors.light.accentWarmth;
-    final Color accentPain =
-        isDark ? MetraColors.dark.accentPain : MetraColors.light.accentPain;
+    final colors = MetraColors.of(context);
+    final Color accentFlow = colors.accentFlow;
+    final Color textPrimary = colors.textPrimary;
+    final Color bgPrimary = colors.bgPrimary;
+    final Color accentPrediction = colors.accentPrediction;
+    final Color accentWarmth = colors.accentWarmth;
+    final Color accentPain = colors.accentPain;
 
     final (Color bg, Border? border, Color textColor, FontWeight fontWeight) =
         _resolveState(

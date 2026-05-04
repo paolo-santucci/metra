@@ -36,17 +36,11 @@ class PrivacyBannerMetra extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor =
-        isDark ? MetraColors.dark.bgSunken : MetraColors.light.bgSunken;
-    final borderColor = isDark
-        ? MetraColors.dark.accentPrediction
-        : MetraColors.light.accentPrediction;
-    final iconColor = isDark
-        ? MetraColors.dark.accentPrediction
-        : MetraColors.light.accentPrediction;
-    final textColor =
-        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
+    final colors = MetraColors.of(context);
+    final bgColor = colors.bgSunken;
+    final borderColor = colors.accentPrediction;
+    final iconColor = colors.accentPrediction;
+    final textColor = colors.textPrimary;
 
     return Semantics(
       label: message,

@@ -51,9 +51,8 @@ class MonthNavigator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final textPrimary =
-        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
+    final colors = MetraColors.of(context);
+    final textPrimary = colors.textPrimary;
     // Bible § 8.1: inchiostro when enabled, faded (alpha 0.40) when disabled.
     final chevronPrev = textPrimary;
     final chevronNext =

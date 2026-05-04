@@ -40,14 +40,10 @@ class ChoiceChipMetra extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final bgSelected =
-        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
-    final fgSelected =
-        isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
-    final textPrimary =
-        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
+    final colors = MetraColors.of(context);
+    final bgSelected = colors.accentFlow;
+    final fgSelected = colors.bgPrimary;
+    final textPrimary = colors.textPrimary;
 
     // Container without `alignment` stays intrinsic-width under Wrap's loose
     // constraints. Row(mainAxisSize.min) gives horizontal centering for the

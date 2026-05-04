@@ -51,16 +51,10 @@ class MetraTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final activeColor = isDark
-        ? MetraColors.dark.mutedTerracotta
-        : MetraColors.light.terracotta;
-    final idleColor = isDark
-        ? MetraColors.dark.ivory.withAlpha(0x68)
-        : MetraColors.light.ink.withAlpha(0x68);
-    final bgColor = isDark
-        ? MetraColors.dark.deepNight.withAlpha(0xF5)
-        : MetraColors.light.sand.withAlpha(0xF5);
+    final colors = MetraColors.of(context);
+    final activeColor = colors.terracotta;
+    final idleColor = colors.ink.withAlpha(0x68);
+    final bgColor = colors.sand.withAlpha(0xF5);
 
     return ClipRect(
       child: BackdropFilter(

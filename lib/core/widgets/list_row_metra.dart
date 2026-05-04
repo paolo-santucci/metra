@@ -42,13 +42,10 @@ class ListRowMetra extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor =
-        isDark ? MetraColors.dark.bgSurface : MetraColors.light.bgSurface;
-    final borderColor =
-        isDark ? MetraColors.dark.borderSubtle : MetraColors.light.borderSubtle;
-    final textColor =
-        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
+    final colors = MetraColors.of(context);
+    final bgColor = colors.bgSurface;
+    final borderColor = colors.borderSubtle;
+    final textColor = colors.textPrimary;
 
     final rowContent = Container(
       constraints: const BoxConstraints(minHeight: 48),

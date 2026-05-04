@@ -77,6 +77,7 @@ class _BarColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = MetraColors.of(context);
     final barHeight =
         maxValue > 0 ? (point.value / maxValue * 80).clamp(0.0, 80.0) : 0.0;
     final displayValue = _formatValue(point.value);
@@ -108,7 +109,7 @@ class _BarColumn extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 10,
               fontWeight: FontWeight.w400,
-              color: MetraColors.light.textSecondary,
+              color: colors.textSecondary,
             ),
             textAlign: TextAlign.center,
           ),
@@ -118,7 +119,7 @@ class _BarColumn extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: MetraColors.light.textPrimary,
+              color: colors.textPrimary,
             ),
             textAlign: TextAlign.center,
           ),

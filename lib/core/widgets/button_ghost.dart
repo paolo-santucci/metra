@@ -37,9 +37,7 @@ class ButtonGhost extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final fgColor =
-        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
+    final fgColor = MetraColors.of(context).textPrimary;
 
     return Semantics(
       label: semanticsLabel,

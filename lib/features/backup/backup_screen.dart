@@ -21,11 +21,9 @@ class BackupScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg =
-        isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
-    final textPrimary =
-        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
+    final colors = MetraColors.of(context);
+    final bg = colors.bgPrimary;
+    final textPrimary = colors.textPrimary;
 
     final asyncState = ref.watch(backupNotifierProvider);
     final backupState = asyncState.valueOrNull;
@@ -43,14 +41,13 @@ class BackupScreen extends ConsumerWidget {
       ),
       body: switch (backupState) {
         null => const Center(child: CircularProgressIndicator()),
-        BackupNotConnected() => _NotConnectedBody(l10n: l10n, isDark: isDark),
+        BackupNotConnected() => _NotConnectedBody(l10n: l10n),
         BackupRunning(:final operation) =>
           _RunningBody(l10n: l10n, operation: operation),
         BackupConnected(:final email, :final lastBackupAt) => _ConnectedBody(
             l10n: l10n,
             email: email,
             lastBackupAt: lastBackupAt,
-            isDark: isDark,
           ),
         BackupErrorState(:final message) =>
           _ErrorBody(l10n: l10n, message: message),
@@ -64,15 +61,13 @@ class BackupScreen extends ConsumerWidget {
 // ---------------------------------------------------------------------------
 
 class _NotConnectedBody extends ConsumerWidget {
-  const _NotConnectedBody({required this.l10n, required this.isDark});
+  const _NotConnectedBody({required this.l10n});
 
   final AppLocalizations l10n;
-  final bool isDark;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final textPrimary =
-        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
+    final textPrimary = MetraColors.of(context).textPrimary;
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -132,13 +127,11 @@ class _ConnectedBody extends ConsumerStatefulWidget {
     required this.l10n,
     required this.email,
     required this.lastBackupAt,
-    required this.isDark,
   });
 
   final AppLocalizations l10n;
   final String email;
   final DateTime? lastBackupAt;
-  final bool isDark;
 
   @override
   ConsumerState<_ConnectedBody> createState() => _ConnectedBodyState();
@@ -226,9 +219,7 @@ class _ConnectedBodyState extends ConsumerState<_ConnectedBody> {
   @override
   Widget build(BuildContext context) {
     final l10n = widget.l10n;
-    final textPrimary = widget.isDark
-        ? MetraColors.dark.textPrimary
-        : MetraColors.light.textPrimary;
+    final textPrimary = MetraColors.of(context).textPrimary;
 
     final lastBackupText = widget.lastBackupAt != null
         ? l10n.backup_last_backup_at(

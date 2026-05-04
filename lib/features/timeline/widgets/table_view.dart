@@ -53,7 +53,8 @@ class _HeaderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ink = MetraColors.light.ink;
+    final colors = MetraColors.of(context);
+    final ink = colors.ink;
     final labelStyle = GoogleFonts.inter(
       fontSize: 11,
       fontWeight: FontWeight.w600,
@@ -106,8 +107,9 @@ class _DataRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ink = MetraColors.light.ink;
-    final tcScura = MetraColors.light.terracottaDeep;
+    final colors = MetraColors.of(context);
+    final ink = colors.ink;
+    final tcScura = colors.terracottaDeep;
 
     final raw = intl.DateFormat.yMMM('it').format(summary.cycle.startDate);
     final month = raw[0].toUpperCase() + raw.substring(1);
@@ -123,7 +125,7 @@ class _DataRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 4),
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       decoration: BoxDecoration(
-        color: MetraColors.light.bgSurface,
+        color: colors.bgSurface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: ink.withValues(alpha: 0.06)),
       ),
@@ -207,6 +209,7 @@ class _TableEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = MetraColors.of(context);
     final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
@@ -216,7 +219,7 @@ class _TableEmptyState extends StatelessWidget {
           textAlign: TextAlign.center,
           style: GoogleFonts.inter(
             fontSize: 15,
-            color: MetraColors.light.textSecondary,
+            color: colors.textSecondary,
           ),
         ),
       ),

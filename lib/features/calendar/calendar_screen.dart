@@ -70,11 +70,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final l10n = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).toString();
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor =
-        isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
-    final textColor = isDark
-        ? MetraColors.dark.textSecondary
-        : MetraColors.light.textSecondary;
+    final colors = MetraColors.of(context);
+    final bgColor = colors.bgPrimary;
+    final textColor = colors.textSecondary;
 
     final calendarAsync = ref.watch(calendarMonthProvider);
     final prediction = ref.watch(cyclePredictionProvider).valueOrNull;
@@ -212,9 +210,8 @@ class _DayOfWeekHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Bible § 8.2: ink @ 35% alpha (0x59 = round(0.35 × 255)).
-    final labelColor =
-        (isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary)
-            .withAlpha(0x59);
+    final colors = MetraColors.of(context);
+    final labelColor = colors.textPrimary.withAlpha(0x59);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 16, 12, 4),
@@ -400,19 +397,13 @@ class _DayDetailCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgSurface =
-        isDark ? MetraColors.dark.bgSurface : MetraColors.light.bgSurface;
-    final textPrimary =
-        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
-    final textSecondary = isDark
-        ? MetraColors.dark.textSecondary
-        : MetraColors.light.textSecondary;
-    final accentFlow =
-        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
-    final malva =
-        isDark ? MetraColors.dark.accentPain : MetraColors.light.accentPain;
-    final dustyOchre =
-        isDark ? MetraColors.dark.accentWarmth : MetraColors.light.accentWarmth;
+    final colors = MetraColors.of(context);
+    final bgSurface = colors.bgSurface;
+    final textPrimary = colors.textPrimary;
+    final textSecondary = colors.textSecondary;
+    final accentFlow = colors.accentFlow;
+    final malva = colors.accentPain;
+    final dustyOchre = colors.accentWarmth;
     final hasData = log != null;
 
     // Flow label — same logic as the removed _FlowBadge.
@@ -581,9 +572,7 @@ class _DayDetailCard extends StatelessWidget {
                       style: MetraTypography.body.copyWith(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: isDark
-                            ? MetraColors.dark.accentFlowStrong
-                            : MetraColors.light.terracottaDeep,
+                        color: colors.accentFlowStrong,
                       ),
                     ),
                   ],

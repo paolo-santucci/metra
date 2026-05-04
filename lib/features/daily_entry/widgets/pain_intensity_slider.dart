@@ -71,14 +71,10 @@ class PainIntensitySlider extends StatelessWidget {
     // content regardless of whether enabled is checked inside the switcher.
     // safe: delegates registered in MetraApp
     final l10n = AppLocalizations.of(context)!;
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final labelColor = isDark
-        ? MetraColors.dark.textSecondary
-        : MetraColors.light.textSecondary;
-    final activeColor =
-        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
-    final inactiveColor =
-        isDark ? MetraColors.dark.borderSubtle : MetraColors.light.borderSubtle;
+    final colors = MetraColors.of(context);
+    final labelColor = colors.textSecondary;
+    final activeColor = colors.accentFlow;
+    final inactiveColor = colors.borderSubtle;
 
     final current = (value ?? 0).clamp(_min, _max);
 

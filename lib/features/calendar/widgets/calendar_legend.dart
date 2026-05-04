@@ -30,20 +30,14 @@ class CalendarLegend extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = MetraColors.of(context);
 
-    final accentFlow =
-        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
-    final accentPrediction = isDark
-        ? MetraColors.dark.accentPrediction
-        : MetraColors.light.accentPrediction;
-    final accentWarmth =
-        isDark ? MetraColors.dark.accentWarmth : MetraColors.light.accentWarmth;
-    final accentPain =
-        isDark ? MetraColors.dark.accentPain : MetraColors.light.accentPain;
-    final textSecondary = isDark
-        ? MetraColors.dark.textSecondary
-        : MetraColors.light.textSecondary;
+    final accentFlow = colors.accentFlow;
+    final accentPrediction = colors.accentPrediction;
+    final accentWarmth = colors.accentWarmth;
+    final accentPain = colors.accentPain;
+    final textSecondary = colors.textSecondary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final dividerColor = isDark ? Colors.white12 : Colors.black12;
 
     return Column(

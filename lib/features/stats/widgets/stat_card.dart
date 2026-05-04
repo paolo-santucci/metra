@@ -40,15 +40,16 @@ class StatSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = MetraColors.of(context);
     final borderColor = isAccent
-        ? MetraColors.light.terracotta.withAlpha(0x44)
-        : MetraColors.light.borderSubtle;
+        ? colors.terracotta.withAlpha(0x44)
+        : colors.borderSubtle;
     final valueColor =
-        isAccent ? MetraColors.light.terracotta : MetraColors.light.textPrimary;
+        isAccent ? colors.terracotta : colors.textPrimary;
 
     return Container(
       decoration: BoxDecoration(
-        color: MetraColors.light.bgSurface,
+        color: colors.bgSurface,
         borderRadius: BorderRadius.circular(MetraRadius.lg),
         border: Border.all(color: borderColor),
       ),
@@ -64,7 +65,7 @@ class StatSummaryCard extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w400,
-              color: MetraColors.light.textSecondary,
+              color: colors.textSecondary,
             ),
           ),
           const SizedBox(height: 6),
@@ -88,7 +89,7 @@ class StatSummaryCard extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w400,
-                  color: MetraColors.light.textSecondary,
+                  color: colors.textSecondary,
                 ),
               ),
             ],
@@ -100,7 +101,7 @@ class StatSummaryCard extends StatelessWidget {
               style: GoogleFonts.inter(
                 fontSize: 12,
                 fontWeight: FontWeight.w400,
-                color: MetraColors.light.textSecondary,
+                color: colors.textSecondary,
               ),
             ),
           ],

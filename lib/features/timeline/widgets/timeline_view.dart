@@ -48,8 +48,8 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = MetraColors.of(context);
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(MetraSpacing.s8),
@@ -57,9 +57,7 @@ class _EmptyState extends StatelessWidget {
           l10n.timeline_empty_hint,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: isDark
-                ? MetraColors.dark.textSecondary
-                : MetraColors.light.textSecondary,
+            color: colors.textSecondary,
             fontSize: 15,
           ),
         ),

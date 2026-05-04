@@ -46,7 +46,7 @@ abstract final class MetraTheme {
         error: colors.terracottaDeep,
         onError: colors.sand,
         shadow: const Color(0x1F2B2521), // rgba(43,37,33,0.12) — § 1.6
-        scrim: colors.overlayScrim,
+        scrim: colors.bgOverlay,
       ),
       textTheme: MetraTypography.toTextTheme(colors.ink),
       cardTheme: CardThemeData(
@@ -115,13 +115,13 @@ abstract final class MetraTheme {
         onTertiary: colors.deepNight,
         surface: colors.deepNightRaised,
         onSurface: colors.ivory,
-        onSurfaceVariant: colors.ivorySoft,
-        outline: colors.dividerDark,
-        outlineVariant: colors.ivorySoft,
+        onSurfaceVariant: colors.textSecondary,
+        outline: colors.borderSubtle,
+        outlineVariant: colors.borderStrong,
         error: colors.mutedTerracottaSoft,
         onError: colors.deepNight,
         shadow: const Color(0x661A1410),
-        scrim: colors.overlayScrim,
+        scrim: colors.bgOverlay,
       ),
       textTheme: MetraTypography.toTextTheme(colors.ivory),
       cardTheme: CardThemeData(
@@ -129,18 +129,18 @@ abstract final class MetraTheme {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: colors.dividerDark),
+          side: BorderSide(color: colors.borderSubtle),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: colors.deepNightSunken,
+        fillColor: colors.bgSunken,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
       ),
-      dividerColor: colors.dividerDark,
+      dividerColor: colors.borderSubtle,
       navigationBarTheme: NavigationBarThemeData(
         indicatorColor: Colors.transparent,
         iconTheme: WidgetStateProperty.resolveWith((states) {

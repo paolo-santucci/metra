@@ -227,9 +227,7 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor =
-        isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
+    final bgColor = MetraColors.of(context).bgPrimary;
 
     final logAsync = ref.watch(dailyEntryProvider(widget.date));
     ref.watch(painSymptomsProvider(widget.date));
@@ -257,8 +255,7 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
             ),
           ),
         ),
-        data: (_) =>
-            _buildForm(context, l10n, isDark, painEnabled, notesEnabled),
+        data: (_) => _buildForm(context, l10n, painEnabled, notesEnabled),
       ),
     );
   }
@@ -266,26 +263,17 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
   Widget _buildForm(
     BuildContext context,
     AppLocalizations l10n,
-    bool isDark,
     bool painEnabled,
     bool notesEnabled,
   ) {
-    final textPrimary =
-        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
-    final textSecondary = isDark
-        ? MetraColors.dark.textSecondary
-        : MetraColors.light.textSecondary;
-    final accentFlow =
-        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
-    final bgSunken =
-        isDark ? MetraColors.dark.bgSunken : MetraColors.light.bgSunken;
-    final borderStrong =
-        isDark ? MetraColors.dark.borderStrong : MetraColors.light.borderStrong;
-    final surfaceRaised =
-        isDark ? MetraColors.dark.bgSurface : MetraColors.light.surfaceRaised;
-    final borderColor = isDark
-        ? MetraColors.dark.textPrimary.withAlpha(0x12)
-        : MetraColors.light.ink.withAlpha(0x12);
+    final colors = MetraColors.of(context);
+    final textPrimary = colors.textPrimary;
+    final textSecondary = colors.textSecondary;
+    final accentFlow = colors.accentFlow;
+    final bgSunken = colors.bgSunken;
+    final borderStrong = colors.borderStrong;
+    final surfaceRaised = colors.bgSurface;
+    final borderColor = colors.ink.withAlpha(0x12);
 
     final locale = Localizations.localeOf(context).languageCode;
     final rawDate = DateFormat('EEEE d MMMM', locale).format(widget.date);

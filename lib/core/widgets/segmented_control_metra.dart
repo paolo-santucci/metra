@@ -40,16 +40,12 @@ class SegmentedControlMetra extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final trackColor =
-        isDark ? MetraColors.dark.bgSunken : MetraColors.light.bgSunken;
-    final activeColor =
-        isDark ? MetraColors.dark.bgSurface : MetraColors.light.bgSurface;
-    final activeText =
-        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
+    final colors = MetraColors.of(context);
+    final trackColor = colors.bgSunken;
+    final activeColor = colors.bgSurface;
+    final activeText = colors.textPrimary;
     // § 5.4: idle label = inchiostro (textPrimary) at 50% alpha.
-    final inactiveText = isDark
-        ? MetraColors.dark.textPrimary.withValues(alpha: 0.5)
-        : MetraColors.light.textPrimary.withValues(alpha: 0.5);
+    final inactiveText = colors.textPrimary.withValues(alpha: 0.5);
 
     final List<Widget> segmentWidgets = [];
     for (var i = 0; i < segments.length; i++) {
@@ -81,7 +77,7 @@ class SegmentedControlMetra extends StatelessWidget {
                     ? [
                         BoxShadow(
                           color: isDark
-                              ? const Color(0x661A1410)
+                              ? const Color(0x1F000000)
                               : const Color(0x1F2B2521),
                           blurRadius: 4,
                           offset: const Offset(0, 1),

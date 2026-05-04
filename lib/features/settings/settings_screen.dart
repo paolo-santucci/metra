@@ -45,14 +45,10 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgPrimary =
-        isDark ? MetraColors.dark.bgPrimary : MetraColors.light.bgPrimary;
-    final textPrimary =
-        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
-    final textSecondary = isDark
-        ? MetraColors.dark.textSecondary
-        : MetraColors.light.textSecondary;
+    final colors = MetraColors.of(context);
+    final bgPrimary = colors.bgPrimary;
+    final textPrimary = colors.textPrimary;
+    final textSecondary = colors.textSecondary;
     final settings = ref.watch(settingsNotifierProvider).valueOrNull ??
         const AppSettingsData.defaults();
     // Backup-row value is state-aware (Design Bible § 18.6): only
@@ -682,15 +678,14 @@ class _MetraToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = MetraColors.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final onColor =
-        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
+    final onColor = colors.accentFlow;
     // Off track: terracotta@8% in light, sunken bg in dark.
-    final offColor = isDark
-        ? MetraColors.dark.bgSunken
-        : MetraColors.light.ink.withAlpha(0x14);
-    final dotColor =
-        isDark ? MetraColors.dark.bgSurface : MetraColors.light.bgSurface;
+    // These are asymmetric tokens — light uses ink@0x14, dark uses bgSunken
+    // (ivory@0x0D). Keeping the ternary because bgSunken alpha differs per mode.
+    final offColor = isDark ? colors.bgSunken : colors.ink.withAlpha(0x14);
+    final dotColor = colors.bgSurface;
     final reduceMotion = MediaQuery.of(context).disableAnimations;
     final dur = Duration(
       milliseconds: reduceMotion ? MetraMotion.instant : MetraMotion.fast,
@@ -740,10 +735,7 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color = isDark
-        ? MetraColors.dark.textSecondary
-        : MetraColors.light.textSecondary;
+    final color = MetraColors.of(context).textSecondary;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -770,11 +762,9 @@ class _GroupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg =
-        isDark ? MetraColors.dark.bgSurface : MetraColors.light.bgSurface;
-    final border =
-        isDark ? MetraColors.dark.borderSubtle : MetraColors.light.borderSubtle;
+    final colors = MetraColors.of(context);
+    final bg = colors.bgSurface;
+    final border = colors.borderSubtle;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: MetraSpacing.s6),
@@ -794,10 +784,7 @@ class _SettingsDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color =
-        isDark ? MetraColors.dark.borderSubtle : MetraColors.light.borderSubtle;
-    return Container(height: 1, color: color);
+    return Container(height: 1, color: MetraColors.of(context).borderSubtle);
   }
 }
 
@@ -831,22 +818,13 @@ class _SettingsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = MetraColors.of(context);
 
-    final labelColor = isDestructive
-        ? (isDark
-            ? MetraColors.dark.accentFlowStrong
-            : MetraColors.light.accentFlowStrong)
-        : (isDark
-            ? MetraColors.dark.textPrimary
-            : MetraColors.light.textPrimary);
+    final labelColor = isDestructive ? colors.accentFlowStrong : colors.textPrimary;
     final bg = isDestructive
-        ? (isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow)
-            .withAlpha(0x0D)
+        ? colors.accentFlow.withAlpha(0x0D)
         : Colors.transparent;
-    final secondaryColor = isDark
-        ? MetraColors.dark.textSecondary
-        : MetraColors.light.textSecondary;
+    final secondaryColor = colors.textSecondary;
     final chevronColor = secondaryColor;
 
     Widget? trailing;
@@ -902,14 +880,11 @@ class _KoFiPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accentFlow =
-        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
+    final colors = MetraColors.of(context);
+    final accentFlow = colors.accentFlow;
     final pillBg = accentFlow.withAlpha(0x14);
     final dotBg = accentFlow.withAlpha(0x28);
-    final textColor = isDark
-        ? MetraColors.dark.accentFlowStrong
-        : MetraColors.light.accentFlowStrong;
+    final textColor = colors.accentFlowStrong;
 
     return Semantics(
       label: label,

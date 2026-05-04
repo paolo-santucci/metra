@@ -37,11 +37,12 @@ class StatsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = MetraColors.of(context);
     final l10n = AppLocalizations.of(context)!;
     final statsAsync = ref.watch(statsProvider);
 
     return Scaffold(
-      backgroundColor: MetraColors.light.bgPrimary,
+      backgroundColor: colors.bgPrimary,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -54,7 +55,7 @@ class StatsScreen extends ConsumerWidget {
                   Text(
                     l10n.stats_title,
                     style: MetraTypography.screenTitle.copyWith(
-                      color: MetraColors.light.textPrimary,
+                      color: colors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -63,7 +64,7 @@ class StatsScreen extends ConsumerWidget {
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
-                      color: MetraColors.light.textSecondary,
+                      color: colors.textSecondary,
                     ),
                   ),
                 ],
@@ -85,7 +86,7 @@ class StatsScreen extends ConsumerWidget {
                     child: Text(
                       l10n.common_error_generic,
                       style: TextStyle(
-                        color: MetraColors.light.textSecondary,
+                        color: colors.textSecondary,
                       ),
                     ),
                   ),
@@ -95,7 +96,7 @@ class StatsScreen extends ConsumerWidget {
                             l10n.stats_insufficient_data,
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              color: MetraColors.light.textSecondary,
+                              color: colors.textSecondary,
                             ),
                           ),
                         )
@@ -117,6 +118,7 @@ class _StatsBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = MetraColors.of(context);
     final l10n = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).toString();
 
@@ -153,7 +155,7 @@ class _StatsBody extends StatelessWidget {
           title: l10n.stats_chart_cycle_length_title,
           child: MiniBarChart(
             points: cycleLengthPoints,
-            color: MetraColors.light.terracotta,
+            color: colors.terracotta,
             maxValue: 35,
           ),
         ),
@@ -161,7 +163,7 @@ class _StatsBody extends StatelessWidget {
           title: l10n.stats_chart_pain_title,
           child: MiniBarChart(
             points: painPoints,
-            color: MetraColors.light.accentPain,
+            color: colors.accentPain,
             maxValue: 3,
           ),
         ),

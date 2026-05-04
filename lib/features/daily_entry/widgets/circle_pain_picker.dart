@@ -36,11 +36,9 @@ class CirclePainPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accent =
-        isDark ? MetraColors.dark.accentPain : MetraColors.light.accentPain;
-    final textPrimary =
-        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
+    final colors = MetraColors.of(context);
+    final accent = colors.accentPain;
+    final textPrimary = colors.textPrimary;
 
     // Spec § 7.3: gap 14 between items, always malva stroke 1.5.
     Widget paincircle(String lbl, Color fill, int v) => _PainCircle(

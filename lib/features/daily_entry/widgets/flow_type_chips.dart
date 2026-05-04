@@ -44,19 +44,12 @@ class FlowTypeChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accent =
-        isDark ? MetraColors.dark.accentFlow : MetraColors.light.accentFlow;
-    final borderSubtle =
-        isDark ? MetraColors.dark.borderSubtle : MetraColors.light.borderSubtle;
-    final textPrimary =
-        isDark ? MetraColors.dark.textPrimary : MetraColors.light.textPrimary;
-    final textSecondary = isDark
-        ? MetraColors.dark.textSecondary
-        : MetraColors.light.textSecondary;
-    final accentText = isDark
-        ? MetraColors.dark.accentFlowText
-        : MetraColors.light.accentFlowText;
+    final colors = MetraColors.of(context);
+    final accent = colors.accentFlow;
+    final borderSubtle = colors.borderSubtle;
+    final textPrimary = colors.textPrimary;
+    final textSecondary = colors.textSecondary;
+    final accentText = colors.accentFlowText;
 
     return Row(
       children: [

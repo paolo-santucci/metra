@@ -82,11 +82,11 @@ The dark theme inverts the surface hierarchy and desaturates accent colors. Sema
 | `surface` `#FAF5EE` | `#251D18` | surface\_d | Card / section bg dark. |
 | `bianco` `#FDFAF6` | `#2F2520` | surface2\_d | Input fields / elevated elements dark. |
 | `terracotta` `#C87456` | `#B86848` | tc\_spenta | Primary accent dark. Flow indicator. |
-| `tc_scura` `#9A4D32` | `#D88868` | tc\_chiara | Body text on tinted bg dark — AA (4.7:1). |
-| `ocra` `#D4A26A` | `#C4956A` | — | Symptom marker dark. |
+| `tc_scura` `#9A4D32` | `#D4906A` | tc\_chiara | Body text on tinted bg dark — AA (4.7:1). |
+| `ocra` `#D4A26A` | `#C4924A` | — | Symptom marker dark. |
 | `lavanda` `#5B4E7A` | `#9B8FBF` | lav\_chiara | Predicted-period outline dark. |
 | `malva` `#9E7488` | `#C4A0B4` | malva\_chiara | Pain marker dark. |
-| `muschio` `#7A8471` | `#7A8471` | — | Unchanged in both themes. |
+| `muschio` `#7A8471` | `#9FA896` | — | Desaturated/lightened in dark theme. |
 | `inchiostro` `#2B2521` | `#EDE4D3` | avorio | Primary text dark. |
 
 Dark alpha stops follow the avorio base `rgba(237,228,211, α)`. The stops in use: `0.07` (card border dark), `0.08` (tab-bar top border dark), `0.10` (segmented-control track dark — see §5.4), `0.12` (input border dark), `0.14` (border2 dark), `0.35` (faint text dark), `0.50` (segmented inactive label dark), `0.55` (tab-bar inactive label dark), `0.65` (sub text dark).

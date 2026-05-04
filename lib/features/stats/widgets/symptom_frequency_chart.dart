@@ -34,6 +34,7 @@ class SymptomFrequencyChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = MetraColors.of(context);
     final l10n = AppLocalizations.of(context)!;
 
     final nonZero = counts.entries
@@ -45,7 +46,7 @@ class SymptomFrequencyChart extends StatelessWidget {
       return Text(
         l10n.stats_insufficient_data,
         style: TextStyle(
-          color: MetraColors.light.textSecondary,
+          color: colors.textSecondary,
           fontSize: 14,
         ),
       );
@@ -101,6 +102,7 @@ class _SymptomRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = MetraColors.of(context);
     final widthFactor = (count / totalCycles).clamp(0.0, 1.0);
 
     return Semantics(
@@ -116,14 +118,14 @@ class _SymptomRow extends StatelessWidget {
                 Text(
                   label,
                   style: GoogleFonts.inter(
-                    color: MetraColors.light.textPrimary,
+                    color: colors.textPrimary,
                     fontSize: 13,
                   ),
                 ),
                 Text(
                   '$count/$totalCycles',
                   style: GoogleFonts.inter(
-                    color: MetraColors.light.textSecondary,
+                    color: colors.textSecondary,
                     fontSize: 13,
                   ),
                 ),
@@ -133,7 +135,7 @@ class _SymptomRow extends StatelessWidget {
             Container(
               height: 6,
               decoration: BoxDecoration(
-                color: MetraColors.light.ink.withAlpha(0x14),
+                color: colors.ink.withAlpha(0x14),
                 borderRadius: BorderRadius.circular(3),
               ),
               child: Align(
@@ -143,7 +145,7 @@ class _SymptomRow extends StatelessWidget {
                   child: Container(
                     height: 6,
                     decoration: BoxDecoration(
-                      color: MetraColors.light.dustyOchre,
+                      color: colors.dustyOchre,
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),

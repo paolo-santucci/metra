@@ -56,6 +56,7 @@ class _TimelineRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = MetraColors.of(context);
     return SizedBox(
       width: 20,
       child: Column(
@@ -67,7 +68,7 @@ class _TimelineRail extends StatelessWidget {
             height: 12,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: MetraColors.light.terracotta,
+              color: colors.terracotta,
             ),
           ),
           if (!isLast)
@@ -75,7 +76,7 @@ class _TimelineRail extends StatelessWidget {
               child: Container(
                 width: 2,
                 margin: const EdgeInsets.only(top: 2),
-                color: MetraColors.light.ink.withValues(alpha: 0.10),
+                color: colors.ink.withValues(alpha: 0.10),
               ),
             ),
         ],
@@ -91,14 +92,15 @@ class _CardBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = MetraColors.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
       decoration: BoxDecoration(
-        color: MetraColors.light.bgSurface,
+        color: colors.bgSurface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: MetraColors.light.ink.withValues(alpha: 0.07),
+          color: colors.ink.withValues(alpha: 0.07),
         ),
       ),
       child: Column(
@@ -121,6 +123,7 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = MetraColors.of(context);
     final l10n = AppLocalizations.of(context)!;
     final rawMonth = intl.DateFormat.yMMM('it').format(summary.cycle.startDate);
     final monthLabel = rawMonth.isEmpty
@@ -138,14 +141,14 @@ class _Header extends StatelessWidget {
         Text(
           monthLabel,
           style: MetraTypography.archiveMonth.copyWith(
-            color: MetraColors.light.ink,
+            color: colors.ink,
           ),
         ),
         Text(
           durationLabel,
           style: GoogleFonts.inter(
             fontSize: 12,
-            color: MetraColors.light.ink.withValues(alpha: 0.40),
+            color: colors.ink.withValues(alpha: 0.40),
           ),
         ),
       ],
@@ -186,13 +189,14 @@ class _FlowPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = MetraColors.of(context);
     final label = flow != null ? _flowLabel(flow!) : '—';
     return _MiniChip(
       svgBody: MetraIcons.dropFilled,
-      iconColor: MetraColors.light.terracottaDeep,
+      iconColor: colors.terracottaDeep,
       label: label,
-      labelColor: MetraColors.light.terracottaDeep,
-      bg: MetraColors.light.terracotta.withValues(alpha: 0x15 / 255),
+      labelColor: colors.terracottaDeep,
+      bg: colors.terracotta.withValues(alpha: 0x15 / 255),
     );
   }
 
@@ -212,6 +216,7 @@ class _PainPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = MetraColors.of(context);
     final label = switch (intensity) {
       1 => l10n.daily_entry_pain_mild,
       2 => l10n.daily_entry_pain_moderate,
@@ -219,9 +224,9 @@ class _PainPill extends StatelessWidget {
     };
     return _MiniChip(
       svgBody: MetraIcons.zapFilled,
-      iconColor: MetraColors.light.malva,
+      iconColor: colors.malva,
       label: label,
-      labelColor: MetraColors.light.malva,
+      labelColor: colors.malva,
       bg: const Color.fromARGB(0x1F, 158, 116, 136),
     );
   }
@@ -235,12 +240,13 @@ class _SymptomPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = MetraColors.of(context);
     return _MiniChip(
       svgBody: MetraIcons.starSmallFilled,
-      iconColor: MetraColors.light.dustyOchre,
+      iconColor: colors.dustyOchre,
       label: _symptomLabel(l10n, symptom),
-      labelColor: MetraColors.light.ink.withValues(alpha: 0.60),
-      bg: MetraColors.light.dustyOchre.withValues(alpha: 0x18 / 255),
+      labelColor: colors.ink.withValues(alpha: 0.60),
+      bg: colors.dustyOchre.withValues(alpha: 0x18 / 255),
     );
   }
 
@@ -305,6 +311,7 @@ class _Footer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = MetraColors.of(context);
     final l10n = AppLocalizations.of(context)!;
     final len = summary.cycle.cycleLength;
     final dayStr =
@@ -320,7 +327,7 @@ class _Footer extends StatelessWidget {
         text,
         style: GoogleFonts.inter(
           fontSize: 12,
-          color: MetraColors.light.ink.withValues(alpha: 0.40),
+          color: colors.ink.withValues(alpha: 0.40),
         ),
       ),
     );
