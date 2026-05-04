@@ -26,7 +26,7 @@ This bible documents the **Light theme** as expressed in `wiki/design/Métra Scr
 
 | File | Status |
 |---|---|
-| `design/Métra Screens Dark.html` | Future bible (dark variant) — not yet canonised. |
+| `design/Métra Screens Dark.html` | Dark variant — canonised. Dark tokens in §1.1.1; component dark specs in §5.4 and throughout. |
 | `design/Métra Quick Entry.html` | Companion sub-flow — derive its tokens from this bible; do not invent new ones. |
 | `wiki/design/Métra Design System.html` | Reference catalog — superseded by this bible for any conflict. |
 | `design/Métra Prototype.html` | Historical exploration — non-authoritative. |
@@ -72,7 +72,26 @@ The HTML defines these in `const C = { … }` (lines 116–121). Treat them as t
 | `malva` | `#9E7488` | 158, 116, 136 | `Color(0xFF9E7488)` | Pain marker (zap & dots). |
 | `muschio` | `#7A8471` | 122, 132, 113 | `Color(0xFF7A8471)` | Defined; reserved (not used in shipped screens). |
 
-#### 1.1.1 Inchiostro alpha stops
+#### 1.1.1 Dark theme color tokens
+
+The dark theme inverts the surface hierarchy and desaturates accent colors. Semantic names stay the same; hex values shift.
+
+| Light token | Dark value | Dark name | Role |
+|---|---|---|---|
+| `sabbia` `#F4EDE2` | `#1A1410` | notte | Background. Page bg dark. |
+| `surface` `#FAF5EE` | `#251D18` | surface\_d | Card / section bg dark. |
+| `bianco` `#FDFAF6` | `#2F2520` | surface2\_d | Input fields / elevated elements dark. |
+| `terracotta` `#C87456` | `#B86848` | tc\_spenta | Primary accent dark. Flow indicator. |
+| `tc_scura` `#9A4D32` | `#D88868` | tc\_chiara | Body text on tinted bg dark — AA (4.7:1). |
+| `ocra` `#D4A26A` | `#C4956A` | — | Symptom marker dark. |
+| `lavanda` `#5B4E7A` | `#9B8FBF` | lav\_chiara | Predicted-period outline dark. |
+| `malva` `#9E7488` | `#C4A0B4` | malva\_chiara | Pain marker dark. |
+| `muschio` `#7A8471` | `#7A8471` | — | Unchanged in both themes. |
+| `inchiostro` `#2B2521` | `#EDE4D3` | avorio | Primary text dark. |
+
+Dark alpha stops follow the avorio base `rgba(237,228,211, α)`. The stops in use: `0.07` (card border dark), `0.08` (tab-bar top border dark), `0.10` (segmented-control track dark — see §5.4), `0.12` (input border dark), `0.14` (border2 dark), `0.35` (faint text dark), `0.50` (segmented inactive label dark), `0.55` (tab-bar inactive label dark), `0.65` (sub text dark).
+
+#### 1.1.2 Inchiostro alpha stops
 
 Wherever the mockup uses translucent ink, it picks from this fixed scale. **Do not invent intermediate values.**
 
@@ -80,7 +99,7 @@ Wherever the mockup uses translucent ink, it picks from this fixed scale. **Do n
 |---|---|
 | `0.04` | Note placeholder fill. Faintest neutral chip ground. |
 | `0.07` | Card border (the universal "card edge"). Section divider. Stepper-button background. Segmented-control background. Generic neutral chip ground. |
-| `0.08` | Tab-bar top border. Calendar-legend top border. Segmented-control track. |
+| `0.08` | Tab-bar top border. Calendar-legend top border. Segmented-control track (light). |
 | `0.10` | Selected neutral-flow chip border. Timeline rail line. |
 | `0.12` | Note textarea border. Onboarding date-input border (with extra `0.02` weight = `0.14`). Number-stepper inactive track. Phone shadow ring. |
 | `0.14` | Onboarding date-input border. |
@@ -239,7 +258,8 @@ The mockup uses depth in two places only:
 | Shadow | Where |
 |---|---|
 | `0 0 0 1px rgba(43,37,33,0.14), 0 4px 16px rgba(43,37,33,0.12), 0 16px 56px rgba(43,37,33,0.2)` | Phone shell — **mockup chrome only**, do not ship in product. |
-| `0 1px 4px rgba(43,37,33,0.12)` | Active segmented-control button. |
+| `0 1px 4px rgba(43,37,33,0.12)` | Active segmented-control button (light). |
+| `0 1px 4px rgba(0,0,0,0.12)` | Active segmented-control button (dark). |
 
 No drop-shadows on cards, buttons, sheets, or dialogs. Elevation is communicated through borders and surface-color contrast, not shadow.
 
@@ -373,7 +393,15 @@ Pairing rules — to be honoured when these variants are activated:
 
 ### 5.4 Segmented control (Archivio)
 
-Track `inline-flex`, `bg rgba(43,37,33,0.08)`, `radius 10`, `padding 3`, `gap 2`. Each segment `paddingInline 18, height 34, radius 8`. Active `bg sabbia`, shadow `0 1px 4px rgba(43,37,33,0.12)`, label `weight 500 inchiostro`. Idle `bg transparent`, label `weight 400 rgba(43,37,33,0.5)`. Labels are CSS `text-transform: capitalize` — they store as lowercase keys (`timeline`, `tabella`).
+Track `inline-flex`, `radius 10`, `padding 3`, `gap 2`. Each segment `paddingInline 18, height 34, radius 8`. Labels are CSS `text-transform: capitalize` — they store as lowercase keys (`timeline`, `tabella`).
+
+**Light:**
+Track `bg rgba(43,37,33,0.08)`. Active `bg sabbia (#F4EDE2)`, shadow `0 1px 4px rgba(43,37,33,0.12)`, label `weight 500 inchiostro`. Idle `bg transparent`, label `weight 400 rgba(43,37,33,0.50)`.
+
+**Dark:**
+Track `bg rgba(237,228,211,0.10)`. Active `bg notte (#1A1410)`, shadow `0 1px 4px rgba(0,0,0,0.12)`, label `weight 500 avorio`. Idle `bg transparent`, label `weight 400 rgba(237,228,211,0.50)`.
+
+Both themes: active segment sits at the page-background colour, creating an inset/recessed effect against the slightly-lighter track.
 
 ---
 
