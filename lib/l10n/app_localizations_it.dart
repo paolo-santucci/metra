@@ -569,7 +569,7 @@ class AppLocalizationsIt extends AppLocalizations {
       'Quanto dura di solito il tuo ciclo?';
 
   @override
-  String get onboarding_period_duration_label => 'Durata mestruazioni';
+  String get onboarding_period_duration_label => 'Durata flusso';
 
   @override
   String get onboarding_get_started => 'Inizia';

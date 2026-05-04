@@ -568,7 +568,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'How long is your cycle usually?';
 
   @override
-  String get onboarding_period_duration_label => 'Menstruation duration';
+  String get onboarding_period_duration_label => 'Flow duration';
 
   @override
   String get onboarding_get_started => 'Get started';

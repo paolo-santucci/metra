@@ -1091,7 +1091,7 @@ abstract class AppLocalizations {
   /// Label for the period duration picker on onboarding screen
   ///
   /// In it, this message translates to:
-  /// **'Durata mestruazioni'**
+  /// **'Durata flusso'**
   String get onboarding_period_duration_label;
 
   /// CTA button on the onboarding welcome screen
