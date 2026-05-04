@@ -75,6 +75,7 @@ const { useState } = React;
 const C = {
   // Light
   sabbia:     '#F4EDE2',
+  surface:    '#FAF5EE',
   terracotta: '#C87456',
   tc_scura:   '#9A4D32',
   ocra:       '#D4A26A',
@@ -251,10 +252,10 @@ function Btn({ label, variant = 'primary', state = 'default', dark = false }) {
   return (
     <div style={{
       display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-      paddingInline: 24, height: 48,
+      paddingInline: 24, height: 56,
       background: bg[variant][state],
       border: `1.5px solid ${border[variant]}`,
-      borderRadius: 12,
+      borderRadius: 16,
       cursor: state === 'disabled' ? 'not-allowed' : 'pointer',
       opacity: 1,
       minWidth: 120,
@@ -264,43 +265,44 @@ function Btn({ label, variant = 'primary', state = 'default', dark = false }) {
           <circle cx="12" cy="12" r="9" stroke={fg[variant][state]} strokeWidth="2" strokeDasharray="28 56" strokeLinecap="round"/>
         </svg>
       )}
-      <span style={{ fontFamily:'Inter', fontSize:15, fontWeight:500, color: fg[variant][state], letterSpacing: '-0.01em' }}>
+      <span style={{ fontFamily:'Inter', fontSize:16, fontWeight:500, color: fg[variant][state], letterSpacing: '-0.01em' }}>
         {state === 'loading' ? 'Salvataggio…' : label}
       </span>
     </div>
   );
 }
 
-// Toggle
+// MetraToggle — byte-for-byte copy of the canonical atom in
+// docs/design/metra-screens-light.html § 6.7 (Impostazioni screen).
+// DO NOT diverge from the canonical here. If a change is needed, patch
+// metra-screens-light.html and DESIGN-BIBLE § 6.7 first, then sync this.
+function MetraToggle({ on, onChange }) {
+  return (
+    <div onClick={() => onChange(!on)} style={{
+      width: 48, height: 28, borderRadius: 14,
+      background: on ? C.terracotta : 'rgba(43,37,33,0.08)',
+      transition: 'background 0.15s',
+      position: 'relative', cursor: 'pointer', flexShrink: 0
+    }}>
+      <div style={{
+        position: 'absolute', top: 3, left: on ? 23 : 3,
+        width: 22, height: 22, borderRadius: 11,
+        background: C.surface,
+        transition: 'left 0.15s'
+      }} />
+    </div>);
+}
+
+// Toggle — catalog wrapper that pairs a label row with the canonical
+// MetraToggle so the showcase sections can render uncontrolled rows.
+// Only the label color is dark-aware; the toggle atom itself is canonical.
 function Toggle({ label, checked = false, dark = false }) {
   const [on, setOn] = useState(checked);
-  const trackBg = on ? C.terracotta : (dark ? 'rgba(237,228,211,0.15)' : 'rgba(43,37,33,0.15)');
   const text = dark ? C.avorio : C.inchiostro;
   return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:16, width: 220 }}>
       <span style={{ fontFamily:'Inter', fontSize:15, color: text }}>{label}</span>
-      <div
-        onClick={() => setOn(!on)}
-        style={{
-          width: 50, height: 30,
-          background: trackBg,
-          borderRadius: 15,
-          position: 'relative',
-          cursor: 'pointer',
-          transition: 'background 0.2s',
-          flexShrink: 0,
-        }}
-      >
-        <div style={{
-          width: 22, height: 22,
-          background: on ? C.sabbia : (dark ? C.avorio : '#fff'),
-          borderRadius: '50%',
-          position: 'absolute',
-          top: 4, left: on ? 24 : 4,
-          transition: 'left 0.2s',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-        }}/>
-      </div>
+      <MetraToggle on={on} onChange={setOn} />
     </div>
   );
 }
@@ -856,7 +858,7 @@ function App() {
             <div style={{ marginBottom:24 }}>
               <div className="token-label" style={{ marginBottom:12 }}>Chip (sintomi)</div>
               <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
-                {['Crampi','Mal di testa','Mal di schiena','Emicrania','Stanchezza','Nausea','Gonfiore','Tensione mammaria'].map((l,i) => <Chip key={l} label={l} selected={i<2}/>)}
+                {['Mal di testa','Mal di schiena','Emicrania','Stanchezza','Nausea','Gonfiore','Tensione mammaria'].map((l,i) => <Chip key={l} label={l} selected={i<2}/>)}
               </div>
             </div>
             <div style={{ height:1, background:'rgba(43,37,33,0.08)', marginBottom:20 }}/>
@@ -879,7 +881,7 @@ function App() {
             <div style={{ marginBottom:24 }}>
               <div className="token-label" style={{ marginBottom:12, color:'rgba(237,228,211,0.35)' }}>Chip</div>
               <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
-                {['Crampi','Mal di testa','Stanchezza','Nausea'].map((l,i) => <Chip key={l} label={l} selected={i<1} dark/>)}
+                {['Mal di testa','Stanchezza','Nausea'].map((l,i) => <Chip key={l} label={l} selected={i<1} dark/>)}
               </div>
             </div>
             <div style={{ height:1, background:'rgba(237,228,211,0.07)', marginBottom:20 }}/>
@@ -1019,7 +1021,7 @@ function App() {
             <div style={{ height:1, background:'rgba(43,37,33,0.08)', marginBlock:20 }}/>
             <div style={{ fontFamily:'Inter', fontSize:12, color:'rgba(43,37,33,0.68)', marginBottom:12, letterSpacing:'0.05em', textTransform:'uppercase' }}>Sintomi</div>
             <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:24 }}>
-              {['Crampi','Mal di testa','Stanchezza'].map((l,i) => <Chip key={l} label={l} selected={i===0}/>)}
+              {['Mal di testa','Stanchezza'].map((l,i) => <Chip key={l} label={l} selected={i===0}/>)}
             </div>
             <div style={{ width:'100%' }}>
               <Btn label="Salva" variant="primary" state="default"/>
@@ -1033,7 +1035,7 @@ function App() {
             <div style={{ height:1, background:'rgba(237,228,211,0.07)', marginBlock:20 }}/>
             <div style={{ fontFamily:'Inter', fontSize:12, color:'rgba(237,228,211,0.35)', marginBottom:12, letterSpacing:'0.05em', textTransform:'uppercase' }}>Sintomi</div>
             <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:24 }}>
-              {['Crampi','Mal di testa','Stanchezza'].map((l,i) => <Chip key={l} label={l} selected={i===0} dark/>)}
+              {['Mal di testa','Stanchezza'].map((l,i) => <Chip key={l} label={l} selected={i===0} dark/>)}
             </div>
             <Btn label="Salva" variant="primary" state="default" dark/>
           </Panel>

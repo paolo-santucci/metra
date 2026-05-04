@@ -333,14 +333,35 @@ There is **no center-FAB**, **no badges**, **no slide indicator**. The active st
 
 Geometry: `height 56` · `radius 16` · centered content · `Inter 16 / weight 500`.
 
-Two variants — chosen by **screen role**, not user preference:
+Two **shipping** variants — chosen by **screen role**, not user preference:
 
 | Variant | Background | Label color | Used on |
 |---|---|---|---|
 | **Inchiostro** | `inchiostro` `#2B2521` | `sabbia` | Onboarding 1 ("Inizia"), Onboarding 3 ("Tutto pronto →"). Use for **brand entry / completion** actions. |
 | **Terracotta** | `terracotta` `#C87456` | `sabbia` | Onboarding 2 ("Continua"), Today ("Salva giornata" — with leading 18 px check icon, gap 8). Use for **commit / save** actions. |
 
-There is no third variant. No outline buttons, no ghost buttons, no destructive buttons in scope.
+Two further variants — **Secondary** (outline) and **Ghost** (text-only) — are **reserved for future flows** and documented in § 5.1.1. They MUST NOT ship in MVP. **No destructive button variant exists**, present or reserved — destructive intent surfaces through the Settings row variant (§ 18.5.1), not through a button.
+
+#### 5.1.1 Reserved variants — not in MVP scope
+
+The reference catalog at `docs/design/metra-design-system.html` (lines 235–272) keeps a Secondary (outline) and a Ghost (text-only) button on hand for flows that may later need a tertiary action surface alongside a primary CTA — for example a "Skip" companion to "Continua", or a "Cancel" companion to a destructive confirm. They are non-canonical until activated by an upstream change (HTML mockup → bible → code, per CLAUDE.md § 11).
+
+**When activated, both variants inherit the canonical primary-CTA geometry** (`height 56 · radius 16 · Inter 16 / weight 500`). The 48 / 12 / 15 dimensions presently in the reference catalog are draft and will be normalised to the primary CTA at activation time — do not propagate them.
+
+Surface treatment (states drawn from the catalog at line 235–272):
+
+| Variant | Default bg | Default label | Border (default) | Pressed bg | Pressed label | Disabled label / border |
+|---|---|---|---|---|---|---|
+| **Secondary** | transparent | `terracotta` | `1.5px solid terracotta` | `rgba(200,116,86,0.12)` | `tc_scura` | label `rgba(200,116,86,0.40)` · border `rgba(200,116,86,0.30)` |
+| **Ghost** | transparent | `inchiostro` | none | `rgba(200,116,86,0.08)` | `terracotta` | label `rgba(43,37,33,0.30)` |
+
+Loading state (both variants): replace the label with a 16 px spinner + "Salvataggio…" microcopy, mirroring the catalog recipe. Never communicate disabled by lowering the global `opacity`; use the alpha stops in this table.
+
+Pairing rules — to be honoured when these variants are activated:
+
+- A screen surfaces **at most one** Secondary or Ghost alongside its Inchiostro/Terracotta primary — never two of the same kind, never both Secondary and Ghost together. The catalog's intent is "primary action + escape hatch", not a menu of equivalent options.
+- The escape-hatch label is a **noun or short imperative** matching the § 14 vocabulary register (e.g. `Salta`, `Annulla`, `Più tardi`). No exclamation marks, no emoji, no all-caps.
+- Activation requires updating `docs/design/metra-screens-light.html` first; this bible is patched to remove the "reserved" gating only after the mockup ships an instance.
 
 ### 5.2 Stepper micro-button (Onboarding 3 ± controls)
 
