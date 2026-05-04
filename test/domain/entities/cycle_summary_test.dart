@@ -42,12 +42,13 @@ void main() {
     List<PainSymptomData> symptoms = const [],
     FlowIntensity? dominantFlow = FlowIntensity.medium,
     int? dominantPainIntensity = 2,
-  }) => CycleSummary(
-    cycle: cycleEntry ?? cycle,
-    symptoms: symptoms,
-    dominantFlow: dominantFlow,
-    dominantPainIntensity: dominantPainIntensity,
-  );
+  }) =>
+      CycleSummary(
+        cycle: cycleEntry ?? cycle,
+        symptoms: symptoms,
+        dominantFlow: dominantFlow,
+        dominantPainIntensity: dominantPainIntensity,
+      );
 
   group('CycleSummary construction', () {
     test('stores all fields', () {

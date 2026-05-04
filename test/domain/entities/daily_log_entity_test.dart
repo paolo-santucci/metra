@@ -32,16 +32,17 @@ void main() {
     int? painIntensity,
     bool notesEnabled = false,
     String? notes,
-  }) => DailyLogEntity(
-    date: date ?? DateTime.utc(2026, 4, 15),
-    flowType: flowType,
-    flowIntensity: flowIntensity,
-    otherDischarge: otherDischarge,
-    painEnabled: painEnabled,
-    painIntensity: painIntensity,
-    notesEnabled: notesEnabled,
-    notes: notes,
-  );
+  }) =>
+      DailyLogEntity(
+        date: date ?? DateTime.utc(2026, 4, 15),
+        flowType: flowType,
+        flowIntensity: flowIntensity,
+        otherDischarge: otherDischarge,
+        painEnabled: painEnabled,
+        painIntensity: painIntensity,
+        notesEnabled: notesEnabled,
+        notes: notes,
+      );
 
   group('DailyLogEntity construction', () {
     test('stores date and applies default booleans', () {

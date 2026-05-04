@@ -30,18 +30,19 @@ void main() {
     DateTime? lastBackupAt,
     bool onboardingCompleted = false,
     int? declaredCycleLength,
-  }) => AppSettingsData(
-    languageCode: languageCode,
-    darkMode: darkMode,
-    painEnabled: painEnabled,
-    notesEnabled: notesEnabled,
-    notificationDaysBefore: notificationDaysBefore,
-    notificationsEnabled: notificationsEnabled,
-    dropboxEmail: dropboxEmail,
-    lastBackupAt: lastBackupAt,
-    onboardingCompleted: onboardingCompleted,
-    declaredCycleLength: declaredCycleLength,
-  );
+  }) =>
+      AppSettingsData(
+        languageCode: languageCode,
+        darkMode: darkMode,
+        painEnabled: painEnabled,
+        notesEnabled: notesEnabled,
+        notificationDaysBefore: notificationDaysBefore,
+        notificationsEnabled: notificationsEnabled,
+        dropboxEmail: dropboxEmail,
+        lastBackupAt: lastBackupAt,
+        onboardingCompleted: onboardingCompleted,
+        declaredCycleLength: declaredCycleLength,
+      );
 
   group('AppSettingsData construction', () {
     test('stores all required fields and null optional fields by default', () {
@@ -272,7 +273,8 @@ void main() {
       expect(copy.onboardingCompleted, isTrue);
     });
 
-    test('copyWith preserves declaredCycleLength even when other fields change', () {
+    test('copyWith preserves declaredCycleLength even when other fields change',
+        () {
       final settings = makeSettings(
         declaredCycleLength: 28,
         languageCode: 'it',
@@ -283,7 +285,8 @@ void main() {
       expect(copy.declaredCycleLength, 28);
     });
 
-    test('copyWith preserves null declaredCycleLength when other fields change', () {
+    test('copyWith preserves null declaredCycleLength when other fields change',
+        () {
       final settings = makeSettings(languageCode: 'it');
       final copy = settings.copyWith(languageCode: 'en');
 

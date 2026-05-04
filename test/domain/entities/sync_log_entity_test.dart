@@ -28,14 +28,15 @@ void main() {
     SyncOperation operation = SyncOperation.backup,
     bool success = true,
     String? errorMessage,
-  }) => SyncLogEntity(
-    id: id,
-    timestamp: timestamp ?? ts,
-    provider: provider,
-    operation: operation,
-    success: success,
-    errorMessage: errorMessage,
-  );
+  }) =>
+      SyncLogEntity(
+        id: id,
+        timestamp: timestamp ?? ts,
+        provider: provider,
+        operation: operation,
+        success: success,
+        errorMessage: errorMessage,
+      );
 
   group('SyncLogEntity construction', () {
     test('stores all required fields', () {

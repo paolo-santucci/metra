@@ -28,13 +28,14 @@ void main() {
     DateTime? endDate,
     int? cycleLength = 28,
     int? periodLength = 5,
-  }) => CycleEntryEntity(
-    id: id,
-    startDate: startDate ?? start,
-    endDate: endDate,
-    cycleLength: cycleLength,
-    periodLength: periodLength,
-  );
+  }) =>
+      CycleEntryEntity(
+        id: id,
+        startDate: startDate ?? start,
+        endDate: endDate,
+        cycleLength: cycleLength,
+        periodLength: periodLength,
+      );
 
   group('CycleEntryEntity construction', () {
     test('stores all required fields', () {
