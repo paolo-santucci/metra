@@ -93,9 +93,10 @@ function Icon({ name, size = 24, color, stroke = 1.5 }) {
     leaf:          <path d="M5 19C5 12 8 5 19 5c0 11-7 14-14 14z" {...p}/>,
     export:        <><path d="M12 16V4M8 8l4-4 4 4" {...p}/><path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2" {...p}/></>,
     moon_crescent: <path d="M12 3a9 9 0 1 0 9 9 6.5 6.5 0 0 1-9-9z" {...p}/>,
-    star_small:    <path d="M12 4l1.5 4.5H18l-3.75 2.75 1.5 4.5L12 13l-3.75 2.75 1.5-4.5L6 8.5h4.5z" {...p}/>,
+    star_small:    <path d="M12 3L14 9.2L20.6 9.2L15.3 13.1L17.3 19.3L12 15.4L6.7 19.3L8.7 13.1L3.4 9.2L10 9.2Z" {...p}/>,
     today_fold:    <><path d="M5 5 L15 5 L19 9 L19 19 L5 19 Z" {...p}/><path d="M15 5 L19 5 L19 9 Z" {...p}/><rect x="10.5" y="11" width="3" height="3" rx="0.8" fill={c} stroke="none"/></>,
     filter:        <path d="M22 3H2l8 9.46V19l4 2v-8.54z" {...p}/>,
+    pen:           <path d="M13 2 C19 5 19 14 13 19 L10 22 L11 19 C8 14 9 6 13 2 Z" fill={c} stroke="none" />,
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">{icons[name] ?? <circle cx="12" cy="12" r="9" stroke={c} strokeWidth={stroke}/>}</svg>;
 }
@@ -105,7 +106,7 @@ function DataIcon({ name, size = 12, color }) {
     drop:         <path d="M12 3C12 3 5 10 5 15a7 7 0 0 0 14 0c0-5-7-12-7-12z" fill={color}/>,
     drop_outline: <path d="M12 3C12 3 5 10 5 15a7 7 0 0 0 14 0c0-5-7-12-7-12z" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>,
     moon_crescent:<path d="M12 3a9 9 0 1 0 9 9 6.5 6.5 0 0 1-9-9z" fill={color}/>,
-    star_small:   <path d="M12 4l1.5 4.5H18l-3.75 2.75 1.5 4.5L12 13l-3.75 2.75 1.5-4.5L6 8.5h4.5z" fill={color}/>,
+    star_small:   <path d="M12 3L14 9.2L20.6 9.2L15.3 13.1L17.3 19.3L12 15.4L6.7 19.3L8.7 13.1L3.4 9.2L10 9.2Z" fill={color}/>,
     zap:          <path d="M13 3L5 14L11 14L9 21L19 11L13 11Z" fill={color}/>,
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">{paths[name] ?? null}</svg>;
@@ -191,7 +192,7 @@ function FlowTypeChips({ value, onChange, t = L }) {
   const neutral = t === D ? 'rgba(237,228,211,' : 'rgba(43,37,33,';
   const types = [
     { id: 'assente',      label: 'Assente',      variant: 'neutral' },
-    { id: 'mestruazioni', label: 'Mestruazioni', variant: 'flow'    },
+    { id: 'intensita',    label: 'Intensità',    variant: 'flow'    },
     { id: 'spotting',     label: 'Spotting',     variant: 'spot'    },
   ];
   return (
@@ -258,20 +259,23 @@ function PainDots({ value, onChange, t = L }) {
 
 function CalDay({ day, monthData, selected, onSelect, t = L }) {
   if (!day) return <div style={{ width: 48, height: 48 }}/>;
-  const { flow, pred, symptoms=[], pain=[] } = monthData;
+  const { flow, pred, symptoms=[], pain=[], notesByDay={} } = monthData;
   const isFlow = flow.includes(day), isPred = pred.includes(day), hasS = symptoms.includes(day), hasP = pain.includes(day);
+  const hasN = notesByDay[day] !== undefined;
   const isSel = selected === day;
   const ic = isSel ? t.bg : null;
+  const penColor = t === D ? 'rgba(237,228,211,0.68)' : 'rgba(43,37,33,0.68)';
   const inds = [
-    isFlow && { name:'drop',         color: ic || t.accentDk },
-    isPred && { name:'drop_outline', color: ic || t.lavanda  },
-    hasS   && { name:'star_small',   color: ic || t.ocra     },
-    hasP   && { name:'zap',          color: ic || t.malva    },
+    isFlow && { name:'drop',         color: ic || t.accentDk,    stroke: false },
+    isPred && { name:'drop_outline', color: ic || t.lavanda,     stroke: false },
+    hasS   && { name:'star_small',   color: ic || t.ocra,        stroke: false },
+    hasP   && { name:'zap',          color: ic || t.malva,       stroke: false },
+    hasN   && { name:'pen',          color: ic || penColor,      stroke: true  },
   ].filter(Boolean);
   return (
     <div onClick={() => onSelect(day)} style={{ width:48, height:48, borderRadius:12, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:1, background: isSel ? (t === D ? t.accent : t.text) : isFlow ? `${t.accent}22` : 'transparent', border: isSel ? 'none' : isFlow ? `1px solid ${t.accent}44` : isPred ? `1.5px solid ${t.lavanda}66` : '1px solid transparent', cursor:'pointer' }}>
       <span style={{ fontFamily:'Inter', fontSize:15, fontWeight: isSel ? 600 : 400, color: isSel ? t.bg : t.text }}>{day}</span>
-      {inds.length > 0 && <div style={{ display:'flex', gap:2, alignItems:'center' }}>{inds.map(ind => <DataIcon key={ind.name} name={ind.name} size={11} color={ind.color}/>)}</div>}
+      {inds.length > 0 && <div style={{ display:'flex', gap: inds.length >= 4 ? 1 : 2, alignItems:'center' }}>{inds.map(ind => ind.stroke ? <Icon key={ind.name} name={ind.name} size={11} color={ind.color} stroke={1.5}/> : <DataIcon key={ind.name} name={ind.name} size={11} color={ind.color}/>)}</div>}
     </div>
   );
 }
@@ -410,11 +414,11 @@ function S03_Iconografia() {
     ['calendar','Calendario'],['wave','Archivio'],['chart','Statistiche'],['settings','Impostazioni'],
     ['drop','Flusso'],['moon_crescent','Luna'],['star_small','Sintomi'],['today_fold','Giornata'],
     ['lock','Privacy'],['cloud','Backup'],['export','Esporta'],['info','Info'],
-    ['leaf','Natura'],['note','Nota'],['filter','Filtro'],
+    ['leaf','Natura'],['note','Nota'],['pen','Penna'],['filter','Filtro'],
     ['chevron_right','Avanti'],['chevron_left','Indietro'],['chevron_down','Espandi'],
     ['plus','Aggiungi'],['check','Conferma'],['x','Chiudi'],
   ];
-  const dataIcons = [['drop','Mestruazioni'],['drop_outline','Previsione'],['star_small','Sintomo'],['zap','Dolore'],['moon_crescent','Luna']];
+  const dataIcons = [['drop','Flusso'],['drop_outline','Previsione'],['star_small','Sintomo'],['zap','Dolore'],['moon_crescent','Luna']];
   function IconGrid({ t, dark }) {
     return (
       <div className={dark ? 'dp' : 'lp'} style={{ flex:1 }}>
@@ -636,7 +640,7 @@ function S08_Input() {
             </div>
             <div className="tlabel" style={{ color:dark?D.faint:undefined, marginBottom:8 }}>Nota libera (textarea)</div>
             <div style={{ minHeight:72, background: dark?D.surface2:'rgba(43,37,33,0.04)', border:`1.5px solid ${dark?'rgba(237,228,211,0.12)':'rgba(43,37,33,0.12)'}`, borderRadius:12, padding:'12px 14px' }}>
-              <span style={{ fontFamily:'Inter', fontSize:15, color:`${t.text}50` }}>Scrivi qualcosa…</span>
+              <span style={{ fontFamily:'Inter', fontSize:15, color:`${t.text}50` }}>Circostanze, colore, consistenza…</span>
             </div>
           </div>
         ))}
@@ -647,14 +651,14 @@ function S08_Input() {
 
 function S09_Flusso() {
   function FlowPanel({ t, dark }) {
-    const [flowType, setFlowType] = useState('mestruazioni');
+    const [flowType, setFlowType] = useState('intensita');
     const [flowInt, setFlowInt] = useState(2);
-    const handle = tp => { const next=tp===flowType?null:tp; if(next!=='mestruazioni')setFlowInt(null);else setFlowInt(2); setFlowType(next); };
+    const handle = tp => { const next=tp===flowType?null:tp; if(next!=='intensita')setFlowInt(null);else setFlowInt(2); setFlowType(next); };
     const neutral = dark ? 'rgba(237,228,211,' : 'rgba(43,37,33,';
     return (
       <div>
         <FlowTypeChips value={flowType} onChange={handle} t={t}/>
-        {flowType==='mestruazioni' && <FlowIntensityDots value={flowInt} onChange={setFlowInt} t={t}/>}
+        {flowType==='intensita' && <FlowIntensityDots value={flowInt} onChange={setFlowInt} t={t}/>}
         {flowType==='spotting' && <div style={{ marginTop:14, padding:'11px 14px', borderRadius:10, background:`${t.accent}0D`, border:`1px solid ${t.accent}28` }}><span style={{ fontFamily:'Inter', fontSize:12, color:neutral+'0.65)', lineHeight:1.55 }}>Piccola perdita fuori dal flusso mestruale.</span></div>}
         {flowType==='assente' && <div style={{ marginTop:14, display:'flex', alignItems:'center', gap:8 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5 9-9" stroke={neutral+'0.35)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg><span style={{ fontFamily:'Inter', fontSize:12, color:neutral+'0.45)' }}>Nessun flusso oggi</span></div>}
       </div>
@@ -691,7 +695,7 @@ function S10_Dolore() {
 }
 
 function S11_Calendario() {
-  const SAMPLE = { flow:[10,11,12,13,14], pred:[7,8,9], symptoms:[13,16], pain:[11,12,13] };
+  const SAMPLE = { flow:[10,11,12,13,14], pred:[7,8,9], symptoms:[13,16], pain:[11,12,13], notesByDay:{13:'ciclo',16:'sintomi'} };
   const DAY_LABELS = ['L','M','M','G','V','S','D'];
   function Grid({ t, dark }) {
     const [sel, setSel] = useState(13);
@@ -705,12 +709,16 @@ function S11_Calendario() {
           {cells.map((day,i) => <CalDay key={i} day={day} monthData={SAMPLE} selected={sel} onSelect={setSel} t={t}/>)}
         </div>
         <div style={{ display:'flex', gap:14, flexWrap:'wrap', marginTop:12, paddingTop:10, borderTop:`1px solid ${t.border}` }}>
-          {[{ icon:'drop', color:t.accentDk, lbl:'Mestruazioni' }, { icon:'star_small', color:t.ocra, lbl:'Sintomi' }, { icon:'zap', color:t.malva, lbl:'Dolore' }, { icon:'drop_outline', color:t.lavanda, lbl:'Previsione' }].map(l => (
+          {[{ icon:'drop', color:t.accentDk, lbl:'Flusso' }, { icon:'star_small', color:t.ocra, lbl:'Sintomi' }, { icon:'zap', color:t.malva, lbl:'Dolore' }, { icon:'drop_outline', color:t.lavanda, lbl:'Previsione' }].map(l => (
             <div key={l.lbl} style={{ display:'flex', alignItems:'center', gap:5 }}>
               <DataIcon name={l.icon} size={14} color={l.color}/>
               <span style={{ fontFamily:'Inter', fontSize:11, color:t.sub }}>{l.lbl}</span>
             </div>
           ))}
+          <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+            <Icon name="pen" size={14} color={t === D ? 'rgba(237,228,211,0.68)' : 'rgba(43,37,33,0.68)'} stroke={1.5}/>
+            <span style={{ fontFamily:'Inter', fontSize:11, color:t.sub }}>Note</span>
+          </div>
         </div>
       </div>
     );
