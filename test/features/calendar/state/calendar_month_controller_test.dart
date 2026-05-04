@@ -125,20 +125,33 @@ void main() {
   });
 
   group('CalendarMonthNotifier — goToNextMonth()', () {
-    test('is a no-op when already on current month', () async {
+    test('is a no-op when already at current month + 1', () async {
+      // Design spec: chevron_right disabled only when displayed month ==
+      // current month + 1. Advancing from current month to current month + 1
+      // is allowed; a second call from current month + 1 must be a no-op.
       final fakeRepo = _StreamableMonthRepo();
       final container = _makeContainer(fakeRepo);
       addTearDown(container.dispose);
 
       await container.read(calendarMonthProvider.future);
       final now = DateTime.now();
+
+      // First advance: current month → current month + 1.
       container.read(calendarMonthProvider.notifier).goToNextMonth();
       await Future<void>.delayed(Duration.zero);
 
-      // State must still be current month.
-      final state = container.read(calendarMonthProvider).valueOrNull;
-      expect(state?.year, equals(now.year));
-      expect(state?.month, equals(now.month));
+      final nextMonth = DateTime(now.year, now.month + 1);
+      final afterFirst = container.read(calendarMonthProvider).valueOrNull;
+      expect(afterFirst?.year, equals(nextMonth.year));
+      expect(afterFirst?.month, equals(nextMonth.month));
+
+      // Second advance: must be a no-op — guard blocks navigation past + 1.
+      container.read(calendarMonthProvider.notifier).goToNextMonth();
+      await Future<void>.delayed(Duration.zero);
+
+      final afterSecond = container.read(calendarMonthProvider).valueOrNull;
+      expect(afterSecond?.year, equals(nextMonth.year));
+      expect(afterSecond?.month, equals(nextMonth.month));
     });
 
     test('advances month when on a past month', () async {

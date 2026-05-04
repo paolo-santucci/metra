@@ -172,7 +172,13 @@ void main() {
 
   group('CyclePredictionService.predict — declared fallback (Strategy B)', () {
     const service = CyclePredictionService();
-    final anchor = DateTime(2026, 1, 1);
+    // Use a recent anchor (within one declared cycle of today) so that
+    // anchor + declaredCycleLength lands in the future and the roll-forward
+    // loop does not alter the expected start. Tests that intentionally verify
+    // roll-forward behaviour belong in a separate group.
+    final now = DateTime.now();
+    final recentAnchor = DateTime.utc(now.year, now.month, now.day)
+        .subtract(const Duration(days: 7));
 
     test(
       'returns null for empty list even with declaredCycleLength provided',
@@ -187,7 +193,9 @@ void main() {
     test(
       'returns null for 1 cycle when declaredCycleLength is null',
       () {
-        final cycles = [makeEntry(id: 1, startDate: anchor, cycleLength: 28)];
+        final cycles = [
+          makeEntry(id: 1, startDate: recentAnchor, cycleLength: 28),
+        ];
         expect(service.predict(cycles), isNull);
       },
     );
@@ -196,8 +204,10 @@ void main() {
       'returns fallback prediction for 1 cycle anchor with declaredCycleLength',
       () {
         // Only one anchor entry (null cycleLength, as inserted by CompleteOnboarding).
+        // recentAnchor is within 28 days of today, so anchor + 28 is in the
+        // future and the service returns it directly without roll-forward.
         final cycles = [
-          CycleEntryEntity(id: 1, startDate: anchor),
+          CycleEntryEntity(id: 1, startDate: recentAnchor),
         ];
         final result = service.predict(
           cycles,
@@ -205,7 +215,7 @@ void main() {
         );
 
         expect(result, isNotNull);
-        final expectedStart = anchor.add(const Duration(days: 28));
+        final expectedStart = recentAnchor.add(const Duration(days: 28));
         expect(result!.expectedStart, equals(expectedStart));
         expect(
           result.windowStart,
@@ -223,8 +233,10 @@ void main() {
     test(
       'fallback anchors on the most-recent cycle when 2 entries exist',
       () {
-        final start1 = anchor;
-        final start2 = anchor.add(const Duration(days: 30));
+        // start1 is the older entry; start2 is the most-recent. Both are
+        // recent enough that start2 + 28 lands in the future.
+        final start1 = recentAnchor.subtract(const Duration(days: 30));
+        final start2 = recentAnchor;
         final cycles = [
           CycleEntryEntity(id: 1, startDate: start1),
           CycleEntryEntity(id: 2, startDate: start2),
@@ -246,17 +258,21 @@ void main() {
     test(
       'WMA path takes over once 3 measured cycles exist, ignoring declaredCycleLength',
       () {
+        // Fixed anchor for a pure-math verification: WMA result is independent
+        // of the roll-forward guard because all 3 entries have measured lengths
+        // and the most-recent anchor's startDate + 90 is used directly.
+        final wmaAnchor = DateTime(2026, 1, 1);
         // 3 complete cycles with measured lengths 30, 30, 30.
         final cycles = [
-          makeEntry(id: 1, startDate: anchor, cycleLength: 30),
+          makeEntry(id: 1, startDate: wmaAnchor, cycleLength: 30),
           makeEntry(
             id: 2,
-            startDate: anchor.add(const Duration(days: 30)),
+            startDate: wmaAnchor.add(const Duration(days: 30)),
             cycleLength: 30,
           ),
           makeEntry(
             id: 3,
-            startDate: anchor.add(const Duration(days: 60)),
+            startDate: wmaAnchor.add(const Duration(days: 60)),
             cycleLength: 30,
           ),
         ];
@@ -270,7 +286,7 @@ void main() {
         expect(result!.cyclesUsed, equals(3));
         expect(
           result.expectedStart,
-          equals(anchor.add(const Duration(days: 90))),
+          equals(wmaAnchor.add(const Duration(days: 90))),
         );
       },
     );
