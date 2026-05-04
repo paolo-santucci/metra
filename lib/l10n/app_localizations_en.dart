@@ -653,7 +653,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get today_notes_label => 'Free note';
 
   @override
-  String get today_notes_hint => 'Write something…';
+  String get today_notes_hint => 'Circumstances, colour, consistency…';
 
   @override
   String get today_save_day => 'Save day';

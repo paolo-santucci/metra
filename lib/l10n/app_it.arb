@@ -982,7 +982,7 @@
   "@today_pain_intensity_label": {"description": "Pain intensity section heading"},
   "today_notes_label": "Nota libera",
   "@today_notes_label": {"description": "Free notes section heading"},
-  "today_notes_hint": "Scrivi qualcosa…",
+  "today_notes_hint": "Circostanze, colore, consistenza…",
   "@today_notes_hint": {"description": "Notes text field placeholder"},
   "today_save_day": "Salva giornata",
   "@today_save_day": {"description": "Save button label"},

@@ -1253,7 +1253,7 @@ abstract class AppLocalizations {
   /// Notes text field placeholder
   ///
   /// In it, this message translates to:
-  /// **'Scrivi qualcosa…'**
+  /// **'Circostanze, colore, consistenza…'**
   String get today_notes_hint;
 
   /// Save button label

@@ -654,7 +654,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get today_notes_label => 'Nota libera';
 
   @override
-  String get today_notes_hint => 'Scrivi qualcosa…';
+  String get today_notes_hint => 'Circostanze, colore, consistenza…';
 
   @override
   String get today_save_day => 'Salva giornata';
