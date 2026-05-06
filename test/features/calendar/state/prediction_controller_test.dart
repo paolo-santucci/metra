@@ -49,8 +49,8 @@ import 'package:metra/providers/use_case_providers.dart';
 // ---------------------------------------------------------------------------
 Future<ProviderContainer> _makeContainer({
   required FutureOr<WatchCyclePrediction> Function(
-          FutureProviderRef<WatchCyclePrediction>)
-      ucFactory,
+    Ref<AsyncValue<WatchCyclePrediction>>,
+  ) ucFactory,
   Stream<AppSettingsData?> Function()? settingsStream,
 }) async {
   final container = ProviderContainer(
