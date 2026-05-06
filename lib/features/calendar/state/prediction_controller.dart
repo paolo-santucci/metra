@@ -24,14 +24,29 @@ import '../../../providers/use_case_providers.dart';
 /// Non-autoDispose provider: the prediction is app-lifetime state consumed by
 /// the calendar and the app-level notification listener.
 ///
-/// Watches AppSettings for [declaredCycleLength] (Strategy B) so the prediction
-/// falls back to the user-declared average when fewer than 3 measured cycles
-/// exist. Re-runs whenever settings change.
-final cyclePredictionProvider = StreamProvider<CyclePrediction?>((ref) async* {
-  final uc = await ref.watch(watchCyclePredictionProvider.future);
-  // Wait for the settings to load so declaredCycleLength is available.
-  // If settings are still loading, valueOrNull returns null → prediction uses
-  // no fallback until settings settle (harmless; they load in milliseconds).
-  final settings = await ref.watch(appSettingsStreamProvider.future);
-  yield* uc(declaredCycleLength: settings?.declaredCycleLength);
+/// BUG-001 fix: converted from an async* generator body (which captured
+/// declaredCycleLength once via .future and never re-ran) to a synchronous
+/// StreamProvider body. Riverpod's dependency tracking now rebuilds this
+/// provider body on every emission from appSettingsStreamProvider or
+/// watchCyclePredictionProvider, including within-session DB writes such as
+/// saveDeclaredCycleLength(). The prediction for <3-cycle users correctly
+/// reflects the latest declared cycle length without an app restart.
+final cyclePredictionProvider = StreamProvider<CyclePrediction?>((ref) {
+  // Synchronous body: ref.watch installs reactive dependencies.
+  // Every new emission from appSettingsStreamProvider rebuilds this provider,
+  // restarting the inner stream with the updated declaredCycleLength.
+  final ucAsync = ref.watch(watchCyclePredictionProvider);
+  final settingsAsync = ref.watch(appSettingsStreamProvider);
+
+  // Return empty stream while either dependency is loading or errored,
+  // so no data emission reaches the notification listener until both
+  // dependencies have resolved (EC-02, EC-03).
+  final uc = ucAsync.valueOrNull;
+  if (uc == null) return const Stream.empty();
+  if (settingsAsync is AsyncLoading || settingsAsync is AsyncError) {
+    return const Stream.empty();
+  }
+
+  final declaredCycleLength = settingsAsync.valueOrNull?.declaredCycleLength;
+  return uc(declaredCycleLength: declaredCycleLength);
 });

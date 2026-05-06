@@ -28,7 +28,20 @@ final settingsNotifierProvider =
 class SettingsNotifier extends AsyncNotifier<AppSettingsData> {
   @override
   Future<AppSettingsData> build() async {
-    final repo = await ref.watch(appSettingsRepositoryProvider.future);
+    // BUG-003 fix: watch the reactive settings stream so this notifier
+    // rebuilds whenever DB writes (e.g. saveDeclaredCycleLength) land,
+    // keeping in-memory state in sync with all DB writes within 500 ms
+    // (NFR-02). The _toCompanion exclusion invariant in
+    // DriftAppSettingsRepository is not affected.
+    final asyncSettings = ref.watch(appSettingsStreamProvider);
+    if (asyncSettings.hasValue) {
+      // Stream has emitted at least once — use the live value.
+      return asyncSettings.requireValue ?? const AppSettingsData.defaults();
+    }
+    // Still loading or errored — fall back to one-shot read so the
+    // existing tests that override appSettingsRepositoryProvider (not
+    // appSettingsStreamProvider) continue to resolve correctly.
+    final repo = await ref.read(appSettingsRepositoryProvider.future);
     return repo.getOrCreate();
   }
 

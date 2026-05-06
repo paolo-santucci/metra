@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/domain/entities/app_settings_data.dart';
@@ -23,7 +25,113 @@ import 'package:metra/providers/repository_providers.dart';
 
 import '../../helpers/fake_app_settings_repository.dart';
 
+// ---------------------------------------------------------------------------
+// Streaming fake — backed by a StreamController so tests can push multiple
+// settings emissions after the notifier has initialised.
+// ---------------------------------------------------------------------------
+class _StreamingFakeAppSettingsRepository implements FakeAppSettingsRepository {
+  final _controller = StreamController<AppSettingsData?>.broadcast();
+  AppSettingsData? _stored;
+
+  @override
+  AppSettingsData? get storedSettings => _stored;
+  @override
+  set storedSettings(AppSettingsData? v) => _stored = v;
+
+  void emit(AppSettingsData? settings) {
+    _stored = settings;
+    _controller.add(settings);
+  }
+
+  void close() => _controller.close();
+
+  @override
+  Stream<AppSettingsData?> watchSettings() => _controller.stream;
+
+  @override
+  Future<AppSettingsData> getOrCreate() async =>
+      _stored ?? const AppSettingsData.defaults();
+
+  @override
+  Future<void> updateSettings(AppSettingsData settings) async {
+    _stored = settings;
+  }
+
+  @override
+  Future<void> updateBackupState({
+    required String? dropboxEmail,
+    required DateTime? lastBackupAt,
+  }) async {
+    final current = _stored ?? const AppSettingsData.defaults();
+    _stored = AppSettingsData(
+      languageCode: current.languageCode,
+      darkMode: current.darkMode,
+      painEnabled: current.painEnabled,
+      notesEnabled: current.notesEnabled,
+      notificationDaysBefore: current.notificationDaysBefore,
+      notificationsEnabled: current.notificationsEnabled,
+      dropboxEmail: dropboxEmail,
+      lastBackupAt: lastBackupAt,
+      onboardingCompleted: current.onboardingCompleted,
+    );
+    _controller.add(_stored);
+  }
+
+  @override
+  Future<void> markOnboardingComplete() async {
+    final current = _stored ?? const AppSettingsData.defaults();
+    _stored = AppSettingsData(
+      languageCode: current.languageCode,
+      darkMode: current.darkMode,
+      painEnabled: current.painEnabled,
+      notesEnabled: current.notesEnabled,
+      notificationDaysBefore: current.notificationDaysBefore,
+      notificationsEnabled: current.notificationsEnabled,
+      dropboxEmail: current.dropboxEmail,
+      lastBackupAt: current.lastBackupAt,
+      onboardingCompleted: true,
+      declaredCycleLength: current.declaredCycleLength,
+    );
+    _controller.add(_stored);
+  }
+
+  @override
+  Future<void> saveDeclaredCycleLength(int cycleLength) async {
+    final current = _stored ?? const AppSettingsData.defaults();
+    _stored = AppSettingsData(
+      languageCode: current.languageCode,
+      darkMode: current.darkMode,
+      painEnabled: current.painEnabled,
+      notesEnabled: current.notesEnabled,
+      notificationDaysBefore: current.notificationDaysBefore,
+      notificationsEnabled: current.notificationsEnabled,
+      dropboxEmail: current.dropboxEmail,
+      lastBackupAt: current.lastBackupAt,
+      onboardingCompleted: current.onboardingCompleted,
+      declaredCycleLength: cycleLength,
+    );
+    _controller.add(_stored);
+  }
+}
+
+ProviderContainer _makeStreamingContainer(
+  _StreamingFakeAppSettingsRepository fakeRepo,
+) {
+  return ProviderContainer(
+    overrides: [
+      appSettingsRepositoryProvider.overrideWith((_) async => fakeRepo),
+      appSettingsStreamProvider.overrideWith(
+        (ref) => fakeRepo.watchSettings(),
+      ),
+    ],
+  );
+}
+
 void main() {
+  // ---------------------------------------------------------------------------
+  // Original tests (unchanged)
+  // ---------------------------------------------------------------------------
+
   ProviderContainer makeContainer(FakeAppSettingsRepository fakeRepo) {
     return ProviderContainer(
       overrides: [
@@ -84,5 +192,114 @@ void main() {
     expect(fakeRepo.storedSettings, equals(updated));
     final state = container.read(settingsNotifierProvider).valueOrNull;
     expect(state, equals(updated));
+  });
+
+  // ---------------------------------------------------------------------------
+  // BUG-003 reactivity tests (FR-06, EC-11): verify that SettingsNotifier
+  // rebuilds when appSettingsStreamProvider emits a new value.
+  // ---------------------------------------------------------------------------
+
+  group('SettingsNotifier reactivity (BUG-003 fix)', () {
+    test(
+      'notifier reflects declaredCycleLength after stream emits new value (FR-06)',
+      () async {
+        final fakeRepo = _StreamingFakeAppSettingsRepository();
+        final container = _makeStreamingContainer(fakeRepo);
+        addTearDown(container.dispose);
+        addTearDown(fakeRepo.close);
+
+        // Emit initial state: no declaredCycleLength yet.
+        fakeRepo.emit(const AppSettingsData.defaults());
+        await Future<void>.delayed(Duration.zero);
+
+        // Emit updated state simulating saveDeclaredCycleLength(28).
+        fakeRepo.emit(
+          const AppSettingsData(
+            languageCode: '',
+            painEnabled: true,
+            notesEnabled: true,
+            notificationDaysBefore: 2,
+            notificationsEnabled: false,
+            onboardingCompleted: false,
+            declaredCycleLength: 28,
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        final state = await container.read(settingsNotifierProvider.future);
+        expect(
+          state.declaredCycleLength,
+          equals(28),
+          reason: 'BUG-003: notifier must reflect declaredCycleLength=28 after '
+              'stream emission',
+        );
+      },
+    );
+
+    test(
+      'notifier reflects dropboxEmail and lastBackupAt after stream emits (FR-06)',
+      () async {
+        final fakeRepo = _StreamingFakeAppSettingsRepository();
+        final container = _makeStreamingContainer(fakeRepo);
+        addTearDown(container.dispose);
+        addTearDown(fakeRepo.close);
+
+        // Emit initial state.
+        fakeRepo.emit(const AppSettingsData.defaults());
+        await Future<void>.delayed(Duration.zero);
+
+        // Emit updated state simulating updateBackupState.
+        final backupDate = DateTime(2026, 6, 1);
+        fakeRepo.emit(
+          AppSettingsData(
+            languageCode: '',
+            painEnabled: true,
+            notesEnabled: true,
+            notificationDaysBefore: 2,
+            notificationsEnabled: false,
+            onboardingCompleted: false,
+            dropboxEmail: 'a@b.com',
+            lastBackupAt: backupDate,
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        final state = await container.read(settingsNotifierProvider.future);
+        expect(
+          state.dropboxEmail,
+          equals('a@b.com'),
+          reason: 'notifier must reflect dropboxEmail after stream emission',
+        );
+        expect(
+          state.lastBackupAt,
+          equals(backupDate),
+          reason: 'notifier must reflect lastBackupAt after stream emission',
+        );
+      },
+    );
+
+    test(
+      'notifier resolves to defaults when stream emits null (EC-11)',
+      () async {
+        final fakeRepo = _StreamingFakeAppSettingsRepository();
+        final container = _makeStreamingContainer(fakeRepo);
+        addTearDown(container.dispose);
+        addTearDown(fakeRepo.close);
+
+        // Emit null (fresh install, no row yet).
+        fakeRepo.emit(null);
+        await Future<void>.delayed(Duration.zero);
+
+        final state = await container.read(settingsNotifierProvider.future);
+        // When stream emits null, should get defaults
+        // (same as previous getOrCreate() behavior).
+        expect(
+          state.languageCode,
+          equals(''),
+          reason:
+              'notifier must return defaults when stream emits null (EC-11)',
+        );
+      },
+    );
   });
 }

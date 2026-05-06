@@ -25,6 +25,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/data/services/notification_service.dart';
 import 'package:metra/domain/services/notification_service.dart';
+import 'package:timezone/data/latest_all.dart' as tz_data;
+import 'package:timezone/timezone.dart' as tz;
 
 void main() {
   group('NotificationService interface', () {
@@ -68,6 +70,84 @@ void main() {
         equals(1001),
       );
     });
+  });
+
+  group('FlutterNotificationService.computeScheduledTz (BUG-004 fix)', () {
+    // computeScheduledTz is a @visibleForTesting helper that converts a UTC
+    // DateTime to the local TZDateTime at 09:00 on the correct local calendar
+    // day. These tests verify the timezone/local conversion is correct.
+    setUpAll(tz_data.initializeTimeZones);
+
+    test(
+      'UTC midnight in UTC-5 (New York) → previous local calendar day at 09:00 (FR-08)',
+      () {
+        tz.setLocalLocation(tz.getLocation('America/New_York'));
+        final service = FlutterNotificationService();
+        // UTC 2026-06-08 00:00 = 2026-06-07 19:00 in New York (UTC-5).
+        // So the notification should fire on June 7, not June 8.
+        final result = service.computeScheduledTz(
+          DateTime.utc(2026, 6, 8, 0, 0, 0),
+        );
+        expect(result.year, equals(2026));
+        expect(result.month, equals(6));
+        expect(
+          result.day,
+          equals(7),
+          reason: 'BUG-004: UTC midnight in UTC-5 must resolve to the PREVIOUS '
+              'local calendar day (June 7, not June 8)',
+        );
+        expect(result.hour, equals(9));
+        expect(result.minute, equals(0));
+        expect(result.location.name, equals('America/New_York'));
+      },
+    );
+
+    test(
+      'UTC midnight in UTC+2 (Rome, CEST) → same local calendar day at 09:00 (FR-08 Italy regression guard)',
+      () {
+        tz.setLocalLocation(tz.getLocation('Europe/Rome'));
+        final service = FlutterNotificationService();
+        // UTC 2026-06-08 00:00 = 2026-06-08 02:00 CEST — same calendar day.
+        final result = service.computeScheduledTz(
+          DateTime.utc(2026, 6, 8, 0, 0, 0),
+        );
+        expect(result.year, equals(2026));
+        expect(result.month, equals(6));
+        expect(
+          result.day,
+          equals(8),
+          reason: 'Italy regression guard: UTC midnight in UTC+2 must stay on '
+              'the same local calendar day (June 8)',
+        );
+        expect(result.hour, equals(9));
+        expect(result.location.name, equals('Europe/Rome'));
+      },
+    );
+
+    test(
+      'UTC midnight on DST spring-forward date in Italy → no exception, day=29 at 09:00 (EC-10)',
+      () {
+        tz.setLocalLocation(tz.getLocation('Europe/Rome'));
+        final service = FlutterNotificationService();
+        // 2026-03-29: Italy clocks spring forward at 02:00 → 03:00.
+        // UTC midnight = 2026-03-29 01:00 CET (before the switch) → same calendar day.
+        // 09:00 is unambiguously after the DST switch — no exception expected.
+        expect(
+          () => service.computeScheduledTz(
+            DateTime.utc(2026, 3, 29, 0, 0, 0),
+          ),
+          returnsNormally,
+          reason: 'DST spring-forward must not throw',
+        );
+        final result = service.computeScheduledTz(
+          DateTime.utc(2026, 3, 29, 0, 0, 0),
+        );
+        expect(result.year, equals(2026));
+        expect(result.month, equals(3));
+        expect(result.day, equals(29));
+        expect(result.hour, equals(9));
+      },
+    );
   });
 }
 

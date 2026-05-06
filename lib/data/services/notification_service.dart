@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -82,6 +83,31 @@ class FlutterNotificationService implements NotificationService {
         ?.createNotificationChannel(channel);
   }
 
+  /// Computes the exact local TZDateTime for the 09:00 alarm on the calendar
+  /// day of [notifyAt] in the device's local timezone.
+  ///
+  /// BUG-004 fix: [notifyAt] may be a UTC datetime. We convert to local first
+  /// so that users at negative-UTC-offset get the correct local calendar day
+  /// (not one day late). For example, UTC midnight 2026-06-08 in UTC-5 (New
+  /// York) becomes 2026-06-07 19:00 local, so the notification fires at
+  /// 09:00 local on June 7 — the correct intended calendar day.
+  @visibleForTesting
+  tz.TZDateTime computeScheduledTz(DateTime notifyAt) {
+    // Convert UTC instant to local timezone before extracting calendar
+    // components. For positive-UTC-offset zones (e.g. Europe/Rome, UTC+2),
+    // UTC midnight shifts forward to 02:00 on the same calendar day — no
+    // regression. For negative-UTC-offset zones (e.g. America/New_York,
+    // UTC-5), UTC midnight shifts back to 19:00 on the preceding local
+    // calendar day, which is the correct intended day for the notification.
+    // Use tz.TZDateTime.from() to respect the timezone package's tz.local
+    // setting — this allows unit tests to call tz.setLocalLocation() and
+    // have the conversion use the configured test timezone rather than the
+    // OS timezone (which Dart's built-in toLocal() uses and cannot be
+    // overridden in pure-Dart tests).
+    final local = tz.TZDateTime.from(notifyAt, tz.local);
+    return tz.TZDateTime(tz.local, local.year, local.month, local.day, 9);
+  }
+
   @override
   Future<void> schedulePredictionNotification(
     DateTime notifyAt,
@@ -89,13 +115,7 @@ class FlutterNotificationService implements NotificationService {
     String body,
   ) async {
     // Fire at 09:00 local time on the notification date.
-    final scheduledDate = tz.TZDateTime(
-      tz.local,
-      notifyAt.year,
-      notifyAt.month,
-      notifyAt.day,
-      9, // 09:00
-    );
+    final scheduledDate = computeScheduledTz(notifyAt);
 
     // BUG-003: the use case guards against past calendar days; guard here
     // against the same-day case where 09:00 local has already passed.

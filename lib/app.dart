@@ -136,21 +136,27 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
         final currentSettings = next.valueOrNull;
         if (currentSettings == null) return;
 
-        // BUG-004 / BUG-001: request OS permission the first time the user
-        // enables notifications. requestPermission() shows the system dialog
-        // when the permission is undetermined; returns false immediately
-        // without a dialog if the user has already denied it.
-        final wasEnabled = prev?.valueOrNull?.notificationsEnabled ?? false;
-        if (currentSettings.notificationsEnabled && !wasEnabled) {
-          final granted =
-              await ref.read(notificationServiceProvider).requestPermission();
-          if (!granted) {
-            // User denied the OS dialog — revert the toggle so the displayed
-            // state matches reality (no notification will fire while denied).
-            await ref.read(settingsNotifierProvider.notifier).save(
-                  currentSettings.copyWith(notificationsEnabled: false),
-                );
-            return;
+        // BUG-002 fix: only request OS permission when the user explicitly
+        // enables notifications (AsyncData → AsyncData transition). The
+        // AsyncLoading → AsyncData cold-start transition must NOT trigger
+        // requestPermission(); the previous state is not a user action.
+        // Without this guard, a cold start with notificationsEnabled: true
+        // and OS permission revoked would silently write notificationsEnabled:
+        // false to the DB, destroying the user's persisted preference (FR-04,
+        // FR-05, EC-05).
+        if (prev is AsyncData<AppSettingsData>) {
+          final wasEnabled = prev.value.notificationsEnabled;
+          if (currentSettings.notificationsEnabled && !wasEnabled) {
+            final granted =
+                await ref.read(notificationServiceProvider).requestPermission();
+            if (!granted) {
+              // User denied the OS dialog — revert the toggle so the displayed
+              // state matches reality (no notification will fire while denied).
+              await ref.read(settingsNotifierProvider.notifier).save(
+                    currentSettings.copyWith(notificationsEnabled: false),
+                  );
+              return;
+            }
           }
         }
 

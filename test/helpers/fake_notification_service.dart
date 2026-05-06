@@ -23,6 +23,13 @@ class FakeNotificationService implements NotificationService {
   int cancelCount = 0;
   bool permissionGranted = true;
 
+  /// Number of times [requestPermission] has been called.
+  ///
+  /// Used by BUG-002 regression tests to verify the cold-start guard
+  /// does not call requestPermission() during AsyncLoading → AsyncData
+  /// transitions (FR-04, EC-05).
+  int requestPermissionCallCount = 0;
+
   @override
   Future<void> initialize() async => initialized = true;
 
@@ -38,5 +45,8 @@ class FakeNotificationService implements NotificationService {
   Future<void> cancelPredictionNotifications() async => cancelCount++;
 
   @override
-  Future<bool> requestPermission() async => permissionGranted;
+  Future<bool> requestPermission() async {
+    requestPermissionCallCount++;
+    return permissionGranted;
+  }
 }
