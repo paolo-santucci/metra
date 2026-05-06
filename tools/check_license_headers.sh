@@ -5,15 +5,17 @@
 # Exits 1 if any non-generated file is missing the header.
 
 set -euo pipefail
+cd "$(dirname "$0")/.."
 
-REQUIRED_LINE="// Copyright (C) 2026  Paolo Santucci"
+# shellcheck source=tools/license_header_constants.sh
+source "tools/license_header_constants.sh"
 FAILURES=0
 
 while IFS= read -r -d '' file; do
   # Skip generated files produced by build_runner or flutter gen-l10n
   case "$file" in
     *.g.dart|*.freezed.dart) continue ;;
-    lib/l10n/app_localizations*.dart) continue ;;
+    *app_localizations*.dart) continue ;;
   esac
 
   if ! head -n 20 "$file" | grep -qF -- "$REQUIRED_LINE"; then

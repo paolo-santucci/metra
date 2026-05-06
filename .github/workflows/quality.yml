@@ -19,6 +19,7 @@ jobs:
         with:
           flutter-version: '3.x'
           channel: stable
+          cache: 'pub'
 
       - name: Install dependencies
         run: flutter pub get
@@ -41,7 +42,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y lcov
 
       - name: Run tests with coverage
-        run: flutter test --coverage
+        run: flutter test --coverage --no-pub
 
       - name: Coverage gate (80% line coverage minimum)
         run: |

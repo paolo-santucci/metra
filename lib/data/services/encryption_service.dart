@@ -22,6 +22,15 @@ import 'package:cryptography/cryptography.dart';
 
 import '../../core/errors/metra_exception.dart';
 
+/// Production Argon2id configuration: 64 MB memory, 3 iterations, 4-lane parallelism.
+/// Must never be altered without a migration plan and security review.
+final _defaultArgon2id = Argon2id(
+  memory: 65536, // 64 MB
+  iterations: 3,
+  parallelism: 4,
+  hashLength: 32,
+);
+
 /// Encrypts and decrypts cloud backup blobs using AES-256-GCM with Argon2id key derivation.
 ///
 /// Blob format: [16-byte salt][12-byte IV/nonce][ciphertext][16-byte GCM MAC]
@@ -31,18 +40,22 @@ class EncryptionService {
   static const _ivLength = 12;
   static const _macLength = 16; // AES-GCM MAC is always 16 bytes
 
-  static final _argon2id = Argon2id(
-    memory: 65536, // 64 MB
-    iterations: 3,
-    parallelism: 4,
-    hashLength: 32,
-  );
-
   static final _aesGcm = AesGcm.with256bits();
 
   final Random _random;
+  final Argon2id _argon2id;
 
-  EncryptionService({Random? random}) : _random = random ?? Random.secure();
+  /// Creates an [EncryptionService].
+  ///
+  /// [kdfOverride] — FOR TESTING ONLY. Never pass this in production code.
+  /// Inject a lightweight [Argon2id] instance (e.g. memory:256, iterations:1)
+  /// to avoid multi-second KDF derivations in unit tests. When null (the default),
+  /// the production-grade [_defaultArgon2id] is used.
+  EncryptionService({
+    Random? random,
+    Argon2id? kdfOverride, // FOR TESTING ONLY
+  })  : _random = random ?? Random.secure(),
+        _argon2id = kdfOverride ?? _defaultArgon2id;
 
   /// Encrypts [plaintext] with a key derived from [passphrase].
   /// Returns blob: [16-byte salt][12-byte nonce][ciphertext][16-byte MAC].

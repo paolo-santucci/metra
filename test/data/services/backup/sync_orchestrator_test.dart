@@ -5,6 +5,7 @@
 
 import 'dart:typed_data';
 
+import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/errors/metra_exception.dart';
 import 'package:metra/data/services/backup/backup_service.dart';
@@ -32,7 +33,14 @@ SyncOrchestrator _make({
   _FakeRecompute? recompute,
   DateTime Function()? now,
 }) {
-  final enc = EncryptionService();
+  final enc = EncryptionService(
+    kdfOverride: Argon2id(
+      memory: 256,
+      iterations: 1,
+      parallelism: 1,
+      hashLength: 32,
+    ),
+  );
   final backupService = BackupService(logRepo);
   final recomp = recompute ?? _FakeRecompute();
   return SyncOrchestrator(
