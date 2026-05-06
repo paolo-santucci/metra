@@ -81,7 +81,6 @@ class _WelcomePage extends StatelessWidget {
     final accentFlow = colors.accentFlow;
     final textPrimary = colors.textPrimary;
     final textSecondary = colors.textSecondary;
-    final bgPrimary = colors.bgPrimary;
 
     return SafeArea(
       child: Column(
@@ -171,14 +170,7 @@ class _WelcomePage extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(36, 0, 36, 28),
                   child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: textPrimary,
-                      foregroundColor: bgPrimary,
-                      minimumSize: const Size.fromHeight(56),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
+                    style: _inchiostroCtaStyle(context),
                     onPressed: onGetStarted,
                     child: Text(l10n.onboarding_get_started),
                   ),
@@ -238,6 +230,53 @@ class _MacronDotsPainter extends CustomPainter {
   bool shouldRepaint(_MacronDotsPainter old) => old.color != color;
 }
 
+// ── Shared CTA button style ───────────────────────────────────────────────────
+
+/// Returns a brightness-aware [ButtonStyle] for the Inchiostro CTA.
+///
+/// Light: solid ink (#2B2521) background, sand (#F4EDE2) foreground, no border.
+/// Dark:  ghost — avorio @ 10 % fill (0x1A), avorio @ 18 % border (0x2E),
+///        avorio foreground. Spec §5.1 dark-theme variant.
+///
+/// Pass [disabledBackgroundColor] and [disabledForegroundColor] for pages that
+/// show a disabled CTA state (e.g. _DataPage before all fields are filled).
+/// Dark disabled values: fill avorio @ 0x0A (~4 %), foreground avorio @ 0x61 (~38 %).
+ButtonStyle _inchiostroCtaStyle(
+  BuildContext context, {
+  Color? disabledBackgroundColor,
+  Color? disabledForegroundColor,
+}) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  final colors = MetraColors.of(context);
+  final textPrimary = colors.textPrimary;
+  final bgPrimary = colors.bgPrimary;
+
+  if (isDark) {
+    return FilledButton.styleFrom(
+      backgroundColor: textPrimary.withAlpha(0x1A),
+      foregroundColor: textPrimary,
+      disabledBackgroundColor:
+          disabledBackgroundColor ?? textPrimary.withAlpha(0x0A),
+      disabledForegroundColor:
+          disabledForegroundColor ?? textPrimary.withAlpha(0x61),
+      side: BorderSide(color: textPrimary.withAlpha(0x2E), width: 1.0),
+      minimumSize: const Size.fromHeight(56),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    );
+  } else {
+    return FilledButton.styleFrom(
+      backgroundColor: textPrimary,
+      foregroundColor: bgPrimary,
+      disabledBackgroundColor:
+          disabledBackgroundColor ?? textPrimary.withValues(alpha: 0.35),
+      disabledForegroundColor:
+          disabledForegroundColor ?? bgPrimary.withValues(alpha: 0.60),
+      minimumSize: const Size.fromHeight(56),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    );
+  }
+}
+
 // ── Page 2: Data entry ────────────────────────────────────────────────────────
 
 class _DataPage extends ConsumerWidget {
@@ -250,7 +289,6 @@ class _DataPage extends ConsumerWidget {
     final textPrimary = colors.textPrimary;
     final textSecondary = colors.textSecondary;
     final accentFlow = colors.accentFlow;
-    final bgPrimary = colors.bgPrimary;
     final state = ref.watch(onboardingNotifierProvider);
     final notifier = ref.read(onboardingNotifierProvider.notifier);
     final locale = Localizations.localeOf(context).toString();
@@ -333,16 +371,7 @@ class _DataPage extends ConsumerWidget {
             ),
             const Spacer(),
             FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: textPrimary,
-                foregroundColor: bgPrimary,
-                disabledBackgroundColor: textPrimary.withValues(alpha: 0.35),
-                disabledForegroundColor: bgPrimary.withValues(alpha: 0.60),
-                minimumSize: const Size.fromHeight(56),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
+              style: _inchiostroCtaStyle(context),
               onPressed:
                   state.canSubmit ? () => _onSubmit(context, ref, state) : null,
               child: Text(l10n.onboarding_all_set),

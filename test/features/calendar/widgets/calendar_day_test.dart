@@ -137,6 +137,14 @@ void main() {
         matchesGoldenFile('goldens/calendar_day_flow_dark.png'),
       );
     });
+
+    testWidgets('selected dark', (tester) async {
+      await tester.pumpWidget(_wrap(_day(isSelected: true), MetraTheme.dark()));
+      await expectLater(
+        find.byType(CalendarDay),
+        matchesGoldenFile('goldens/calendar_day_selected_dark.png'),
+      );
+    });
   });
 
   group('future day', () {
@@ -236,6 +244,122 @@ void main() {
       await tester.pumpWidget(_wrap(_day(), MetraTheme.light()));
       await tester.tap(find.byType(CalendarDay));
       // no exception expected
+    });
+  });
+
+  // ── TASK-03 tests: selectedDayFill (FR-01/FR-02/FR-04) ───────────────────────
+
+  /// Finds the innermost non-transparent DecoratedBox that acts as the cell fill.
+  BoxDecoration findCellDecoration(WidgetTester tester) {
+    final boxes = tester.widgetList<DecoratedBox>(find.byType(DecoratedBox));
+    return boxes.map((b) => b.decoration).whereType<BoxDecoration>().firstWhere(
+          (d) => d.color != null && d.color != Colors.transparent,
+        );
+  }
+
+  group('CalendarDay — selected fill (FR-01/FR-02/FR-04)', () {
+    testWidgets('dark selected — fill is muted terracotta (#B86848)',
+        (tester) async {
+      await tester.pumpWidget(_wrap(_day(isSelected: true), MetraTheme.dark()));
+      final decoration = findCellDecoration(tester);
+      expect(decoration.color, const Color(0xFFB86848));
+    });
+
+    testWidgets('light selected — fill is ink (#2B2521, regression guard)',
+        (tester) async {
+      await tester
+          .pumpWidget(_wrap(_day(isSelected: true), MetraTheme.light()));
+      final decoration = findCellDecoration(tester);
+      expect(decoration.color, const Color(0xFF2B2521));
+    });
+
+    testWidgets('dark selected + today — fill is terracotta, no today border',
+        (tester) async {
+      await tester.pumpWidget(
+        _wrap(_day(isSelected: true, isToday: true), MetraTheme.dark()),
+      );
+      final decoration = findCellDecoration(tester);
+      // Selected wins over today: fill is terracotta, border is null.
+      expect(decoration.color, const Color(0xFFB86848));
+      expect(decoration.border, isNull);
+    });
+
+    testWidgets(
+        'dark selected + flow — fill is terracotta, flow indicator uses bgPrimary',
+        (tester) async {
+      await tester.pumpWidget(
+        _wrap(_day(isSelected: true, isFlow: true), MetraTheme.dark()),
+      );
+      final decoration = findCellDecoration(tester);
+      // Selected wins over flow: fill is terracotta.
+      expect(decoration.color, const Color(0xFFB86848));
+    });
+
+    testWidgets(
+        'dark selected + prediction — fill is terracotta, prediction indicator uses bgPrimary',
+        (tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          _day(isSelected: true, hasPrediction: true),
+          MetraTheme.dark(),
+        ),
+      );
+      final decoration = findCellDecoration(tester);
+      expect(decoration.color, const Color(0xFFB86848));
+    });
+
+    testWidgets(
+        'dark selected + note — note indicator dot is bgPrimary (#1A1410)',
+        (tester) async {
+      // The note indicator colour is set to bgPrimary on selected cells.
+      // bgPrimary in dark = #1A1410. We verify no exception and correct fill.
+      await tester.pumpWidget(
+        _wrap(_day(isSelected: true, hasNote: true), MetraTheme.dark()),
+      );
+      final decoration = findCellDecoration(tester);
+      expect(decoration.color, const Color(0xFFB86848));
+    });
+
+    testWidgets('dark selected with onTap null — fill terracotta, not a button',
+        (tester) async {
+      await tester.pumpWidget(
+        _wrap(_day(isSelected: true), MetraTheme.dark()),
+      );
+      final decoration = findCellDecoration(tester);
+      expect(decoration.color, const Color(0xFFB86848));
+      // onTap is null → not a button semantically.
+      final semantics = tester.getSemantics(find.byType(CalendarDay));
+      expect(semantics.flagsCollection.isButton, isFalse);
+    });
+
+    testWidgets('live theme switch refreshes selected fill', (tester) async {
+      // Build a StatefulWidget that holds ThemeMode and can toggle it.
+      final notifier = ValueNotifier<ThemeMode>(ThemeMode.light);
+      await tester.pumpWidget(
+        ValueListenableBuilder<ThemeMode>(
+          valueListenable: notifier,
+          builder: (_, mode, __) => MaterialApp(
+            theme: MetraTheme.light(),
+            darkTheme: MetraTheme.dark(),
+            themeMode: mode,
+            home: Scaffold(
+              body: Center(
+                child: _day(isSelected: true),
+              ),
+            ),
+          ),
+        ),
+      );
+      // Light first.
+      var decoration = findCellDecoration(tester);
+      expect(decoration.color, const Color(0xFF2B2521));
+
+      // Switch to dark.
+      notifier.value = ThemeMode.dark;
+      await tester.pumpAndSettle();
+
+      decoration = findCellDecoration(tester);
+      expect(decoration.color, const Color(0xFFB86848));
     });
   });
 }

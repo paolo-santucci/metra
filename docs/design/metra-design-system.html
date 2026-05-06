@@ -257,6 +257,10 @@ function PainDots({ value, onChange, t = L }) {
   );
 }
 
+// §8.3.1 Calendar day state table — Selected state tokens:
+//   Light: bg inchiostro #2B2521 (t.text), text sabbia #F4EDE2 (t.bg), weight 600
+//   Dark:  bg tc_spenta  #B86848 (D.accent), text notte #1A1410 (D.bg), weight 600
+//   Indicators on selected cell use bgPrimary (t.bg) for contrast in both themes.
 function CalDay({ day, monthData, selected, onSelect, t = L }) {
   if (!day) return <div style={{ width: 48, height: 48 }}/>;
   const { flow, pred, symptoms=[], pain=[], notesByDay={} } = monthData;
@@ -474,6 +478,10 @@ function S04_Bottoni() {
           <span style={{ fontFamily:'Inter', fontSize:16, fontWeight:500, color:t.bg }}>Salva giornata</span>
         </div>
 
+        {/* §5.1 Inchiostro CTA — Dark-theme variant:
+             bg rgba(237,228,211,0.10) [textPrimary @ 0x1A],
+             border 1px solid rgba(237,228,211,0.18) [textPrimary @ 0x2E],
+             label avorio #EDE4D3. Terracotta CTA unaffected. */}
         <div className="tlabel" style={{ color:dark?D.faint:undefined, marginBottom:8 }}>Filled Ink / Frosted — CTA neutrale</div>
         <div style={{ height:56, background: dark?'rgba(237,228,211,0.10)':t.text, border: dark?'1px solid rgba(237,228,211,0.18)':'none', borderRadius:16, display:'flex', alignItems:'center', justifyContent:'center', marginBottom:20, cursor:'pointer' }}>
           <span style={{ fontFamily:'Inter', fontSize:16, fontWeight:500, color: dark?t.text:t.bg }}>Inizia</span>

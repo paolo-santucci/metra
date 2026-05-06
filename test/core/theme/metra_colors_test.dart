@@ -18,6 +18,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/theme/metra_colors.dart';
+import 'package:metra/core/theme/metra_theme.dart';
 
 void main() {
   group('MetraColors light palette', () {
@@ -73,6 +74,51 @@ void main() {
 
     test('accentPain semantic alias maps to malvaLight', () {
       expect(MetraColors.dark.accentPain, MetraColors.dark.malvaLight);
+    });
+  });
+
+  group('MetraColors selectedDayFill token (FR-03, TASK-01)', () {
+    test('_LightPalette.selectedDayFill is ink (#2B2521)', () {
+      expect(MetraColors.light.selectedDayFill, const Color(0xFF2B2521));
+    });
+
+    test('_DarkPalette.selectedDayFill is mutedTerracotta (#B86848)', () {
+      expect(MetraColors.dark.selectedDayFill, const Color(0xFFB86848));
+    });
+
+    testWidgets('MetraColors.of(context) light resolves selectedDayFill to ink',
+        (tester) async {
+      late MetraPalette palette;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: MetraTheme.light(),
+          home: Builder(
+            builder: (context) {
+              palette = MetraColors.of(context);
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      );
+      expect(palette.selectedDayFill, const Color(0xFF2B2521));
+    });
+
+    testWidgets(
+        'MetraColors.of(context) dark resolves selectedDayFill to mutedTerracotta',
+        (tester) async {
+      late MetraPalette palette;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: MetraTheme.dark(),
+          home: Builder(
+            builder: (context) {
+              palette = MetraColors.of(context);
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      );
+      expect(palette.selectedDayFill, const Color(0xFFB86848));
     });
   });
 

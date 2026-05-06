@@ -84,6 +84,7 @@ class CalendarDay extends StatelessWidget {
     final Color accentPrediction = colors.accentPrediction;
     final Color accentWarmth = colors.accentWarmth;
     final Color accentPain = colors.accentPain;
+    final Color selectedDayFill = colors.selectedDayFill;
 
     final (Color bg, Border? border, Color textColor, FontWeight fontWeight) =
         _resolveState(
@@ -91,6 +92,7 @@ class CalendarDay extends StatelessWidget {
       textPrimary: textPrimary,
       bgPrimary: bgPrimary,
       accentPrediction: accentPrediction,
+      selectedDayFill: selectedDayFill,
     );
 
     // Future cells are read-only — suppress tap regardless of what the caller passes.
@@ -213,10 +215,11 @@ class CalendarDay extends StatelessWidget {
     required Color textPrimary,
     required Color bgPrimary,
     required Color accentPrediction,
+    required Color selectedDayFill,
   }) {
     if (isSelected) {
       return (
-        textPrimary,
+        selectedDayFill,
         null,
         bgPrimary,
         FontWeight.w600,

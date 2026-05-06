@@ -57,6 +57,11 @@ abstract interface class MetraPalette {
   Color get focusRing;
   Color get bgOverlay;
   Color get textDisabledColor;
+  // Semantic token for the selected calendar day cell fill.
+  // Light: ink (#2B2521), Dark: mutedTerracotta (#B86848).
+  // Kept distinct from accentFlow so future palette changes to accentFlow
+  // cannot silently shift the calendar selection colour (OQ-01).
+  Color get selectedDayFill;
 }
 
 // Design tokens sourced from design/DESIGN-BIBLE.md § 1.1, cross-checked against
@@ -156,6 +161,8 @@ final class _LightPalette implements MetraPalette {
   @override
   Color get textDisabledColor =>
       ink.withAlpha(0xAD); // inchiostro @ 0.68 — § 1.1
+  @override
+  Color get selectedDayFill => ink; // inchiostro (#2B2521) — FR-02, OQ-01
 }
 
 // Dark palette — values sourced from design/Métra Screens Dark.html const C
@@ -250,6 +257,9 @@ final class _DarkPalette implements MetraPalette {
   // avorio @ 0.68 = readable disabled text dark
   @override
   Color get textDisabledColor => ivory.withAlpha(0xAD);
+  @override
+  // tc_spenta (#B86848) — muted terracotta dark-mode selected fill — FR-01, OQ-01
+  Color get selectedDayFill => mutedTerracotta;
 }
 
 abstract final class MetraColors {
