@@ -254,4 +254,65 @@ void main() {
       );
     });
   });
+
+  group('cold-start regression (BUG-005)', () {
+    test(
+      'cold_start_after_09_on_notification_day_shows_immediately_not_lost',
+      () async {
+        // Fixed far-future date; local constructor avoids UTC-offset ambiguity on CI.
+        final nowOverride =
+            DateTime(2099, 3, 1, 10, 0); // 10:00 local on notify day
+        final fakeService = FakeNotificationService(nowOverride: nowOverride);
+        final useCase = SchedulePredictionNotification(fakeService);
+
+        // notifyAt = windowStart - notificationDaysBefore = 2099-03-06 - 5d = 2099-03-01
+        // Using local constructor: unambiguous in any CI timezone.
+        final windowStart =
+            DateTime(2099, 3, 6, 12, 0); // local noon (no UTC shift)
+        final prediction = CyclePrediction(
+          expectedStart: windowStart.add(const Duration(days: 2)),
+          windowStart: windowStart,
+          windowEnd: windowStart.add(const Duration(days: 4)),
+          cyclesUsed: 3,
+        );
+        const settings = AppSettingsData(
+          languageCode: 'it',
+          painEnabled: true,
+          notesEnabled: true,
+          notificationsEnabled: true,
+          notificationDaysBefore: 5,
+          onboardingCompleted: false,
+        );
+
+        await useCase.execute(
+          prediction: prediction,
+          settings: settings,
+          title: 'Promemoria ciclo',
+          body: 'La finestra stimata inizia tra 5 giorni',
+        );
+
+        expect(
+          fakeService.cancelCount,
+          equals(1),
+          reason: 'use case always cancels before scheduling',
+        );
+        expect(
+          fakeService.scheduled,
+          isEmpty,
+          reason: 'past 09:00 on same day: must NOT go to the scheduled queue',
+        );
+        expect(
+          fakeService.shown,
+          hasLength(1),
+          reason:
+              'must be shown immediately — cold-start alarm must not be lost',
+        );
+        expect(fakeService.shown.first.title, equals('Promemoria ciclo'));
+        expect(
+          fakeService.shown.first.body,
+          equals('La finestra stimata inizia tra 5 giorni'),
+        );
+      },
+    );
+  });
 }

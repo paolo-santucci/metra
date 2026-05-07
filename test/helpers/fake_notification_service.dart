@@ -21,7 +21,7 @@ class FakeNotificationService implements NotificationService {
   bool initialized = false;
   final List<({DateTime notifyAt, String title, String body})> scheduled = [];
   int cancelCount = 0;
-  bool permissionGranted = true;
+  bool permissionGranted;
 
   /// Number of times [requestPermission] has been called.
   ///
@@ -29,6 +29,22 @@ class FakeNotificationService implements NotificationService {
   /// does not call requestPermission() during AsyncLoading → AsyncData
   /// transitions (FR-04, EC-05).
   int requestPermissionCallCount = 0;
+
+  /// Optional clock override for deterministic tests. Defaults to DateTime.now().
+  final DateTime? _nowOverride;
+
+  /// Number of times the immediate-show path was triggered (cold-start same-day case).
+  int showCount = 0;
+
+  /// Records of immediately-shown notifications (cold-start same-day case).
+  final List<({DateTime notifyAt, String title, String body})> shown = [];
+
+  FakeNotificationService({
+    this.permissionGranted = true,
+    DateTime? nowOverride,
+  }) : _nowOverride = nowOverride;
+
+  DateTime _now() => _nowOverride ?? DateTime.now();
 
   @override
   Future<void> initialize() async => initialized = true;
@@ -38,8 +54,21 @@ class FakeNotificationService implements NotificationService {
     DateTime notifyAt,
     String title,
     String body,
-  ) async =>
+  ) async {
+    final local = notifyAt.toLocal();
+    final notifyDay = DateTime(local.year, local.month, local.day);
+    final nowTime = _now();
+    final nowDay = DateTime(nowTime.year, nowTime.month, nowTime.day);
+    final sameDay = notifyDay == nowDay;
+    final pastNine = nowTime.hour >= 9;
+
+    if (sameDay && pastNine) {
+      shown.add((notifyAt: notifyAt, title: title, body: body));
+      showCount++;
+    } else {
       scheduled.add((notifyAt: notifyAt, title: title, body: body));
+    }
+  }
 
   @override
   Future<void> cancelPredictionNotifications() async => cancelCount++;

@@ -108,6 +108,20 @@ class FlutterNotificationService implements NotificationService {
     return tz.TZDateTime(tz.local, local.year, local.month, local.day, 9);
   }
 
+  /// Returns true when [scheduledDate] is on the same calendar day as [now]
+  /// AND [now] is at or after [scheduledDate] — meaning the 09:00 alarm time
+  /// has already passed today so the notification must be shown immediately.
+  ///
+  /// Pure predicate; no side-effects. @visibleForTesting to allow unit tests
+  /// to exercise the branch logic without a platform channel.
+  @visibleForTesting
+  bool shouldShowImmediately(tz.TZDateTime scheduledDate, tz.TZDateTime now) {
+    final sameDay = scheduledDate.year == now.year &&
+        scheduledDate.month == now.month &&
+        scheduledDate.day == now.day;
+    return sameDay && !scheduledDate.isAfter(now);
+  }
+
   @override
   Future<void> schedulePredictionNotification(
     DateTime notifyAt,
@@ -116,10 +130,30 @@ class FlutterNotificationService implements NotificationService {
   ) async {
     // Fire at 09:00 local time on the notification date.
     final scheduledDate = computeScheduledTz(notifyAt);
+    final now = tz.TZDateTime.now(tz.local);
 
-    // BUG-003: the use case guards against past calendar days; guard here
-    // against the same-day case where 09:00 local has already passed.
-    if (scheduledDate.isBefore(tz.TZDateTime.now(tz.local))) return;
+    if (scheduledDate.isBefore(now)) {
+      if (shouldShowImmediately(scheduledDate, now)) {
+        // BUG-005 fix: cold-start on notification day after 09:00 —
+        // the scheduled alarm was cancelled by the listener before we got here.
+        // Show immediately so the notification is not silently lost.
+        await _plugin.show(
+          kPredictionNotificationId,
+          title,
+          body,
+          const NotificationDetails(
+            android: AndroidNotificationDetails(
+              _kChannelId,
+              _kChannelName,
+              importance: Importance.high,
+              priority: Priority.high,
+            ),
+            iOS: DarwinNotificationDetails(),
+          ),
+        );
+      }
+      return;
+    }
 
     const androidDetails = AndroidNotificationDetails(
       _kChannelId,

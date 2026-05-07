@@ -28,32 +28,34 @@ import 'package:metra/domain/services/notification_service.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../helpers/fake_notification_service.dart';
+
 void main() {
   group('NotificationService interface', () {
     test('FakeNotificationService implements NotificationService', () {
-      final fake = _FakeNotificationService();
+      final fake = FakeNotificationService();
       expect(fake, isA<NotificationService>());
     });
 
     test('initialize() sets the initialized flag', () async {
-      final fake = _FakeNotificationService();
+      final fake = FakeNotificationService();
       expect(fake.initialized, isFalse);
       await fake.initialize();
       expect(fake.initialized, isTrue);
     });
 
     test('schedulePredictionNotification() records the call', () async {
-      final fake = _FakeNotificationService();
+      final fake = FakeNotificationService();
       final date = DateTime(2026, 5, 10);
       await fake.schedulePredictionNotification(date, 'Title', 'Body');
       expect(fake.scheduled, hasLength(1));
-      expect(fake.scheduled.first.$1, equals(date));
-      expect(fake.scheduled.first.$2, equals('Title'));
-      expect(fake.scheduled.first.$3, equals('Body'));
+      expect(fake.scheduled.first.notifyAt, equals(date));
+      expect(fake.scheduled.first.title, equals('Title'));
+      expect(fake.scheduled.first.body, equals('Body'));
     });
 
     test('cancelPredictionNotifications() increments cancelCount', () async {
-      final fake = _FakeNotificationService();
+      final fake = FakeNotificationService();
       await fake.cancelPredictionNotifications();
       await fake.cancelPredictionNotifications();
       expect(fake.cancelCount, equals(2));
@@ -149,31 +151,79 @@ void main() {
       },
     );
   });
-}
 
-// ---------------------------------------------------------------------------
-// Test double
-// ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Group A — FakeNotificationService routing (same-day cold-start path)
+  // ---------------------------------------------------------------------------
 
-class _FakeNotificationService implements NotificationService {
-  bool initialized = false;
-  final List<(DateTime, String, String)> scheduled = [];
-  int cancelCount = 0;
+  group('FakeNotificationService.schedulePredictionNotification routing', () {
+    test('same_day_past_09_records_to_shown_not_scheduled', () async {
+      final fake = FakeNotificationService(
+        nowOverride: DateTime(2099, 1, 1, 10, 0), // 10:00 on the notify day
+      );
+      final notifyAt = DateTime(2099, 1, 1, 9, 0); // same local day
 
-  @override
-  Future<void> initialize() async => initialized = true;
+      await fake.schedulePredictionNotification(notifyAt, 'Title', 'Body');
 
-  @override
-  Future<void> schedulePredictionNotification(
-    DateTime notifyAt,
-    String title,
-    String body,
-  ) async =>
-      scheduled.add((notifyAt, title, body));
+      expect(fake.shown, hasLength(1));
+      expect(fake.showCount, equals(1));
+      expect(fake.scheduled, isEmpty);
+      expect(fake.shown.first.notifyAt, equals(notifyAt));
+    });
 
-  @override
-  Future<void> cancelPredictionNotifications() async => cancelCount++;
+    test('future_date_records_to_scheduled_not_shown', () async {
+      final fake = FakeNotificationService(
+        nowOverride: DateTime(2026, 5, 7, 10, 0),
+      );
+      final notifyAt = DateTime(2099, 1, 1, 9, 0); // far future
 
-  @override
-  Future<bool> requestPermission() async => true;
+      await fake.schedulePredictionNotification(notifyAt, 'Title', 'Body');
+
+      expect(fake.scheduled, hasLength(1));
+      expect(fake.shown, isEmpty);
+      expect(fake.showCount, equals(0));
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Group B — FlutterNotificationService.shouldShowImmediately predicate
+  // These tests FAIL until T-02 adds shouldShowImmediately to
+  // FlutterNotificationService. That is the intended T-02 contract.
+  // ---------------------------------------------------------------------------
+
+  group('FlutterNotificationService.shouldShowImmediately', () {
+    setUpAll(tz_data.initializeTimeZones);
+
+    test('same_day_after_scheduled_time_returns_true', () {
+      tz.setLocalLocation(tz.getLocation('Europe/Rome'));
+      final service = FlutterNotificationService();
+      final scheduledDate = tz.TZDateTime(tz.local, 2026, 5, 7, 9, 0);
+      final now = tz.TZDateTime(tz.local, 2026, 5, 7, 9, 29);
+      expect(service.shouldShowImmediately(scheduledDate, now), isTrue);
+    });
+
+    test('different_day_returns_false', () {
+      tz.setLocalLocation(tz.getLocation('Europe/Rome'));
+      final service = FlutterNotificationService();
+      final scheduledDate = tz.TZDateTime(tz.local, 2026, 5, 7, 9, 0);
+      final now = tz.TZDateTime(tz.local, 2026, 5, 8, 9, 29);
+      expect(service.shouldShowImmediately(scheduledDate, now), isFalse);
+    });
+
+    test('same_day_exact_boundary_returns_true', () {
+      tz.setLocalLocation(tz.getLocation('Europe/Rome'));
+      final service = FlutterNotificationService();
+      final scheduledDate = tz.TZDateTime(tz.local, 2026, 5, 7, 9, 0);
+      final now = tz.TZDateTime(tz.local, 2026, 5, 7, 9, 0);
+      expect(service.shouldShowImmediately(scheduledDate, now), isTrue);
+    });
+
+    test('same_day_before_scheduled_time_returns_false', () {
+      tz.setLocalLocation(tz.getLocation('Europe/Rome'));
+      final service = FlutterNotificationService();
+      final scheduledDate = tz.TZDateTime(tz.local, 2026, 5, 7, 9, 0);
+      final now = tz.TZDateTime(tz.local, 2026, 5, 7, 8, 59);
+      expect(service.shouldShowImmediately(scheduledDate, now), isFalse);
+    });
+  });
 }
