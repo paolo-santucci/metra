@@ -1,0 +1,79 @@
+# Labels used in this template:
+#   feature      — applied automatically by this form
+#   needs-triage — applied automatically by this form
+
+name: Feature request
+description: Propose a new feature or improvement for Métra
+title: "[Feature]: "
+labels:
+  - feature
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a feature for Métra.
+
+        Métra is a **privacy-first, local-first** app — it has no proprietary server and collects
+        zero telemetry. Please make sure your proposal respects these core principles before submitting.
+
+        Features that require data to leave the device without user consent, or that introduce
+        third-party analytics, will not be accepted.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem this solves
+      description: >-
+        Describe the problem or limitation you are experiencing. What are you trying to do that
+        Métra currently makes difficult or impossible?
+      placeholder: "e.g. I want to … but currently I have to …"
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: Proposed solution
+      description: >-
+        Describe the feature or change you would like to see. Be as specific as possible about
+        behavior, UI placement, and any edge cases you have considered.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: >-
+        Describe any alternative solutions or features you have considered, and why the proposed
+        solution is preferable.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Feature area
+      description: Which part of the app does this feature relate to?
+      options:
+        - "Please select an area"
+        - Cycle tracking
+        - Statistics & Charts
+        - Notifications
+        - Backup & Sync
+        - Accessibility
+        - Settings
+        - Other
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: principles_confirmation
+    attributes:
+      label: Principle alignment
+      options:
+        - label: >-
+            This feature respects the local-first and no-telemetry principles of Métra. It does not
+            require sending personal data to a proprietary server or to any third-party analytics service.
+          required: true

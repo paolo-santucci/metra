@@ -1,0 +1,139 @@
+# Labels used in this template:
+#   bug        — applied automatically by this form
+#   needs-triage — applied automatically by this form
+#   android    — applied manually during triage based on platform dropdown response
+#   ios        — applied manually during triage based on platform dropdown response
+
+name: Bug report
+description: Report a reproducible problem in Métra
+title: "[Bug]: "
+labels:
+  - bug
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to report a bug.
+
+        **Privacy reminder:** Métra stores sensitive health data locally. Before submitting, review any
+        logs or screenshots you attach and redact any personal information (cycle dates, health notes, etc.).
+
+        If you believe you have found a **security vulnerability**, do not file a public issue.
+        Use the private disclosure link in the issue picker instead.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Describe what happens and why it is unexpected.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps_to_reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Exact steps that reliably reproduce the issue.
+      placeholder: |
+        1. Open the app
+        2. Navigate to …
+        3. Tap …
+        4. Observe …
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: Expected behavior
+      description: What you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual_behavior
+    attributes:
+      label: Actual behavior
+      description: What actually happened instead.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How severe is the impact of this bug?
+      options:
+        - "Please select a severity level"
+        - "Low — minor visual glitch or cosmetic issue"
+        - "Medium — feature partially broken but workaround exists"
+        - "High — feature broken with no workaround"
+        - "Critical — data loss, crash on launch, or security concern"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      description: Which platform(s) are affected?
+      options:
+        - "Please select a platform"
+        - Android
+        - iOS
+        - Both (Android and iOS)
+    validations:
+      required: true
+
+  - type: input
+    id: os_version
+    attributes:
+      label: OS version
+      description: Android version (e.g. Android 14) or iOS version (e.g. iOS 17.4).
+      placeholder: "e.g. Android 14 / iOS 17.4"
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: Device model
+      description: The device you are using (e.g. Pixel 8, iPhone 15 Pro).
+      placeholder: "e.g. Pixel 8 / iPhone 15 Pro"
+    validations:
+      required: false
+
+  - type: input
+    id: app_version
+    attributes:
+      label: App version
+      description: The Métra version shown in Settings → About.
+      placeholder: "e.g. 0.3.0 (build 42)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs (optional)
+      description: |
+        Paste any relevant log output here. You can retrieve local diagnostic logs from
+        Settings → Diagnostics → Copy logs.
+
+        **Redact all personal or health data before pasting.**
+      placeholder: Paste log output here…
+      render: shell
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: not_security_issue
+    attributes:
+      label: Privacy and security confirmation
+      options:
+        - label: >-
+            I confirm this is not a privacy or security vulnerability. Security issues must be
+            reported privately via the contact link in the issue picker, not as public issues.
+          required: true

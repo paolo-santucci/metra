@@ -1,0 +1,9 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: Security vulnerability
+    url: mailto:paolo@paolosantucci.com
+    about: >-
+      Security and privacy vulnerabilities must not be filed as public issues.
+      Please disclose them privately via email so they can be assessed and patched
+      before any public disclosure.
