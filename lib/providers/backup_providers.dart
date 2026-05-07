@@ -35,6 +35,12 @@ final dropboxProviderProvider = Provider<DropboxProvider>((ref) {
   );
 });
 
+/// Thin seam: all BackupNotifier provider reads go through this so tests
+/// can override with FakeDropboxProvider without touching the real OAuth flow.
+final cloudBackupProvider = Provider<CloudBackupProvider>(
+  (ref) => ref.watch(dropboxProviderProvider),
+);
+
 final backupServiceProvider = FutureProvider<BackupService>((ref) async {
   final logRepo = await ref.watch(dailyLogRepositoryProvider.future);
   return BackupService(logRepo);

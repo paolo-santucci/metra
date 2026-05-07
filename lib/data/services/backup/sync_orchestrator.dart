@@ -16,6 +16,7 @@ import '../../../domain/repositories/daily_log_repository.dart';
 import '../../../domain/repositories/sync_log_repository.dart';
 import '../../../domain/use_cases/backup_data.dart';
 import '../encryption_service.dart';
+import 'backup_filename.dart';
 import 'backup_service.dart';
 import 'dropbox_provider.dart';
 
@@ -67,7 +68,7 @@ class SyncOrchestrator implements BackupRunner {
       final snapshot = await _backupService.buildSnapshot();
       final bytes = Uint8List.fromList(utf8.encode(snapshot.encode()));
       final blob = await _encryption.encrypt(bytes, passphrase);
-      final filename = _filenameFor(ts);
+      final filename = BackupFilename.filenameFor(ts);
       await _provider.upload(blob, filename);
       // Verify that the upload registered before pruning older files.
       final files = await _provider.listFiles();
@@ -151,16 +152,5 @@ class SyncOrchestrator implements BackupRunner {
       );
       rethrow;
     }
-  }
-
-  String _filenameFor(DateTime t) {
-    final dt = t.toUtc();
-    final y = dt.year.toString().padLeft(4, '0');
-    final mo = dt.month.toString().padLeft(2, '0');
-    final d = dt.day.toString().padLeft(2, '0');
-    final h = dt.hour.toString().padLeft(2, '0');
-    final mi = dt.minute.toString().padLeft(2, '0');
-    final s = dt.second.toString().padLeft(2, '0');
-    return 'metra_backup_$y$mo${d}T$h$mi${s}Z.enc';
   }
 }

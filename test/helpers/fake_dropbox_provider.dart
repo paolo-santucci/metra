@@ -13,6 +13,22 @@ class FakeDropboxProvider implements CloudBackupProvider {
   bool failNextUpload = false;
   bool failNextDownload = false;
 
+  /// Simulates the email returned by [currentEmail].
+  /// Set to null to simulate an email fetch failure.
+  String? currentEmailResult = 'user@example.com';
+
+  /// When true, the next [listFiles] call throws once, then resets to false.
+  bool failNextList = false;
+
+  @override
+  Future<void> authorize() async {}
+
+  @override
+  Future<String?> currentEmail() async => currentEmailResult;
+
+  @override
+  Future<void> disconnect() async {}
+
   @override
   Future<void> upload(Uint8List blob, String filename) async {
     if (failNextUpload) {
@@ -34,8 +50,13 @@ class FakeDropboxProvider implements CloudBackupProvider {
   }
 
   @override
-  Future<List<String>> listFiles() async =>
-      files.keys.toList()..sort((a, b) => b.compareTo(a));
+  Future<List<String>> listFiles() async {
+    if (failNextList) {
+      failNextList = false;
+      throw Exception('list failed');
+    }
+    return files.keys.toList()..sort((a, b) => b.compareTo(a));
+  }
 
   @override
   Future<void> deleteFile(String filename) async => files.remove(filename);

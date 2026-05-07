@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/metra_exception.dart';
 import '../../../core/utils/result.dart';
+import '../../../data/services/backup/backup_filename.dart';
 import '../../../providers/backup_providers.dart';
 import '../../../providers/encryption_provider.dart';
 import '../../../providers/repository_providers.dart';
@@ -31,15 +32,23 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
   Future<void> connect() async {
     state = const AsyncData(BackupRunning(BackupOperation.connecting));
     try {
-      final dropbox = ref.read(dropboxProviderProvider);
+      final dropbox = ref.read(cloudBackupProvider);
       await dropbox.authorize();
       final email = await dropbox.currentEmail();
       if (email == null) throw const SyncException('Could not fetch account');
       final settingsRepo = await ref.read(appSettingsRepositoryProvider.future);
-      final current = await settingsRepo.getOrCreate();
+      DateTime? discoveredLastBackupAt;
+      try {
+        final files = await dropbox.listFiles(); // sorted desc, newest first
+        if (files.isNotEmpty) {
+          discoveredLastBackupAt = BackupFilename.parseTimestamp(files.first);
+        }
+      } catch (_) {
+        // best-effort: listing failure does not abort the connect flow
+      }
       await settingsRepo.updateBackupState(
         dropboxEmail: email,
-        lastBackupAt: current.lastBackupAt,
+        lastBackupAt: discoveredLastBackupAt,
       );
       ref.invalidateSelf();
     } catch (e) {
@@ -56,7 +65,7 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
   Future<void> disconnect() async {
     state = const AsyncData(BackupRunning(BackupOperation.disconnecting));
     try {
-      final dropbox = ref.read(dropboxProviderProvider);
+      final dropbox = ref.read(cloudBackupProvider);
       await dropbox.disconnect();
       final settingsRepo = await ref.read(appSettingsRepositoryProvider.future);
       await settingsRepo.updateBackupState(

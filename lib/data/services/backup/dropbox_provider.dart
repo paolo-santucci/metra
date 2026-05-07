@@ -31,6 +31,11 @@ abstract class CloudBackupProvider {
   Future<Uint8List> download(String filename);
   Future<List<String>> listFiles();
   Future<void> deleteFile(String filename);
+
+  // Widening additions (C-08: additive-only)
+  Future<void> authorize();
+  Future<String?> currentEmail();
+  Future<void> disconnect();
 }
 
 class DropboxProvider implements CloudBackupProvider {
@@ -80,6 +85,7 @@ class DropboxProvider implements CloudBackupProvider {
   Future<bool> get isConnected async =>
       (await _storage.read(key: _accessTokenKey)) != null;
 
+  @override
   Future<void> authorize() async {
     final verifier = _generateCodeVerifier();
     final challenge = _codeChallenge(verifier);
@@ -128,6 +134,7 @@ class DropboxProvider implements CloudBackupProvider {
     );
   }
 
+  @override
   Future<String?> currentEmail() async {
     final token = await _storage.read(key: _accessTokenKey);
     if (token == null) return null;
@@ -141,6 +148,7 @@ class DropboxProvider implements CloudBackupProvider {
     return data['email'] as String?;
   }
 
+  @override
   Future<void> disconnect() async {
     final token = await _storage.read(key: _accessTokenKey);
     if (token != null) {

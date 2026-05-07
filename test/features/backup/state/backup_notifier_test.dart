@@ -3,6 +3,8 @@
 // This file is part of Métra.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/errors/metra_exception.dart';
@@ -16,6 +18,7 @@ import 'package:metra/providers/encryption_provider.dart';
 import 'package:metra/providers/repository_providers.dart';
 
 import '../../../helpers/fake_app_settings_repository.dart';
+import '../../../helpers/fake_dropbox_provider.dart';
 import '../../../helpers/in_memory_secure_storage.dart';
 
 class _FakeRunner implements BackupRunner {
@@ -43,11 +46,13 @@ void main() {
   late FakeAppSettingsRepository settingsRepo;
   late InMemorySecureStorage storage;
   late _FakeRunner runner;
+  late FakeDropboxProvider fakeDropbox;
 
   setUp(() {
     settingsRepo = FakeAppSettingsRepository();
     storage = InMemorySecureStorage();
     runner = _FakeRunner();
+    fakeDropbox = FakeDropboxProvider();
   });
 
   ProviderContainer makeContainer() {
@@ -57,6 +62,7 @@ void main() {
         secureStorageProvider.overrideWithValue(storage),
         backupDataProvider.overrideWith((_) async => BackupData(runner)),
         restoreDataProvider.overrideWith((_) async => RestoreData(runner)),
+        cloudBackupProvider.overrideWithValue(fakeDropbox),
       ],
     );
   }
@@ -268,10 +274,9 @@ void main() {
       lastBackupAt: DateTime.utc(2026, 4, 29),
     );
     storage.values['metra_backup_passphrase_v1'] = 'my-pass';
-    // dropboxProviderProvider is NOT overridden — the real DropboxProvider
-    // uses the injected InMemorySecureStorage (wired via secureStorageProvider).
-    // With no access-token in storage, disconnect() skips the revoke call
-    // and runs two no-op deletes, so it completes successfully.
+    // cloudBackupProvider is overridden in makeContainer() with fakeDropbox.
+    // The fake's disconnect() is a no-op, matching the real DropboxProvider
+    // behavior when no token is stored. The settings are cleared by the notifier.
     final container = makeContainer();
     addTearDown(container.dispose);
     await container.read(backupNotifierProvider.future);
@@ -280,5 +285,74 @@ void main() {
     expect(settings.dropboxEmail, isNull);
     expect(settings.lastBackupAt, isNull);
     expect(storage.values.containsKey('metra_backup_passphrase_v1'), isFalse);
+  });
+
+  group('BackupNotifier.connect — existing backup check', () {
+    test('connect() — empty Dropbox → BackupConnected(lastBackupAt: null)',
+        () async {
+      // fakeDropbox.currentEmailResult = 'user@example.com' (default)
+      // fakeDropbox.files is empty (default)
+      final container = makeContainer();
+      addTearDown(container.dispose);
+      await container.read(backupNotifierProvider.future);
+      await container.read(backupNotifierProvider.notifier).connect();
+      final s = await container.read(backupNotifierProvider.future);
+      expect(s, isA<BackupConnected>());
+      expect((s as BackupConnected).lastBackupAt, isNull);
+      expect(s.email, equals('user@example.com'));
+    });
+
+    test('connect() — one backup file → BackupConnected(lastBackupAt set)',
+        () async {
+      fakeDropbox.files['metra_backup_20260429T100000Z.enc'] = Uint8List(0);
+      final container = makeContainer();
+      addTearDown(container.dispose);
+      await container.read(backupNotifierProvider.future);
+      await container.read(backupNotifierProvider.notifier).connect();
+      final s = await container.read(backupNotifierProvider.future);
+      expect(s, isA<BackupConnected>());
+      expect(
+        (s as BackupConnected).lastBackupAt,
+        equals(DateTime.utc(2026, 4, 29, 10, 0, 0)),
+      );
+    });
+
+    test('connect() — multiple files → lastBackupAt = newest', () async {
+      // FakeDropboxProvider.listFiles() sorts desc, so newest is first.
+      fakeDropbox.files['metra_backup_20260429T100000Z.enc'] = Uint8List(0);
+      fakeDropbox.files['metra_backup_20260101T000000Z.enc'] = Uint8List(0);
+      final container = makeContainer();
+      addTearDown(container.dispose);
+      await container.read(backupNotifierProvider.future);
+      await container.read(backupNotifierProvider.notifier).connect();
+      final s = await container.read(backupNotifierProvider.future);
+      expect(s, isA<BackupConnected>());
+      expect(
+        (s as BackupConnected).lastBackupAt,
+        equals(DateTime.utc(2026, 4, 29, 10, 0, 0)),
+      );
+    });
+
+    test('connect() — listFiles throws → connect succeeds, lastBackupAt: null',
+        () async {
+      fakeDropbox.failNextList = true;
+      final container = makeContainer();
+      addTearDown(container.dispose);
+      await container.read(backupNotifierProvider.future);
+      await container.read(backupNotifierProvider.notifier).connect();
+      final s = await container.read(backupNotifierProvider.future);
+      expect(s, isA<BackupConnected>());
+      expect((s as BackupConnected).lastBackupAt, isNull);
+    });
+
+    test('connect() — currentEmail returns null → BackupErrorState', () async {
+      fakeDropbox.currentEmailResult = null;
+      final container = makeContainer();
+      addTearDown(container.dispose);
+      await container.read(backupNotifierProvider.future);
+      await container.read(backupNotifierProvider.notifier).connect();
+      final s = container.read(backupNotifierProvider).valueOrNull;
+      expect(s, isA<BackupErrorState>());
+    });
   });
 }
