@@ -413,25 +413,24 @@ class SettingsScreen extends ConsumerWidget {
     showModalBottomSheet<void>(
       context: context,
       builder: (sheetCtx) => SafeArea(
-        child: ListView.builder(
-          shrinkWrap: true,
-          itemCount: 7,
-          itemBuilder: (_, i) {
-            final days = i + 1;
-            return ListTile(
-              title: Text(l10n.settings_advance_value(days)),
-              trailing: settings.notificationDaysBefore == days
-                  ? const Icon(Icons.check)
-                  : null,
-              onTap: () {
-                Navigator.of(sheetCtx).pop();
-                _save(
-                  ref,
-                  settings.copyWith(notificationDaysBefore: days),
-                );
-              },
-            );
-          },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (int i = 0; i < 7; i++)
+              ListTile(
+                title: Text(l10n.settings_advance_value(i + 1)),
+                trailing: settings.notificationDaysBefore == i + 1
+                    ? const Icon(Icons.check)
+                    : null,
+                onTap: () {
+                  Navigator.of(sheetCtx).pop();
+                  _save(
+                    ref,
+                    settings.copyWith(notificationDaysBefore: i + 1),
+                  );
+                },
+              ),
+          ],
         ),
       ),
     );

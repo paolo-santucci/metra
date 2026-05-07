@@ -365,6 +365,124 @@ void main() {
     });
   });
 
+  group('SettingsScreen — advance picker', () {
+    testWidgets('shows all 7 options when picker row is tapped',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final stub = _StubSettingsNotifier(defaults);
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Preavviso'));
+      await tester.pumpAndSettle();
+
+      final sheet = find.byType(BottomSheet);
+      expect(sheet, findsOneWidget);
+      for (final label in [
+        '1 giorno prima',
+        '2 giorni prima',
+        '3 giorni prima',
+        '4 giorni prima',
+        '5 giorni prima',
+        '6 giorni prima',
+        '7 giorni prima',
+      ]) {
+        expect(
+          find.descendant(of: sheet, matching: find.text(label)),
+          findsOneWidget,
+          reason: 'Option "$label" must be visible without scrolling',
+        );
+      }
+      // No Scrollable inside the sheet — a ListView.builder would create one.
+      expect(
+        find.descendant(of: sheet, matching: find.byType(Scrollable)),
+        findsNothing,
+        reason:
+            'Column picker must not contain a Scrollable (regression guard)',
+      );
+    });
+
+    testWidgets('tapping an option saves the correct notificationDaysBefore',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final stub = _StubSettingsNotifier(defaults);
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Preavviso'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.text('5 giorni prima'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(stub.savedSettings?.notificationDaysBefore, equals(5));
+    });
+
+    testWidgets('tapping the selected option re-saves the same value',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final stub = _StubSettingsNotifier(defaults); // notificationDaysBefore: 2
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Preavviso'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.text('2 giorni prima'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(stub.savedSettings?.notificationDaysBefore, equals(2));
+    });
+
+    testWidgets('check icon appears only on the currently selected option',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final stub = _StubSettingsNotifier(defaults); // notificationDaysBefore: 2
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Preavviso'));
+      await tester.pumpAndSettle();
+
+      final sheet = find.byType(BottomSheet);
+      expect(
+        find.descendant(of: sheet, matching: find.byIcon(Icons.check)),
+        findsOneWidget,
+        reason: 'Exactly one check icon must appear (the selected option)',
+      );
+    });
+  });
+
   group('SettingsScreen — backup row', () {
     testWidgets('backup row is visible', (tester) async {
       tester.view.physicalSize = const Size(800, 4000);
