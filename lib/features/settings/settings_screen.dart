@@ -308,41 +308,39 @@ class SettingsScreen extends ConsumerWidget {
   ) {
     showModalBottomSheet<void>(
       context: context,
-      builder: (sheetCtx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: Text(l10n.settings_language_system),
-              trailing:
-                  settings.languageCode == '' ? const Icon(Icons.check) : null,
-              onTap: () {
-                Navigator.of(sheetCtx).pop();
-                _save(ref, settings.copyWith(languageCode: ''));
-              },
-            ),
-            ListTile(
-              title: Text(l10n.settings_language_it),
-              trailing: settings.languageCode == 'it'
-                  ? const Icon(Icons.check)
-                  : null,
-              onTap: () {
-                Navigator.of(sheetCtx).pop();
-                _save(ref, settings.copyWith(languageCode: 'it'));
-              },
-            ),
-            ListTile(
-              title: Text(l10n.settings_language_en),
-              trailing: settings.languageCode == 'en'
-                  ? const Icon(Icons.check)
-                  : null,
-              onTap: () {
-                Navigator.of(sheetCtx).pop();
-                _save(ref, settings.copyWith(languageCode: 'en'));
-              },
-            ),
-          ],
-        ),
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (sheetCtx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            title: Text(l10n.settings_language_system),
+            trailing:
+                settings.languageCode == '' ? const Icon(Icons.check) : null,
+            onTap: () {
+              Navigator.of(sheetCtx).pop();
+              _save(ref, settings.copyWith(languageCode: ''));
+            },
+          ),
+          ListTile(
+            title: Text(l10n.settings_language_it),
+            trailing:
+                settings.languageCode == 'it' ? const Icon(Icons.check) : null,
+            onTap: () {
+              Navigator.of(sheetCtx).pop();
+              _save(ref, settings.copyWith(languageCode: 'it'));
+            },
+          ),
+          ListTile(
+            title: Text(l10n.settings_language_en),
+            trailing:
+                settings.languageCode == 'en' ? const Icon(Icons.check) : null,
+            onTap: () {
+              Navigator.of(sheetCtx).pop();
+              _save(ref, settings.copyWith(languageCode: 'en'));
+            },
+          ),
+        ],
       ),
     );
   }
@@ -355,51 +353,51 @@ class SettingsScreen extends ConsumerWidget {
   ) {
     showModalBottomSheet<void>(
       context: context,
-      builder: (sheetCtx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: Text(l10n.settings_theme_system),
-              trailing:
-                  settings.darkMode == null ? const Icon(Icons.check) : null,
-              onTap: () {
-                Navigator.of(sheetCtx).pop();
-                // Full constructor needed: copyWith cannot set darkMode to null.
-                _save(
-                  ref,
-                  AppSettingsData(
-                    languageCode: settings.languageCode,
-                    darkMode: null,
-                    painEnabled: settings.painEnabled,
-                    notesEnabled: settings.notesEnabled,
-                    notificationDaysBefore: settings.notificationDaysBefore,
-                    notificationsEnabled: settings.notificationsEnabled,
-                    onboardingCompleted: settings.onboardingCompleted,
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              title: Text(l10n.settings_theme_light),
-              trailing:
-                  settings.darkMode == false ? const Icon(Icons.check) : null,
-              onTap: () {
-                Navigator.of(sheetCtx).pop();
-                _save(ref, settings.copyWith(darkMode: false));
-              },
-            ),
-            ListTile(
-              title: Text(l10n.settings_theme_dark),
-              trailing:
-                  settings.darkMode == true ? const Icon(Icons.check) : null,
-              onTap: () {
-                Navigator.of(sheetCtx).pop();
-                _save(ref, settings.copyWith(darkMode: true));
-              },
-            ),
-          ],
-        ),
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (sheetCtx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            title: Text(l10n.settings_theme_system),
+            trailing:
+                settings.darkMode == null ? const Icon(Icons.check) : null,
+            onTap: () {
+              Navigator.of(sheetCtx).pop();
+              // Full constructor needed: copyWith cannot set darkMode to null.
+              _save(
+                ref,
+                AppSettingsData(
+                  languageCode: settings.languageCode,
+                  darkMode: null,
+                  painEnabled: settings.painEnabled,
+                  notesEnabled: settings.notesEnabled,
+                  notificationDaysBefore: settings.notificationDaysBefore,
+                  notificationsEnabled: settings.notificationsEnabled,
+                  onboardingCompleted: settings.onboardingCompleted,
+                ),
+              );
+            },
+          ),
+          ListTile(
+            title: Text(l10n.settings_theme_light),
+            trailing:
+                settings.darkMode == false ? const Icon(Icons.check) : null,
+            onTap: () {
+              Navigator.of(sheetCtx).pop();
+              _save(ref, settings.copyWith(darkMode: false));
+            },
+          ),
+          ListTile(
+            title: Text(l10n.settings_theme_dark),
+            trailing:
+                settings.darkMode == true ? const Icon(Icons.check) : null,
+            onTap: () {
+              Navigator.of(sheetCtx).pop();
+              _save(ref, settings.copyWith(darkMode: true));
+            },
+          ),
+        ],
       ),
     );
   }
@@ -412,26 +410,26 @@ class SettingsScreen extends ConsumerWidget {
   ) {
     showModalBottomSheet<void>(
       context: context,
-      builder: (sheetCtx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (int i = 0; i < 7; i++)
-              ListTile(
-                title: Text(l10n.settings_advance_value(i + 1)),
-                trailing: settings.notificationDaysBefore == i + 1
-                    ? const Icon(Icons.check)
-                    : null,
-                onTap: () {
-                  Navigator.of(sheetCtx).pop();
-                  _save(
-                    ref,
-                    settings.copyWith(notificationDaysBefore: i + 1),
-                  );
-                },
-              ),
-          ],
-        ),
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (sheetCtx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (int i = 0; i < 7; i++)
+            ListTile(
+              title: Text(l10n.settings_advance_value(i + 1)),
+              trailing: settings.notificationDaysBefore == i + 1
+                  ? const Icon(Icons.check)
+                  : null,
+              onTap: () {
+                Navigator.of(sheetCtx).pop();
+                _save(
+                  ref,
+                  settings.copyWith(notificationDaysBefore: i + 1),
+                );
+              },
+            ),
+        ],
       ),
     );
   }

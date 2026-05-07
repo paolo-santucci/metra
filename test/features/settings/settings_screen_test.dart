@@ -483,6 +483,46 @@ void main() {
     });
   });
 
+  group('SettingsScreen — advance picker (narrow viewport)', () {
+    testWidgets('all 7 options are visible on a compact phone screen',
+        (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.padding = const FakeViewPadding(bottom: 48);
+      addTearDown(tester.view.reset);
+
+      final stub = _StubSettingsNotifier(defaults);
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Preavviso'));
+      await tester.pumpAndSettle();
+
+      final sheet = find.byType(BottomSheet);
+      expect(sheet, findsOneWidget);
+      for (final expected in [
+        '1 giorno prima',
+        '2 giorni prima',
+        '3 giorni prima',
+        '4 giorni prima',
+        '5 giorni prima',
+        '6 giorni prima',
+        '7 giorni prima',
+      ]) {
+        expect(
+          find.descendant(of: sheet, matching: find.text(expected)),
+          findsOneWidget,
+        );
+      }
+      expect(
+        find.descendant(of: sheet, matching: find.byType(Scrollable)),
+        findsNothing,
+      );
+    });
+  });
+
   group('SettingsScreen — backup row', () {
     testWidgets('backup row is visible', (tester) async {
       tester.view.physicalSize = const Size(800, 4000);
