@@ -8,6 +8,8 @@ title: "[Feature]: "
 labels:
   - feature
   - needs-triage
+projects:
+  - paolo-santucci/2
 body:
   - type: markdown
     attributes:
