@@ -3,6 +3,7 @@ name: iOS
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
     branches: [main]
 
@@ -45,6 +46,160 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: TestFlight upload (stub)
+      # -----------------------------------------------------------------------
+      # Decode signing materials from GitHub Secrets onto the ephemeral runner
+      # filesystem. Nothing from this point is committed; CI starts from a
+      # fresh checkout on every run.
+      # -----------------------------------------------------------------------
+
+      - name: Decode signing materials
+        env:
+          IOS_DIST_CERT_P12_BASE64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
         run: |
-          echo "TODO: configure fastlane for TestFlight upload — needs Apple Developer cert, App Store Connect API key"
+          mkdir -p "$RUNNER_TEMP/signing"
+          echo "$IOS_DIST_CERT_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/signing/dist.p12"
+          echo "$IOS_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/signing/profile.mobileprovision"
+
+      - name: Create ephemeral keychain and import certificate
+        env:
+          IOS_KEYCHAIN_PASSWORD: ${{ secrets.IOS_KEYCHAIN_PASSWORD }}
+          IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/signing/metra-ci.keychain-db"
+          security create-keychain -p "$IOS_KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security default-keychain -s "$KEYCHAIN"
+          # Add ephemeral keychain to the user search list alongside the login
+          # keychain so codesign can locate the identity on all runner revisions.
+          security list-keychains -d user -s "$KEYCHAIN" login.keychain-db
+          security unlock-keychain -p "$IOS_KEYCHAIN_PASSWORD" "$KEYCHAIN"
+
+          # Import distribution certificate (cert + private key)
+          security import "$RUNNER_TEMP/signing/dist.p12" \
+            -k "$KEYCHAIN" \
+            -P "$IOS_DIST_CERT_PASSWORD" \
+            -A -t cert -f pkcs12
+
+          # Allow codesign to read the key without a UI password prompt.
+          # Both -S flags are required; omitting either causes codesign to hang.
+          security set-key-partition-list \
+            -S "apple-tool:,apple:" \
+            -s \
+            -k "$IOS_KEYCHAIN_PASSWORD" \
+            "$KEYCHAIN"
+
+      - name: Install provisioning profile
+        run: |
+          # Extract UUID from the provisioning profile plist payload
+          PROFILE_UUID=$(security cms -D -i "$RUNNER_TEMP/signing/profile.mobileprovision" \
+            | plutil -extract UUID raw -)
+
+          # Mask the UUID so it never appears in plain text in CI logs
+          echo "::add-mask::$PROFILE_UUID"
+
+          PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$PROFILES_DIR"
+          cp "$RUNNER_TEMP/signing/profile.mobileprovision" \
+            "$PROFILES_DIR/$PROFILE_UUID.mobileprovision"
+
+          # Persist UUID for subsequent steps via GITHUB_ENV
+          echo "PROFILE_UUID=$PROFILE_UUID" >> "$GITHUB_ENV"
+
+      - name: Decode App Store Connect API key
+        env:
+          APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+        run: |
+          ASC_KEY_DIR="$HOME/.appstoreconnect/private_keys"
+          mkdir -p "$ASC_KEY_DIR"
+          echo "$APP_STORE_CONNECT_API_KEY_BASE64" | base64 --decode \
+            > "$ASC_KEY_DIR/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8"
+          chmod 600 "$ASC_KEY_DIR/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8"
+
+      # -----------------------------------------------------------------------
+      # Configure CI signing in the checked-out project.pbxproj.
+      # The committed file uses CODE_SIGN_STYLE = Automatic, which is correct
+      # for local Xcode development. CI gets a fresh checkout every run and
+      # needs Manual signing for the archive phase to succeed without an
+      # Apple-ID session. We patch only this working-tree copy — the repository
+      # is never modified.
+      # -----------------------------------------------------------------------
+
+      - name: Configure CI signing in project.pbxproj (workspace only)
+        env:
+          IOS_DEVELOPMENT_TEAM_ID: ${{ secrets.IOS_DEVELOPMENT_TEAM_ID }}
+        run: |
+          PBXPROJ="ios/Runner.xcodeproj/project.pbxproj"
+
+          # Step 1: flip Automatic -> Manual on all configurations.
+          # PlistBuddy cannot parse pbxproj format; sed is the standard approach.
+          sed -i '' "s|CODE_SIGN_STYLE = Automatic;|CODE_SIGN_STYLE = Manual;|g" "$PBXPROJ"
+
+          # Step 2: after each CODE_SIGN_STYLE = Manual; line, insert
+          # DEVELOPMENT_TEAM and PROVISIONING_PROFILE_SPECIFIER.
+          # awk reads the previous line; skips the insert when DEVELOPMENT_TEAM
+          # is already present (idempotent).
+          awk \
+            -v team="$IOS_DEVELOPMENT_TEAM_ID" \
+            -v profile="$PROFILE_UUID" \
+            'BEGIN { prev="" }
+            {
+              if (prev ~ /CODE_SIGN_STYLE = Manual;/ && $0 !~ /DEVELOPMENT_TEAM/) {
+                printf "\t\t\t\tDEVELOPMENT_TEAM = %s;\n", team
+                printf "\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = \"%s\";\n", profile
+              }
+              print $0
+              prev = $0
+            }' "$PBXPROJ" > "$PBXPROJ.tmp" && mv "$PBXPROJ.tmp" "$PBXPROJ"
+
+          TEAM_COUNT=$(grep -c "DEVELOPMENT_TEAM" "$PBXPROJ" || true)
+          echo "project.pbxproj patched for CI manual signing. DEVELOPMENT_TEAM inserted ${TEAM_COUNT} time(s)."
+
+      - name: Materialize ExportOptions.plist
+        env:
+          IOS_DEVELOPMENT_TEAM_ID: ${{ secrets.IOS_DEVELOPMENT_TEAM_ID }}
+        run: |
+          sed \
+            -e "s|__TEAM_ID__|$IOS_DEVELOPMENT_TEAM_ID|g" \
+            -e "s|__PROFILE_UUID__|$PROFILE_UUID|g" \
+            ios/ExportOptions.plist.template \
+            > "$RUNNER_TEMP/ExportOptions.plist"
+
+      - name: Build IPA
+        run: |
+          flutter build ipa \
+            --release \
+            --export-options-plist="$RUNNER_TEMP/ExportOptions.plist" \
+            --build-number="$GITHUB_RUN_NUMBER" \
+            --dart-define=DROPBOX_APP_KEY=${{ secrets.DROPBOX_APP_KEY }}
+
+      - name: Upload to TestFlight
+        env:
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+        run: |
+          xcrun altool \
+            --upload-app \
+            --type ios \
+            --file build/ios/ipa/*.ipa \
+            --apiKey "$APP_STORE_CONNECT_API_KEY_ID" \
+            --apiIssuer "$APP_STORE_CONNECT_API_ISSUER_ID"
+
+      # -----------------------------------------------------------------------
+      # Cleanup: always runs, even on failure, so signing material does not
+      # linger on the runner filesystem between steps or in job artifacts.
+      # -----------------------------------------------------------------------
+
+      - name: Cleanup signing material
+        if: always()
+        env:
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+        run: |
+          security delete-keychain "$RUNNER_TEMP/signing/metra-ci.keychain-db" 2>/dev/null || true
+          rm -f "$RUNNER_TEMP/signing/dist.p12"
+          rm -f "$RUNNER_TEMP/signing/profile.mobileprovision"
+          rm -f "$HOME/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8"
+          if [ -n "$PROFILE_UUID" ]; then
+            rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
+          fi
