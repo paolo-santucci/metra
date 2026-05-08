@@ -128,13 +128,22 @@ jobs:
             > "$RUNNER_TEMP/ExportOptions.plist"
 
       # -----------------------------------------------------------------------
-      # Build flow: Flutter compiles the Dart side without signing, then
-      # xcodebuild archives + exports the IPA. We bypass `flutter build ipa`
-      # because its pre-flight check inspects the committed project.pbxproj
-      # (which uses CODE_SIGN_IDENTITY = "iPhone Developer" and no
-      # CODE_SIGN_STYLE on the Runner target) and aborts before xcodebuild
-      # ever runs. Passing signing settings as xcodebuild CLI arguments
-      # overrides the project file without needing to patch it.
+      # Build flow: Flutter compiles the Dart side without signing (which also
+      # runs `pod install`), then a Ruby script patches signing settings into
+      # ONLY the Runner native target, then xcodebuild archives without any
+      # CLI signing overrides. This avoids two pitfalls:
+      #
+      #  1. `flutter build ipa` aborts in pre-flight when the committed pbxproj
+      #     has CODE_SIGN_IDENTITY = "iPhone Developer" (development cert)
+      #     while we're trying to sign with a Distribution cert.
+      #  2. xcodebuild CLI signing args (e.g. PROVISIONING_PROFILE_SPECIFIER)
+      #     apply to every target in the workspace, which makes CocoaPods
+      #     static-library targets fail with "does not support provisioning
+      #     profiles".
+      #
+      # Setting signing in the pbxproj for the Runner target only — using the
+      # xcodeproj Ruby gem (bundled with CocoaPods, pre-installed on the
+      # runner) — keeps Pods unsigned and Runner manually signed.
       # -----------------------------------------------------------------------
 
       - name: Build iOS bundle (no signing)
@@ -145,9 +154,34 @@ jobs:
             --build-number="$GITHUB_RUN_NUMBER" \
             --dart-define=DROPBOX_APP_KEY=${{ secrets.DROPBOX_APP_KEY }}
 
-      - name: Archive with xcodebuild
+      - name: Configure Runner target signing (workspace only)
         env:
           IOS_DEVELOPMENT_TEAM_ID: ${{ secrets.IOS_DEVELOPMENT_TEAM_ID }}
+        run: |
+          ruby <<'RUBY'
+          require 'xcodeproj'
+
+          project = Xcodeproj::Project.open('ios/Runner.xcodeproj')
+          runner = project.targets.find { |t| t.name == 'Runner' }
+          raise 'Runner target not found in ios/Runner.xcodeproj' unless runner
+
+          team    = ENV.fetch('IOS_DEVELOPMENT_TEAM_ID')
+          profile = ENV.fetch('PROFILE_UUID')
+
+          runner.build_configurations.each do |config|
+            settings = config.build_settings
+            settings['CODE_SIGN_STYLE']                   = 'Manual'
+            settings['DEVELOPMENT_TEAM']                  = team
+            settings['PROVISIONING_PROFILE_SPECIFIER']    = profile
+            settings['CODE_SIGN_IDENTITY']                = 'Apple Distribution'
+            settings['CODE_SIGN_IDENTITY[sdk=iphoneos*]'] = 'Apple Distribution'
+            puts "Patched Runner.#{config.name}: manual signing via team #{team}"
+          end
+
+          project.save
+          RUBY
+
+      - name: Archive with xcodebuild
         run: |
           xcodebuild \
             -workspace ios/Runner.xcworkspace \
@@ -155,11 +189,7 @@ jobs:
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
-            archive \
-            CODE_SIGN_STYLE=Manual \
-            DEVELOPMENT_TEAM="$IOS_DEVELOPMENT_TEAM_ID" \
-            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_UUID" \
-            CODE_SIGN_IDENTITY="Apple Distribution"
+            archive
 
       - name: Export IPA
         run: |
