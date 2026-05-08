@@ -289,7 +289,7 @@ function SettingsRow({ label, value, toggle, destructive, t = L }) {
   const bg = destructive ? `${t.accent}0D` : 'transparent';
   return (
     <div style={{ height:56, paddingInline:20, display:'flex', alignItems:'center', justifyContent:'space-between', background:bg, cursor:'pointer' }}>
-      <span style={{ fontFamily:'Inter', fontSize:15, fontWeight:500, color:labelColor }}>{label}</span>
+      <span style={{ fontFamily:'Inter', fontSize:15, fontWeight:500, color:labelColor, flex:1 }}>{label}</span>
       {toggle ? toggle : (
         <div style={{ display:'flex', alignItems:'center', gap:6 }}>
           {value && <span style={{ fontFamily:'Inter', fontSize:14, color:t.sub }}>{value}</span>}
@@ -856,12 +856,14 @@ function S14_Impostazioni() {
     const SLabel = ({ children }) => <div style={{ fontFamily:'Inter', fontSize:12, fontWeight:600, letterSpacing:'0.06em', textTransform:'uppercase', color:t.faint, paddingInline:4, marginBottom:10 }}>{children}</div>;
     const SCard = ({ children }) => <div style={{ background:t.surface, borderRadius:16, border:`1px solid ${t.border}`, overflow:'hidden', marginBottom:20 }}>{children}</div>;
     return (
-      <div style={{ maxWidth:320 }}>
+      <div style={{ width:320 }}>
         <SLabel>Notifiche</SLabel>
         <SCard>
           <SettingsRow label="Promemoria ciclo" toggle={<MetraToggle on={n1} onChange={setN1} t={t}/>} t={t}/>
           <div style={{ height:1, background:sep }}/>
           <SettingsRow label="Preavviso" value="3 giorni prima" t={t}/>
+          <div style={{ height:1, background:sep }}/>
+          <SettingsRow label="Orario" value="alle 09:00" t={t}/>
         </SCard>
         <SLabel>Dati</SLabel>
         <SCard>
