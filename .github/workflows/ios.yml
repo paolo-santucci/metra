@@ -181,6 +181,28 @@ jobs:
           project.save
           RUBY
 
+      # -----------------------------------------------------------------------
+      # Wipe only the pre-built Flutter app bundle so that xcodebuild archive
+      # triggers a clean actool + Info.plist compile pass from scratch.
+      #
+      # Why: `flutter build ios --no-codesign` populates build/ios/iphoneos/
+      # Runner.app. When xcodebuild archive subsequently runs the Flutter Run
+      # Script phase (xcode_backend.sh), it finds an existing bundle and may
+      # skip recompiling the asset catalog, producing an archive with a
+      # CFBundleIconName-less Info.plist and no 120x120 icon entry — exactly
+      # the two altool errors reported. Removing the pre-built app forces
+      # actool to recompile from the source asset catalog, producing a
+      # correctly-structured bundle.
+      #
+      # The flutter build step above must remain because it:
+      #   - resolves and installs CocoaPods (`pod install`)
+      #   - writes Generated.xcconfig with FLUTTER_BUILD_NAME / FLUTTER_BUILD_NUMBER
+      # Only the compiled app artifact is removed here, not the derived sources.
+      # -----------------------------------------------------------------------
+
+      - name: Remove pre-built app bundle before archive
+        run: rm -rf build/ios/iphoneos/Runner.app
+
       - name: Archive with xcodebuild
         run: |
           xcodebuild \
@@ -189,6 +211,7 @@ jobs:
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
+            CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" \
             archive
 
       - name: Export IPA
@@ -197,6 +220,52 @@ jobs:
             -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
             -exportPath "$RUNNER_TEMP/ipa" \
             -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
+
+      # -----------------------------------------------------------------------
+      # Validate IPA bundle contents before upload: confirm that actool
+      # produced AppIcon entries in Assets.car and that Info.plist retains
+      # CFBundleIconName. A missing key here will cause altool to reject the
+      # upload with "Missing required icon file" / "Missing CFBundleIconName".
+      # This step is always informational — it prints and exits 0 so that a
+      # bad build is still caught by altool but the log shows the exact state.
+      # -----------------------------------------------------------------------
+
+      - name: Validate IPA bundle (icon + plist sanity)
+        run: |
+          IPA=$(ls "$RUNNER_TEMP/ipa"/*.ipa)
+          WORK="$RUNNER_TEMP/ipa-inspect"
+          mkdir -p "$WORK"
+          unzip -q "$IPA" -d "$WORK"
+          APP="$WORK/Payload/Runner.app"
+
+          echo "===== AppIcon / Assets.car presence ====="
+          find "$APP" -maxdepth 2 \( -name 'AppIcon*' -o -name 'Assets.car' \) \
+            -print -exec ls -lh {} \;
+
+          echo "===== CFBundleIconName ====="
+          plutil -extract CFBundleIconName raw -o - "$APP/Info.plist" \
+            || echo "ERROR: CFBundleIconName is MISSING from bundle Info.plist"
+
+          echo "===== CFBundleIcons (iOS icon dict) ====="
+          plutil -extract CFBundleIcons xml1 -o - "$APP/Info.plist" \
+            || echo "NOTE: CFBundleIcons not present (iOS 14+ uses asset-catalog only)"
+
+          echo "===== assetutil icon inventory ====="
+          xcrun --sdk iphoneos assetutil --info "$APP/Assets.car" 2>&1 \
+            | grep -E '"Name"|"PixelWidth"|"PixelHeight"' | head -60 \
+            || echo "NOTE: assetutil unavailable or Assets.car absent"
+
+      - name: Validate app (server-side, no upload slot consumed)
+        env:
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+        run: |
+          xcrun altool \
+            --validate-app \
+            --type ios \
+            --file "$RUNNER_TEMP/ipa"/*.ipa \
+            --apiKey "$APP_STORE_CONNECT_API_KEY_ID" \
+            --apiIssuer "$APP_STORE_CONNECT_API_ISSUER_ID"
 
       - name: Upload to TestFlight
         env:
