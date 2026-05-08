@@ -237,6 +237,7 @@ jobs:
           mkdir -p "$WORK"
           unzip -q "$IPA" -d "$WORK"
           APP="$WORK/Payload/Runner.app"
+          FAIL=0
 
           echo "===== AppIcon / Assets.car presence ====="
           find "$APP" -maxdepth 2 \( -name 'AppIcon*' -o -name 'Assets.car' \) \
@@ -244,28 +245,39 @@ jobs:
 
           echo "===== CFBundleIconName ====="
           plutil -extract CFBundleIconName raw -o - "$APP/Info.plist" \
-            || echo "ERROR: CFBundleIconName is MISSING from bundle Info.plist"
-
-          echo "===== CFBundleIcons (iOS icon dict) ====="
-          plutil -extract CFBundleIcons xml1 -o - "$APP/Info.plist" \
-            || echo "NOTE: CFBundleIcons not present (iOS 14+ uses asset-catalog only)"
+            || { echo "ERROR: CFBundleIconName is MISSING from bundle Info.plist"; FAIL=1; }
 
           echo "===== assetutil icon inventory ====="
-          xcrun --sdk iphoneos assetutil --info "$APP/Assets.car" 2>&1 \
-            | grep -E '"Name"|"PixelWidth"|"PixelHeight"' | head -60 \
-            || echo "NOTE: assetutil unavailable or Assets.car absent"
+          ICON_NAMES=$(xcrun --sdk iphoneos assetutil --info "$APP/Assets.car" 2>&1 \
+            | grep '"Name"' | grep -i appicon || true)
+          if [ -z "$ICON_NAMES" ]; then
+            echo "ERROR: No AppIcon entries found in Assets.car — actool did not compile the icon set"
+            xcrun --sdk iphoneos assetutil --info "$APP/Assets.car" 2>&1 \
+              | grep -E '"Name"|"PixelWidth"|"PixelHeight"' | head -30
+            FAIL=1
+          else
+            xcrun --sdk iphoneos assetutil --info "$APP/Assets.car" 2>&1 \
+              | grep -E '"Name"|"PixelWidth"|"PixelHeight"' | head -60
+          fi
+
+          exit $FAIL
 
       - name: Validate app (server-side, no upload slot consumed)
         env:
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
         run: |
-          xcrun altool \
+          OUTPUT=$(xcrun altool \
             --validate-app \
             --type ios \
             --file "$RUNNER_TEMP/ipa"/*.ipa \
             --apiKey "$APP_STORE_CONNECT_API_KEY_ID" \
-            --apiIssuer "$APP_STORE_CONNECT_API_ISSUER_ID"
+            --apiIssuer "$APP_STORE_CONNECT_API_ISSUER_ID" 2>&1)
+          echo "$OUTPUT"
+          if echo "$OUTPUT" | grep -q "VERIFY FAILED\|FAILED with"; then
+            echo "::error::altool --validate-app reported validation errors"
+            exit 1
+          fi
 
       - name: Upload to TestFlight
         env:
