@@ -60,6 +60,16 @@
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
 
+	<!-- Export Compliance: Métra uses AES-256 (SQLCipher) and AES-256-GCM
+	     (cloud backup) for local data protection only — no military, DRM, or
+	     authentication-bypass use. Qualifies for BIS License Exception ENC
+	     §740.17(b)(1). Prevents "Missing Compliance" hold in TestFlight. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Métra uses the system file picker to let you select backup and data files. The file picker includes the photo library as a source option. Métra does not access, read, or store your photos.</string>
+
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>Métra uses notifications to remind you when your predicted cycle window is approaching.</string>
 	<key>CFBundleURLTypes</key>
