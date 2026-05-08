@@ -1,0 +1,160 @@
+// Copyright (C) 2026  Paolo Santucci
+//
+// This file is part of Métra.
+//
+// Métra is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Métra is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Métra. If not, see <https://www.gnu.org/licenses/>.
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:metra/data/services/notification_service.dart';
+import 'package:timezone/data/latest_all.dart' as tzdata;
+import 'package:timezone/timezone.dart' as tz;
+
+import 'fake_notification_service.dart';
+
+void main() {
+  group('FakeNotificationService time-routing (TASK-02, FR-02, NFR-11)', () {
+    test(
+      'given_same_day_past_notifyAt_when_now_is_23:30_and_notifyAt_is_00:00_then_routes_to_shown',
+      () async {
+        final fake = FakeNotificationService(
+          now: () => DateTime(2099, 1, 1, 23, 30),
+        );
+        await fake.schedulePredictionNotification(
+          DateTime(2099, 1, 1, 0, 0),
+          't',
+          'b',
+        );
+        expect(fake.shown, hasLength(1));
+        expect(fake.scheduled, isEmpty);
+      },
+    );
+
+    test(
+      'given_same_day_future_notifyAt_when_now_is_08:00_and_notifyAt_is_23:00_then_routes_to_scheduled',
+      () async {
+        final fake = FakeNotificationService(
+          now: () => DateTime(2099, 1, 1, 8, 0),
+        );
+        await fake.schedulePredictionNotification(
+          DateTime(2099, 1, 1, 23, 0),
+          't',
+          'b',
+        );
+        expect(fake.scheduled, hasLength(1));
+        expect(fake.shown, isEmpty);
+      },
+    );
+
+    test(
+      'given_future_date_when_now_is_2026-05-07_10:00_and_notifyAt_is_2099-01-01_09:00_then_routes_to_scheduled',
+      () async {
+        final fake = FakeNotificationService(
+          now: () => DateTime(2026, 5, 7, 10, 0),
+        );
+        await fake.schedulePredictionNotification(
+          DateTime(2099, 1, 1, 9, 0),
+          't',
+          'b',
+        );
+        expect(fake.scheduled, hasLength(1));
+        expect(fake.shown, isEmpty);
+      },
+    );
+  });
+
+  group('Production parity NFR-11', () {
+    late FlutterNotificationService prodService;
+
+    setUpAll(() {
+      tzdata.initializeTimeZones();
+      tz.setLocalLocation(tz.UTC);
+    });
+
+    setUp(() {
+      prodService = FlutterNotificationService();
+    });
+
+    test(
+      'given_same_day_past_when_notifyAt_is_08:00_and_now_is_09:30_then_fake_and_prod_both_route_to_shown',
+      () async {
+        final now = DateTime(2099, 6, 1, 9, 30);
+        final notifyAt = DateTime(2099, 6, 1, 8, 0);
+
+        // Fake side: inspect shown/scheduled lists.
+        final fake = FakeNotificationService(now: () => now);
+        await fake.schedulePredictionNotification(notifyAt, 't', 'b');
+        final fakeRoutesToShown = fake.shown.isNotEmpty;
+
+        // Production side: use the @visibleForTesting predicate directly.
+        final tzNow = tz.TZDateTime(
+          tz.local,
+          now.year,
+          now.month,
+          now.day,
+          now.hour,
+          now.minute,
+        );
+        final tzScheduled = tz.TZDateTime(
+          tz.local,
+          notifyAt.year,
+          notifyAt.month,
+          notifyAt.day,
+          notifyAt.hour,
+          notifyAt.minute,
+        );
+        final prodRoutesToShown =
+            prodService.shouldShowImmediately(tzScheduled, tzNow);
+
+        expect(fakeRoutesToShown, isTrue);
+        expect(prodRoutesToShown, equals(fakeRoutesToShown));
+      },
+    );
+
+    test(
+      'given_same_day_future_when_notifyAt_is_18:00_and_now_is_09:30_then_fake_and_prod_both_route_to_scheduled',
+      () async {
+        final now = DateTime(2099, 6, 1, 9, 30);
+        final notifyAt = DateTime(2099, 6, 1, 18, 0);
+
+        // Fake side: inspect shown/scheduled lists.
+        final fake = FakeNotificationService(now: () => now);
+        await fake.schedulePredictionNotification(notifyAt, 't', 'b');
+        final fakeRoutesToShown = fake.shown.isNotEmpty;
+
+        // Production side: use the @visibleForTesting predicate directly.
+        final tzNow = tz.TZDateTime(
+          tz.local,
+          now.year,
+          now.month,
+          now.day,
+          now.hour,
+          now.minute,
+        );
+        final tzScheduled = tz.TZDateTime(
+          tz.local,
+          notifyAt.year,
+          notifyAt.month,
+          notifyAt.day,
+          notifyAt.hour,
+          notifyAt.minute,
+        );
+        final prodRoutesToShown =
+            prodService.shouldShowImmediately(tzScheduled, tzNow);
+
+        expect(fakeRoutesToShown, isFalse);
+        expect(prodRoutesToShown, equals(fakeRoutesToShown));
+      },
+    );
+  });
+}

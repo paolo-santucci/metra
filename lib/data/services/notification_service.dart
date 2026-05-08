@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
-import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:flutter/foundation.dart' show debugPrint, visibleForTesting;
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -55,6 +55,10 @@ class FlutterNotificationService implements NotificationService {
     } on Exception {
       // Fall back to UTC if timezone detection fails (unsupported platform,
       // unknown IANA name, or method channel not registered in tests).
+      debugPrint(
+        'FlutterNotificationService: timezone detection failed; '
+        'falling back to UTC.',
+      );
       tz.setLocalLocation(tz.UTC);
     }
 
@@ -83,14 +87,15 @@ class FlutterNotificationService implements NotificationService {
         ?.createNotificationChannel(channel);
   }
 
-  /// Computes the exact local TZDateTime for the 09:00 alarm on the calendar
-  /// day of [notifyAt] in the device's local timezone.
+  /// Computes the exact local TZDateTime for the alarm on the calendar
+  /// day of [notifyAt] in the device's local timezone, at the hour and
+  /// minute encoded in [notifyAt].
   ///
   /// BUG-004 fix: [notifyAt] may be a UTC datetime. We convert to local first
   /// so that users at negative-UTC-offset get the correct local calendar day
   /// (not one day late). For example, UTC midnight 2026-06-08 in UTC-5 (New
-  /// York) becomes 2026-06-07 19:00 local, so the notification fires at
-  /// 09:00 local on June 7 — the correct intended calendar day.
+  /// York) becomes 2026-06-07 19:00 local, so the notification fires at the
+  /// requested time on June 7 — the correct intended calendar day.
   @visibleForTesting
   tz.TZDateTime computeScheduledTz(DateTime notifyAt) {
     // Convert UTC instant to local timezone before extracting calendar
@@ -104,13 +109,25 @@ class FlutterNotificationService implements NotificationService {
     // have the conversion use the configured test timezone rather than the
     // OS timezone (which Dart's built-in toLocal() uses and cannot be
     // overridden in pure-Dart tests).
+    //
+    // Hour and minute are taken directly from notifyAt (the caller is
+    // responsible for supplying the user-configured time-of-day), NOT from
+    // the local conversion. This avoids the off-by-one that arose when the
+    // time was hardcoded to 9.
     final local = tz.TZDateTime.from(notifyAt, tz.local);
-    return tz.TZDateTime(tz.local, local.year, local.month, local.day, 9);
+    return tz.TZDateTime(
+      tz.local,
+      local.year,
+      local.month,
+      local.day,
+      notifyAt.hour,
+      notifyAt.minute,
+    );
   }
 
   /// Returns true when [scheduledDate] is on the same calendar day as [now]
-  /// AND [now] is at or after [scheduledDate] — meaning the 09:00 alarm time
-  /// has already passed today so the notification must be shown immediately.
+  /// AND [now] is at or after [scheduledDate] — meaning the configured alarm
+  /// time has already passed today so the notification must be shown immediately.
   ///
   /// Pure predicate; no side-effects. @visibleForTesting to allow unit tests
   /// to exercise the branch logic without a platform channel.
@@ -128,13 +145,13 @@ class FlutterNotificationService implements NotificationService {
     String title,
     String body,
   ) async {
-    // Fire at 09:00 local time on the notification date.
+    // Fire at the time encoded in notifyAt on the correct local calendar day.
     final scheduledDate = computeScheduledTz(notifyAt);
     final now = tz.TZDateTime.now(tz.local);
 
     if (scheduledDate.isBefore(now)) {
       if (shouldShowImmediately(scheduledDate, now)) {
-        // BUG-005 fix: cold-start on notification day after 09:00 —
+        // BUG-005 fix: cold-start on notification day after the scheduled time —
         // the scheduled alarm was cancelled by the listener before we got here.
         // Show immediately so the notification is not silently lost.
         await _plugin.show(

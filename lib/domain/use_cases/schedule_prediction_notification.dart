@@ -18,6 +18,7 @@
 import '../entities/app_settings_data.dart';
 import '../entities/cycle_prediction.dart';
 import '../services/notification_service.dart';
+import '../../core/constants/app_constants.dart';
 
 class SchedulePredictionNotification {
   const SchedulePredictionNotification(this._notifService);
@@ -32,29 +33,38 @@ class SchedulePredictionNotification {
   }) async {
     await _notifService.cancelPredictionNotifications();
     if (prediction == null || !settings.notificationsEnabled) return;
-    assert(
-      settings.notificationDaysBefore >= 1 &&
-          settings.notificationDaysBefore <= 7,
-      'notificationDaysBefore must be in [1, 7]; '
-      'got ${settings.notificationDaysBefore}',
-    );
-    final notifyAt = prediction.windowStart
+
+    if (settings.notificationDaysBefore < 1 ||
+        settings.notificationDaysBefore > AppConstants.kMaxAdvanceDays) {
+      throw ArgumentError.value(
+        settings.notificationDaysBefore,
+        'notificationDaysBefore',
+        'must be in [1, ${AppConstants.kMaxAdvanceDays}]',
+      );
+    }
+    if (settings.notificationTimeMinutes < 0 ||
+        settings.notificationTimeMinutes > 1439) {
+      throw ArgumentError.value(
+        settings.notificationTimeMinutes,
+        'notificationTimeMinutes',
+        'must be in [0, 1439]',
+      );
+    }
+
+    final base = prediction.windowStart
         .subtract(Duration(days: settings.notificationDaysBefore));
-    // BUG-003: compare calendar dates in local time to avoid the UTC/local
-    // mismatch that drops a valid same-day delivery.  `notifyAt` may be a UTC
-    // midnight DateTime while `DateTime.now()` is local; comparing them raw
-    // treats UTC midnight as already past in UTC+ timezones even when 09:00
-    // local (the actual delivery time) has not yet arrived.
-    // Same-day hour-level precision is delegated to the service.
-    final notifyLocal = notifyAt.toLocal();
-    final notifyDay = DateTime(
-      notifyLocal.year,
-      notifyLocal.month,
-      notifyLocal.day,
+    final notifyAt = DateTime(
+      base.year,
+      base.month,
+      base.day,
+      settings.notificationTimeMinutes ~/ 60,
+      settings.notificationTimeMinutes % 60,
     );
+
     final now = DateTime.now();
-    final todayDay = DateTime(now.year, now.month, now.day);
-    if (notifyDay.isBefore(todayDay)) return;
+    final today = DateTime(now.year, now.month, now.day);
+    if (notifyAt.toLocal().isBefore(today)) return;
+
     await _notifService.schedulePredictionNotification(notifyAt, title, body);
   }
 }

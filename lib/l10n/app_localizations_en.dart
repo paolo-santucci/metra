@@ -158,8 +158,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notification_prediction_title => 'Your cycle is approaching';
 
   @override
-  String notification_prediction_body(int days) {
-    return 'Your predicted window starts in $days days';
+  String notification_prediction_body(num days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'in $days days',
+      one: 'tomorrow',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -237,6 +243,14 @@ class AppLocalizationsEn extends AppLocalizations {
       one: '1 day before',
     );
     return '$_temp0';
+  }
+
+  @override
+  String get settings_notification_time_label => 'Reminder time';
+
+  @override
+  String settings_notification_time_value(String time) {
+    return '$time';
   }
 
   @override

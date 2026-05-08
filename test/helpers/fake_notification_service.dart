@@ -31,7 +31,15 @@ class FakeNotificationService implements NotificationService {
   int requestPermissionCallCount = 0;
 
   /// Optional clock override for deterministic tests. Defaults to DateTime.now().
+  ///
+  /// Deprecated: prefer the [now] callback parameter which supports
+  /// advancing time across calls in a single test instance.
+  @Deprecated('Use now: () => yourDateTime instead')
   final DateTime? _nowOverride;
+
+  /// Optional clock factory for deterministic tests. Evaluated on each call
+  /// to [_now]. Takes precedence over [nowOverride].
+  final DateTime Function()? _nowFn;
 
   /// Number of times the immediate-show path was triggered (cold-start same-day case).
   int showCount = 0;
@@ -41,10 +49,12 @@ class FakeNotificationService implements NotificationService {
 
   FakeNotificationService({
     this.permissionGranted = true,
-    DateTime? nowOverride,
-  }) : _nowOverride = nowOverride;
+    @Deprecated('Use now: () => yourDateTime instead') DateTime? nowOverride,
+    DateTime Function()? now,
+  })  : _nowOverride = nowOverride,
+        _nowFn = now;
 
-  DateTime _now() => _nowOverride ?? DateTime.now();
+  DateTime _now() => _nowFn?.call() ?? _nowOverride ?? DateTime.now();
 
   @override
   Future<void> initialize() async => initialized = true;
@@ -60,9 +70,9 @@ class FakeNotificationService implements NotificationService {
     final nowTime = _now();
     final nowDay = DateTime(nowTime.year, nowTime.month, nowTime.day);
     final sameDay = notifyDay == nowDay;
-    final pastNine = nowTime.hour >= 9;
+    final atOrBeforeNow = !local.isAfter(nowTime);
 
-    if (sameDay && pastNine) {
+    if (sameDay && atOrBeforeNow) {
       shown.add((notifyAt: notifyAt, title: title, body: body));
       showCount++;
     } else {
@@ -71,7 +81,11 @@ class FakeNotificationService implements NotificationService {
   }
 
   @override
-  Future<void> cancelPredictionNotifications() async => cancelCount++;
+  Future<void> cancelPredictionNotifications() async {
+    cancelCount++;
+    scheduled.clear();
+    shown.clear();
+  }
 
   @override
   Future<bool> requestPermission() async {

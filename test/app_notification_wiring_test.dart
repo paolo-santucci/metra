@@ -267,6 +267,154 @@ void main() {
   });
 
   // ===========================================================================
+  // TASK-11: FR-16 / FR-18 / NFR-15 — notificationTimeMinutes threading
+  //
+  // Verifies that notificationTimeMinutes on AppSettingsData flows through both
+  // scheduler.execute() call sites so that the composed notifyAt carries the
+  // correct hour and minute.
+  //
+  // Coverage: FR-16, FR-18, NFR-15.
+  // ===========================================================================
+
+  group('TASK-11 notificationTimeMinutes wiring (FR-16, FR-18, NFR-15)', () {
+    test(
+      'IF-08: notificationTimeMinutes=1380 (23:00) → scheduled.first.notifyAt has hour=23 minute=0',
+      () async {
+        final fake = FakeNotificationService(
+          // Place "now" well before the notifyAt so the fake routes to scheduled.
+          now: () => DateTime(2099, 1, 1, 0, 0),
+        );
+        // windowStart far enough in the future that notifyAt is also future.
+        final windowStart = DateTime(2099, 2, 1);
+        final prediction = CyclePrediction(
+          windowStart: windowStart,
+          windowEnd: windowStart.add(const Duration(days: 4)),
+          expectedStart: windowStart.add(const Duration(days: 2)),
+          cyclesUsed: 3,
+        );
+        const settings = AppSettingsData(
+          languageCode: 'en',
+          painEnabled: true,
+          notesEnabled: true,
+          notificationDaysBefore: 1,
+          notificationsEnabled: true,
+          onboardingCompleted: true,
+          notificationTimeMinutes: 1380, // 23:00
+        );
+
+        await _simulatePredictionListenerSchedule(
+          prediction: prediction,
+          settings: settings,
+          service: fake,
+        );
+
+        expect(
+          fake.scheduled,
+          hasLength(1),
+          reason: 'FR-16: exactly one notification must be scheduled',
+        );
+        expect(
+          fake.scheduled.first.notifyAt.hour,
+          equals(23),
+          reason:
+              'FR-16: notifyAt.hour must be 23 when notificationTimeMinutes=1380',
+        );
+        expect(
+          fake.scheduled.first.notifyAt.minute,
+          equals(0),
+          reason:
+              'FR-16: notifyAt.minute must be 0 when notificationTimeMinutes=1380',
+        );
+      },
+    );
+
+    test(
+      'EC-04 wiring: notificationTimeMinutes=0 (midnight 00:00) → scheduled.first.notifyAt has hour=0 minute=0',
+      () async {
+        final fake = FakeNotificationService(
+          // Place "now" well before the notifyAt so the fake routes to scheduled.
+          now: () => DateTime(2099, 1, 1, 0, 0),
+        );
+        // windowStart far enough in the future that notifyAt (midnight the day
+        // before) is also well in the future relative to now.
+        final windowStart = DateTime(2099, 3, 1);
+        final prediction = CyclePrediction(
+          windowStart: windowStart,
+          windowEnd: windowStart.add(const Duration(days: 4)),
+          expectedStart: windowStart.add(const Duration(days: 2)),
+          cyclesUsed: 3,
+        );
+        const settings = AppSettingsData(
+          languageCode: 'en',
+          painEnabled: true,
+          notesEnabled: true,
+          notificationDaysBefore: 1,
+          notificationsEnabled: true,
+          onboardingCompleted: true,
+          notificationTimeMinutes: 0, // midnight 00:00 — EC-04 lower bound
+        );
+
+        await _simulatePredictionListenerSchedule(
+          prediction: prediction,
+          settings: settings,
+          service: fake,
+        );
+
+        expect(
+          fake.scheduled,
+          hasLength(1),
+          reason: 'EC-04: exactly one notification must be scheduled',
+        );
+        expect(
+          fake.scheduled.first.notifyAt.hour,
+          equals(0),
+          reason:
+              'EC-04: notifyAt.hour must be 0 when notificationTimeMinutes=0 '
+              '(midnight lower bound — no off-by-9 or wrap to 23:59)',
+        );
+        expect(
+          fake.scheduled.first.notifyAt.minute,
+          equals(0),
+          reason:
+              'EC-04: notifyAt.minute must be 0 when notificationTimeMinutes=0',
+        );
+      },
+    );
+
+    test(
+      'BUG-002 preserved: AsyncLoading→AsyncData with notificationTimeMinutes=720 → requestPermissionCallCount==0',
+      () async {
+        final fake = FakeNotificationService()..permissionGranted = false;
+
+        const coldStartSettings = AppSettingsData(
+          languageCode: '',
+          painEnabled: true,
+          notesEnabled: true,
+          notificationDaysBefore: 2,
+          notificationsEnabled: true,
+          onboardingCompleted: true,
+          notificationTimeMinutes: 720, // 12:00 — non-default value
+        );
+
+        await _simulateSettingsListenerGuard(
+          prev: const AsyncLoading<AppSettingsData>(),
+          next: const AsyncData(coldStartSettings),
+          service: fake,
+        );
+
+        expect(
+          fake.requestPermissionCallCount,
+          equals(0),
+          reason:
+              'BUG-002: the presence of notificationTimeMinutes must not weaken '
+              'the cold-start permission guard — requestPermission() must not be '
+              'called during AsyncLoading → AsyncData transition (FR-18, NFR-15)',
+        );
+      },
+    );
+  });
+
+  // ===========================================================================
   // TASK-05: FR-09 prediction-listener → notification-scheduler wiring
   //
   // Verifies that SchedulePredictionNotification.execute() is called with the
@@ -309,11 +457,13 @@ void main() {
           equals(1),
           reason: 'FR-09: exactly one notification must be scheduled',
         );
+        // notifyAt = (windowStart − daysBefore) at notificationTimeMinutes=540 (09:00 local)
+        final base = prediction.windowStart.subtract(const Duration(days: 1));
         expect(
           fake.scheduled.first.notifyAt,
-          equals(prediction.windowStart.subtract(const Duration(days: 1))),
+          equals(DateTime(base.year, base.month, base.day, 9, 0)),
           reason:
-              'FR-09: notifyAt = prediction.windowStart − notificationDaysBefore',
+              'FR-09: notifyAt = prediction.windowStart − notificationDaysBefore at 09:00 local (notificationTimeMinutes default=540)',
         );
         expect(
           fake.scheduled.first.title,

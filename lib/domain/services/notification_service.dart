@@ -27,9 +27,9 @@ abstract class NotificationService {
 
   /// Schedules a single prediction-reminder notification.
   ///
-  /// The notification fires at 09:00 local time on the date given by
-  /// [notifyAt].  Any previously scheduled prediction notification is
-  /// replaced (same stable ID is reused).
+  /// The notification fires at the local time encoded in [notifyAt].
+  /// Any previously scheduled prediction notification is replaced
+  /// (same stable ID is reused).
   Future<void> schedulePredictionNotification(
     DateTime notifyAt,
     String title,

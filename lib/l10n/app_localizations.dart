@@ -386,11 +386,11 @@ abstract class AppLocalizations {
   /// **'Il tuo ciclo si avvicina'**
   String get notification_prediction_title;
 
-  /// Body text for the prediction notification
+  /// Body text for the prediction notification. ICU plural: =1 → 'domani', other → 'tra N giorni'.
   ///
   /// In it, this message translates to:
-  /// **'La finestra stimata inizia tra {days} giorni'**
-  String notification_prediction_body(int days);
+  /// **'{days, plural, =1{domani} other{tra {days} giorni}}'**
+  String notification_prediction_body(num days);
 
   /// Settings row label for language selection
   ///
@@ -529,6 +529,18 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'{n, plural, =1{1 giorno prima} other{{n} giorni prima}}'**
   String settings_advance_value(int n);
+
+  /// Settings row label for the notification time-of-day picker (Notifiche group)
+  ///
+  /// In it, this message translates to:
+  /// **'Orario notifica'**
+  String get settings_notification_time_label;
+
+  /// Settings row value displaying the formatted time from MaterialLocalizations.formatTimeOfDay
+  ///
+  /// In it, this message translates to:
+  /// **'{time}'**
+  String settings_notification_time_value(String time);
 
   /// Language option: follow system locale
   ///

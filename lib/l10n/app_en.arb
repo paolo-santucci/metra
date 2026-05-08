@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "@@last_modified": "2026-04-30",
+  "@@last_modified": "2026-05-08",
 
   "common_appName": "Mētra",
   "common_loading": "Loading…",
@@ -77,12 +77,12 @@
     "description": "Title for the prediction notification"
   },
 
-  "notification_prediction_body": "Your predicted window starts in {days} days",
+  "notification_prediction_body": "{days, plural, =1{tomorrow} other{in {days} days}}",
   "@notification_prediction_body": {
-    "description": "Body text for the prediction notification",
+    "description": "Body text for the prediction notification. ICU plural: =1 → 'tomorrow', other → 'in N days'.",
     "placeholders": {
       "days": {
-        "type": "int"
+        "type": "num"
       }
     }
   },
@@ -151,6 +151,21 @@
     "description": "Current value displayed for the advance notification setting",
     "placeholders": {
       "n": { "type": "int" }
+    }
+  },
+
+  "settings_notification_time_label": "Reminder time",
+  "@settings_notification_time_label": {
+    "description": "Settings row label for the notification time-of-day picker (Notifications group)"
+  },
+
+  "settings_notification_time_value": "{time}",
+  "@settings_notification_time_value": {
+    "description": "Settings row value displaying the formatted time from MaterialLocalizations.formatTimeOfDay",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
     }
   },
 

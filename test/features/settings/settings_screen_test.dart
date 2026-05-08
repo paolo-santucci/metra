@@ -67,6 +67,7 @@ class _StubBackupNotifier extends BackupNotifier {
 Widget _wrap(
   List<Override> overrides, {
   BackupState backupState = const BackupNotConnected(),
+  Locale locale = const Locale('it'),
 }) {
   // The settings screen reads backupNotifierProvider for the Backup-row
   // value text (Design Bible § 18.6). The real notifier's build() touches
@@ -80,7 +81,7 @@ Widget _wrap(
     ],
     child: MaterialApp(
       theme: MetraTheme.light(),
-      locale: const Locale('it'),
+      locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: const SettingsScreen(),
@@ -398,12 +399,14 @@ void main() {
           reason: 'Option "$label" must be visible without scrolling',
         );
       }
-      // No Scrollable inside the sheet — a ListView.builder would create one.
+      // OQ-A resolution (TASK-09): 14 ListTiles × 56 dp ≈ 784 dp exceed a
+      // 640 dp viewport — the no-Scrollable invariant is structurally
+      // unsatisfiable. The picker now wraps in SingleChildScrollView.
       expect(
         find.descendant(of: sheet, matching: find.byType(Scrollable)),
-        findsNothing,
+        findsOneWidget,
         reason:
-            'Column picker must not contain a Scrollable (regression guard)',
+            'Picker uses SingleChildScrollView to fit 14 rows (OQ-A resolution)',
       );
     });
 
@@ -516,12 +519,413 @@ void main() {
           findsOneWidget,
         );
       }
+      // OQ-A resolution (TASK-09): SingleChildScrollView now wraps the 14
+      // ListTiles — the no-Scrollable invariant intentionally relaxed.
       expect(
         find.descendant(of: sheet, matching: find.byType(Scrollable)),
-        findsNothing,
+        findsOneWidget,
+        reason:
+            'Picker uses SingleChildScrollView to fit 14 rows (OQ-A resolution)',
       );
     });
   });
+
+  // ── TASK-09 smoke tests (TDD: write first, implement second) ────────────────
+
+  group('SettingsScreen — Orario notifica row', () {
+    testWidgets('row is visible when notificationsEnabled=true',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final stub = _StubSettingsNotifier(
+        defaults.copyWith(notificationsEnabled: true),
+      );
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Orario notifica'), findsOneWidget);
+    });
+
+    testWidgets(
+      'row is non-interactive when notificationsEnabled=false',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        // defaults has notificationsEnabled=false
+        final stub = _StubSettingsNotifier(defaults);
+        await tester.pumpWidget(
+          _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Orario notifica'));
+        await tester.pumpAndSettle();
+
+        // No dialog opens when disabled; savedSettings remains null.
+        expect(find.byType(Dialog), findsNothing);
+        expect(stub.savedSettings, isNull);
+      },
+    );
+  });
+
+  group('SettingsScreen — advance picker 14 rows', () {
+    testWidgets('shows 14 rows on 360x640 viewport', (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.padding = const FakeViewPadding(bottom: 48);
+      addTearDown(tester.view.reset);
+
+      final stub = _StubSettingsNotifier(defaults);
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Preavviso'));
+      await tester.pumpAndSettle();
+
+      final sheet = find.byType(BottomSheet);
+      expect(sheet, findsOneWidget);
+
+      // All 14 options must be present (scroll to reveal them if needed).
+      for (int i = 1; i <= 14; i++) {
+        final label = i == 1 ? '1 giorno prima' : '$i giorni prima';
+        expect(
+          find.descendant(of: sheet, matching: find.text(label)),
+          findsOneWidget,
+          reason: 'Option "$label" must exist in the sheet',
+        );
+      }
+    });
+  });
+
+  // ── End TASK-09 smoke tests ──────────────────────────────────────────────────
+
+  // ── TASK-17 tests (FR-12, FR-13, FR-15, FR-17) ──────────────────────────────
+
+  group('SettingsScreen — Orario notifica row time picker FR-13', () {
+    testWidgets(
+      'tap on enabled row opens TimePickerDialog',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        final stub = _StubSettingsNotifier(
+          defaults.copyWith(notificationsEnabled: true),
+        );
+        await tester.pumpWidget(
+          _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Orario notifica'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byType(TimePickerDialog),
+          findsOneWidget,
+          reason:
+              'Tapping the Orario notifica row must open a TimePickerDialog',
+        );
+      },
+    );
+
+    testWidgets(
+      'should_write_540_when_confirm_at_initial_09_00_given_default_settings',
+      (tester) async {
+        // FR-13: initial time derived from notificationTimeMinutes=540 (09:00).
+        // Confirming without changing the time must write 540.
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        final stub = _StubSettingsNotifier(
+          defaults.copyWith(notificationsEnabled: true),
+        );
+        await tester.pumpWidget(
+          _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Orario notifica'));
+        await tester.pumpAndSettle();
+
+        // Tap OK without changing the time — confirms the initial 09:00.
+        await tester.tap(find.text('OK'));
+        await tester.pumpAndSettle();
+
+        expect(
+          stub.savedSettings?.notificationTimeMinutes,
+          540,
+          reason:
+              'Confirming at initial 09:00 must persist notificationTimeMinutes=540',
+        );
+      },
+    );
+
+    testWidgets(
+      'should_write_825_when_confirm_at_13_45_given_input_mode',
+      (tester) async {
+        // FR-13: switch to keyboard input mode, type 13:45, confirm → 825.
+        // Force 24h format so 13 is a valid hour in the time picker's input
+        // validation (otherwise MediaQuery.alwaysUse24HourFormat defaults to
+        // false in the test environment and rejects hours > 12).
+        tester.platformDispatcher.alwaysUse24HourFormatTestValue = true;
+        addTearDown(
+          () =>
+              tester.platformDispatcher.alwaysUse24HourFormatTestValue = false,
+        );
+
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        final stub = _StubSettingsNotifier(
+          defaults.copyWith(notificationsEnabled: true),
+        );
+        await tester.pumpWidget(
+          _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Orario notifica'));
+        await tester.pumpAndSettle();
+
+        // Switch from dial to keyboard input mode.
+        await tester.tap(find.byIcon(Icons.keyboard_outlined));
+        await tester.pumpAndSettle();
+
+        // In 24h input mode there are two TextFields inside TimePickerDialog:
+        // hours first, minutes second.
+        final dialog = find.byType(TimePickerDialog);
+        final fieldsInDialog = find.descendant(
+          of: dialog,
+          matching: find.byType(TextField),
+        );
+
+        await tester.enterText(fieldsInDialog.first, '13');
+        await tester.pump();
+        await tester.enterText(fieldsInDialog.last, '45');
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('OK'));
+        await tester.pumpAndSettle();
+
+        expect(
+          stub.savedSettings?.notificationTimeMinutes,
+          825,
+          reason:
+              'Confirming at 13:45 must persist notificationTimeMinutes=825 (13*60+45)',
+        );
+      },
+    );
+
+    testWidgets(
+      'should_not_write_when_cancel_given_open_time_picker',
+      (tester) async {
+        // FR-13: cancel must leave savedSettings null (no Drift write).
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        final stub = _StubSettingsNotifier(
+          defaults.copyWith(notificationsEnabled: true),
+        );
+        await tester.pumpWidget(
+          _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Orario notifica'));
+        await tester.pumpAndSettle();
+
+        // Tap Cancel (IT locale: "Annulla").
+        await tester.tap(find.text('Annulla'));
+        await tester.pumpAndSettle();
+
+        expect(
+          stub.savedSettings,
+          isNull,
+          reason:
+              'Cancelling the time picker must not trigger any settings write',
+        );
+      },
+    );
+  });
+
+  group('SettingsScreen — settings_notification_time_value locale format FR-15',
+      () {
+    // 825 minutes = 13:45.  IT (24h) → "13:45".  EN (12h) → "1:45 PM".
+    const timeMinutes = 825;
+
+    testWidgets(
+      'should_show_13_45_in_IT_locale_given_notificationTimeMinutes_825',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        final stub = _StubSettingsNotifier(
+          defaults.copyWith(
+            notificationsEnabled: true,
+            notificationTimeMinutes: timeMinutes,
+          ),
+        );
+        await tester.pumpWidget(
+          _wrap(
+            [settingsNotifierProvider.overrideWith(() => stub)],
+            locale: const Locale('it'),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('13:45'),
+          findsOneWidget,
+          reason:
+              'IT (24h) locale must format 825 min as "13:45" in the Orario notifica row',
+        );
+      },
+    );
+
+    testWidgets(
+      'should_show_1_45_PM_in_EN_locale_given_notificationTimeMinutes_825',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        final stub = _StubSettingsNotifier(
+          defaults.copyWith(
+            notificationsEnabled: true,
+            notificationTimeMinutes: timeMinutes,
+          ),
+        );
+        await tester.pumpWidget(
+          _wrap(
+            [settingsNotifierProvider.overrideWith(() => stub)],
+            locale: const Locale('en'),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('1:45 PM'),
+          findsOneWidget,
+          reason:
+              'EN (12h) locale must format 825 min as "1:45 PM" in the Reminder time row',
+        );
+      },
+    );
+  });
+
+  group('SettingsScreen — advance picker 14 rows FR-12 (wide viewport)', () {
+    testWidgets(
+      'shows all 14 rows on 800x2000 viewport',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 2000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        final stub = _StubSettingsNotifier(defaults);
+        await tester.pumpWidget(
+          _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Preavviso'));
+        await tester.pumpAndSettle();
+
+        final sheet = find.byType(BottomSheet);
+        expect(sheet, findsOneWidget);
+
+        for (int i = 1; i <= 14; i++) {
+          final label = i == 1 ? '1 giorno prima' : '$i giorni prima';
+          expect(
+            find.descendant(of: sheet, matching: find.text(label)),
+            findsOneWidget,
+            reason:
+                'Option "$label" must be present in the advance picker (wide viewport)',
+          );
+        }
+
+        // OQ-A resolution (TASK-09): SingleChildScrollView wraps all 14 rows.
+        expect(
+          find.descendant(of: sheet, matching: find.byType(Scrollable)),
+          findsOneWidget,
+          reason:
+              'Picker uses SingleChildScrollView for 14 rows (OQ-A resolution)',
+        );
+      },
+    );
+  });
+
+  group('SettingsScreen — Scrollable invariant FR-17', () {
+    // Both assertions were flipped from findsNothing → findsOneWidget in
+    // TASK-09 (OQ-A resolution). These tests confirm the flip holds.
+
+    testWidgets(
+      'advance picker Scrollable findsOneWidget on wide viewport (FR-17)',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 2000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        final stub = _StubSettingsNotifier(defaults);
+        await tester.pumpWidget(
+          _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Preavviso'));
+        await tester.pumpAndSettle();
+
+        final sheet = find.byType(BottomSheet);
+        expect(
+          find.descendant(of: sheet, matching: find.byType(Scrollable)),
+          findsOneWidget,
+          reason:
+              'OQ-A resolution: SingleChildScrollView present on wide viewport for 14-row picker',
+        );
+      },
+    );
+
+    testWidgets(
+      'advance picker Scrollable findsOneWidget on narrow viewport (FR-17)',
+      (tester) async {
+        tester.view.physicalSize = const Size(360, 640);
+        tester.view.devicePixelRatio = 1.0;
+        tester.view.padding = const FakeViewPadding(bottom: 48);
+        addTearDown(tester.view.reset);
+
+        final stub = _StubSettingsNotifier(defaults);
+        await tester.pumpWidget(
+          _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Preavviso'));
+        await tester.pumpAndSettle();
+
+        final sheet = find.byType(BottomSheet);
+        expect(
+          find.descendant(of: sheet, matching: find.byType(Scrollable)),
+          findsOneWidget,
+          reason:
+              'OQ-A resolution: SingleChildScrollView present on narrow viewport for 14-row picker',
+        );
+      },
+    );
+  });
+
+  // ── End TASK-17 tests ────────────────────────────────────────────────────────
 
   group('SettingsScreen — backup row', () {
     testWidgets('backup row is visible', (tester) async {

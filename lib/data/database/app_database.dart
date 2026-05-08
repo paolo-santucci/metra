@@ -105,6 +105,12 @@ class AppSettings extends Table {
   /// measured cycles exist. Null means the user skipped the question or
   /// no onboarding data was recorded.
   IntColumn get declaredCycleLength => integer().nullable()();
+
+  /// Time of day for the prediction notification, in minutes from midnight.
+  ///
+  /// Range: [0, 1439]. Default 540 = 09:00 local time.
+  IntColumn get notificationTimeMinutes =>
+      integer().withDefault(const Constant(540))();
 }
 
 /// Local-only audit trail of cloud backup/restore operations.
@@ -138,7 +144,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -229,6 +235,14 @@ class AppDatabase extends _$AppDatabase {
               "UPDATE pain_symptoms "
               "SET symptom_type = 4 "
               "WHERE symptom_type = -1",
+            );
+          }
+          if (from < 7) {
+            // Add configurable notification time-of-day column.
+            // Purely additive; existing rows receive the default (540 = 09:00).
+            await m.addColumn(
+              appSettings,
+              appSettings.notificationTimeMinutes,
             );
           }
         },

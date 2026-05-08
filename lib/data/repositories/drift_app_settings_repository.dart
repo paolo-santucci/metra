@@ -17,6 +17,7 @@
 
 import 'package:drift/drift.dart';
 
+import '../../core/constants/app_constants.dart';
 import '../../data/database/app_database.dart';
 import '../../data/database/daos/app_settings_dao.dart';
 import '../../domain/entities/app_settings_data.dart';
@@ -34,12 +35,14 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
         darkMode: row.darkMode,
         painEnabled: row.painEnabled,
         notesEnabled: row.notesEnabled,
-        notificationDaysBefore: row.notificationDaysBefore,
+        notificationDaysBefore:
+            row.notificationDaysBefore.clamp(1, AppConstants.kMaxAdvanceDays),
         notificationsEnabled: row.notificationsEnabled,
         dropboxEmail: row.dropboxEmail,
         lastBackupAt: row.lastBackupAt,
         onboardingCompleted: row.onboardingCompleted,
         declaredCycleLength: row.declaredCycleLength,
+        notificationTimeMinutes: row.notificationTimeMinutes.clamp(0, 1439),
       );
 
   static AppSettingsCompanion _toCompanion(AppSettingsData data) =>
@@ -50,6 +53,7 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
         notesEnabled: Value(data.notesEnabled),
         notificationDaysBefore: Value(data.notificationDaysBefore),
         notificationsEnabled: Value(data.notificationsEnabled),
+        notificationTimeMinutes: Value(data.notificationTimeMinutes),
       );
 
   // ---- interface implementation ----

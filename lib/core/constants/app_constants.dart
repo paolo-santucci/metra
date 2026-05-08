@@ -31,6 +31,9 @@ class AppConstants {
   static const String kUrlKoFiBadge =
       'https://storage.ko-fi.com/cdn/kofi2.png?v=6';
 
+  static const int kMaxAdvanceDays = 14;
+  static const int kDefaultNotificationTimeMinutes = 540;
+
   static const double tapTargetMin = 44.0;
   static const double tapTargetMd = 48.0;
   static const double contentPad = 24.0;

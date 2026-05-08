@@ -134,6 +134,26 @@ class SettingsScreen extends ConsumerWidget {
                       .settings_advance_value(settings.notificationDaysBefore),
                   onTap: () => _showAdvancePicker(context, ref, settings, l10n),
                 ),
+                const _SettingsDivider(),
+                Builder(
+                  builder: (rowCtx) {
+                    final timeValue =
+                        MaterialLocalizations.of(rowCtx).formatTimeOfDay(
+                      TimeOfDay(
+                        hour: settings.notificationTimeMinutes ~/ 60,
+                        minute: settings.notificationTimeMinutes % 60,
+                      ),
+                    );
+                    final label = l10n.settings_notification_time_label;
+                    return _SettingsRow(
+                      label: label,
+                      semanticsLabel: '$label: $timeValue',
+                      valueText: timeValue,
+                      enabled: settings.notificationsEnabled,
+                      onTap: () => _showTimePicker(rowCtx, ref, settings),
+                    );
+                  },
+                ),
               ],
             ),
 
@@ -306,10 +326,13 @@ class SettingsScreen extends ConsumerWidget {
     AppSettingsData settings,
     AppLocalizations l10n,
   ) {
+    // Why: SettingsScreen lives inside a ShellRoute Scaffold whose
+    // bottomNavigationBar already covers the gesture-nav region; turning on
+    // useSafeArea here leaves a visible dim-overlay band at the sheet bottom
+    // on real Android devices (issue #4 round 2).
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      useSafeArea: true,
       builder: (sheetCtx) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -351,10 +374,11 @@ class SettingsScreen extends ConsumerWidget {
     AppSettingsData settings,
     AppLocalizations l10n,
   ) {
+    // Why: see _showLanguagePicker — useSafeArea omitted to avoid
+    // dim-overlay gap below sheet under ShellRoute scaffold.
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      useSafeArea: true,
       builder: (sheetCtx) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -402,34 +426,63 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
+  /// Shows a [showTimePicker] dialog seeded with [settings.notificationTimeMinutes].
+  ///
+  /// On confirm, converts the selected [TimeOfDay] to minutes-since-midnight
+  /// and persists via the settings notifier. On cancel (null result) no write
+  /// occurs. [TimeOfDay] is intentionally local to this method only — it must
+  /// never leak into domain entities (NFR-08).
+  static Future<void> _showTimePicker(
+    BuildContext context,
+    WidgetRef ref,
+    AppSettingsData settings,
+  ) async {
+    final initial = TimeOfDay(
+      hour: settings.notificationTimeMinutes ~/ 60,
+      minute: settings.notificationTimeMinutes % 60,
+    );
+    final tod = await showTimePicker(context: context, initialTime: initial);
+    if (tod == null) return; // user cancelled — no write
+    final minutes = tod.hour * 60 + tod.minute;
+    _save(ref, settings.copyWith(notificationTimeMinutes: minutes));
+  }
+
   static void _showAdvancePicker(
     BuildContext context,
     WidgetRef ref,
     AppSettingsData settings,
     AppLocalizations l10n,
   ) {
+    // Why: see _showLanguagePicker — useSafeArea omitted to avoid
+    // dim-overlay gap below sheet under ShellRoute scaffold.
+    // isScrollControlled stays: kMaxAdvanceDays (14) ListTiles ≈ 784 dp
+    // exceed the 9/16 viewport cap on a 640-dp-tall phone; without it the
+    // top items clip. OQ-A resolution: relax the no-Scrollable invariant —
+    // 14 rows × 56 dp are structurally impossible to display without scroll
+    // on a compact (360×640) device. See test assertions updated in TASK-09.
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      useSafeArea: true,
-      builder: (sheetCtx) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (int i = 0; i < 7; i++)
-            ListTile(
-              title: Text(l10n.settings_advance_value(i + 1)),
-              trailing: settings.notificationDaysBefore == i + 1
-                  ? const Icon(Icons.check)
-                  : null,
-              onTap: () {
-                Navigator.of(sheetCtx).pop();
-                _save(
-                  ref,
-                  settings.copyWith(notificationDaysBefore: i + 1),
-                );
-              },
-            ),
-        ],
+      builder: (sheetCtx) => SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (int i = 0; i < AppConstants.kMaxAdvanceDays; i++)
+              ListTile(
+                title: Text(l10n.settings_advance_value(i + 1)),
+                trailing: settings.notificationDaysBefore == i + 1
+                    ? const Icon(Icons.check)
+                    : null,
+                onTap: () {
+                  Navigator.of(sheetCtx).pop();
+                  _save(
+                    ref,
+                    settings.copyWith(notificationDaysBefore: i + 1),
+                  );
+                },
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -793,6 +846,7 @@ class _SettingsRow extends StatelessWidget {
     this.toggle,
     this.showChevron = false,
     this.isDestructive = false,
+    this.enabled = true,
     required this.onTap,
   });
 
@@ -811,17 +865,25 @@ class _SettingsRow extends StatelessWidget {
   /// Destructive rows: terracotta-tinted background and accentFlowStrong label.
   final bool isDestructive;
 
+  /// When false, the row is greyed out and taps are ignored.
+  final bool enabled;
+
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final colors = MetraColors.of(context);
 
-    final labelColor =
-        isDestructive ? colors.accentFlowStrong : colors.textPrimary;
+    // Disabled rows are greyed out — neither destructive nor full primary.
+    final labelColor = !enabled
+        ? colors.textSecondary
+        : isDestructive
+            ? colors.accentFlowStrong
+            : colors.textPrimary;
     final bg =
         isDestructive ? colors.accentFlow.withAlpha(0x0D) : Colors.transparent;
-    final secondaryColor = colors.textSecondary;
+    final secondaryColor =
+        enabled ? colors.textSecondary : colors.textSecondary.withAlpha(0x80);
     final chevronColor = secondaryColor;
 
     Widget? trailing;
@@ -846,8 +908,10 @@ class _SettingsRow extends StatelessWidget {
     return Semantics(
       label: semanticsLabel ?? label,
       button: true,
+      enabled: enabled,
       child: InkWell(
-        onTap: onTap,
+        // Suppress tap entirely when disabled.
+        onTap: enabled ? onTap : null,
         child: Container(
           height: 56,
           padding: const EdgeInsets.symmetric(horizontal: MetraSpacing.s5),

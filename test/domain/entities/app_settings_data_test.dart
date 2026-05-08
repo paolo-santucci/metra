@@ -15,8 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/domain/entities/app_settings_data.dart';
+
+String readAppSettingsDataSource() =>
+    File('lib/domain/entities/app_settings_data.dart').readAsStringSync();
 
 void main() {
   AppSettingsData makeSettings({
@@ -30,6 +35,7 @@ void main() {
     DateTime? lastBackupAt,
     bool onboardingCompleted = false,
     int? declaredCycleLength,
+    int notificationTimeMinutes = 540,
   }) =>
       AppSettingsData(
         languageCode: languageCode,
@@ -42,6 +48,7 @@ void main() {
         lastBackupAt: lastBackupAt,
         onboardingCompleted: onboardingCompleted,
         declaredCycleLength: declaredCycleLength,
+        notificationTimeMinutes: notificationTimeMinutes,
       );
 
   group('AppSettingsData construction', () {
@@ -198,6 +205,157 @@ void main() {
       final b = makeSettings(dropboxEmail: 'x@y.com', declaredCycleLength: 28);
 
       expect(a.hashCode, equals(b.hashCode));
+    });
+  });
+
+  group('AppSettingsData notificationTimeMinutes', () {
+    test(
+        'given_no_argument_when_constructed_then_notificationTimeMinutes_is_540',
+        () {
+      expect(const AppSettingsData.defaults().notificationTimeMinutes, 540);
+    });
+
+    test(
+        'given_notificationTimeMinutes_750_darkMode_true_when_copyWith_1080_then_propagates_and_preserves',
+        () {
+      const a = AppSettingsData(
+        languageCode: 'it',
+        painEnabled: true,
+        notesEnabled: true,
+        notificationDaysBefore: 2,
+        notificationsEnabled: false,
+        onboardingCompleted: false,
+        notificationTimeMinutes: 750,
+        darkMode: true,
+      );
+      final b = a.copyWith(notificationTimeMinutes: 1080);
+      expect(b.notificationTimeMinutes, 1080);
+      expect(b.darkMode, true);
+    });
+
+    test(
+        'given_notificationTimeMinutes_750_when_copyWith_unrelated_field_then_preserves_notificationTimeMinutes',
+        () {
+      const a = AppSettingsData(
+        languageCode: 'it',
+        painEnabled: true,
+        notesEnabled: true,
+        notificationDaysBefore: 2,
+        notificationsEnabled: false,
+        onboardingCompleted: false,
+        notificationTimeMinutes: 750,
+      );
+      expect(a.copyWith(darkMode: true).notificationTimeMinutes, 750);
+    });
+
+    test(
+        'given_same_notificationTimeMinutes_when_equality_check_then_equal_and_hashCode_matches',
+        () {
+      const a = AppSettingsData(
+        languageCode: 'it',
+        painEnabled: true,
+        notesEnabled: true,
+        notificationDaysBefore: 2,
+        notificationsEnabled: false,
+        onboardingCompleted: false,
+        notificationTimeMinutes: 1,
+      );
+      const b = AppSettingsData(
+        languageCode: 'it',
+        painEnabled: true,
+        notesEnabled: true,
+        notificationDaysBefore: 2,
+        notificationsEnabled: false,
+        onboardingCompleted: false,
+        notificationTimeMinutes: 1,
+      );
+      const c = AppSettingsData(
+        languageCode: 'it',
+        painEnabled: true,
+        notesEnabled: true,
+        notificationDaysBefore: 2,
+        notificationsEnabled: false,
+        onboardingCompleted: false,
+        notificationTimeMinutes: 2,
+      );
+      expect(a == b, true);
+      expect(a == c, false);
+    });
+  });
+
+  group('AppSettingsData notificationTimeMinutes — constructor defaults', () {
+    test(
+        'given_no_notificationTimeMinutes_arg_when_constructed_then_defaults_to_540',
+        () {
+      const settings = AppSettingsData(
+        languageCode: 'it',
+        painEnabled: true,
+        notesEnabled: true,
+        notificationDaysBefore: 2,
+        notificationsEnabled: false,
+        onboardingCompleted: false,
+      );
+      expect(settings.notificationTimeMinutes, 540);
+    });
+
+    test('given_notificationTimeMinutes_720_when_constructed_then_returns_720',
+        () {
+      const settings = AppSettingsData(
+        languageCode: 'it',
+        painEnabled: true,
+        notesEnabled: true,
+        notificationDaysBefore: 2,
+        notificationsEnabled: false,
+        onboardingCompleted: false,
+        notificationTimeMinutes: 720,
+      );
+      expect(settings.notificationTimeMinutes, 720);
+    });
+  });
+
+  group('AppSettingsData notificationTimeMinutes — hashCode', () {
+    test(
+        'given_same_fields_except_notificationTimeMinutes_when_hashCode_compared_then_differs',
+        () {
+      const a = AppSettingsData(
+        languageCode: 'it',
+        painEnabled: true,
+        notesEnabled: true,
+        notificationDaysBefore: 2,
+        notificationsEnabled: false,
+        onboardingCompleted: false,
+        notificationTimeMinutes: 540,
+      );
+      const b = AppSettingsData(
+        languageCode: 'it',
+        painEnabled: true,
+        notesEnabled: true,
+        notificationDaysBefore: 2,
+        notificationsEnabled: false,
+        onboardingCompleted: false,
+        notificationTimeMinutes: 720,
+      );
+      expect(a.hashCode, isNot(equals(b.hashCode)));
+    });
+  });
+
+  group('AppSettingsData purity (NFR-08)', () {
+    test(
+        'given_entity_source_file_when_grepped_then_no_flutter_or_TimeOfDay_import',
+        () {
+      // Verify the domain entity contains no Flutter framework imports —
+      // the domain layer must remain pure Dart.
+      final source = readAppSettingsDataSource();
+      expect(
+        source.contains('package:flutter'),
+        isFalse,
+        reason: 'domain entity must not import package:flutter',
+      );
+      expect(
+        source.contains('TimeOfDay'),
+        isFalse,
+        reason: 'domain entity must not reference Flutter TimeOfDay',
+      );
     });
   });
 

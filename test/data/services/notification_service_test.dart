@@ -22,6 +22,8 @@
 //   - the domain interface is well-formed (constructable, callable via fake)
 //   - the stable notification-ID constant value (orphan-risk guard)
 
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/data/services/notification_service.dart';
 import 'package:metra/domain/services/notification_service.dart';
@@ -81,7 +83,7 @@ void main() {
     setUpAll(tz_data.initializeTimeZones);
 
     test(
-      'UTC midnight in UTC-5 (New York) → previous local calendar day at 09:00 (FR-08)',
+      'UTC midnight in UTC-5 (New York) → previous local calendar day, hour=0 (FR-08 BUG-004)',
       () {
         tz.setLocalLocation(tz.getLocation('America/New_York'));
         final service = FlutterNotificationService();
@@ -98,14 +100,15 @@ void main() {
           reason: 'BUG-004: UTC midnight in UTC-5 must resolve to the PREVIOUS '
               'local calendar day (June 7, not June 8)',
         );
-        expect(result.hour, equals(9));
+        // notifyAt.hour == 0 (UTC midnight input); hour forwarded verbatim.
+        expect(result.hour, equals(0));
         expect(result.minute, equals(0));
         expect(result.location.name, equals('America/New_York'));
       },
     );
 
     test(
-      'UTC midnight in UTC+2 (Rome, CEST) → same local calendar day at 09:00 (FR-08 Italy regression guard)',
+      'UTC midnight in UTC+2 (Rome, CEST) → same local calendar day, hour=0 (FR-08 Italy regression guard)',
       () {
         tz.setLocalLocation(tz.getLocation('Europe/Rome'));
         final service = FlutterNotificationService();
@@ -121,19 +124,20 @@ void main() {
           reason: 'Italy regression guard: UTC midnight in UTC+2 must stay on '
               'the same local calendar day (June 8)',
         );
-        expect(result.hour, equals(9));
+        // notifyAt.hour == 0 (UTC midnight input); hour forwarded verbatim.
+        expect(result.hour, equals(0));
         expect(result.location.name, equals('Europe/Rome'));
       },
     );
 
     test(
-      'UTC midnight on DST spring-forward date in Italy → no exception, day=29 at 09:00 (EC-10)',
+      'UTC midnight on DST spring-forward date in Italy → no exception, day=29 hour=0 (EC-10)',
       () {
         tz.setLocalLocation(tz.getLocation('Europe/Rome'));
         final service = FlutterNotificationService();
         // 2026-03-29: Italy clocks spring forward at 02:00 → 03:00.
         // UTC midnight = 2026-03-29 01:00 CET (before the switch) → same calendar day.
-        // 09:00 is unambiguously after the DST switch — no exception expected.
+        // The requested time (00:00) is before the DST switch — no exception expected.
         expect(
           () => service.computeScheduledTz(
             DateTime.utc(2026, 3, 29, 0, 0, 0),
@@ -147,7 +151,8 @@ void main() {
         expect(result.year, equals(2026));
         expect(result.month, equals(3));
         expect(result.day, equals(29));
-        expect(result.hour, equals(9));
+        // notifyAt.hour == 0 (UTC midnight input); hour forwarded verbatim.
+        expect(result.hour, equals(0));
       },
     );
   });
@@ -226,4 +231,207 @@ void main() {
       expect(service.shouldShowImmediately(scheduledDate, now), isFalse);
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // Group C — TASK-07 smoke tests: notifyAt hour/minute forwarded (no off-by-9)
+  // ---------------------------------------------------------------------------
+
+  group('TASK-07: computeScheduledTz respects notifyAt hour and minute', () {
+    setUpAll(tz_data.initializeTimeZones);
+
+    test(
+      'computeScheduledTz at 14:15 returns TZDateTime hour=14 minute=15 (no off-by-9)',
+      () {
+        tz.setLocalLocation(tz.getLocation('Europe/Rome'));
+        final sut = FlutterNotificationService();
+        final notifyAt = DateTime(2099, 6, 10, 14, 15);
+        final tzd = sut.computeScheduledTz(notifyAt);
+        expect(tzd.hour, 14);
+        expect(tzd.minute, 15);
+      },
+    );
+
+    test('grep: no literal ", 9)" in computeScheduledTz body', () async {
+      final src = await File(
+        'lib/data/services/notification_service.dart',
+      ).readAsString();
+      expect(
+        src,
+        isNot(matches(RegExp(r'computeScheduledTz[\s\S]*?,\s*9\s*\)'))),
+      );
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Group D — TASK-14: non-09:00 time forwarding (FR-11)
+  // Regression guard: computeScheduledTz must never subtract or hardcode 9 h.
+  // ---------------------------------------------------------------------------
+
+  group(
+      'TASK-14 Group 1: computeScheduledTz forwards any notifyAt hour/minute (FR-11)',
+      () {
+    setUpAll(tz_data.initializeTimeZones);
+
+    test(
+      '09:00 notifyAt returns hour=9 minute=0 — no accidental subtraction',
+      () {
+        tz.setLocalLocation(tz.getLocation('Europe/Rome'));
+        final sut = FlutterNotificationService();
+        final notifyAt = DateTime(2099, 6, 10, 9, 0);
+        final tzd = sut.computeScheduledTz(notifyAt);
+        expect(tzd.hour, equals(9));
+        expect(tzd.minute, equals(0));
+      },
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // Group E — TASK-14: time-of-day edge cases EC-04, EC-05
+  // ---------------------------------------------------------------------------
+
+  group('TASK-14 Group 2: computeScheduledTz time-of-day edges (EC-04, EC-05)',
+      () {
+    setUpAll(tz_data.initializeTimeZones);
+
+    test(
+      'notifyAt midnight 00:00 → hour=0 minute=0',
+      () {
+        tz.setLocalLocation(tz.getLocation('Europe/Rome'));
+        final sut = FlutterNotificationService();
+        final notifyAt = DateTime(2099, 6, 10, 0, 0);
+        final tzd = sut.computeScheduledTz(notifyAt);
+        expect(tzd.hour, equals(0));
+        expect(tzd.minute, equals(0));
+      },
+    );
+
+    test(
+      'notifyAt 23:59 → hour=23 minute=59',
+      () {
+        tz.setLocalLocation(tz.getLocation('Europe/Rome'));
+        final sut = FlutterNotificationService();
+        final notifyAt = DateTime(2099, 6, 10, 23, 59);
+        final tzd = sut.computeScheduledTz(notifyAt);
+        expect(tzd.hour, equals(23));
+        expect(tzd.minute, equals(59));
+      },
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // Group F — TASK-14: BUG-004 UTC→local day arithmetic preserved (FR-19)
+  // Distinct from existing 2026 tests: year 2099, explicit hour/minute echo.
+  // ---------------------------------------------------------------------------
+
+  group('TASK-14 Group 3: BUG-004 UTC→local day arithmetic (FR-19)', () {
+    setUpAll(tz_data.initializeTimeZones);
+
+    test(
+      'UTC 2099-06-08 00:00 in America/New_York → local day=7, hour=0, minute=0',
+      () {
+        tz.setLocalLocation(tz.getLocation('America/New_York'));
+        final sut = FlutterNotificationService();
+        // UTC midnight in New York (UTC-4 in June) = 2099-06-07 20:00 local.
+        // The notification must fire on June 7 (the correct local calendar day).
+        final notifyAt = DateTime.utc(2099, 6, 8, 0, 0);
+        final tzd = sut.computeScheduledTz(notifyAt);
+        expect(
+          tzd.day,
+          equals(7),
+          reason:
+              'UTC midnight in UTC-4 must map to the previous local calendar day',
+        );
+        expect(
+          tzd.hour,
+          equals(notifyAt.hour),
+          reason: 'hour must echo notifyAt.hour verbatim',
+        );
+        expect(
+          tzd.minute,
+          equals(notifyAt.minute),
+          reason: 'minute must echo notifyAt.minute verbatim',
+        );
+        expect(tzd.location.name, equals('America/New_York'));
+      },
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // Group G — TASK-14: DST regression (NFR-12, Europe/Rome)
+  // Tests notifyAt.hour == 2, minute == 30 around the DST transition times.
+  // The production function passes hour/minute verbatim to TZDateTime ctor;
+  // the timezone package normalizes any ambiguous or gap time silently.
+  // ---------------------------------------------------------------------------
+
+  group('TASK-14 Group 4: DST regression Europe/Rome (NFR-12)', () {
+    setUpAll(tz_data.initializeTimeZones);
+
+    test(
+      'Spring-forward 2026-03-29 02:30 → no exception; valid TZDateTime produced',
+      () {
+        tz.setLocalLocation(tz.getLocation('Europe/Rome'));
+        final sut = FlutterNotificationService();
+        // Italy clocks spring forward at 02:00 → 03:00 on 2026-03-29.
+        // UTC 2026-03-29 02:30 = CET 03:30 after the switch (UTC+1 → UTC+2).
+        // Local day is still 29. The timezone package silently shifts the
+        // gap time forward (02:30 → 03:30), so result.hour == 3, minute == 30.
+        final notifyAt = DateTime.utc(2026, 3, 29, 2, 30);
+        expect(
+          () => sut.computeScheduledTz(notifyAt),
+          returnsNormally,
+          reason: 'Spring-forward DST must not throw',
+        );
+        final tzd = sut.computeScheduledTz(notifyAt);
+        expect(tzd.year, equals(2026));
+        expect(tzd.month, equals(3));
+        expect(tzd.day, equals(29));
+        // The timezone package normalizes the gap: 02:30 does not exist in
+        // Europe/Rome on 2026-03-29, so TZDateTime shifts it to 03:30.
+        expect(
+          tzd.hour,
+          equals(3),
+          reason: 'OS-silent gap shift: 02:30 normalizes to 03:30',
+        );
+        expect(tzd.minute, equals(30));
+      },
+    );
+
+    test(
+      'Fall-back 2026-10-25 02:30 → no exception; hour=2 minute=30 (first occurrence)',
+      () {
+        tz.setLocalLocation(tz.getLocation('Europe/Rome'));
+        final sut = FlutterNotificationService();
+        // Italy clocks fall back at 03:00 CEST → 02:00 CET on 2026-10-25
+        // (UTC 01:00). UTC 02:30 is past the fall-back (UTC 01:00), so the
+        // local time is CET 03:30 — but notifyAt.hour == 2 and that is the
+        // value passed verbatim to TZDateTime. 02:30 CET on 2026-10-25 is a
+        // valid, unambiguous wall-clock time (fall-back produced the second
+        // 02:00–03:00 block in CET). The timezone package constructs it without
+        // error and hour == 2, minute == 30.
+        final notifyAt = DateTime.utc(2026, 10, 25, 2, 30);
+        expect(
+          () => sut.computeScheduledTz(notifyAt),
+          returnsNormally,
+          reason: 'Fall-back DST must not throw',
+        );
+        final tzd = sut.computeScheduledTz(notifyAt);
+        expect(tzd.year, equals(2026));
+        expect(tzd.month, equals(10));
+        expect(tzd.day, equals(25));
+        expect(
+          tzd.hour,
+          equals(2),
+          reason:
+              'Fall-back: notifyAt.hour==2 echoed verbatim; 02:30 CET is valid',
+        );
+        expect(tzd.minute, equals(30));
+      },
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // Group H — TASK-14: static constant assertions (NFR-15)
+  // kPredictionNotificationId == 1001 is already covered in
+  // 'FlutterNotificationService constants' above; no duplication needed.
+  // ---------------------------------------------------------------------------
 }

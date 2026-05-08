@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
+import 'package:metra/core/constants/app_constants.dart';
+
 class AppSettingsData {
   const AppSettingsData({
     required this.languageCode,
@@ -27,6 +29,7 @@ class AppSettingsData {
     this.lastBackupAt,
     required this.onboardingCompleted,
     this.declaredCycleLength,
+    this.notificationTimeMinutes = AppConstants.kDefaultNotificationTimeMinutes,
   });
 
   /// Factory returning the defaults that match DB column defaults.
@@ -40,6 +43,12 @@ class AppSettingsData {
   final bool painEnabled;
   final bool notesEnabled;
   final int notificationDaysBefore;
+
+  /// Time of day for the cycle reminder, encoded as minutes-since-midnight.
+  ///
+  /// Legal range: [0, 1439]. Default 540 = 09:00 local time.
+  final int notificationTimeMinutes;
+
   final bool notificationsEnabled;
 
   /// Dropbox account email linked to this device, or null if not connected.
@@ -67,6 +76,7 @@ class AppSettingsData {
     String? dropboxEmail,
     DateTime? lastBackupAt,
     bool? onboardingCompleted,
+    int? notificationTimeMinutes,
   }) {
     return AppSettingsData(
       languageCode: languageCode ?? this.languageCode,
@@ -83,6 +93,8 @@ class AppSettingsData {
       // written exclusively via saveDeclaredCycleLength() and never needs
       // to be reset to null by a general settings update.
       declaredCycleLength: declaredCycleLength,
+      notificationTimeMinutes:
+          notificationTimeMinutes ?? this.notificationTimeMinutes,
     );
   }
 
@@ -100,7 +112,8 @@ class AppSettingsData {
           dropboxEmail == other.dropboxEmail &&
           lastBackupAt == other.lastBackupAt &&
           onboardingCompleted == other.onboardingCompleted &&
-          declaredCycleLength == other.declaredCycleLength;
+          declaredCycleLength == other.declaredCycleLength &&
+          notificationTimeMinutes == other.notificationTimeMinutes;
 
   @override
   int get hashCode =>
@@ -113,7 +126,8 @@ class AppSettingsData {
       dropboxEmail.hashCode ^
       lastBackupAt.hashCode ^
       onboardingCompleted.hashCode ^
-      declaredCycleLength.hashCode;
+      declaredCycleLength.hashCode ^
+      notificationTimeMinutes.hashCode;
 }
 
 class _AppSettingsDataDefaults extends AppSettingsData {
@@ -126,5 +140,6 @@ class _AppSettingsDataDefaults extends AppSettingsData {
           notificationDaysBefore: 2,
           notificationsEnabled: false,
           onboardingCompleted: false,
+          notificationTimeMinutes: AppConstants.kDefaultNotificationTimeMinutes,
         );
 }
