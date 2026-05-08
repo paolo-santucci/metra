@@ -15,12 +15,6 @@
     {
       "size": "29x29",
       "idiom": "iphone",
-      "scale": "1x",
-      "filename": "Light/icon-29x29.png"
-    },
-    {
-      "size": "29x29",
-      "idiom": "iphone",
       "scale": "2x",
       "filename": "Light/icon-58x58.png"
     },
@@ -77,18 +71,6 @@
       "idiom": "iphone",
       "scale": "3x",
       "filename": "Dark/icon-60x60.png",
-      "appearances": [
-        {
-          "appearance": "luminosity",
-          "value": "dark"
-        }
-      ]
-    },
-    {
-      "size": "29x29",
-      "idiom": "iphone",
-      "scale": "1x",
-      "filename": "Dark/icon-29x29.png",
       "appearances": [
         {
           "appearance": "luminosity",
