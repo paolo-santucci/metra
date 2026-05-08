@@ -117,45 +117,6 @@ jobs:
             > "$ASC_KEY_DIR/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8"
           chmod 600 "$ASC_KEY_DIR/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8"
 
-      # -----------------------------------------------------------------------
-      # Configure CI signing in the checked-out project.pbxproj.
-      # The committed file uses CODE_SIGN_STYLE = Automatic, which is correct
-      # for local Xcode development. CI gets a fresh checkout every run and
-      # needs Manual signing for the archive phase to succeed without an
-      # Apple-ID session. We patch only this working-tree copy — the repository
-      # is never modified.
-      # -----------------------------------------------------------------------
-
-      - name: Configure CI signing in project.pbxproj (workspace only)
-        env:
-          IOS_DEVELOPMENT_TEAM_ID: ${{ secrets.IOS_DEVELOPMENT_TEAM_ID }}
-        run: |
-          PBXPROJ="ios/Runner.xcodeproj/project.pbxproj"
-
-          # Step 1: flip Automatic -> Manual on all configurations.
-          # PlistBuddy cannot parse pbxproj format; sed is the standard approach.
-          sed -i '' "s|CODE_SIGN_STYLE = Automatic;|CODE_SIGN_STYLE = Manual;|g" "$PBXPROJ"
-
-          # Step 2: after each CODE_SIGN_STYLE = Manual; line, insert
-          # DEVELOPMENT_TEAM and PROVISIONING_PROFILE_SPECIFIER.
-          # awk reads the previous line; skips the insert when DEVELOPMENT_TEAM
-          # is already present (idempotent).
-          awk \
-            -v team="$IOS_DEVELOPMENT_TEAM_ID" \
-            -v profile="$PROFILE_UUID" \
-            'BEGIN { prev="" }
-            {
-              if (prev ~ /CODE_SIGN_STYLE = Manual;/ && $0 !~ /DEVELOPMENT_TEAM/) {
-                printf "\t\t\t\tDEVELOPMENT_TEAM = %s;\n", team
-                printf "\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = \"%s\";\n", profile
-              }
-              print $0
-              prev = $0
-            }' "$PBXPROJ" > "$PBXPROJ.tmp" && mv "$PBXPROJ.tmp" "$PBXPROJ"
-
-          TEAM_COUNT=$(grep -c "DEVELOPMENT_TEAM" "$PBXPROJ" || true)
-          echo "project.pbxproj patched for CI manual signing. DEVELOPMENT_TEAM inserted ${TEAM_COUNT} time(s)."
-
       - name: Materialize ExportOptions.plist
         env:
           IOS_DEVELOPMENT_TEAM_ID: ${{ secrets.IOS_DEVELOPMENT_TEAM_ID }}
@@ -166,13 +127,46 @@ jobs:
             ios/ExportOptions.plist.template \
             > "$RUNNER_TEMP/ExportOptions.plist"
 
-      - name: Build IPA
+      # -----------------------------------------------------------------------
+      # Build flow: Flutter compiles the Dart side without signing, then
+      # xcodebuild archives + exports the IPA. We bypass `flutter build ipa`
+      # because its pre-flight check inspects the committed project.pbxproj
+      # (which uses CODE_SIGN_IDENTITY = "iPhone Developer" and no
+      # CODE_SIGN_STYLE on the Runner target) and aborts before xcodebuild
+      # ever runs. Passing signing settings as xcodebuild CLI arguments
+      # overrides the project file without needing to patch it.
+      # -----------------------------------------------------------------------
+
+      - name: Build iOS bundle (no signing)
         run: |
-          flutter build ipa \
+          flutter build ios \
             --release \
-            --export-options-plist="$RUNNER_TEMP/ExportOptions.plist" \
+            --no-codesign \
             --build-number="$GITHUB_RUN_NUMBER" \
             --dart-define=DROPBOX_APP_KEY=${{ secrets.DROPBOX_APP_KEY }}
+
+      - name: Archive with xcodebuild
+        env:
+          IOS_DEVELOPMENT_TEAM_ID: ${{ secrets.IOS_DEVELOPMENT_TEAM_ID }}
+        run: |
+          xcodebuild \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
+            archive \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="$IOS_DEVELOPMENT_TEAM_ID" \
+            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_UUID" \
+            CODE_SIGN_IDENTITY="Apple Distribution"
+
+      - name: Export IPA
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
+            -exportPath "$RUNNER_TEMP/ipa" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
 
       - name: Upload to TestFlight
         env:
@@ -182,7 +176,7 @@ jobs:
           xcrun altool \
             --upload-app \
             --type ios \
-            --file build/ios/ipa/*.ipa \
+            --file "$RUNNER_TEMP/ipa"/*.ipa \
             --apiKey "$APP_STORE_CONNECT_API_KEY_ID" \
             --apiIssuer "$APP_STORE_CONNECT_API_ISSUER_ID"
 

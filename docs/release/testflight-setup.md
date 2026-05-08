@@ -309,15 +309,23 @@ shows no error. The flag `-S "apple-tool:,apple:"` (comma, no space) is
 required; omitting it or using `-S apple-tool:` alone leaves codesign unable
 to unlock the key.
 
-### flutter build ipa: "No signing certificate found"
+### xcodebuild archive: "No signing certificate found" / code signing errors
 
-The pbxproj patch step failed to inject `CODE_SIGN_STYLE = Manual` before the
-archive. Check the "Configure CI signing" step log for the Python output line
-`project.pbxproj patched for CI manual signing.` If it is missing, the
-`sed` substitution found no `CODE_SIGN_STYLE = Automatic;` lines — this would
-happen if the pbxproj was already set to Manual (which would be fine) or if the
-file structure changed after a Flutter SDK upgrade. Re-run with debug output:
+The workflow passes `CODE_SIGN_STYLE=Manual`, `DEVELOPMENT_TEAM`,
+`PROVISIONING_PROFILE_SPECIFIER`, and `CODE_SIGN_IDENTITY="Apple Distribution"`
+as command-line arguments to `xcodebuild archive`. These override the committed
+`project.pbxproj`, so the file does not need to be patched. If signing still
+fails, verify in order:
 
-```bash
-grep "CODE_SIGN_STYLE" ios/Runner.xcodeproj/project.pbxproj
-```
+1. The keychain step ran successfully and the distribution cert was imported.
+   Look for the line `1 identity imported.` in the
+   "Create ephemeral keychain and import certificate" step.
+2. The provisioning profile UUID was extracted and exported. The
+   "Install provisioning profile" step should set `PROFILE_UUID` in
+   `GITHUB_ENV` (the value is masked in logs).
+3. The `IOS_DEVELOPMENT_TEAM_ID` secret matches the team that signed the
+   distribution certificate (10-char alphanumeric).
+4. The cert in `IOS_DIST_CERT_P12_BASE64` is an **Apple Distribution**
+   certificate (not Apple Development). The workflow hardcodes
+   `CODE_SIGN_IDENTITY="Apple Distribution"`, so a development cert will
+   not match.
