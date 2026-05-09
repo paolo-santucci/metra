@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/theme/metra_colors.dart';
 import '../../l10n/app_localizations.dart';
+import '../../providers/encryption_provider.dart';
 import 'state/backup_notifier.dart';
 import 'state/backup_state.dart';
 import 'widgets/passphrase_dialog.dart';
@@ -139,20 +140,29 @@ class _ConnectedBody extends ConsumerStatefulWidget {
 
 class _ConnectedBodyState extends ConsumerState<_ConnectedBody> {
   Future<void> _handleBackup() async {
-    final messenger = ScaffoldMessenger.of(context);
-    await PassphraseDialog.show(
-      context,
-      onConfirmed: (passphrase) {
-        unawaited(
-          ref
-              .read(backupNotifierProvider.notifier)
-              .backupWithPassphrase(passphrase),
-        );
-        messenger.showSnackBar(
-          SnackBar(content: Text(widget.l10n.backup_in_progress)),
-        );
-      },
-    );
+    // FR-12 / FR-13: read the cached passphrase BEFORE showing any dialog.
+    final cached = await ref
+        .read(secureStorageProvider)
+        .read(key: 'metra_backup_passphrase_v1');
+
+    if (!mounted) return;
+
+    if (cached != null && cached.isNotEmpty) {
+      // FR-12 Nth-time path: passphrase is cached — run silently, no dialog.
+      unawaited(ref.read(backupNotifierProvider.notifier).backupSilent());
+    } else {
+      // FR-13 first-time path: no cached passphrase — prompt with setNew dialog.
+      await PassphraseDialog.show(
+        context,
+        onConfirmed: (passphrase) {
+          unawaited(
+            ref
+                .read(backupNotifierProvider.notifier)
+                .backupWithPassphrase(passphrase),
+          );
+        },
+      );
+    }
   }
 
   Future<void> _handleRestore() async {

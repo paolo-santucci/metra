@@ -32,7 +32,15 @@ import 'package:timezone/timezone.dart' as tz;
 /// daily reminder and avoids the SCHEDULE_EXACT_ALARM permission, which is
 /// not auto-granted on Android 14+ and is policy-gated for non-alarm-clock
 /// apps. The manifest no longer declares SCHEDULE_EXACT_ALARM.
+///
+/// Battery-optimisation channel: "metra/battery_optimization".
+/// Routes two methods to the MainActivity Kotlin handler:
+///   - `isIgnoring` → PowerManager.isIgnoringBatteryOptimizations
+///   - `openSettings` → Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
 class FlutterNotificationService implements NotificationService {
+  static const _kBatteryOptChannel =
+      MethodChannel('metra/battery_optimization');
+
   /// Stable ID for the single prediction-reminder notification.
   ///
   /// Must never change: changing it would orphan any already-scheduled
@@ -223,5 +231,41 @@ class FlutterNotificationService implements NotificationService {
         AndroidFlutterLocalNotificationsPlugin>();
     if (androidPlugin == null) return true;
     return await androidPlugin.requestNotificationsPermission() ?? true;
+  }
+
+  @override
+  Future<bool> hasNotificationPermission() async {
+    // areNotificationsEnabled() is read-only: returns the persisted permission
+    // state without showing the system dialog. Available on Android 13+ via
+    // POST_NOTIFICATIONS; on Android < 13 returns true (no runtime permission
+    // required). On iOS, resolvePlatformSpecificImplementation returns null
+    // (iOS permission is handled during initialize()), so we return true.
+    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    if (androidPlugin == null) return true;
+    return await androidPlugin.areNotificationsEnabled() ?? true;
+  }
+
+  @override
+  Future<bool> isIgnoringBatteryOptimizations() async {
+    try {
+      final result = await _kBatteryOptChannel.invokeMethod<bool>('isIgnoring');
+      // Kotlin handler returns Boolean; null means Android < 23 (no Doze),
+      // which is treated as whitelisted (true).
+      return result ?? true;
+    } on PlatformException {
+      // OEM error or unsupported path — treat as not-whitelisted so the
+      // Settings row remains actionable.
+      return false;
+    }
+  }
+
+  @override
+  Future<void> openBatteryOptimizationSettings() async {
+    try {
+      await _kBatteryOptChannel.invokeMethod<void>('openSettings');
+    } on PlatformException catch (e) {
+      debugPrint('[NotificationService.openBatteryOpt] $e');
+    }
   }
 }

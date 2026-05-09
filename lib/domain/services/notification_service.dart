@@ -46,5 +46,40 @@ abstract class NotificationService {
   /// during [initialize] — this method returns [true] on that platform.
   /// Subsequent calls after denial return [false] immediately without showing
   /// a dialog again; the user must go to Android Settings to re-enable.
+  ///
+  /// Only call this method when the user explicitly enables notifications
+  /// (e.g. the settings-toggle-on flow). For cold-start re-checks, use
+  /// [hasNotificationPermission] instead — it never shows a system dialog.
   Future<bool> requestPermission();
+
+  /// Read-only check: returns true if Métra currently has the OS-level
+  /// notification permission, without re-prompting the user.
+  ///
+  /// On Android < 13: returns true (no runtime permission required).
+  /// On Android 13+: queries the system permission state without showing
+  /// a dialog (uses the plugin's areNotificationsEnabled()).
+  /// On iOS: returns true if previously granted via [initialize].
+  /// On any platform error: returns true (fail-open: do not block scheduling
+  /// over a query failure).
+  ///
+  /// Use this method for cold-start re-checks (FR-07). Use [requestPermission]
+  /// only when the user explicitly enables notifications.
+  Future<bool> hasNotificationPermission();
+
+  /// Returns true if Métra is on the OS battery-optimisation whitelist.
+  ///
+  /// On iOS: returns [true] (no concept exists on that platform).
+  /// On Android < 23 (M, no Doze mode): returns [true].
+  /// On any platform error: returns [false] without throwing.
+  Future<bool> isIgnoringBatteryOptimizations();
+
+  /// Opens the OS battery-optimisation settings panel for Métra so the
+  /// user can toggle the whitelist exemption.
+  ///
+  /// On iOS: no-op (returns immediately; no equivalent concept exists).
+  /// On Android < 23: no-op.
+  /// On intent-rejection (OEM custom builds): emits a [debugPrint] line
+  /// prefixed with `[NotificationService.openBatteryOpt]` and returns
+  /// without throwing.
+  Future<void> openBatteryOptimizationSettings();
 }

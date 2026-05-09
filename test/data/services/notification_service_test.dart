@@ -439,7 +439,282 @@ void main() {
   // ---------------------------------------------------------------------------
 
   // ---------------------------------------------------------------------------
+  // Fix #2: hasNotificationPermission — read-only check (FR-07, no-nag)
+  //
+  // The implementation calls areNotificationsEnabled() (read-only) on the
+  // Android plugin via the 'dexterous.com/flutter/local_notifications' channel.
+  // We verify it does NOT call requestNotificationsPermission (which shows a
+  // system dialog). Both methods share the same MethodChannel in the plugin.
+  // ---------------------------------------------------------------------------
+  group(
+      'Fix #2: hasNotificationPermission — read-only via areNotificationsEnabled',
+      () {
+    const kNotifChannel = 'dexterous.com/flutter/local_notifications';
+
+    test(
+      'hasNotificationPermission returns false when areNotificationsEnabled '
+      'returns false and does NOT invoke requestNotificationsPermission',
+      () async {
+        bool requestPermissionCalled = false;
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(
+          const MethodChannel(kNotifChannel),
+          (call) async {
+            if (call.method == 'areNotificationsEnabled') return false;
+            if (call.method == 'requestNotificationsPermission') {
+              requestPermissionCalled = true;
+              return true;
+            }
+            return null;
+          },
+        );
+        addTearDown(() {
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+              .setMockMethodCallHandler(
+            const MethodChannel(kNotifChannel),
+            null,
+          );
+        });
+
+        final service = FlutterNotificationService();
+        final result = await service.hasNotificationPermission();
+
+        expect(
+          result,
+          isFalse,
+          reason:
+              'hasNotificationPermission must reflect the OS permission state',
+        );
+        expect(
+          requestPermissionCalled,
+          isFalse,
+          reason: 'requestNotificationsPermission must NEVER be called by '
+              'hasNotificationPermission — it would show a system dialog',
+        );
+      },
+    );
+
+    test(
+      'hasNotificationPermission returns true when areNotificationsEnabled '
+      'returns true',
+      () async {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(
+          const MethodChannel(kNotifChannel),
+          (call) async {
+            if (call.method == 'areNotificationsEnabled') return true;
+            return null;
+          },
+        );
+        addTearDown(() {
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+              .setMockMethodCallHandler(
+            const MethodChannel(kNotifChannel),
+            null,
+          );
+        });
+
+        final service = FlutterNotificationService();
+        final result = await service.hasNotificationPermission();
+
+        expect(result, isTrue);
+      },
+    );
+
+    test(
+      'hasNotificationPermission returns true on non-Android platform '
+      '(areNotificationsEnabled returns null — fail-open)',
+      () async {
+        // Simulate a platform where areNotificationsEnabled returns null
+        // (e.g. Android < 13 or iOS where the method is not implemented).
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(
+          const MethodChannel(kNotifChannel),
+          (call) async {
+            if (call.method == 'areNotificationsEnabled') return null;
+            return null;
+          },
+        );
+        addTearDown(() {
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+              .setMockMethodCallHandler(
+            const MethodChannel(kNotifChannel),
+            null,
+          );
+        });
+
+        final service = FlutterNotificationService();
+        final result = await service.hasNotificationPermission();
+
+        expect(
+          result,
+          isTrue,
+          reason: 'hasNotificationPermission must fail-open (return true) when '
+              'areNotificationsEnabled returns null — do not block scheduling '
+              'over a query failure',
+        );
+      },
+    );
+  });
+
+  // ---------------------------------------------------------------------------
   // Group I — BUG-006: Android schedule mode + PlatformException visibility
+  // ---------------------------------------------------------------------------
+  //
+  // Group J — TASK-05: battery-optimisation channel (FR-03 platform side)
+  // ---------------------------------------------------------------------------
+
+  group(
+      'TASK-05: FlutterNotificationService battery-optimisation channel (FR-03)',
+      () {
+    const kBatteryChannel = 'metra/battery_optimization';
+
+    test(
+      'isIgnoringBatteryOptimizations returns true when channel returns true',
+      () async {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(
+          const MethodChannel(kBatteryChannel),
+          (call) async {
+            if (call.method == 'isIgnoring') return true;
+            return null;
+          },
+        );
+        addTearDown(() {
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+              .setMockMethodCallHandler(
+            const MethodChannel(kBatteryChannel),
+            null,
+          );
+        });
+
+        final service = FlutterNotificationService();
+        expect(await service.isIgnoringBatteryOptimizations(), isTrue);
+      },
+    );
+
+    test(
+      'isIgnoringBatteryOptimizations returns false when channel returns false',
+      () async {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(
+          const MethodChannel(kBatteryChannel),
+          (call) async {
+            if (call.method == 'isIgnoring') return false;
+            return null;
+          },
+        );
+        addTearDown(() {
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+              .setMockMethodCallHandler(
+            const MethodChannel(kBatteryChannel),
+            null,
+          );
+        });
+
+        final service = FlutterNotificationService();
+        expect(await service.isIgnoringBatteryOptimizations(), isFalse);
+      },
+    );
+
+    test(
+      'isIgnoringBatteryOptimizations returns false on PlatformException (does not propagate)',
+      () async {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(
+          const MethodChannel(kBatteryChannel),
+          (call) async {
+            throw PlatformException(
+              code: 'battery_opt_error',
+              message: 'simulated failure',
+            );
+          },
+        );
+        addTearDown(() {
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+              .setMockMethodCallHandler(
+            const MethodChannel(kBatteryChannel),
+            null,
+          );
+        });
+
+        final service = FlutterNotificationService();
+        // Must not throw; must return false as safe default.
+        expect(await service.isIgnoringBatteryOptimizations(), isFalse);
+      },
+    );
+
+    test(
+      'openBatteryOptimizationSettings invokes channel and does not throw on success',
+      () async {
+        var invoked = false;
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(
+          const MethodChannel(kBatteryChannel),
+          (call) async {
+            if (call.method == 'openSettings') invoked = true;
+            return null;
+          },
+        );
+        addTearDown(() {
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+              .setMockMethodCallHandler(
+            const MethodChannel(kBatteryChannel),
+            null,
+          );
+        });
+
+        final service = FlutterNotificationService();
+        await expectLater(
+          service.openBatteryOptimizationSettings(),
+          completes,
+        );
+        expect(invoked, isTrue);
+      },
+    );
+
+    test(
+      'openBatteryOptimizationSettings does not throw on PlatformException (emits debugPrint)',
+      () async {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(
+          const MethodChannel(kBatteryChannel),
+          (call) async {
+            throw PlatformException(
+              code: 'intent_rejected',
+              message: 'OEM blocked',
+            );
+          },
+        );
+        addTearDown(() {
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+              .setMockMethodCallHandler(
+            const MethodChannel(kBatteryChannel),
+            null,
+          );
+        });
+
+        final captured = <String>[];
+        final originalDebugPrint = debugPrint;
+        debugPrint = (String? msg, {int? wrapWidth}) => captured.add(msg ?? '');
+        addTearDown(() => debugPrint = originalDebugPrint);
+
+        final service = FlutterNotificationService();
+        // Must not throw.
+        await expectLater(
+          service.openBatteryOptimizationSettings(),
+          completes,
+        );
+        expect(
+          captured
+              .any((m) => m.contains('[NotificationService.openBatteryOpt]')),
+          isTrue,
+          reason: 'PlatformException must be surfaced via debugPrint',
+        );
+      },
+    );
+  });
+
   // ---------------------------------------------------------------------------
 
   group('BUG-006: Android schedule mode + PlatformException visibility', () {

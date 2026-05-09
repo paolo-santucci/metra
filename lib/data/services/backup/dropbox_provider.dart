@@ -99,8 +99,14 @@ class DropboxProvider implements CloudBackupProvider {
       'token_access_type': 'offline',
       'state': _oauthState!,
     });
-    final result =
-        await _webAuth(authUrl.toString(), callbackUrlScheme: 'metra');
+    final result = await _webAuth(
+      authUrl.toString(),
+      callbackUrlScheme: 'metra',
+    ).timeout(
+      const Duration(minutes: 5),
+      onTimeout: () =>
+          throw const SyncException('OAuth timed out — please try again'),
+    );
     final callbackParams = Uri.parse(result).queryParameters;
     final returnedState = callbackParams['state'];
     if (returnedState != _oauthState) {

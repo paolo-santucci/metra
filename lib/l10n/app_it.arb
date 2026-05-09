@@ -398,6 +398,21 @@
     }
   },
 
+  "settings_battery_optimization_label": "Pianificazione in background",
+  "@settings_battery_optimization_label": {
+    "description": "Settings row label (Notifiche group): tapping this row opens the OS battery-optimisation settings so Métra can be exempted"
+  },
+
+  "settings_battery_optimization_subtitle": "Apre le impostazioni di sistema per esentare Mētra dall'ottimizzazione batteria. I promemoria ciclo arriveranno all'orario previsto.",
+  "@settings_battery_optimization_subtitle": {
+    "description": "Helper text beneath the battery-optimisation settings row; explains what the tap does and why it matters for cycle reminders"
+  },
+
+  "settings_battery_optimization_semantics_label": "Apri le impostazioni di ottimizzazione batteria",
+  "@settings_battery_optimization_semantics_label": {
+    "description": "Semantics label for the battery-optimisation row (used by TalkBack/VoiceOver); describes the action, not the label"
+  },
+
   "settings_language_system": "Automatica",
   "@settings_language_system": {
     "description": "Language option: follow system locale"

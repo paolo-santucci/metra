@@ -33,6 +33,7 @@ import 'package:metra/providers/use_case_providers.dart';
 
 import '../../helpers/fake_cycle_entry_repository.dart';
 import '../../helpers/fake_daily_log_repository.dart';
+import '../../helpers/fake_notification_service.dart';
 
 // ---------------------------------------------------------------------------
 // Stub notifier
@@ -784,6 +785,74 @@ void main() {
     );
   });
 
+  group('SettingsScreen — Android time-picker theme (FR-01, FR-02)', () {
+    // Helper: opens the Android Material TimePickerDialog and returns the
+    // TimePickerThemeData captured from inside the Theme(...) builder.
+    Future<TimePickerThemeData> openAndCaptureTheme(
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+
+      final stub = _StubSettingsNotifier(
+        defaults.copyWith(notificationsEnabled: true),
+      );
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Orario notifica'));
+      await tester.pumpAndSettle();
+
+      // Theme.of() walks up from the dialog and finds the inner Theme
+      // injected by _showTimePicker's builder — the one with the
+      // TimePickerThemeData override.
+      final dialogCtx = tester.element(find.byType(TimePickerDialog));
+      return Theme.of(dialogCtx).timePickerTheme;
+    }
+
+    testWidgets(
+      'FR-01 regression guard: dialTextStyle is null (inherits M3 default)',
+      (tester) async {
+        final tpTheme = await openAndCaptureTheme(tester);
+        expect(
+          tpTheme.dialTextStyle,
+          isNull,
+          reason:
+              'FR-01: dialTextStyle must be null so M3 bodyLarge default applies '
+              'with correct geometric clearance. Any non-null value is a regression.',
+        );
+        debugDefaultTargetPlatformOverride = null;
+      },
+    );
+
+    testWidgets(
+      'FR-02: hourMinuteTextStyle is 40 pt DM Serif Display',
+      (tester) async {
+        final tpTheme = await openAndCaptureTheme(tester);
+        expect(
+          tpTheme.hourMinuteTextStyle?.fontSize,
+          40,
+          reason: 'FR-02: hourMinuteTextStyle.fontSize must be 40, not 52.',
+        );
+        // Google Fonts normalises "DM Serif Display" → "DMSerifDisplay_regular"
+        // at runtime. Check the normalised prefix so the assertion survives
+        // minor version bumps while still catching a wrong typeface.
+        expect(
+          tpTheme.hourMinuteTextStyle?.fontFamily,
+          contains('DMSerifDisplay'),
+          reason:
+              'FR-02: hourMinuteTextStyle must use DM Serif Display typeface '
+              '(runtime family name: DMSerifDisplay_regular).',
+        );
+        debugDefaultTargetPlatformOverride = null;
+      },
+    );
+  });
+
   group('SettingsScreen — settings_notification_time_value locale format FR-15',
       () {
     // 825 minutes = 13:45.  IT (24h) → "13:45".  EN (12h) → "1:45 PM".
@@ -1233,6 +1302,39 @@ void main() {
           reason:
               'Ripristina is an active reset action — must use accentFlow, not textSecondary',
         );
+
+        // FR-11 + §18.10.1 parity rule: Ripristina must match OK weight/size.
+        expect(
+          ripristina.style?.fontWeight,
+          FontWeight.w600,
+          reason:
+              'FR-11: Ripristina must be w600 — equal semantic weight with OK.',
+        );
+        expect(
+          ripristina.style?.fontSize,
+          17,
+          reason: 'FR-11: Ripristina fontSize must be 17 pt (parity with OK).',
+        );
+
+        // Regression guard: OK must also carry the same three values.
+        final ok = tester.widget<Text>(find.text('OK'));
+        expect(
+          ok.style?.color,
+          expected,
+          reason: '§18.10.1 parity: OK must use accentFlow (regression guard).',
+        );
+        expect(
+          ok.style?.fontWeight,
+          FontWeight.w600,
+          reason: '§18.10.1 parity: OK must be w600 (regression guard).',
+        );
+        expect(
+          ok.style?.fontSize,
+          17,
+          reason:
+              '§18.10.1 parity: OK fontSize must be 17 pt (regression guard).',
+        );
+
         debugDefaultTargetPlatformOverride = null;
       },
     );
@@ -1790,6 +1892,178 @@ void main() {
           stub.saveCallCount,
           1,
           reason: 'Exactly one save must occur (the flushed pending debounce)',
+        );
+        debugDefaultTargetPlatformOverride = null;
+      },
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // TASK-07: FR-03 — Pianificazione in background row (battery-opt)
+  // ---------------------------------------------------------------------------
+
+  group('SettingsScreen — FR-03 battery-opt row (TASK-07)', () {
+    testWidgets(
+      'battery-opt row is visible when notificationsEnabled=false',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        // defaults has notificationsEnabled=false — row must still appear.
+        final stub = _StubSettingsNotifier(defaults);
+        final fake = FakeNotificationService();
+        await tester.pumpWidget(
+          _wrap([
+            settingsNotifierProvider.overrideWith(() => stub),
+            notificationServiceProvider.overrideWithValue(fake),
+          ]),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Pianificazione in background'),
+          findsOneWidget,
+          reason:
+              'FR-03: row must always be visible regardless of master toggle',
+        );
+      },
+    );
+
+    testWidgets(
+      'tapping battery-opt row calls openBatteryOptimizationSettings once',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        final stub = _StubSettingsNotifier(defaults);
+        final fake = FakeNotificationService();
+        await tester.pumpWidget(
+          _wrap([
+            settingsNotifierProvider.overrideWith(() => stub),
+            notificationServiceProvider.overrideWithValue(fake),
+          ]),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Pianificazione in background'));
+        await tester.pumpAndSettle();
+
+        expect(
+          fake.openBatteryOptimizationSettingsCallCount,
+          1,
+          reason:
+              'FR-03: openBatteryOptimizationSettings must be called exactly once',
+        );
+      },
+    );
+
+    testWidgets(
+      'battery-opt row has Semantics button=true and tap-target height ≥44 dp',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        final stub = _StubSettingsNotifier(defaults);
+        final fake = FakeNotificationService();
+        await tester.pumpWidget(
+          _wrap([
+            settingsNotifierProvider.overrideWith(() => stub),
+            notificationServiceProvider.overrideWithValue(fake),
+          ]),
+        );
+        await tester.pumpAndSettle();
+
+        // _SettingsRow wraps the row in an InkWell; its height is the tap target.
+        final rowFinder = find.text('Pianificazione in background');
+        expect(rowFinder, findsOneWidget);
+
+        final inkWell = find.ancestor(
+          of: rowFinder,
+          matching: find.byType(InkWell),
+        );
+        expect(
+          inkWell,
+          findsAtLeastNWidgets(1),
+          reason: 'Row must be wrapped in an InkWell tap target',
+        );
+
+        final size = tester.getSize(inkWell.first);
+        expect(
+          size.height,
+          greaterThanOrEqualTo(44.0),
+          reason: 'NFR-07: tap-target height must be ≥44 dp',
+        );
+
+        // Verify Semantics carries an accessible label for the row.
+        // The _SettingsRow widget passes semanticsLabel to Semantics.label;
+        // for this row that is settings_battery_optimization_semantics_label
+        // ("Apri le impostazioni di ottimizzazione batteria").
+        expect(
+          find.bySemanticsLabel(
+            RegExp(r'(Pianificazione in background|ottimizzazione batteria)'),
+          ),
+          findsAtLeastNWidgets(1),
+          reason:
+              'Accessibility: semantics label must reference the row purpose',
+        );
+      },
+    );
+
+    testWidgets(
+      'OQ-03: row visible when already whitelisted (isIgnoringBatteryOptimizations=true)',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        // Battery already whitelisted — row must NOT disappear (OQ-03).
+        final stub = _StubSettingsNotifier(defaults);
+        final fake = FakeNotificationService(
+          isIgnoringBatteryOptimizationsValue: true,
+        );
+        await tester.pumpWidget(
+          _wrap([
+            settingsNotifierProvider.overrideWith(() => stub),
+            notificationServiceProvider.overrideWithValue(fake),
+          ]),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Pianificazione in background'),
+          findsOneWidget,
+          reason:
+              'OQ-03: row must remain visible even when already whitelisted',
+        );
+      },
+    );
+
+    testWidgets(
+      'battery-opt row is hidden on iOS (bible §18.6.1)',
+      (tester) async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        final stub = _StubSettingsNotifier(defaults);
+        final fake = FakeNotificationService();
+        await tester.pumpWidget(
+          _wrap([
+            settingsNotifierProvider.overrideWith(() => stub),
+            notificationServiceProvider.overrideWithValue(fake),
+          ]),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Pianificazione in background'),
+          findsNothing,
+          reason:
+              'Bible §18.6.1: row must be absent on iOS (no battery-opt gate on that platform)',
         );
         debugDefaultTargetPlatformOverride = null;
       },

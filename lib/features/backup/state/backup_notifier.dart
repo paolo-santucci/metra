@@ -3,6 +3,7 @@
 // This file is part of Métra.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/metra_exception.dart';
@@ -52,6 +53,7 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
       );
       ref.invalidateSelf();
     } catch (e) {
+      debugPrint('[BackupNotifier.connect] ${e.runtimeType}: $e');
       state = AsyncData(
         BackupErrorState(
           e is MetraException
@@ -86,6 +88,7 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
   }
 
   Future<void> backupWithPassphrase(String passphrase) async {
+    if (state.valueOrNull is BackupRunning) return;
     final storage = ref.read(secureStorageProvider);
     // Read the old passphrase so it can be restored if the upload fails.
     // The invariant: after a failed backup the cloud blob is still encrypted
@@ -110,6 +113,12 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
   }
 
   Future<void> backupSilent() async {
+    if (state.valueOrNull is BackupRunning) return;
+    // Not configured: no account is connected, so there is nowhere to back up.
+    // Without this guard, a passphrase left in secure storage after Dropbox
+    // disconnect would cause _runBackup to fire and fail silently on every
+    // cold-start (BUG-D04 follow-up / FR-14).
+    if (state.valueOrNull is BackupNotConnected) return;
     final pass =
         await ref.read(secureStorageProvider).read(key: _passphraseKey);
     if (pass == null) return;

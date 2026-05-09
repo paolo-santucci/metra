@@ -22,12 +22,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/metra_theme.dart';
 import 'domain/entities/app_settings_data.dart';
 import 'domain/entities/cycle_prediction.dart';
+import 'features/backup/state/backup_notifier.dart';
 import 'features/calendar/state/prediction_controller.dart';
 import 'features/settings/state/settings_notifier.dart';
 import 'l10n/app_localizations.dart';
-import 'providers/backup_providers.dart';
 import 'providers/encryption_provider.dart';
-import 'providers/repository_providers.dart';
 import 'providers/use_case_providers.dart';
 import 'router/app_router.dart';
 
@@ -62,27 +61,63 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
     super.initState();
     // Best-effort: initialize notification channels. Failures are non-fatal
     // (e.g. test environments without a platform channel).
+    // FR-07 / BUG-B03: chain the cold-start POST_NOTIFICATIONS re-check
+    // immediately after initialize() completes so we verify OS permission
+    // reality before the first scheduling call fires.
     ref
         .read(notificationServiceProvider)
         .initialize()
+        .then((_) => _verifyNotificationPermissionOnColdStart())
         .catchError((Object _) {});
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _autoSyncIfConfigured();
     });
   }
 
+  // FR-07 / BUG-B03 / Fix #2: verify OS POST_NOTIFICATIONS permission at cold-start.
+  //
+  // When the user's persisted notificationsEnabled is true but the OS permission
+  // has been revoked since the last grant (e.g. the user manually revoked it in
+  // Settings), we must flip the persisted flag to false so the UI and scheduling
+  // logic reflect reality. Without this check a cold-start with a revoked
+  // permission silently fires scheduler.execute() and schedules a notification
+  // that the OS will silently drop, and the user never sees the discrepancy.
+  //
+  // Fix #2: uses hasNotificationPermission() (read-only check via
+  // areNotificationsEnabled()) instead of requestPermission(), which would
+  // re-show the system dialog on grant-then-revoke after every cold-start —
+  // violating Métra's "no nag" voice and FR-07's explicit "no re-prompt"
+  // requirement.
+  Future<void> _verifyNotificationPermissionOnColdStart() async {
+    final settings = await ref.read(settingsNotifierProvider.future);
+    if (!settings.notificationsEnabled) return;
+    // FR-07 / Fix #2: read-only check via checkSelfPermission-equivalent;
+    // never re-prompt the user at cold-start (Métra "no nag" voice).
+    final granted =
+        await ref.read(notificationServiceProvider).hasNotificationPermission();
+    if (!granted) {
+      // OS permission revoked since last grant — revert persisted flag so
+      // displayed state matches reality (no notification will fire while denied).
+      await ref
+          .read(settingsNotifierProvider.notifier)
+          .save(settings.copyWith(notificationsEnabled: false));
+    }
+  }
+
+  // FR-15 / BUG-D04: route auto-sync through BackupNotifier.backupSilent()
+  // so ref.invalidateSelf() fires inside _runBackup and any open BackupScreen
+  // re-renders the updated lastBackupAt without navigation.
+  //
+  // FR-18 / BUG-D06: catch(e) now emits a structured debugPrint so
+  // real-device regressions are diagnosable from device logs.
   Future<void> _autoSyncIfConfigured() async {
     try {
-      final settingsRepo = await ref.read(appSettingsRepositoryProvider.future);
-      final data = await settingsRepo.getOrCreate();
-      if (data.dropboxEmail == null) return; // not connected
       final storage = ref.read(secureStorageProvider);
       final pass = await storage.read(key: 'metra_backup_passphrase_v1');
-      if (pass == null) return; // first backup not done yet
-      final uc = await ref.read(backupDataProvider.future);
-      await uc();
-    } catch (_) {
-      // Silent — user can retry from BackupScreen.
+      if (pass == null) return; // first backup not done yet; no-op
+      await ref.read(backupNotifierProvider.notifier).backupSilent();
+    } catch (e) {
+      debugPrint('[autoSync] ${e.runtimeType}: $e');
     }
   }
 
@@ -101,9 +136,16 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
         : Locale(settings.languageCode);
 
     // Reschedule notification whenever the predicted next cycle date changes.
+    //
+    // FR-05 / BUG-B02: guard scheduler.execute() with prev is AsyncData so
+    // the cold-start AsyncLoading → AsyncData transition does NOT invoke
+    // scheduling. Only legitimate data-update (AsyncData → AsyncData)
+    // transitions trigger rescheduling, preventing alarm-quota exhaustion.
     ref.listen<AsyncValue<CyclePrediction?>>(
       cyclePredictionProvider,
-      (_, next) async {
+      (prev, next) async {
+        if (prev is! AsyncData<CyclePrediction?>) return;
+        if (next is! AsyncData<CyclePrediction?>) return;
         final prediction = next.valueOrNull;
         final currentSettings = ref.read(settingsNotifierProvider).valueOrNull;
         if (currentSettings == null) return;
@@ -130,6 +172,11 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
 
     // Reschedule notification immediately when the user changes settings
     // (toggle notificationsEnabled or adjust notificationDaysBefore).
+    //
+    // FR-06 / BUG-B02: guard scheduler.execute() with prev is AsyncData so
+    // the cold-start AsyncLoading → AsyncData transition does NOT invoke
+    // scheduling. Only legitimate user-driven (AsyncData → AsyncData)
+    // transitions trigger rescheduling.
     ref.listen<AsyncValue<AppSettingsData>>(
       settingsNotifierProvider,
       (prev, next) async {
@@ -159,6 +206,11 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
             }
           }
         }
+
+        // FR-06 / BUG-B02: skip scheduling on cold-start transition.
+        // The _verifyNotificationPermissionOnColdStart() method handles
+        // the initial permission check independently of this listener.
+        if (prev is! AsyncData<AppSettingsData>) return;
 
         final prediction = ref.read(cyclePredictionProvider).valueOrNull;
         final l10n = await AppLocalizations.delegate

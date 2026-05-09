@@ -157,4 +157,98 @@ void main() {
       },
     );
   });
+
+  // ---------------------------------------------------------------------------
+  // Fix #2: FakeNotificationService.hasNotificationPermission tracking
+  // ---------------------------------------------------------------------------
+
+  group('Fix #2: FakeNotificationService.hasNotificationPermission tracking',
+      () {
+    test(
+      'hasNotificationPermission returns the configured value (default=true) '
+      'and increments hasNotificationPermissionCallCount; '
+      'does NOT increment requestPermissionCallCount',
+      () async {
+        final fake = FakeNotificationService();
+        expect(
+          fake.hasNotificationPermissionCallCount,
+          equals(0),
+          reason: 'counter starts at zero',
+        );
+        expect(
+          fake.requestPermissionCallCount,
+          equals(0),
+          reason: 'requestPermissionCallCount starts at zero',
+        );
+
+        final result = await fake.hasNotificationPermission();
+
+        expect(
+          result,
+          isTrue,
+          reason: 'default hasNotificationPermissionValue is true',
+        );
+        expect(
+          fake.hasNotificationPermissionCallCount,
+          equals(1),
+          reason: 'hasNotificationPermission increments its own counter',
+        );
+        expect(
+          fake.requestPermissionCallCount,
+          equals(0),
+          reason:
+              'hasNotificationPermission must NOT increment requestPermissionCallCount',
+        );
+      },
+    );
+
+    test(
+      'hasNotificationPermission returns false when hasNotificationPermissionValue=false',
+      () async {
+        final fake =
+            FakeNotificationService(hasNotificationPermissionValue: false);
+        final result = await fake.hasNotificationPermission();
+        expect(result, isFalse);
+        expect(fake.hasNotificationPermissionCallCount, equals(1));
+        expect(fake.requestPermissionCallCount, equals(0));
+      },
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // TASK-05: FakeNotificationService battery-optimisation tracking (FR-03)
+  // ---------------------------------------------------------------------------
+
+  group('TASK-05: FakeNotificationService battery-optimisation methods (FR-03)',
+      () {
+    test(
+      'isIgnoringBatteryOptimizations defaults to true',
+      () async {
+        final fake = FakeNotificationService();
+        expect(await fake.isIgnoringBatteryOptimizations(), isTrue);
+      },
+    );
+
+    test(
+      'isIgnoringBatteryOptimizations returns configured false when set via constructor',
+      () async {
+        final fake = FakeNotificationService(
+          isIgnoringBatteryOptimizationsValue: false,
+        );
+        expect(await fake.isIgnoringBatteryOptimizations(), isFalse);
+      },
+    );
+
+    test(
+      'openBatteryOptimizationSettings increments call count on each invocation',
+      () async {
+        final fake = FakeNotificationService();
+        expect(fake.openBatteryOptimizationSettingsCallCount, equals(0));
+        await fake.openBatteryOptimizationSettings();
+        expect(fake.openBatteryOptimizationSettingsCallCount, equals(1));
+        await fake.openBatteryOptimizationSettings();
+        expect(fake.openBatteryOptimizationSettingsCallCount, equals(2));
+      },
+    );
+  });
 }

@@ -548,6 +548,24 @@ abstract class AppLocalizations {
   /// **'{time}'**
   String settings_notification_time_value(String time);
 
+  /// Settings row label (Notifiche group): tapping this row opens the OS battery-optimisation settings so Métra can be exempted
+  ///
+  /// In it, this message translates to:
+  /// **'Pianificazione in background'**
+  String get settings_battery_optimization_label;
+
+  /// Helper text beneath the battery-optimisation settings row; explains what the tap does and why it matters for cycle reminders
+  ///
+  /// In it, this message translates to:
+  /// **'Apre le impostazioni di sistema per esentare Mētra dall\'ottimizzazione batteria. I promemoria ciclo arriveranno all\'orario previsto.'**
+  String get settings_battery_optimization_subtitle;
+
+  /// Semantics label for the battery-optimisation row (used by TalkBack/VoiceOver); describes the action, not the label
+  ///
+  /// In it, this message translates to:
+  /// **'Apri le impostazioni di ottimizzazione batteria'**
+  String get settings_battery_optimization_semantics_label;
+
   /// Language option: follow system locale
   ///
   /// In it, this message translates to:

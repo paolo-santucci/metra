@@ -23,11 +23,37 @@ class FakeNotificationService implements NotificationService {
   int cancelCount = 0;
   bool permissionGranted;
 
+  /// Configurable return value for [isIgnoringBatteryOptimizations].
+  ///
+  /// Defaults to [true] (whitelisted). Set to [false] to exercise the
+  /// "not whitelisted" branch in Settings UI tests (TASK-07, FR-03).
+  bool isIgnoringBatteryOptimizationsValue;
+
+  /// Configurable return value for [hasNotificationPermission].
+  ///
+  /// Defaults to [true] (permission granted). Set to [false] to exercise the
+  /// "OS permission revoked" branch in cold-start re-check tests (Fix #2,
+  /// FR-07).
+  bool hasNotificationPermissionValue;
+
+  /// Number of times [hasNotificationPermission] has been called.
+  ///
+  /// Used by Fix #2 / FR-07 tests to assert the cold-start re-check calls
+  /// the read-only method exactly once and never calls [requestPermission].
+  int hasNotificationPermissionCallCount = 0;
+
+  /// Number of times [openBatteryOptimizationSettings] has been called.
+  ///
+  /// Used by TASK-07 widget tests to assert that tapping the Settings row
+  /// invokes the method exactly once (FR-03).
+  int openBatteryOptimizationSettingsCallCount = 0;
+
   /// Number of times [requestPermission] has been called.
   ///
   /// Used by BUG-002 regression tests to verify the cold-start guard
   /// does not call requestPermission() during AsyncLoading → AsyncData
-  /// transitions (FR-04, EC-05).
+  /// transitions (FR-04, EC-05). Fix #2 asserts this stays at 0 during
+  /// cold-start re-checks.
   int requestPermissionCallCount = 0;
 
   /// Optional clock override for deterministic tests. Defaults to DateTime.now().
@@ -49,6 +75,8 @@ class FakeNotificationService implements NotificationService {
 
   FakeNotificationService({
     this.permissionGranted = true,
+    this.isIgnoringBatteryOptimizationsValue = true,
+    this.hasNotificationPermissionValue = true,
     @Deprecated('Use now: () => yourDateTime instead') DateTime? nowOverride,
     DateTime Function()? now,
   })  : _nowOverride = nowOverride,
@@ -91,5 +119,20 @@ class FakeNotificationService implements NotificationService {
   Future<bool> requestPermission() async {
     requestPermissionCallCount++;
     return permissionGranted;
+  }
+
+  @override
+  Future<bool> hasNotificationPermission() async {
+    hasNotificationPermissionCallCount++;
+    return hasNotificationPermissionValue;
+  }
+
+  @override
+  Future<bool> isIgnoringBatteryOptimizations() async =>
+      isIgnoringBatteryOptimizationsValue;
+
+  @override
+  Future<void> openBatteryOptimizationSettings() async {
+    openBatteryOptimizationSettingsCallCount++;
   }
 }

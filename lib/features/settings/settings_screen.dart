@@ -158,6 +158,24 @@ class SettingsScreen extends ConsumerWidget {
                     );
                   },
                 ),
+                // FR-03: battery-optimisation link — Android only (bible §18.6.1).
+                // On iOS the row is hidden: iOS schedules user-notification triggers
+                // without a battery-optimisation gate, so the OS settings surface
+                // does not exist on that platform.
+                if (defaultTargetPlatform == TargetPlatform.android) ...[
+                  const _SettingsDivider(),
+                  _SettingsRow(
+                    label: l10n.settings_battery_optimization_label,
+                    semanticsLabel:
+                        l10n.settings_battery_optimization_semantics_label,
+                    showChevron: true,
+                    onTap: () async {
+                      await ref
+                          .read(notificationServiceProvider)
+                          .openBatteryOptimizationSettings();
+                    },
+                  ),
+                ],
               ],
             ),
 
@@ -496,12 +514,8 @@ class SettingsScreen extends ConsumerWidget {
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
           timePickerTheme: TimePickerThemeData(
-            dialTextStyle: Theme.of(ctx).textTheme.bodyLarge?.copyWith(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
             hourMinuteTextStyle: Theme.of(ctx).textTheme.displaySmall?.copyWith(
-                  fontSize: 52,
+                  fontSize: 40,
                 ),
           ),
         ),
@@ -959,6 +973,7 @@ class _CupertinoPickerScaffoldState extends State<_CupertinoPickerScaffold> {
                         l10n.common_restore,
                         style: TextStyle(
                           color: colors.accentFlow,
+                          fontWeight: FontWeight.w600,
                           fontSize: 17,
                         ),
                       ),

@@ -23,6 +23,7 @@ import '../data/services/key_management_service.dart';
 
 final secureStorageProvider = Provider<FlutterSecureStorage>(
   (_) => const FlutterSecureStorage(
+    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   ),
 );

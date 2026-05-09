@@ -11,6 +11,9 @@ import 'package:metra/features/backup/backup_screen.dart';
 import 'package:metra/features/backup/state/backup_notifier.dart';
 import 'package:metra/features/backup/state/backup_state.dart';
 import 'package:metra/l10n/app_localizations.dart';
+import 'package:metra/providers/encryption_provider.dart';
+
+import '../../helpers/in_memory_secure_storage.dart';
 
 // ---------------------------------------------------------------------------
 // Stub notifier
@@ -22,6 +25,8 @@ class _StubBackupNotifier extends BackupNotifier {
   final BackupState _initial;
   String? capturedRestorePassphrase;
   String? capturedBackupPassphrase;
+  int backupSilentCallCount = 0;
+  int backupWithPassphraseCallCount = 0;
 
   @override
   Future<BackupState> build() async => _initial;
@@ -36,6 +41,12 @@ class _StubBackupNotifier extends BackupNotifier {
   @override
   Future<void> backupWithPassphrase(String passphrase) async {
     capturedBackupPassphrase = passphrase;
+    backupWithPassphraseCallCount++;
+  }
+
+  @override
+  Future<void> backupSilent() async {
+    backupSilentCallCount++;
   }
 }
 
@@ -44,11 +55,37 @@ class _StubBackupNotifier extends BackupNotifier {
 // ---------------------------------------------------------------------------
 
 Widget _wrap(BackupState state, {_StubBackupNotifier? stub}) {
+  // Provide an empty InMemorySecureStorage so _handleBackup's read() returns
+  // null and the setNew PassphraseDialog path is exercised without calling
+  // the real FlutterSecureStorage plugin (which is unavailable in widget tests).
   return ProviderScope(
     overrides: [
       backupNotifierProvider.overrideWith(
         () => stub ?? _StubBackupNotifier(state),
       ),
+      secureStorageProvider.overrideWithValue(InMemorySecureStorage()),
+    ],
+    child: MaterialApp(
+      theme: MetraTheme.light(),
+      locale: const Locale('en'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: const BackupScreen(),
+    ),
+  );
+}
+
+/// Helper that also overrides [secureStorageProvider] with [storage].
+Widget _wrapWithStorage(
+  BackupState state, {
+  required InMemorySecureStorage storage,
+  _StubBackupNotifier? stub,
+}) {
+  final notifierStub = stub ?? _StubBackupNotifier(state);
+  return ProviderScope(
+    overrides: [
+      backupNotifierProvider.overrideWith(() => notifierStub),
+      secureStorageProvider.overrideWithValue(storage),
     ],
     child: MaterialApp(
       theme: MetraTheme.light(),
@@ -375,6 +412,162 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(stub.capturedRestorePassphrase, isNull);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // FR-12 / FR-13 / FR-14 — _handleBackup passphrase caching + button disable
+  // ---------------------------------------------------------------------------
+
+  group('_handleBackup — FR-12: Nth-time (cached passphrase)', () {
+    testWidgets(
+        'cached passphrase → no dialog → backupSilent called once '
+        '(FR-12 / BUG-D01)', (tester) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final storage = InMemorySecureStorage()
+        ..values['metra_backup_passphrase_v1'] = 'cached-pass-123';
+      final stub = _StubBackupNotifier(
+        const BackupConnected(email: 'user@example.com'),
+      );
+
+      await tester.pumpWidget(
+        _wrapWithStorage(
+          const BackupConnected(email: 'user@example.com'),
+          storage: storage,
+          stub: stub,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Back up now'));
+      await tester.pumpAndSettle();
+
+      // Dialog must NOT appear (FR-12: cached passphrase path skips dialog).
+      expect(find.text('Set passphrase'), findsNothing);
+
+      // backupSilent called once; backupWithPassphrase never called.
+      expect(stub.backupSilentCallCount, 1);
+      expect(stub.backupWithPassphraseCallCount, 0);
+
+      // Cached passphrase must NOT be rewritten (FR-12 read-once invariant).
+      expect(storage.values['metra_backup_passphrase_v1'], 'cached-pass-123');
+    });
+  });
+
+  group('_handleBackup — FR-13: first-time (no cached passphrase)', () {
+    testWidgets(
+        'no passphrase in storage → dialog shown → confirm → '
+        'backupWithPassphrase called (FR-13 / EC-01)', (tester) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final storage = InMemorySecureStorage(); // empty — no cached passphrase
+      final stub = _StubBackupNotifier(
+        const BackupConnected(email: 'user@example.com'),
+      );
+
+      await tester.pumpWidget(
+        _wrapWithStorage(
+          const BackupConnected(email: 'user@example.com'),
+          storage: storage,
+          stub: stub,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Back up now'));
+      await tester.pumpAndSettle();
+
+      // PassphraseDialog must appear in setNew mode.
+      expect(find.text('Set a backup passphrase'), findsOneWidget);
+      expect(
+        find.widgetWithText(TextField, 'Confirm passphrase'),
+        findsOneWidget,
+      );
+
+      // Enter a valid passphrase (≥ 8 chars, matching confirm).
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Passphrase').first,
+        'my-secret-pass',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Confirm passphrase').first,
+        'my-secret-pass',
+      );
+      await tester.pumpAndSettle();
+
+      // Tap confirm.
+      await tester.tap(
+        find.widgetWithText(TextButton, 'I understand — save and back up'),
+      );
+      await tester.pumpAndSettle();
+
+      // backupWithPassphrase called with the entered value.
+      expect(stub.capturedBackupPassphrase, 'my-secret-pass');
+      expect(stub.backupWithPassphraseCallCount, 1);
+      // backupSilent must NOT be called.
+      expect(stub.backupSilentCallCount, 0);
+    });
+
+    testWidgets(
+        'cancel on setNew dialog → no write, no notifier call, '
+        'button re-enables (FR-13 cancel path)', (tester) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final storage = InMemorySecureStorage(); // empty
+      final stub = _StubBackupNotifier(
+        const BackupConnected(email: 'user@example.com'),
+      );
+
+      await tester.pumpWidget(
+        _wrapWithStorage(
+          const BackupConnected(email: 'user@example.com'),
+          storage: storage,
+          stub: stub,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Back up now'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Set a backup passphrase'), findsOneWidget);
+
+      // Cancel without confirming.
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.pumpAndSettle();
+
+      // No write to secure storage.
+      expect(storage.values.containsKey('metra_backup_passphrase_v1'), isFalse);
+      // No notifier calls.
+      expect(stub.backupWithPassphraseCallCount, 0);
+      expect(stub.backupSilentCallCount, 0);
+      // Button is re-enabled (not stuck disabled).
+      final button = tester.widget<ElevatedButton>(
+        find.widgetWithText(ElevatedButton, 'Back up now'),
+      );
+      expect(button.onPressed, isNotNull);
+    });
+  });
+
+  group('_handleBackup — FR-14: button state', () {
+    testWidgets(
+        'Salva ora button is not present when state is BackupRunning '
+        '(FR-14 / EC-02)', (tester) async {
+      // When state is BackupRunning, the screen switches to _RunningBody which
+      // has no "Back up now" button. Absence = unreachable = disabled per FR-14.
+      await tester.pumpWidget(
+        _wrap(const BackupRunning(BackupOperation.backingUp)),
+      );
+      await tester.pump();
+
+      expect(
+        find.widgetWithText(ElevatedButton, 'Back up now'),
+        findsNothing,
+      );
     });
   });
 }

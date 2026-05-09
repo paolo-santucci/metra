@@ -15,9 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -124,6 +126,81 @@ void main() {
     expect(
       () => p.upload(Uint8List.fromList([1]), 'x.enc'),
       throwsA(isA<SyncException>()),
+    );
+  });
+
+  // BUG-C03 / FR-10 / NFR-05 / EC-12
+  group('OAuth timeout (BUG-C03)', () {
+    test(
+      'authorize() throws SyncException after 5 minutes when _webAuth never resolves',
+      () {
+        fakeAsync((fake) {
+          final p = DropboxProvider(
+            appKey: 'key',
+            storage: storage,
+            webAuth: (url, {required callbackUrlScheme}) =>
+                Completer<String>().future, // never completes
+          );
+
+          SyncException? caught;
+          p.authorize().then((_) {}).catchError((Object e) {
+            caught = e as SyncException;
+          });
+
+          // Advance the fake clock past the 5-minute threshold.
+          fake.elapse(const Duration(minutes: 5));
+
+          expect(caught, isNotNull);
+          expect(caught, isA<SyncException>());
+          expect(
+            caught!.message,
+            'OAuth timed out — please try again',
+          );
+        });
+      },
+    );
+
+    test(
+      'authorize() succeeds when _webAuth resolves within 5 minutes',
+      () async {
+        // The token-exchange HTTP mock must also handle the POST.
+        final client = MockClient((req) async {
+          if (req.url.path == '/oauth2/token') {
+            return http.Response(
+              jsonEncode({
+                'access_token': 'access-tok',
+                'refresh_token': 'refresh-tok',
+              }),
+              200,
+            );
+          }
+          return http.Response('{}', 200);
+        });
+
+        final p = DropboxProvider(
+          appKey: 'key',
+          storage: storage,
+          client: client,
+          // Capture the state from the auth URL so CSRF check passes.
+          webAuth: (url, {required callbackUrlScheme}) async {
+            final state = Uri.parse(url).queryParameters['state']!;
+            return 'metra://oauth-callback?code=abc&state=$state';
+          },
+        );
+
+        // Must not throw — no timeout, no SyncException.
+        await expectLater(p.authorize(), completes);
+
+        // Happy-path: tokens written to storage.
+        expect(
+          storage.values['metra_dropbox_access_token_v1'],
+          'access-tok',
+        );
+        expect(
+          storage.values['metra_dropbox_refresh_token_v1'],
+          'refresh-tok',
+        );
+      },
     );
   });
 }

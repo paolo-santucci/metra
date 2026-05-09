@@ -257,6 +257,18 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
+  String get settings_battery_optimization_label =>
+      'Pianificazione in background';
+
+  @override
+  String get settings_battery_optimization_subtitle =>
+      'Apre le impostazioni di sistema per esentare Mētra dall\'ottimizzazione batteria. I promemoria ciclo arriveranno all\'orario previsto.';
+
+  @override
+  String get settings_battery_optimization_semantics_label =>
+      'Apri le impostazioni di ottimizzazione batteria';
+
+  @override
   String get settings_language_system => 'Automatica';
 
   @override

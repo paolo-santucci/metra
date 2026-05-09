@@ -1197,6 +1197,8 @@ function ScreenImpostazioni() {
         </SettingsCard>
 
         {/* ── Notifiche ── */}
+        {/* Row 4 (Pianificazione in background) — §18.6.1: link variant, always visible,
+            Android-only at runtime (the iOS branch omits this row). FR-03 / FR-04. */}
         <SettingsLabel>Notifiche</SettingsLabel>
         <SettingsCard>
           <SettingsRow
@@ -1206,6 +1208,8 @@ function ScreenImpostazioni() {
           <SettingsRow label="Preavviso" value="3 giorni prima" />
           <SettingsDivider />
           <SettingsRow label="Orario" value="alle 09:00" />
+          <SettingsDivider />
+          <SettingsRow label="Pianificazione in background" />
         </SettingsCard>
 
         {/* ── Registro ── */}
