@@ -1090,7 +1090,9 @@ void main() {
 
       final stub = _StubSettingsNotifier(
         defaults.copyWith(
-            notificationsEnabled: true, notificationTimeMinutes: 540),
+          notificationsEnabled: true,
+          notificationTimeMinutes: 540,
+        ),
       );
       await tester.pumpWidget(
         _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
@@ -1121,7 +1123,9 @@ void main() {
       // notificationTimeMinutes=540 → _roundTo5(540)=540 → seeded value
       final stub = _StubSettingsNotifier(
         defaults.copyWith(
-            notificationsEnabled: true, notificationTimeMinutes: 540),
+          notificationsEnabled: true,
+          notificationTimeMinutes: 540,
+        ),
       );
       await tester.pumpWidget(
         _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
