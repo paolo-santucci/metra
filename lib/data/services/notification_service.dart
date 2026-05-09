@@ -27,12 +27,11 @@ import 'package:timezone/timezone.dart' as tz;
 ///
 /// Notification channel: "metra_cycle" (high importance).
 ///
-/// Android exact-alarm note: the manifest declares SCHEDULE_EXACT_ALARM,
-/// which is correct for minSdk 24 (flutter.minSdkVersion default).
-/// On Android 13+ (API 33+) a user-visible permission prompt is shown once;
-/// on earlier versions the permission is pre-granted.
-/// If minSdk is ever raised to 33+, consider switching to USE_EXACT_ALARM
-/// (pre-granted, no prompt on Android 13+) and updating the manifest.
+/// Android scheduling mode: uses [AndroidScheduleMode.inexactAllowWhileIdle].
+/// Cycle reminders fire within Doze's ~15 min window — acceptable for a
+/// daily reminder and avoids the SCHEDULE_EXACT_ALARM permission, which is
+/// not auto-granted on Android 14+ and is policy-gated for non-alarm-clock
+/// apps. The manifest no longer declares SCHEDULE_EXACT_ALARM.
 class FlutterNotificationService implements NotificationService {
   /// Stable ID for the single prediction-reminder notification.
   ///
@@ -43,8 +42,11 @@ class FlutterNotificationService implements NotificationService {
   static const String _kChannelId = 'metra_cycle';
   static const String _kChannelName = 'Mētra — Ciclo';
 
-  final FlutterLocalNotificationsPlugin _plugin =
-      FlutterLocalNotificationsPlugin();
+  FlutterNotificationService({
+    @visibleForTesting FlutterLocalNotificationsPlugin? pluginOverride,
+  }) : _plugin = pluginOverride ?? FlutterLocalNotificationsPlugin();
+
+  final FlutterLocalNotificationsPlugin _plugin;
 
   @override
   Future<void> initialize() async {
@@ -191,17 +193,16 @@ class FlutterNotificationService implements NotificationService {
         body,
         scheduledDate,
         details,
-        // exactAllowWhileIdle keeps the alarm firing even in Doze mode.
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         // Absolute time — do not reinterpret as wall-clock time.
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: null,
       );
-    } on PlatformException {
-      // BUG-002: SCHEDULE_EXACT_ALARM was revoked by the user in Android
-      // Settings → Apps → Special app access. zonedSchedule() throws; swallow
-      // so the caller receives a clean void return.
+    } on PlatformException catch (e) {
+      debugPrint(
+        'FlutterNotificationService: zonedSchedule failed (${e.code}): ${e.message}',
+      );
     }
   }
 

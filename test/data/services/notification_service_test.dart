@@ -24,6 +24,9 @@
 
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/data/services/notification_service.dart';
 import 'package:metra/domain/services/notification_service.dart';
@@ -434,4 +437,94 @@ void main() {
   // kPredictionNotificationId == 1001 is already covered in
   // 'FlutterNotificationService constants' above; no duplication needed.
   // ---------------------------------------------------------------------------
+
+  // ---------------------------------------------------------------------------
+  // Group I — BUG-006: Android schedule mode + PlatformException visibility
+  // ---------------------------------------------------------------------------
+
+  group('BUG-006: Android schedule mode + PlatformException visibility', () {
+    setUpAll(tz_data.initializeTimeZones);
+
+    test(
+      'schedulePredictionNotification uses inexactAllowWhileIdle on Android',
+      () async {
+        tz.setLocalLocation(tz.getLocation('Europe/Rome'));
+        final plugin = _RecordingPlugin();
+        final service = FlutterNotificationService(pluginOverride: plugin);
+        final notifyAt = DateTime(2099, 6, 10, 9, 0);
+
+        await service.schedulePredictionNotification(notifyAt, 'T', 'B');
+
+        expect(
+          plugin.recordedMode,
+          equals(AndroidScheduleMode.inexactAllowWhileIdle),
+        );
+      },
+    );
+
+    test(
+      'schedulePredictionNotification logs (does not silently swallow) PlatformException from zonedSchedule',
+      () async {
+        tz.setLocalLocation(tz.getLocation('Europe/Rome'));
+        final plugin = _RecordingPlugin()
+          ..throwOnSchedule = PlatformException(
+            code: 'exact_alarms_not_permitted',
+            message: 'denied',
+          );
+        final service = FlutterNotificationService(pluginOverride: plugin);
+        final captured = <String>[];
+        final originalDebugPrint = debugPrint;
+        debugPrint = (String? msg, {int? wrapWidth}) => captured.add(msg ?? '');
+        addTearDown(() => debugPrint = originalDebugPrint);
+        final notifyAt = DateTime(2099, 6, 10, 9, 0);
+
+        await service.schedulePredictionNotification(notifyAt, 'T', 'B');
+
+        expect(
+          captured.any(
+            (m) =>
+                m.contains('FlutterNotificationService:') &&
+                m.contains('exact_alarms_not_permitted'),
+          ),
+          isTrue,
+          reason:
+              'PlatformException must be surfaced via debugPrint, not swallowed',
+        );
+      },
+    );
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Recording test-double for FlutterLocalNotificationsPlugin (BUG-006).
+// Records the androidScheduleMode passed to zonedSchedule; optionally throws
+// a PlatformException to exercise the error-logging path.
+// noSuchMethod returns null for every other plugin method — sufficient because
+// the BUG-006 tests only exercise zonedSchedule.
+// ---------------------------------------------------------------------------
+class _RecordingPlugin implements FlutterLocalNotificationsPlugin {
+  AndroidScheduleMode? recordedMode;
+  PlatformException? throwOnSchedule;
+
+  @override
+  Future<void> zonedSchedule(
+    int id,
+    String? title,
+    String? body,
+    tz.TZDateTime scheduledDate,
+    NotificationDetails notificationDetails, {
+    required UILocalNotificationDateInterpretation
+        uiLocalNotificationDateInterpretation,
+    // ignore: deprecated_member_use
+    bool androidAllowWhileIdle = false,
+    AndroidScheduleMode? androidScheduleMode,
+    String? payload,
+    DateTimeComponents? matchDateTimeComponents,
+  }) async {
+    recordedMode = androidScheduleMode;
+    if (throwOnSchedule != null) throw throwOnSchedule!;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
 }
