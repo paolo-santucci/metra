@@ -462,13 +462,18 @@ class SettingsScreen extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       CupertinoButton(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
                         onPressed: () => Navigator.of(ctx).pop(),
                         child: Text(
                           l10n.common_cancel,
-                          style: TextStyle(color: colors.textSecondary),
+                          style: TextStyle(
+                            color: colors.textSecondary,
+                            fontSize: 17,
+                          ),
                         ),
                       ),
                       CupertinoButton(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
                         onPressed: () {
                           _save(
                             ref,
@@ -484,6 +489,7 @@ class SettingsScreen extends ConsumerWidget {
                           style: TextStyle(
                             color: colors.accentFlow,
                             fontWeight: FontWeight.w600,
+                            fontSize: 17,
                           ),
                         ),
                       ),
@@ -585,13 +591,18 @@ class SettingsScreen extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       CupertinoButton(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
                         onPressed: () => Navigator.of(ctx).pop(),
                         child: Text(
                           l10n.common_cancel,
-                          style: TextStyle(color: colors.textSecondary),
+                          style: TextStyle(
+                            color: colors.textSecondary,
+                            fontSize: 17,
+                          ),
                         ),
                       ),
                       CupertinoButton(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
                         onPressed: () {
                           _save(
                             ref,
@@ -606,6 +617,7 @@ class SettingsScreen extends ConsumerWidget {
                           style: TextStyle(
                             color: colors.accentFlow,
                             fontWeight: FontWeight.w600,
+                            fontSize: 17,
                           ),
                         ),
                       ),
