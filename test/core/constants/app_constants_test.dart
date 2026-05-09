@@ -19,8 +19,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/constants/app_constants.dart';
 
 void main() {
-  test('AppConstants exposes kMaxAdvanceDays = 14', () {
-    expect(AppConstants.kMaxAdvanceDays, 14);
+  test('AppConstants exposes kMaxAdvanceDays = 7', () {
+    expect(AppConstants.kMaxAdvanceDays, 7);
   });
 
   test('AppConstants exposes kDefaultNotificationTimeMinutes = 540', () {

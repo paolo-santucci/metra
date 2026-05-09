@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -382,8 +384,8 @@ void main() {
       await tester.tap(find.text('Preavviso'));
       await tester.pumpAndSettle();
 
-      final sheet = find.byType(BottomSheet);
-      expect(sheet, findsOneWidget);
+      final dialog = find.byType(Dialog);
+      expect(dialog, findsOneWidget);
       for (final label in [
         '1 giorno prima',
         '2 giorni prima',
@@ -394,20 +396,11 @@ void main() {
         '7 giorni prima',
       ]) {
         expect(
-          find.descendant(of: sheet, matching: find.text(label)),
+          find.descendant(of: dialog, matching: find.text(label)),
           findsOneWidget,
           reason: 'Option "$label" must be visible without scrolling',
         );
       }
-      // OQ-A resolution (TASK-09): 14 ListTiles × 56 dp ≈ 784 dp exceed a
-      // 640 dp viewport — the no-Scrollable invariant is structurally
-      // unsatisfiable. The picker now wraps in SingleChildScrollView.
-      expect(
-        find.descendant(of: sheet, matching: find.byType(Scrollable)),
-        findsOneWidget,
-        reason:
-            'Picker uses SingleChildScrollView to fit 14 rows (OQ-A resolution)',
-      );
     });
 
     testWidgets('tapping an option saves the correct notificationDaysBefore',
@@ -427,7 +420,7 @@ void main() {
 
       await tester.tap(
         find.descendant(
-          of: find.byType(BottomSheet),
+          of: find.byType(Dialog),
           matching: find.text('5 giorni prima'),
         ),
       );
@@ -453,7 +446,7 @@ void main() {
 
       await tester.tap(
         find.descendant(
-          of: find.byType(BottomSheet),
+          of: find.byType(Dialog),
           matching: find.text('2 giorni prima'),
         ),
       );
@@ -477,9 +470,9 @@ void main() {
       await tester.tap(find.text('Preavviso'));
       await tester.pumpAndSettle();
 
-      final sheet = find.byType(BottomSheet);
+      final dialog = find.byType(Dialog);
       expect(
-        find.descendant(of: sheet, matching: find.byIcon(Icons.check)),
+        find.descendant(of: dialog, matching: find.byIcon(Icons.check)),
         findsOneWidget,
         reason: 'Exactly one check icon must appear (the selected option)',
       );
@@ -503,8 +496,8 @@ void main() {
       await tester.tap(find.text('Preavviso'));
       await tester.pumpAndSettle();
 
-      final sheet = find.byType(BottomSheet);
-      expect(sheet, findsOneWidget);
+      final dialog = find.byType(Dialog);
+      expect(dialog, findsOneWidget);
       for (final expected in [
         '1 giorno prima',
         '2 giorni prima',
@@ -515,18 +508,10 @@ void main() {
         '7 giorni prima',
       ]) {
         expect(
-          find.descendant(of: sheet, matching: find.text(expected)),
+          find.descendant(of: dialog, matching: find.text(expected)),
           findsOneWidget,
         );
       }
-      // OQ-A resolution (TASK-09): SingleChildScrollView now wraps the 14
-      // ListTiles — the no-Scrollable invariant intentionally relaxed.
-      expect(
-        find.descendant(of: sheet, matching: find.byType(Scrollable)),
-        findsOneWidget,
-        reason:
-            'Picker uses SingleChildScrollView to fit 14 rows (OQ-A resolution)',
-      );
     });
   });
 
@@ -574,8 +559,8 @@ void main() {
     );
   });
 
-  group('SettingsScreen — advance picker 14 rows', () {
-    testWidgets('shows 14 rows on 360x640 viewport', (tester) async {
+  group('SettingsScreen — advance picker 7 rows', () {
+    testWidgets('shows 7 rows on 360x640 viewport', (tester) async {
       tester.view.physicalSize = const Size(360, 640);
       tester.view.devicePixelRatio = 1.0;
       tester.view.padding = const FakeViewPadding(bottom: 48);
@@ -590,16 +575,15 @@ void main() {
       await tester.tap(find.text('Preavviso'));
       await tester.pumpAndSettle();
 
-      final sheet = find.byType(BottomSheet);
-      expect(sheet, findsOneWidget);
+      final dialog = find.byType(Dialog);
+      expect(dialog, findsOneWidget);
 
-      // All 14 options must be present (scroll to reveal them if needed).
-      for (int i = 1; i <= 14; i++) {
+      for (int i = 1; i <= 7; i++) {
         final label = i == 1 ? '1 giorno prima' : '$i giorni prima';
         expect(
-          find.descendant(of: sheet, matching: find.text(label)),
+          find.descendant(of: dialog, matching: find.text(label)),
           findsOneWidget,
-          reason: 'Option "$label" must exist in the sheet',
+          reason: 'Option "$label" must exist in the dialog',
         );
       }
     });
@@ -826,9 +810,9 @@ void main() {
     );
   });
 
-  group('SettingsScreen — advance picker 14 rows FR-12 (wide viewport)', () {
+  group('SettingsScreen — advance picker 7 rows FR-12 (wide viewport)', () {
     testWidgets(
-      'shows all 14 rows on 800x2000 viewport',
+      'shows all 7 rows on 800x2000 viewport',
       (tester) async {
         tester.view.physicalSize = const Size(800, 2000);
         tester.view.devicePixelRatio = 1.0;
@@ -843,36 +827,25 @@ void main() {
         await tester.tap(find.text('Preavviso'));
         await tester.pumpAndSettle();
 
-        final sheet = find.byType(BottomSheet);
-        expect(sheet, findsOneWidget);
+        final dialog = find.byType(Dialog);
+        expect(dialog, findsOneWidget);
 
-        for (int i = 1; i <= 14; i++) {
+        for (int i = 1; i <= 7; i++) {
           final label = i == 1 ? '1 giorno prima' : '$i giorni prima';
           expect(
-            find.descendant(of: sheet, matching: find.text(label)),
+            find.descendant(of: dialog, matching: find.text(label)),
             findsOneWidget,
             reason:
                 'Option "$label" must be present in the advance picker (wide viewport)',
           );
         }
-
-        // OQ-A resolution (TASK-09): SingleChildScrollView wraps all 14 rows.
-        expect(
-          find.descendant(of: sheet, matching: find.byType(Scrollable)),
-          findsOneWidget,
-          reason:
-              'Picker uses SingleChildScrollView for 14 rows (OQ-A resolution)',
-        );
       },
     );
   });
 
-  group('SettingsScreen — Scrollable invariant FR-17', () {
-    // Both assertions were flipped from findsNothing → findsOneWidget in
-    // TASK-09 (OQ-A resolution). These tests confirm the flip holds.
-
+  group('SettingsScreen — picker dialog invariant FR-17', () {
     testWidgets(
-      'advance picker Scrollable findsOneWidget on wide viewport (FR-17)',
+      'advance picker shows Dialog (not BottomSheet) on wide viewport (FR-17)',
       (tester) async {
         tester.view.physicalSize = const Size(800, 2000);
         tester.view.devicePixelRatio = 1.0;
@@ -887,18 +860,21 @@ void main() {
         await tester.tap(find.text('Preavviso'));
         await tester.pumpAndSettle();
 
-        final sheet = find.byType(BottomSheet);
         expect(
-          find.descendant(of: sheet, matching: find.byType(Scrollable)),
+          find.byType(Dialog),
           findsOneWidget,
-          reason:
-              'OQ-A resolution: SingleChildScrollView present on wide viewport for 14-row picker',
+          reason: 'Advance picker must show as a Dialog, not a BottomSheet',
+        );
+        expect(
+          find.byType(BottomSheet),
+          findsNothing,
+          reason: 'Advance picker must show as a Dialog, not a BottomSheet',
         );
       },
     );
 
     testWidgets(
-      'advance picker Scrollable findsOneWidget on narrow viewport (FR-17)',
+      'advance picker shows Dialog (not BottomSheet) on narrow viewport (FR-17)',
       (tester) async {
         tester.view.physicalSize = const Size(360, 640);
         tester.view.devicePixelRatio = 1.0;
@@ -914,12 +890,15 @@ void main() {
         await tester.tap(find.text('Preavviso'));
         await tester.pumpAndSettle();
 
-        final sheet = find.byType(BottomSheet);
         expect(
-          find.descendant(of: sheet, matching: find.byType(Scrollable)),
+          find.byType(Dialog),
           findsOneWidget,
-          reason:
-              'OQ-A resolution: SingleChildScrollView present on narrow viewport for 14-row picker',
+          reason: 'Advance picker must show as a Dialog, not a BottomSheet',
+        );
+        expect(
+          find.byType(BottomSheet),
+          findsNothing,
+          reason: 'Advance picker must show as a Dialog, not a BottomSheet',
         );
       },
     );
@@ -1025,5 +1004,231 @@ void main() {
         expect(find.text('Configurato'), findsNothing);
       },
     );
+  });
+
+  group('SettingsScreen — iOS time picker (CupertinoDatePicker)', () {
+    testWidgets('tap on enabled row opens CupertinoDatePicker modal',
+        (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      tester.view.physicalSize = const Size(800, 4000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final stub = _StubSettingsNotifier(
+        defaults.copyWith(notificationsEnabled: true),
+      );
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Orario notifica'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byType(CupertinoDatePicker),
+        findsOneWidget,
+        reason:
+            'iOS time row must open CupertinoDatePicker, not TimePickerDialog',
+      );
+      expect(
+        find.byType(TimePickerDialog),
+        findsNothing,
+        reason: 'TimePickerDialog must not appear on iOS',
+      );
+      debugDefaultTargetPlatformOverride = null;
+    });
+
+    testWidgets('Annulla dismisses without saving', (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      tester.view.physicalSize = const Size(800, 4000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final stub = _StubSettingsNotifier(
+        defaults.copyWith(
+            notificationsEnabled: true, notificationTimeMinutes: 540),
+      );
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Orario notifica'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Annulla'));
+      await tester.pumpAndSettle();
+
+      expect(
+        stub.savedSettings,
+        isNull,
+        reason: 'Annulla must not write settings',
+      );
+      debugDefaultTargetPlatformOverride = null;
+    });
+
+    testWidgets('OK confirms and saves seeded value without scroll',
+        (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      tester.view.physicalSize = const Size(800, 4000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      // notificationTimeMinutes=540 → _roundTo5(540)=540 → seeded value
+      final stub = _StubSettingsNotifier(
+        defaults.copyWith(
+            notificationsEnabled: true, notificationTimeMinutes: 540),
+      );
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Orario notifica'));
+      await tester.pumpAndSettle();
+
+      // Tap OK without scrolling — seeded value (540) is written
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+
+      expect(
+        stub.savedSettings?.notificationTimeMinutes,
+        540,
+        reason: 'OK without scroll must write the seeded minute value',
+      );
+      debugDefaultTargetPlatformOverride = null;
+    });
+  });
+
+  group('SettingsScreen — iOS days picker (CupertinoPicker)', () {
+    testWidgets('tap on Preavviso row opens CupertinoPicker modal',
+        (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      tester.view.physicalSize = const Size(800, 4000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final stub = _StubSettingsNotifier(defaults);
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Preavviso'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byType(CupertinoPicker),
+        findsOneWidget,
+        reason: 'iOS advance row must open CupertinoPicker',
+      );
+      expect(
+        find.byType(Dialog),
+        findsNothing,
+        reason: 'SimpleDialog must not appear on iOS',
+      );
+      debugDefaultTargetPlatformOverride = null;
+    });
+
+    testWidgets('Annulla dismisses without saving', (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      tester.view.physicalSize = const Size(800, 4000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final stub = _StubSettingsNotifier(defaults);
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Preavviso'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Annulla'));
+      await tester.pumpAndSettle();
+
+      expect(
+        stub.savedSettings,
+        isNull,
+        reason: 'Annulla must not write settings',
+      );
+      debugDefaultTargetPlatformOverride = null;
+    });
+
+    testWidgets('OK confirms and saves seeded day value without scroll',
+        (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      tester.view.physicalSize = const Size(800, 4000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      // notificationDaysBefore=3 → selectedIndex=2 → "3 giorni prima" seeded
+      final stub = _StubSettingsNotifier(
+        defaults.copyWith(notificationDaysBefore: 3),
+      );
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Preavviso'));
+      await tester.pumpAndSettle();
+
+      // Tap OK without scrolling — selectedIndex (2) + 1 = 3 is written
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+
+      expect(
+        stub.savedSettings?.notificationDaysBefore,
+        3,
+        reason: 'OK without scroll must write the seeded day value',
+      );
+      debugDefaultTargetPlatformOverride = null;
+    });
+
+    testWidgets('shows day labels near center of picker', (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      tester.view.physicalSize = const Size(800, 4000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      // defaults.notificationDaysBefore=2 → initialItem=1 (index of "2 giorni prima").
+      // ListWheelScrollView renders only items near the current scroll position.
+      // Verify items reliably in-viewport around index 1: "1 giorno prima"
+      // through "5 giorni prima". The last items (6-7) may not be rendered until
+      // the wheel is scrolled there.
+      final stub = _StubSettingsNotifier(defaults);
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Preavviso'));
+      await tester.pumpAndSettle();
+
+      final pickerFinder = find.byType(CupertinoPicker);
+      expect(
+        pickerFinder,
+        findsOneWidget,
+        reason: 'CupertinoPicker must be present',
+      );
+
+      for (final label in [
+        '1 giorno prima',
+        '2 giorni prima',
+        '3 giorni prima',
+        '4 giorni prima',
+        '5 giorni prima',
+      ]) {
+        expect(
+          find.descendant(of: pickerFinder, matching: find.text(label)),
+          findsAtLeastNWidgets(1),
+          reason: 'Day label "$label" must appear in iOS CupertinoPicker',
+        );
+      }
+      debugDefaultTargetPlatformOverride = null;
+    });
   });
 }

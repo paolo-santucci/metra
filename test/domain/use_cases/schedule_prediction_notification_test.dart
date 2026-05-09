@@ -242,8 +242,7 @@ void main() {
         painEnabled: true,
         notesEnabled: true,
         notificationsEnabled: true,
-        notificationDaysBefore:
-            7, // mid-range value; 14 is the current upper bound
+        notificationDaysBefore: 7, // upper bound
         onboardingCompleted: false,
       );
 
@@ -295,7 +294,7 @@ void main() {
                 .having(
                   (e) => e.message,
                   'message',
-                  contains('[1, 14]'),
+                  contains('[1, 7]'),
                 ),
           ),
         );
@@ -469,7 +468,7 @@ void main() {
     );
 
     test(
-      'given_daysBefore_8_when_execute_then_succeeds',
+      'given_daysBefore_7_when_execute_then_succeeds',
       () async {
         final svc = FakeNotificationService();
         final uc = SchedulePredictionNotification(svc);
@@ -478,7 +477,7 @@ void main() {
           painEnabled: true,
           notesEnabled: true,
           notificationsEnabled: true,
-          notificationDaysBefore: 8, // was blocked by old <= 7 assert
+          notificationDaysBefore: 7,
           onboardingCompleted: false,
         );
 
@@ -489,15 +488,15 @@ void main() {
           body: 'b',
         );
 
-        // notifyAt = 2099-08-18 - 8 days = 2099-08-10 at 09:00
+        // notifyAt = 2099-08-18 - 7 days = 2099-08-11 at 09:00
         expect(svc.scheduled, hasLength(1));
         final notifyAt = svc.scheduled.first.notifyAt;
-        expect(notifyAt, equals(DateTime(2099, 8, 10, 9, 0)));
+        expect(notifyAt, equals(DateTime(2099, 8, 11, 9, 0)));
       },
     );
 
     test(
-      'given_daysBefore_14_when_execute_then_succeeds_and_notifyAt_is_windowStart_minus_14_days',
+      'given_daysBefore_6_when_execute_then_succeeds_and_notifyAt_is_windowStart_minus_6_days',
       () async {
         final svc = FakeNotificationService();
         final uc = SchedulePredictionNotification(svc);
@@ -506,7 +505,7 @@ void main() {
           painEnabled: true,
           notesEnabled: true,
           notificationsEnabled: true,
-          notificationDaysBefore: 14, // upper bound
+          notificationDaysBefore: 6,
           onboardingCompleted: false,
         );
 
@@ -517,10 +516,10 @@ void main() {
           body: 'b',
         );
 
-        // notifyAt = 2099-08-18 - 14 days = 2099-08-04 at 09:00
+        // notifyAt = 2099-08-18 - 6 days = 2099-08-12 at 09:00
         expect(svc.scheduled, hasLength(1));
         final notifyAt = svc.scheduled.first.notifyAt;
-        expect(notifyAt, equals(DateTime(2099, 8, 4, 9, 0)));
+        expect(notifyAt, equals(DateTime(2099, 8, 12, 9, 0)));
       },
     );
 
@@ -551,7 +550,7 @@ void main() {
                 .having(
                   (e) => e.message,
                   'message',
-                  contains('[1, 14]'),
+                  contains('[1, 7]'),
                 ),
           ),
         );

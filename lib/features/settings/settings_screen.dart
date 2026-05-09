@@ -19,6 +19,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -320,6 +322,9 @@ class SettingsScreen extends ConsumerWidget {
         true => l10n.settings_theme_dark,
       };
 
+  static int _roundTo5(int minutes) =>
+      ((minutes / 5).round() * 5).clamp(0, 1435);
+
   static void _showLanguagePicker(
     BuildContext context,
     WidgetRef ref,
@@ -426,6 +431,84 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
+  static Future<void> _showTimePickerIOS(
+    BuildContext context,
+    WidgetRef ref,
+    AppSettingsData settings,
+  ) async {
+    final colors = MetraColors.of(context);
+    final seedMinutes = _roundTo5(settings.notificationTimeMinutes);
+    final initial = DateTime(2000, 1, 1, seedMinutes ~/ 60, seedMinutes % 60);
+
+    int? confirmedMinutes;
+
+    await showCupertinoModalPopup<void>(
+      context: context,
+      builder: (ctx) {
+        final l10n = AppLocalizations.of(ctx)!;
+        return CupertinoTheme(
+          data: CupertinoThemeData(
+            brightness: Theme.of(ctx).brightness,
+            primaryColor: colors.accentFlow,
+          ),
+          child: Container(
+            height: 310,
+            color: colors.bgSurface,
+            child: Column(
+              children: [
+                SizedBox(
+                  height: 44,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      CupertinoButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        child: Text(
+                          l10n.common_cancel,
+                          style: TextStyle(color: colors.textSecondary),
+                        ),
+                      ),
+                      CupertinoButton(
+                        onPressed: () {
+                          _save(
+                            ref,
+                            settings.copyWith(
+                              notificationTimeMinutes:
+                                  confirmedMinutes ?? seedMinutes,
+                            ),
+                          );
+                          Navigator.of(ctx).pop();
+                        },
+                        child: Text(
+                          l10n.common_ok,
+                          style: TextStyle(
+                            color: colors.accentFlow,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: CupertinoDatePicker(
+                    mode: CupertinoDatePickerMode.time,
+                    minuteInterval: 5,
+                    initialDateTime: initial,
+                    use24hFormat: MediaQuery.alwaysUse24HourFormatOf(ctx),
+                    onDateTimeChanged: (dt) {
+                      confirmedMinutes = dt.hour * 60 + dt.minute;
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   /// Shows a [showTimePicker] dialog seeded with [settings.notificationTimeMinutes].
   ///
   /// On confirm, converts the selected [TimeOfDay] to minutes-since-midnight
@@ -437,52 +520,157 @@ class SettingsScreen extends ConsumerWidget {
     WidgetRef ref,
     AppSettingsData settings,
   ) async {
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return _showTimePickerIOS(context, ref, settings);
+    }
     final initial = TimeOfDay(
       hour: settings.notificationTimeMinutes ~/ 60,
       minute: settings.notificationTimeMinutes % 60,
     );
-    final tod = await showTimePicker(context: context, initialTime: initial);
+    final tod = await showTimePicker(
+      context: context,
+      initialTime: initial,
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          timePickerTheme: TimePickerThemeData(
+            dialTextStyle: Theme.of(ctx).textTheme.bodyLarge?.copyWith(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+            hourMinuteTextStyle: Theme.of(ctx).textTheme.displaySmall?.copyWith(
+                  fontSize: 52,
+                ),
+          ),
+        ),
+        child: child!,
+      ),
+    );
     if (tod == null) return; // user cancelled — no write
     final minutes = tod.hour * 60 + tod.minute;
     _save(ref, settings.copyWith(notificationTimeMinutes: minutes));
   }
 
-  static void _showAdvancePicker(
+  static Future<void> _showDaysPickerIOS(
     BuildContext context,
     WidgetRef ref,
     AppSettingsData settings,
     AppLocalizations l10n,
-  ) {
-    // Why: see _showLanguagePicker — useSafeArea omitted to avoid
-    // dim-overlay gap below sheet under ShellRoute scaffold.
-    // isScrollControlled stays: kMaxAdvanceDays (14) ListTiles ≈ 784 dp
-    // exceed the 9/16 viewport cap on a 640-dp-tall phone; without it the
-    // top items clip. OQ-A resolution: relax the no-Scrollable invariant —
-    // 14 rows × 56 dp are structurally impossible to display without scroll
-    // on a compact (360×640) device. See test assertions updated in TASK-09.
-    showModalBottomSheet<void>(
+  ) async {
+    final colors = MetraColors.of(context);
+    int selectedIndex = (settings.notificationDaysBefore - 1)
+        .clamp(0, AppConstants.kMaxAdvanceDays - 1);
+
+    await showCupertinoModalPopup<void>(
       context: context,
-      isScrollControlled: true,
-      builder: (sheetCtx) => SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (int i = 0; i < AppConstants.kMaxAdvanceDays; i++)
-              ListTile(
-                title: Text(l10n.settings_advance_value(i + 1)),
-                trailing: settings.notificationDaysBefore == i + 1
-                    ? const Icon(Icons.check)
-                    : null,
-                onTap: () {
-                  Navigator.of(sheetCtx).pop();
-                  _save(
-                    ref,
-                    settings.copyWith(notificationDaysBefore: i + 1),
-                  );
-                },
+      builder: (ctx) {
+        return CupertinoTheme(
+          data: CupertinoThemeData(
+            brightness: Theme.of(ctx).brightness,
+            primaryColor: colors.accentFlow,
+            textTheme: CupertinoTextThemeData(
+              pickerTextStyle: TextStyle(
+                color: colors.textPrimary,
+                fontSize: 21,
               ),
-          ],
-        ),
+            ),
+          ),
+          child: Container(
+            height: 310,
+            color: colors.bgSurface,
+            child: Column(
+              children: [
+                SizedBox(
+                  height: 44,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      CupertinoButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        child: Text(
+                          l10n.common_cancel,
+                          style: TextStyle(color: colors.textSecondary),
+                        ),
+                      ),
+                      CupertinoButton(
+                        onPressed: () {
+                          _save(
+                            ref,
+                            settings.copyWith(
+                              notificationDaysBefore: selectedIndex + 1,
+                            ),
+                          );
+                          Navigator.of(ctx).pop();
+                        },
+                        child: Text(
+                          l10n.common_ok,
+                          style: TextStyle(
+                            color: colors.accentFlow,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: CupertinoPicker(
+                    scrollController: FixedExtentScrollController(
+                      initialItem: selectedIndex,
+                    ),
+                    itemExtent: 44,
+                    onSelectedItemChanged: (i) => selectedIndex = i,
+                    children: [
+                      for (int i = 1; i <= AppConstants.kMaxAdvanceDays; i++)
+                        Center(
+                          child: Text(
+                            l10n.settings_advance_value(i),
+                            style: TextStyle(
+                              color: colors.textPrimary,
+                              fontSize: 21,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  static Future<void> _showAdvancePicker(
+    BuildContext context,
+    WidgetRef ref,
+    AppSettingsData settings,
+    AppLocalizations l10n,
+  ) async {
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return _showDaysPickerIOS(context, ref, settings, l10n);
+    }
+    await showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => SimpleDialog(
+        title: Text(l10n.settings_advance_label),
+        children: [
+          for (int i = 0; i < AppConstants.kMaxAdvanceDays; i++)
+            SimpleDialogOption(
+              onPressed: () {
+                Navigator.of(dialogCtx).pop();
+                _save(ref, settings.copyWith(notificationDaysBefore: i + 1));
+              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(l10n.settings_advance_value(i + 1)),
+                  if (settings.notificationDaysBefore == i + 1)
+                    const Icon(Icons.check, size: 18),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }
