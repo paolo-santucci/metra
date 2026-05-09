@@ -134,6 +134,7 @@ class SettingsScreen extends ConsumerWidget {
                       '${l10n.settings_advance_label}: ${l10n.settings_advance_value(settings.notificationDaysBefore)}',
                   valueText: l10n
                       .settings_advance_value(settings.notificationDaysBefore),
+                  enabled: settings.notificationsEnabled,
                   onTap: () => _showAdvancePicker(context, ref, settings, l10n),
                 ),
                 const _SettingsDivider(),

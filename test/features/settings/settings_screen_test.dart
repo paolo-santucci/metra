@@ -375,7 +375,9 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      final stub = _StubSettingsNotifier(defaults);
+      final stub = _StubSettingsNotifier(
+        defaults.copyWith(notificationsEnabled: true),
+      );
       await tester.pumpWidget(
         _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
       );
@@ -409,7 +411,9 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      final stub = _StubSettingsNotifier(defaults);
+      final stub = _StubSettingsNotifier(
+        defaults.copyWith(notificationsEnabled: true),
+      );
       await tester.pumpWidget(
         _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
       );
@@ -435,7 +439,9 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      final stub = _StubSettingsNotifier(defaults); // notificationDaysBefore: 2
+      final stub = _StubSettingsNotifier(
+        defaults.copyWith(notificationsEnabled: true),
+      ); // notificationDaysBefore: 2
       await tester.pumpWidget(
         _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
       );
@@ -461,7 +467,9 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      final stub = _StubSettingsNotifier(defaults); // notificationDaysBefore: 2
+      final stub = _StubSettingsNotifier(
+        defaults.copyWith(notificationsEnabled: true),
+      ); // notificationDaysBefore: 2
       await tester.pumpWidget(
         _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
       );
@@ -487,7 +495,9 @@ void main() {
       tester.view.padding = const FakeViewPadding(bottom: 48);
       addTearDown(tester.view.reset);
 
-      final stub = _StubSettingsNotifier(defaults);
+      final stub = _StubSettingsNotifier(
+        defaults.copyWith(notificationsEnabled: true),
+      );
       await tester.pumpWidget(
         _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
       );
@@ -559,6 +569,31 @@ void main() {
     );
   });
 
+  group('BUG-007: Preavviso row disabled when notifications toggle is off', () {
+    testWidgets(
+      'Preavviso row is disabled when notificationsEnabled is false',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        // defaults has notificationsEnabled=false
+        final stub = _StubSettingsNotifier(defaults);
+        await tester.pumpWidget(
+          _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Preavviso'));
+        await tester.pumpAndSettle();
+
+        // No dialog opens when disabled; savedSettings remains null.
+        expect(find.byType(Dialog), findsNothing);
+        expect(stub.savedSettings, isNull);
+      },
+    );
+  });
+
   group('SettingsScreen — advance picker 7 rows', () {
     testWidgets('shows 7 rows on 360x640 viewport', (tester) async {
       tester.view.physicalSize = const Size(360, 640);
@@ -566,7 +601,9 @@ void main() {
       tester.view.padding = const FakeViewPadding(bottom: 48);
       addTearDown(tester.view.reset);
 
-      final stub = _StubSettingsNotifier(defaults);
+      final stub = _StubSettingsNotifier(
+        defaults.copyWith(notificationsEnabled: true),
+      );
       await tester.pumpWidget(
         _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
       );
@@ -818,7 +855,9 @@ void main() {
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.reset);
 
-        final stub = _StubSettingsNotifier(defaults);
+        final stub = _StubSettingsNotifier(
+          defaults.copyWith(notificationsEnabled: true),
+        );
         await tester.pumpWidget(
           _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
         );
@@ -851,7 +890,9 @@ void main() {
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.reset);
 
-        final stub = _StubSettingsNotifier(defaults);
+        final stub = _StubSettingsNotifier(
+          defaults.copyWith(notificationsEnabled: true),
+        );
         await tester.pumpWidget(
           _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
         );
@@ -881,7 +922,9 @@ void main() {
         tester.view.padding = const FakeViewPadding(bottom: 48);
         addTearDown(tester.view.reset);
 
-        final stub = _StubSettingsNotifier(defaults);
+        final stub = _StubSettingsNotifier(
+          defaults.copyWith(notificationsEnabled: true),
+        );
         await tester.pumpWidget(
           _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
         );
@@ -1109,7 +1152,9 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      final stub = _StubSettingsNotifier(defaults);
+      final stub = _StubSettingsNotifier(
+        defaults.copyWith(notificationsEnabled: true),
+      );
       await tester.pumpWidget(
         _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
       );
@@ -1137,7 +1182,9 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      final stub = _StubSettingsNotifier(defaults);
+      final stub = _StubSettingsNotifier(
+        defaults.copyWith(notificationsEnabled: true),
+      );
       await tester.pumpWidget(
         _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
       );
@@ -1166,7 +1213,10 @@ void main() {
 
       // notificationDaysBefore=3 → selectedIndex=2 → "3 giorni prima" seeded
       final stub = _StubSettingsNotifier(
-        defaults.copyWith(notificationDaysBefore: 3),
+        defaults.copyWith(
+          notificationsEnabled: true,
+          notificationDaysBefore: 3,
+        ),
       );
       await tester.pumpWidget(
         _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
@@ -1199,7 +1249,9 @@ void main() {
       // Verify items reliably in-viewport around index 1: "1 giorno prima"
       // through "5 giorni prima". The last items (6-7) may not be rendered until
       // the wheel is scrolled there.
-      final stub = _StubSettingsNotifier(defaults);
+      final stub = _StubSettingsNotifier(
+        defaults.copyWith(notificationsEnabled: true),
+      );
       await tester.pumpWidget(
         _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
       );
