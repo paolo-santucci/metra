@@ -154,28 +154,16 @@ class SettingsScreen extends ConsumerWidget {
                       semanticsLabel: '$label: $timeValue',
                       valueText: timeValue,
                       enabled: settings.notificationsEnabled,
-                      onTap: () => _showTimePicker(rowCtx, ref, settings),
+                      onTap: () =>
+                          _showCupertinoTimePicker(rowCtx, ref, settings),
                     );
                   },
                 ),
-                // FR-03: battery-optimisation link — Android only (bible §18.6.1).
-                // On iOS the row is hidden: iOS schedules user-notification triggers
-                // without a battery-optimisation gate, so the OS settings surface
-                // does not exist on that platform.
-                if (defaultTargetPlatform == TargetPlatform.android) ...[
-                  const _SettingsDivider(),
-                  _SettingsRow(
-                    label: l10n.settings_battery_optimization_label,
-                    semanticsLabel:
-                        l10n.settings_battery_optimization_semantics_label,
-                    showChevron: true,
-                    onTap: () async {
-                      await ref
-                          .read(notificationServiceProvider)
-                          .openBatteryOptimizationSettings();
-                    },
-                  ),
-                ],
+                // "Pianificazione in background" (battery-opt row) was removed.
+                // The underlying NotificationService methods are kept for potential
+                // re-addition. Users on OEM devices that suppress inexact alarms
+                // (Samsung / Xiaomi / OnePlus) must whitelist Métra manually:
+                // Settings → Apps → Métra → Battery → Unrestricted.
               ],
             ),
 
@@ -451,7 +439,15 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  static Future<void> _showTimePickerIOS(
+  /// Shows a Cupertino time-picker wheel seeded with [settings.notificationTimeMinutes].
+  ///
+  /// Used on both Android and iOS — the Cupertino wheel is the canonical
+  /// picker for this app on all platforms (Material Time Picker removed in
+  /// favour of visual consistency). The seed is rounded to the nearest 5 min
+  /// ([_roundTo5]) so the wheel always lands on a tick mark. Auto-save fires
+  /// 250 ms after the last wheel movement; Ripristina resets to the seed;
+  /// OK flushes any pending debounce and closes.
+  static Future<void> _showCupertinoTimePicker(
     BuildContext context,
     WidgetRef ref,
     AppSettingsData settings,
@@ -488,43 +484,6 @@ class SettingsScreen extends ConsumerWidget {
         },
       ),
     );
-  }
-
-  /// Shows a [showTimePicker] dialog seeded with [settings.notificationTimeMinutes].
-  ///
-  /// On confirm, converts the selected [TimeOfDay] to minutes-since-midnight
-  /// and persists via the settings notifier. On cancel (null result) no write
-  /// occurs. [TimeOfDay] is intentionally local to this method only — it must
-  /// never leak into domain entities (NFR-08).
-  static Future<void> _showTimePicker(
-    BuildContext context,
-    WidgetRef ref,
-    AppSettingsData settings,
-  ) async {
-    if (defaultTargetPlatform == TargetPlatform.iOS) {
-      return _showTimePickerIOS(context, ref, settings);
-    }
-    final initial = TimeOfDay(
-      hour: settings.notificationTimeMinutes ~/ 60,
-      minute: settings.notificationTimeMinutes % 60,
-    );
-    final tod = await showTimePicker(
-      context: context,
-      initialTime: initial,
-      builder: (ctx, child) => Theme(
-        data: Theme.of(ctx).copyWith(
-          timePickerTheme: TimePickerThemeData(
-            hourMinuteTextStyle: Theme.of(ctx).textTheme.displaySmall?.copyWith(
-                  fontSize: 40,
-                ),
-          ),
-        ),
-        child: child!,
-      ),
-    );
-    if (tod == null) return; // user cancelled — no write
-    final minutes = tod.hour * 60 + tod.minute;
-    _save(ref, settings.copyWith(notificationTimeMinutes: minutes));
   }
 
   static Future<void> _showDaysPickerIOS(

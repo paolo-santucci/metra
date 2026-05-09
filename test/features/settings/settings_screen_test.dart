@@ -33,7 +33,6 @@ import 'package:metra/providers/use_case_providers.dart';
 
 import '../../helpers/fake_cycle_entry_repository.dart';
 import '../../helpers/fake_daily_log_repository.dart';
-import '../../helpers/fake_notification_service.dart';
 
 // ---------------------------------------------------------------------------
 // Stub notifier
@@ -636,8 +635,12 @@ void main() {
 
   group('SettingsScreen — Orario notifica row time picker FR-13', () {
     testWidgets(
-      'tap on enabled row opens TimePickerDialog',
+      'android_time_picker_uses_cupertino_wheel',
       (tester) async {
+        // FR-13: on Android the picker must now be a Cupertino wheel, not
+        // the Material TimePickerDialog. The Material dialog was replaced to
+        // give a unified UX on both platforms.
+        debugDefaultTargetPlatformOverride = TargetPlatform.android;
         tester.view.physicalSize = const Size(800, 4000);
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.reset);
@@ -653,20 +656,28 @@ void main() {
         await tester.tap(find.text('Orario notifica'));
         await tester.pumpAndSettle();
 
+        expect(
+          find.byType(CupertinoDatePicker),
+          findsOneWidget,
+          reason: 'Android must now open a CupertinoDatePicker wheel, not the '
+              'Material TimePickerDialog.',
+        );
         expect(
           find.byType(TimePickerDialog),
-          findsOneWidget,
+          findsNothing,
           reason:
-              'Tapping the Orario notifica row must open a TimePickerDialog',
+              'TimePickerDialog must not appear on Android after migration.',
         );
+        debugDefaultTargetPlatformOverride = null;
       },
     );
 
     testWidgets(
-      'should_write_540_when_confirm_at_initial_09_00_given_default_settings',
+      'should_not_write_when_barrier_dismiss_given_open_time_picker',
       (tester) async {
-        // FR-13: initial time derived from notificationTimeMinutes=540 (09:00).
-        // Confirming without changing the time must write 540.
+        // FR-13: opening the Cupertino picker and dismissing via the barrier
+        // (tap outside the 310 px bottom sheet) without moving the wheel must
+        // leave savedSettings null — no debounce fires, no Drift write occurs.
         tester.view.physicalSize = const Size(800, 4000);
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.reset);
@@ -682,176 +693,27 @@ void main() {
         await tester.tap(find.text('Orario notifica'));
         await tester.pumpAndSettle();
 
-        // Tap OK without changing the time — confirms the initial 09:00.
-        await tester.tap(find.text('OK'));
-        await tester.pumpAndSettle();
-
-        expect(
-          stub.savedSettings?.notificationTimeMinutes,
-          540,
-          reason:
-              'Confirming at initial 09:00 must persist notificationTimeMinutes=540',
-        );
-      },
-    );
-
-    testWidgets(
-      'should_write_825_when_confirm_at_13_45_given_input_mode',
-      (tester) async {
-        // FR-13: switch to keyboard input mode, type 13:45, confirm → 825.
-        // Force 24h format so 13 is a valid hour in the time picker's input
-        // validation (otherwise MediaQuery.alwaysUse24HourFormat defaults to
-        // false in the test environment and rejects hours > 12).
-        tester.platformDispatcher.alwaysUse24HourFormatTestValue = true;
-        addTearDown(
-          () =>
-              tester.platformDispatcher.alwaysUse24HourFormatTestValue = false,
-        );
-
-        tester.view.physicalSize = const Size(800, 4000);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.reset);
-
-        final stub = _StubSettingsNotifier(
-          defaults.copyWith(notificationsEnabled: true),
-        );
-        await tester.pumpWidget(
-          _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
-        );
-        await tester.pumpAndSettle();
-
-        await tester.tap(find.text('Orario notifica'));
-        await tester.pumpAndSettle();
-
-        // Switch from dial to keyboard input mode.
-        await tester.tap(find.byIcon(Icons.keyboard_outlined));
-        await tester.pumpAndSettle();
-
-        // In 24h input mode there are two TextFields inside TimePickerDialog:
-        // hours first, minutes second.
-        final dialog = find.byType(TimePickerDialog);
-        final fieldsInDialog = find.descendant(
-          of: dialog,
-          matching: find.byType(TextField),
-        );
-
-        await tester.enterText(fieldsInDialog.first, '13');
-        await tester.pump();
-        await tester.enterText(fieldsInDialog.last, '45');
-        await tester.pumpAndSettle();
-
-        await tester.tap(find.text('OK'));
-        await tester.pumpAndSettle();
-
-        expect(
-          stub.savedSettings?.notificationTimeMinutes,
-          825,
-          reason:
-              'Confirming at 13:45 must persist notificationTimeMinutes=825 (13*60+45)',
-        );
-      },
-    );
-
-    testWidgets(
-      'should_not_write_when_cancel_given_open_time_picker',
-      (tester) async {
-        // FR-13: cancel must leave savedSettings null (no Drift write).
-        tester.view.physicalSize = const Size(800, 4000);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.reset);
-
-        final stub = _StubSettingsNotifier(
-          defaults.copyWith(notificationsEnabled: true),
-        );
-        await tester.pumpWidget(
-          _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
-        );
-        await tester.pumpAndSettle();
-
-        await tester.tap(find.text('Orario notifica'));
-        await tester.pumpAndSettle();
-
-        // Tap Cancel (IT locale: "Annulla").
-        await tester.tap(find.text('Annulla'));
+        // Dismiss by tapping above the 310 px bottom sheet.
+        // physicalSize is 800×4000, devicePixelRatio=1 → logical size 800×4000.
+        // The sheet is anchored at the bottom; Offset(400, 100) is well above it.
+        await tester.tapAt(const Offset(400, 100));
         await tester.pumpAndSettle();
 
         expect(
           stub.savedSettings,
           isNull,
           reason:
-              'Cancelling the time picker must not trigger any settings write',
+              'Dismissing the Cupertino picker without wheel movement must not '
+              'trigger any settings write (no debounce was scheduled).',
         );
       },
     );
   });
 
-  group('SettingsScreen — Android time-picker theme (FR-01, FR-02)', () {
-    // Helper: opens the Android Material TimePickerDialog and returns the
-    // TimePickerThemeData captured from inside the Theme(...) builder.
-    Future<TimePickerThemeData> openAndCaptureTheme(
-      WidgetTester tester,
-    ) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.reset);
-      debugDefaultTargetPlatformOverride = TargetPlatform.android;
-
-      final stub = _StubSettingsNotifier(
-        defaults.copyWith(notificationsEnabled: true),
-      );
-      await tester.pumpWidget(
-        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Orario notifica'));
-      await tester.pumpAndSettle();
-
-      // Theme.of() walks up from the dialog and finds the inner Theme
-      // injected by _showTimePicker's builder — the one with the
-      // TimePickerThemeData override.
-      final dialogCtx = tester.element(find.byType(TimePickerDialog));
-      return Theme.of(dialogCtx).timePickerTheme;
-    }
-
-    testWidgets(
-      'FR-01 regression guard: dialTextStyle is null (inherits M3 default)',
-      (tester) async {
-        final tpTheme = await openAndCaptureTheme(tester);
-        expect(
-          tpTheme.dialTextStyle,
-          isNull,
-          reason:
-              'FR-01: dialTextStyle must be null so M3 bodyLarge default applies '
-              'with correct geometric clearance. Any non-null value is a regression.',
-        );
-        debugDefaultTargetPlatformOverride = null;
-      },
-    );
-
-    testWidgets(
-      'FR-02: hourMinuteTextStyle is 40 pt DM Serif Display',
-      (tester) async {
-        final tpTheme = await openAndCaptureTheme(tester);
-        expect(
-          tpTheme.hourMinuteTextStyle?.fontSize,
-          40,
-          reason: 'FR-02: hourMinuteTextStyle.fontSize must be 40, not 52.',
-        );
-        // Google Fonts normalises "DM Serif Display" → "DMSerifDisplay_regular"
-        // at runtime. Check the normalised prefix so the assertion survives
-        // minor version bumps while still catching a wrong typeface.
-        expect(
-          tpTheme.hourMinuteTextStyle?.fontFamily,
-          contains('DMSerifDisplay'),
-          reason:
-              'FR-02: hourMinuteTextStyle must use DM Serif Display typeface '
-              '(runtime family name: DMSerifDisplay_regular).',
-        );
-        debugDefaultTargetPlatformOverride = null;
-      },
-    );
-  });
+  // Note: the "Android time-picker theme (FR-01, FR-02)" group was removed
+  // when the Material TimePickerDialog was replaced by the unified Cupertino
+  // wheel on all platforms. TimePickerThemeData is no longer configured or
+  // testable from the settings screen.
 
   group('SettingsScreen — settings_notification_time_value locale format FR-15',
       () {
@@ -1898,175 +1760,8 @@ void main() {
     );
   });
 
-  // ---------------------------------------------------------------------------
-  // TASK-07: FR-03 — Pianificazione in background row (battery-opt)
-  // ---------------------------------------------------------------------------
-
-  group('SettingsScreen — FR-03 battery-opt row (TASK-07)', () {
-    testWidgets(
-      'battery-opt row is visible when notificationsEnabled=false',
-      (tester) async {
-        tester.view.physicalSize = const Size(800, 4000);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.reset);
-
-        // defaults has notificationsEnabled=false — row must still appear.
-        final stub = _StubSettingsNotifier(defaults);
-        final fake = FakeNotificationService();
-        await tester.pumpWidget(
-          _wrap([
-            settingsNotifierProvider.overrideWith(() => stub),
-            notificationServiceProvider.overrideWithValue(fake),
-          ]),
-        );
-        await tester.pumpAndSettle();
-
-        expect(
-          find.text('Pianificazione in background'),
-          findsOneWidget,
-          reason:
-              'FR-03: row must always be visible regardless of master toggle',
-        );
-      },
-    );
-
-    testWidgets(
-      'tapping battery-opt row calls openBatteryOptimizationSettings once',
-      (tester) async {
-        tester.view.physicalSize = const Size(800, 4000);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.reset);
-
-        final stub = _StubSettingsNotifier(defaults);
-        final fake = FakeNotificationService();
-        await tester.pumpWidget(
-          _wrap([
-            settingsNotifierProvider.overrideWith(() => stub),
-            notificationServiceProvider.overrideWithValue(fake),
-          ]),
-        );
-        await tester.pumpAndSettle();
-
-        await tester.tap(find.text('Pianificazione in background'));
-        await tester.pumpAndSettle();
-
-        expect(
-          fake.openBatteryOptimizationSettingsCallCount,
-          1,
-          reason:
-              'FR-03: openBatteryOptimizationSettings must be called exactly once',
-        );
-      },
-    );
-
-    testWidgets(
-      'battery-opt row has Semantics button=true and tap-target height ≥44 dp',
-      (tester) async {
-        tester.view.physicalSize = const Size(800, 4000);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.reset);
-
-        final stub = _StubSettingsNotifier(defaults);
-        final fake = FakeNotificationService();
-        await tester.pumpWidget(
-          _wrap([
-            settingsNotifierProvider.overrideWith(() => stub),
-            notificationServiceProvider.overrideWithValue(fake),
-          ]),
-        );
-        await tester.pumpAndSettle();
-
-        // _SettingsRow wraps the row in an InkWell; its height is the tap target.
-        final rowFinder = find.text('Pianificazione in background');
-        expect(rowFinder, findsOneWidget);
-
-        final inkWell = find.ancestor(
-          of: rowFinder,
-          matching: find.byType(InkWell),
-        );
-        expect(
-          inkWell,
-          findsAtLeastNWidgets(1),
-          reason: 'Row must be wrapped in an InkWell tap target',
-        );
-
-        final size = tester.getSize(inkWell.first);
-        expect(
-          size.height,
-          greaterThanOrEqualTo(44.0),
-          reason: 'NFR-07: tap-target height must be ≥44 dp',
-        );
-
-        // Verify Semantics carries an accessible label for the row.
-        // The _SettingsRow widget passes semanticsLabel to Semantics.label;
-        // for this row that is settings_battery_optimization_semantics_label
-        // ("Apri le impostazioni di ottimizzazione batteria").
-        expect(
-          find.bySemanticsLabel(
-            RegExp(r'(Pianificazione in background|ottimizzazione batteria)'),
-          ),
-          findsAtLeastNWidgets(1),
-          reason:
-              'Accessibility: semantics label must reference the row purpose',
-        );
-      },
-    );
-
-    testWidgets(
-      'OQ-03: row visible when already whitelisted (isIgnoringBatteryOptimizations=true)',
-      (tester) async {
-        tester.view.physicalSize = const Size(800, 4000);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.reset);
-
-        // Battery already whitelisted — row must NOT disappear (OQ-03).
-        final stub = _StubSettingsNotifier(defaults);
-        final fake = FakeNotificationService(
-          isIgnoringBatteryOptimizationsValue: true,
-        );
-        await tester.pumpWidget(
-          _wrap([
-            settingsNotifierProvider.overrideWith(() => stub),
-            notificationServiceProvider.overrideWithValue(fake),
-          ]),
-        );
-        await tester.pumpAndSettle();
-
-        expect(
-          find.text('Pianificazione in background'),
-          findsOneWidget,
-          reason:
-              'OQ-03: row must remain visible even when already whitelisted',
-        );
-      },
-    );
-
-    testWidgets(
-      'battery-opt row is hidden on iOS (bible §18.6.1)',
-      (tester) async {
-        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-        tester.view.physicalSize = const Size(800, 4000);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.reset);
-
-        final stub = _StubSettingsNotifier(defaults);
-        final fake = FakeNotificationService();
-        await tester.pumpWidget(
-          _wrap([
-            settingsNotifierProvider.overrideWith(() => stub),
-            notificationServiceProvider.overrideWithValue(fake),
-          ]),
-        );
-        await tester.pumpAndSettle();
-
-        expect(
-          find.text('Pianificazione in background'),
-          findsNothing,
-          reason:
-              'Bible §18.6.1: row must be absent on iOS (no battery-opt gate on that platform)',
-        );
-        debugDefaultTargetPlatformOverride = null;
-      },
-    );
-  });
+  // Note: the "FR-03 battery-opt row (TASK-07)" group was removed when the
+  // "Pianificazione in background" settings row was removed from the UI.
+  // The underlying NotificationService.isIgnoringBatteryOptimizations() and
+  // openBatteryOptimizationSettings() methods are preserved for future use.
 }

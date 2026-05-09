@@ -51,7 +51,12 @@ void main() {
 
     test('schedulePredictionNotification() records the call', () async {
       final fake = FakeNotificationService();
-      final date = DateTime(2026, 5, 10);
+      // Use a far-future date so the FakeNotificationService routes it to
+      // `scheduled` (not `shown`) regardless of when the test is executed.
+      // The original date (2026-05-10) was once in the future but became
+      // today on 2026-05-10, causing the fake to route it to the same-day
+      // immediate-show path instead of the scheduled path.
+      final date = DateTime(2099, 12, 31, 9, 0);
       await fake.schedulePredictionNotification(date, 'Title', 'Body');
       expect(fake.scheduled, hasLength(1));
       expect(fake.scheduled.first.notifyAt, equals(date));

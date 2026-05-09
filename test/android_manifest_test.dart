@@ -19,13 +19,14 @@
 //   - FR-09 / BUG-C02: release-blocker — INTERNET permission must be declared
 //     in the main AndroidManifest.xml (not just in the debug overlay), or
 //     every release APK throws SocketException on every Dropbox HTTP call.
-//   - FR-04: REQUEST_IGNORE_BATTERY_OPTIMIZATIONS permission must be
-//     declared so the Settings row in TASK-07 can launch the OS
-//     battery-optimisation panel.
 //   - FR-08 / BUG-C01: KeepAliveService must be exported (android:exported=
 //     "true"), otherwise Chrome's cross-UID bindService during OAuth fails
 //     and the OS OOM-killer terminates Métra mid-OAuth on real devices
 //     (the emulator masks this behaviour).
+//
+// Note: REQUEST_IGNORE_BATTERY_OPTIMIZATIONS was removed (qp-20260509) when
+// the "Pianificazione in background" Settings row was removed. The permission
+// is no longer used. Its test has been removed accordingly.
 //
 // These assertions read the manifest as text and use `contains` checks.
 // No XML parser dependency is required.
@@ -57,22 +58,6 @@ void main() {
               'Dropbox HTTP call. Currently declared only in the debug overlay '
               '(android/app/src/debug/AndroidManifest.xml), which masks the '
               'defect in debug builds.',
-        );
-      },
-    );
-
-    test(
-      'declares REQUEST_IGNORE_BATTERY_OPTIMIZATIONS permission (FR-04)',
-      () {
-        expect(
-          manifest.contains(
-            '<uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>',
-          ),
-          isTrue,
-          reason: 'REQUEST_IGNORE_BATTERY_OPTIMIZATIONS permission missing. '
-              'Required so the "Allow background scheduling" Settings row '
-              '(TASK-07) can fire the Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS '
-              'intent.',
         );
       },
     );
