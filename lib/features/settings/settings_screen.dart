@@ -958,7 +958,7 @@ class _CupertinoPickerScaffoldState extends State<_CupertinoPickerScaffold> {
                       child: Text(
                         l10n.common_restore,
                         style: TextStyle(
-                          color: colors.textSecondary,
+                          color: colors.accentFlow,
                           fontSize: 17,
                         ),
                       ),

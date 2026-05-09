@@ -20,6 +20,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:metra/core/theme/metra_colors.dart';
 import 'package:metra/core/theme/metra_theme.dart';
 import 'package:metra/domain/entities/app_settings_data.dart';
 import 'package:metra/domain/use_cases/delete_all_data.dart';
@@ -1198,6 +1199,43 @@ void main() {
       );
       debugDefaultTargetPlatformOverride = null;
     });
+
+    testWidgets(
+      'BUG-008: Ripristina label color is accentFlow (not textSecondary)',
+      (tester) async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        final stub = _StubSettingsNotifier(
+          defaults.copyWith(
+            notificationsEnabled: true,
+            notificationTimeMinutes: 540,
+          ),
+        );
+        await tester.pumpWidget(
+          _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Orario notifica'));
+        await tester.pumpAndSettle();
+
+        // Resolve expected color from the live theme context.
+        final ctx = tester.element(find.byType(SettingsScreen));
+        final expected = MetraColors.of(ctx).accentFlow;
+
+        final ripristina = tester.widget<Text>(find.text('Ripristina'));
+        expect(
+          ripristina.style?.color,
+          expected,
+          reason:
+              'Ripristina is an active reset action — must use accentFlow, not textSecondary',
+        );
+        debugDefaultTargetPlatformOverride = null;
+      },
+    );
   });
 
   group('SettingsScreen — iOS days picker (CupertinoPicker)', () {
