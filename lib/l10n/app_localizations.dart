@@ -134,6 +134,12 @@ abstract class AppLocalizations {
   /// **'OK'**
   String get common_ok;
 
+  /// Restore/reset action — used by the Cupertino picker toolbar to reset the wheel to its initial value without closing the modal
+  ///
+  /// In it, this message translates to:
+  /// **'Ripristina'**
+  String get common_restore;
+
   /// Generic error message shown when an operation fails unexpectedly
   ///
   /// In it, this message translates to:

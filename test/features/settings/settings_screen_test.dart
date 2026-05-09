@@ -42,6 +42,7 @@ class _StubSettingsNotifier extends SettingsNotifier {
 
   final AppSettingsData _initial;
   AppSettingsData? savedSettings;
+  int saveCallCount = 0;
 
   @override
   Future<AppSettingsData> build() async => _initial;
@@ -49,6 +50,7 @@ class _StubSettingsNotifier extends SettingsNotifier {
   @override
   Future<void> save(AppSettingsData settings) async {
     savedSettings = settings;
+    saveCallCount++;
     state = AsyncData(settings);
   }
 }
@@ -1082,7 +1084,90 @@ void main() {
       debugDefaultTargetPlatformOverride = null;
     });
 
-    testWidgets('Annulla dismisses without saving', (tester) async {
+    testWidgets(
+      'Ripristina resets wheel and resaves original; modal stays open (time)',
+      (tester) async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        // Seed 540 (09:00) — already round-5; Ripristina must restore to 540.
+        final stub = _StubSettingsNotifier(
+          defaults.copyWith(
+            notificationsEnabled: true,
+            notificationTimeMinutes: 540,
+          ),
+        );
+        await tester.pumpWidget(
+          _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Orario notifica'));
+        await tester.pumpAndSettle();
+
+        // Drag the minutes column of CupertinoDatePicker.
+        //
+        // Layout (800px wide viewport, devicePixelRatio=1):
+        //   In 12h time mode there are 3 wheels: [0]=hours, [1]=minutes, [2]=AM/PM.
+        //   In 24h mode: [0]=hours, [1]=minutes.
+        //   The minutes column center is at x≈400 in both formats.
+        //   itemExtent=32; a drag of ≥64px triggers a selection change.
+        //   dragFrom(Offset(400, pickerRect.center.dy), ...) targets the
+        //   minutes column reliably without assuming wheel index.
+        final pickerFinder = find.byType(CupertinoDatePicker);
+        final pickerRect = tester.getRect(pickerFinder);
+        // 4 scroll items * 32 px/item = 128 px → 3 minute-intervals (+15 min).
+        await tester.dragFrom(
+          Offset(400, pickerRect.center.dy),
+          const Offset(0, -128),
+        );
+        // pumpAndSettle lets the snap finish AND fires the 250 ms debounce timer
+        // (default step is 100 ms, so 3 steps cross the 250 ms window).
+        await tester.pumpAndSettle();
+
+        // Autosave must have fired.
+        expect(
+          stub.savedSettings,
+          isNotNull,
+          reason: 'Autosave must fire after wheel settles',
+        );
+        expect(
+          stub.savedSettings?.notificationTimeMinutes,
+          isNot(540),
+          reason: 'Autosave must write a value different from the seed',
+        );
+
+        // Tap Ripristina — should resave the original and keep modal open.
+        await tester.tap(find.text('Ripristina'));
+        await tester.pumpAndSettle();
+
+        expect(
+          stub.savedSettings?.notificationTimeMinutes,
+          540,
+          reason: 'Ripristina must restore the seed value (540)',
+        );
+        expect(
+          find.byType(CupertinoDatePicker),
+          findsOneWidget,
+          reason: 'Modal must stay open after Ripristina',
+        );
+        expect(
+          find.text('Ripristina'),
+          findsOneWidget,
+          reason: 'Ripristina button must still be visible',
+        );
+        expect(
+          find.text('Annulla'),
+          findsNothing,
+          reason: 'Annulla must not exist — replaced by Ripristina',
+        );
+        debugDefaultTargetPlatformOverride = null;
+      },
+    );
+
+    testWidgets('OK closes the modal (time)', (tester) async {
       debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
       tester.view.physicalSize = const Size(800, 4000);
       tester.view.devicePixelRatio = 1.0;
@@ -1102,47 +1187,14 @@ void main() {
       await tester.tap(find.text('Orario notifica'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Annulla'));
-      await tester.pumpAndSettle();
-
-      expect(
-        stub.savedSettings,
-        isNull,
-        reason: 'Annulla must not write settings',
-      );
-      debugDefaultTargetPlatformOverride = null;
-    });
-
-    testWidgets('OK confirms and saves seeded value without scroll',
-        (tester) async {
-      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-      tester.view.physicalSize = const Size(800, 4000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.reset);
-
-      // notificationTimeMinutes=540 → _roundTo5(540)=540 → seeded value
-      final stub = _StubSettingsNotifier(
-        defaults.copyWith(
-          notificationsEnabled: true,
-          notificationTimeMinutes: 540,
-        ),
-      );
-      await tester.pumpWidget(
-        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Orario notifica'));
-      await tester.pumpAndSettle();
-
-      // Tap OK without scrolling — seeded value (540) is written
+      // Tap OK without scrolling — modal must close.
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
 
       expect(
-        stub.savedSettings?.notificationTimeMinutes,
-        540,
-        reason: 'OK without scroll must write the seeded minute value',
+        find.byType(CupertinoDatePicker),
+        findsNothing,
+        reason: 'OK must close the modal',
       );
       debugDefaultTargetPlatformOverride = null;
     });
@@ -1180,42 +1232,81 @@ void main() {
       debugDefaultTargetPlatformOverride = null;
     });
 
-    testWidgets('Annulla dismisses without saving', (tester) async {
+    testWidgets(
+      'Ripristina resets wheel and resaves original; modal stays open (days)',
+      (tester) async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        // Seed 3 days → seededIndex = 2. Ripristina must restore to 3.
+        final stub = _StubSettingsNotifier(
+          defaults.copyWith(
+            notificationsEnabled: true,
+            notificationDaysBefore: 3,
+          ),
+        );
+        await tester.pumpWidget(
+          _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Preavviso'));
+        await tester.pumpAndSettle();
+
+        // Drag 2 items upward on the CupertinoPicker (itemExtent=44 → 88 px).
+        final pickerFinder = find.byType(CupertinoPicker);
+        await tester.drag(pickerFinder, const Offset(0, -88.0));
+        // pumpAndSettle fires the 250 ms debounce timer.
+        await tester.pumpAndSettle();
+
+        // Autosave must have fired.
+        expect(
+          stub.savedSettings,
+          isNotNull,
+          reason: 'Autosave must fire after wheel settles',
+        );
+        expect(
+          stub.savedSettings?.notificationDaysBefore,
+          isNot(3),
+          reason: 'Autosave must write a value different from the seed',
+        );
+
+        // Tap Ripristina — should resave original and keep modal open.
+        await tester.tap(find.text('Ripristina'));
+        await tester.pumpAndSettle();
+
+        expect(
+          stub.savedSettings?.notificationDaysBefore,
+          3,
+          reason: 'Ripristina must restore the seed value (3)',
+        );
+        expect(
+          find.byType(CupertinoPicker),
+          findsOneWidget,
+          reason: 'Modal must stay open after Ripristina',
+        );
+        expect(
+          find.text('Ripristina'),
+          findsOneWidget,
+          reason: 'Ripristina button must still be visible',
+        );
+        expect(
+          find.text('Annulla'),
+          findsNothing,
+          reason: 'Annulla must not exist — replaced by Ripristina',
+        );
+        debugDefaultTargetPlatformOverride = null;
+      },
+    );
+
+    testWidgets('OK closes the modal (days)', (tester) async {
       debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
       tester.view.physicalSize = const Size(800, 4000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      final stub = _StubSettingsNotifier(
-        defaults.copyWith(notificationsEnabled: true),
-      );
-      await tester.pumpWidget(
-        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Preavviso'));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Annulla'));
-      await tester.pumpAndSettle();
-
-      expect(
-        stub.savedSettings,
-        isNull,
-        reason: 'Annulla must not write settings',
-      );
-      debugDefaultTargetPlatformOverride = null;
-    });
-
-    testWidgets('OK confirms and saves seeded day value without scroll',
-        (tester) async {
-      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-      tester.view.physicalSize = const Size(800, 4000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.reset);
-
-      // notificationDaysBefore=3 → selectedIndex=2 → "3 giorni prima" seeded
       final stub = _StubSettingsNotifier(
         defaults.copyWith(
           notificationsEnabled: true,
@@ -1230,14 +1321,14 @@ void main() {
       await tester.tap(find.text('Preavviso'));
       await tester.pumpAndSettle();
 
-      // Tap OK without scrolling — selectedIndex (2) + 1 = 3 is written
+      // Tap OK without scrolling — modal must close.
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
 
       expect(
-        stub.savedSettings?.notificationDaysBefore,
-        3,
-        reason: 'OK without scroll must write the seeded day value',
+        find.byType(CupertinoPicker),
+        findsNothing,
+        reason: 'OK must close the modal',
       );
       debugDefaultTargetPlatformOverride = null;
     });
@@ -1286,5 +1377,384 @@ void main() {
       }
       debugDefaultTargetPlatformOverride = null;
     });
+  });
+
+  // ---------------------------------------------------------------------------
+  // NEW autosave / Ripristina / debounce-flush tests
+  // ---------------------------------------------------------------------------
+
+  group('SettingsScreen — iOS time picker autosave + debounce', () {
+    testWidgets(
+      'wheel-stop autosave fires after 250 ms (time)',
+      (tester) async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        // Seed 540 (09:00). Drag +3 items in minute column (+15 min → 555).
+        final stub = _StubSettingsNotifier(
+          defaults.copyWith(
+            notificationsEnabled: true,
+            notificationTimeMinutes: 540,
+          ),
+        );
+        await tester.pumpWidget(
+          _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Orario notifica'));
+        await tester.pumpAndSettle();
+
+        // Drag +15 min: 4 scroll items * 32 px/item = 128 px → 555 min.
+        final pickerFinder = find.byType(CupertinoDatePicker);
+        final pickerRect = tester.getRect(pickerFinder);
+        await tester.dragFrom(
+          Offset(400, pickerRect.center.dy),
+          const Offset(0, -128),
+        );
+        // pumpAndSettle fires the 250 ms debounce (default step = 100 ms).
+        await tester.pumpAndSettle();
+
+        expect(
+          stub.savedSettings?.notificationTimeMinutes,
+          555,
+          reason: 'Autosave must write 555 (540 + 15 min) after debounce',
+        );
+        expect(
+          find.byType(CupertinoDatePicker),
+          findsOneWidget,
+          reason: 'Modal must stay open after autosave',
+        );
+        debugDefaultTargetPlatformOverride = null;
+      },
+    );
+
+    testWidgets(
+      'OK after autosave saves once with last scrolled value (time)',
+      (tester) async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        // Seed 540. Drag +10 min (96 px → 550), let autosave fire, then tap OK.
+        final stub = _StubSettingsNotifier(
+          defaults.copyWith(
+            notificationsEnabled: true,
+            notificationTimeMinutes: 540,
+          ),
+        );
+        await tester.pumpWidget(
+          _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Orario notifica'));
+        await tester.pumpAndSettle();
+
+        final pickerFinder = find.byType(CupertinoDatePicker);
+        final pickerRect = tester.getRect(pickerFinder);
+        // 96 px → +10 min (550).
+        await tester.dragFrom(
+          Offset(400, pickerRect.center.dy),
+          const Offset(0, -96),
+        );
+        // pumpAndSettle fires autosave (timer fires during settle).
+        await tester.pumpAndSettle();
+
+        // Reset call count; OK must not trigger another save.
+        stub.saveCallCount = 0;
+
+        await tester.tap(find.text('OK'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byType(CupertinoDatePicker),
+          findsNothing,
+          reason: 'OK must close the modal',
+        );
+        expect(
+          stub.savedSettings?.notificationTimeMinutes,
+          550,
+          reason: 'Last scrolled value (550) must be persisted',
+        );
+        expect(
+          stub.saveCallCount,
+          0,
+          reason:
+              'OK must not trigger an extra save when debounce already fired',
+        );
+        debugDefaultTargetPlatformOverride = null;
+      },
+    );
+
+    testWidgets(
+      'barrier-dismiss preserves auto-saved value (time)',
+      (tester) async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        // Seed 540. Drag +5 min (64 px → 545); let autosave fire, then dismiss.
+        final stub = _StubSettingsNotifier(
+          defaults.copyWith(
+            notificationsEnabled: true,
+            notificationTimeMinutes: 540,
+          ),
+        );
+        await tester.pumpWidget(
+          _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Orario notifica'));
+        await tester.pumpAndSettle();
+
+        final pickerFinder = find.byType(CupertinoDatePicker);
+        final pickerRect = tester.getRect(pickerFinder);
+        // 64 px → +5 min (545).
+        await tester.dragFrom(
+          Offset(400, pickerRect.center.dy),
+          const Offset(0, -64),
+        );
+        // pumpAndSettle fires autosave.
+        await tester.pumpAndSettle();
+
+        // Dismiss via barrier tap (top-left corner, above the 310 px popup).
+        await tester.tapAt(const Offset(10, 10));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byType(CupertinoDatePicker),
+          findsNothing,
+          reason: 'Barrier tap must dismiss the modal',
+        );
+        expect(
+          stub.savedSettings?.notificationTimeMinutes,
+          545,
+          reason:
+              'Auto-saved value (545) must NOT be reverted on barrier dismiss',
+        );
+        debugDefaultTargetPlatformOverride = null;
+      },
+    );
+
+    testWidgets(
+      'tap-OK with debounce still pending flushes synchronously (time)',
+      (tester) async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        // Seed 540. Drag +5 min (64 px → 545); pump only 30 ms (debounce
+        // still pending at 30 ms < 250 ms), then tap OK.
+        final stub = _StubSettingsNotifier(
+          defaults.copyWith(
+            notificationsEnabled: true,
+            notificationTimeMinutes: 540,
+          ),
+        );
+        await tester.pumpWidget(
+          _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Orario notifica'));
+        await tester.pumpAndSettle();
+
+        final pickerFinder = find.byType(CupertinoDatePicker);
+        final pickerRect = tester.getRect(pickerFinder);
+        // 64 px → +5 min (545). onDateTimeChanged fires immediately.
+        await tester.dragFrom(
+          Offset(400, pickerRect.center.dy),
+          const Offset(0, -64),
+        );
+        // Advance 30 ms — snap settles but 250 ms timer still pending.
+        await tester.pump(const Duration(milliseconds: 10));
+        await tester.pump(const Duration(milliseconds: 10));
+        await tester.pump(const Duration(milliseconds: 10));
+
+        // Tap OK — must synchronously flush the pending debounce.
+        await tester.tap(find.text('OK'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byType(CupertinoDatePicker),
+          findsNothing,
+          reason: 'OK must close the modal',
+        );
+        expect(
+          stub.savedSettings?.notificationTimeMinutes,
+          545,
+          reason: 'OK must synchronously flush pending debounce and save 545',
+        );
+        expect(
+          stub.saveCallCount,
+          1,
+          reason: 'Exactly one save must occur (the flushed pending debounce)',
+        );
+        debugDefaultTargetPlatformOverride = null;
+      },
+    );
+  });
+
+  group('SettingsScreen — iOS days picker autosave + debounce', () {
+    testWidgets(
+      'wheel-stop autosave fires after 250 ms (days)',
+      (tester) async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        // Seed 2 days → seededIndex=1. Drag +2 items → index 3 → 4 days.
+        final stub = _StubSettingsNotifier(
+          defaults.copyWith(
+            notificationsEnabled: true,
+            notificationDaysBefore: 2,
+          ),
+        );
+        await tester.pumpWidget(
+          _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Preavviso'));
+        await tester.pumpAndSettle();
+
+        // Drag 2 items upward (towards higher day numbers).
+        // itemExtent=44; drag(Offset(0, -2*44)) → index seededIndex+2 = 3 → 4 days.
+        final pickerFinder = find.byType(CupertinoPicker);
+        await tester.drag(pickerFinder, const Offset(0, -2 * 44.0));
+        // pumpAndSettle fires the 250 ms debounce (default step = 100 ms).
+        await tester.pumpAndSettle();
+
+        expect(
+          stub.savedSettings?.notificationDaysBefore,
+          4,
+          reason: 'Autosave must write 4 days after debounce',
+        );
+        expect(
+          find.byType(CupertinoPicker),
+          findsOneWidget,
+          reason: 'Modal must stay open after autosave',
+        );
+        debugDefaultTargetPlatformOverride = null;
+      },
+    );
+
+    testWidgets(
+      'OK after autosave saves once with last scrolled value (days)',
+      (tester) async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        // Seed 2 days. Drag +2 items → 4 days; let autosave fire; then OK.
+        final stub = _StubSettingsNotifier(
+          defaults.copyWith(
+            notificationsEnabled: true,
+            notificationDaysBefore: 2,
+          ),
+        );
+        await tester.pumpWidget(
+          _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Preavviso'));
+        await tester.pumpAndSettle();
+
+        final pickerFinder = find.byType(CupertinoPicker);
+        await tester.drag(pickerFinder, const Offset(0, -2 * 44.0));
+        // pumpAndSettle fires autosave.
+        await tester.pumpAndSettle();
+
+        // Reset count; OK must not trigger another save.
+        stub.saveCallCount = 0;
+
+        await tester.tap(find.text('OK'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byType(CupertinoPicker),
+          findsNothing,
+          reason: 'OK must close the modal',
+        );
+        expect(
+          stub.savedSettings?.notificationDaysBefore,
+          4,
+          reason: 'Last scrolled value (4 days) must be persisted',
+        );
+        expect(
+          stub.saveCallCount,
+          0,
+          reason:
+              'OK must not trigger an extra save when debounce already fired',
+        );
+        debugDefaultTargetPlatformOverride = null;
+      },
+    );
+
+    testWidgets(
+      'tap-OK with debounce still pending flushes synchronously (days)',
+      (tester) async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        tester.view.physicalSize = const Size(800, 4000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        // Seed 2 days. Drag +1 item → 3 days; pump only 30 ms (debounce
+        // still pending at 30 ms < 250 ms), then tap OK.
+        final stub = _StubSettingsNotifier(
+          defaults.copyWith(
+            notificationsEnabled: true,
+            notificationDaysBefore: 2,
+          ),
+        );
+        await tester.pumpWidget(
+          _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Preavviso'));
+        await tester.pumpAndSettle();
+
+        final pickerFinder = find.byType(CupertinoPicker);
+        // Drag 1 item upward. onSelectedItemChanged fires immediately.
+        await tester.drag(pickerFinder, const Offset(0, -44.0));
+        // Advance 30 ms — snap settles but 250 ms timer still pending.
+        await tester.pump(const Duration(milliseconds: 10));
+        await tester.pump(const Duration(milliseconds: 10));
+        await tester.pump(const Duration(milliseconds: 10));
+
+        // Tap OK — must synchronously flush the pending debounce.
+        await tester.tap(find.text('OK'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byType(CupertinoPicker),
+          findsNothing,
+          reason: 'OK must close the modal',
+        );
+        expect(
+          stub.savedSettings?.notificationDaysBefore,
+          3,
+          reason:
+              'OK must synchronously flush pending debounce and save 3 days',
+        );
+        expect(
+          stub.saveCallCount,
+          1,
+          reason: 'Exactly one save must occur (the flushed pending debounce)',
+        );
+        debugDefaultTargetPlatformOverride = null;
+      },
+    );
   });
 }

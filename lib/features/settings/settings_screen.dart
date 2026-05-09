@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -437,82 +438,37 @@ class SettingsScreen extends ConsumerWidget {
     WidgetRef ref,
     AppSettingsData settings,
   ) async {
-    final colors = MetraColors.of(context);
     final seedMinutes = _roundTo5(settings.notificationTimeMinutes);
     final initial = DateTime(2000, 1, 1, seedMinutes ~/ 60, seedMinutes % 60);
 
-    int? confirmedMinutes;
+    int currentMinutes = seedMinutes;
 
     await showCupertinoModalPopup<void>(
       context: context,
-      builder: (ctx) {
-        final l10n = AppLocalizations.of(ctx)!;
-        return CupertinoTheme(
-          data: CupertinoThemeData(
-            brightness: Theme.of(ctx).brightness,
-            primaryColor: colors.accentFlow,
-          ),
-          child: Container(
-            height: 310,
-            color: colors.bgSurface,
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 44,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      CupertinoButton(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        onPressed: () => Navigator.of(ctx).pop(),
-                        child: Text(
-                          l10n.common_cancel,
-                          style: TextStyle(
-                            color: colors.textSecondary,
-                            fontSize: 17,
-                          ),
-                        ),
-                      ),
-                      CupertinoButton(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        onPressed: () {
-                          _save(
-                            ref,
-                            settings.copyWith(
-                              notificationTimeMinutes:
-                                  confirmedMinutes ?? seedMinutes,
-                            ),
-                          );
-                          Navigator.of(ctx).pop();
-                        },
-                        child: Text(
-                          l10n.common_ok,
-                          style: TextStyle(
-                            color: colors.accentFlow,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 17,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: CupertinoDatePicker(
-                    mode: CupertinoDatePickerMode.time,
-                    minuteInterval: 5,
-                    initialDateTime: initial,
-                    use24hFormat: MediaQuery.alwaysUse24HourFormatOf(ctx),
-                    onDateTimeChanged: (dt) {
-                      confirmedMinutes = dt.hour * 60 + dt.minute;
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+      builder: (ctx) => _CupertinoPickerScaffold(
+        wheelBuilder: (resetKey, scheduleAutoSave) => CupertinoDatePicker(
+          key: resetKey,
+          mode: CupertinoDatePickerMode.time,
+          minuteInterval: 5,
+          initialDateTime: initial,
+          use24hFormat: MediaQuery.alwaysUse24HourFormatOf(ctx),
+          onDateTimeChanged: (dt) {
+            currentMinutes = dt.hour * 60 + dt.minute;
+            scheduleAutoSave();
+          },
+        ),
+        onAutoSave: () => _save(
+          ref,
+          settings.copyWith(notificationTimeMinutes: currentMinutes),
+        ),
+        onRestore: () {
+          currentMinutes = seedMinutes;
+          _save(
+            ref,
+            settings.copyWith(notificationTimeMinutes: seedMinutes),
+          );
+        },
+      ),
     );
   }
 
@@ -563,92 +519,62 @@ class SettingsScreen extends ConsumerWidget {
     AppSettingsData settings,
     AppLocalizations l10n,
   ) async {
-    final colors = MetraColors.of(context);
-    int selectedIndex = (settings.notificationDaysBefore - 1)
+    final seededIndex = (settings.notificationDaysBefore - 1)
         .clamp(0, AppConstants.kMaxAdvanceDays - 1);
+
+    int selectedIndex = seededIndex;
 
     await showCupertinoModalPopup<void>(
       context: context,
       builder: (ctx) {
-        return CupertinoTheme(
-          data: CupertinoThemeData(
-            brightness: Theme.of(ctx).brightness,
-            primaryColor: colors.accentFlow,
-            textTheme: CupertinoTextThemeData(
-              pickerTextStyle: TextStyle(
-                color: colors.textPrimary,
-                fontSize: 21,
+        final colors = MetraColors.of(ctx);
+        return _CupertinoPickerScaffold(
+          wheelBuilder: (resetKey, scheduleAutoSave) => CupertinoTheme(
+            data: CupertinoThemeData(
+              brightness: Theme.of(ctx).brightness,
+              primaryColor: colors.accentFlow,
+              textTheme: CupertinoTextThemeData(
+                pickerTextStyle: TextStyle(
+                  color: colors.textPrimary,
+                  fontSize: 21,
+                ),
               ),
             ),
-          ),
-          child: Container(
-            height: 310,
-            color: colors.bgSurface,
-            child: Column(
+            child: CupertinoPicker(
+              key: resetKey,
+              scrollController: FixedExtentScrollController(
+                initialItem: selectedIndex,
+              ),
+              itemExtent: 44,
+              onSelectedItemChanged: (i) {
+                selectedIndex = i;
+                scheduleAutoSave();
+              },
               children: [
-                SizedBox(
-                  height: 44,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      CupertinoButton(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        onPressed: () => Navigator.of(ctx).pop(),
-                        child: Text(
-                          l10n.common_cancel,
-                          style: TextStyle(
-                            color: colors.textSecondary,
-                            fontSize: 17,
-                          ),
-                        ),
+                for (int i = 1; i <= AppConstants.kMaxAdvanceDays; i++)
+                  Center(
+                    child: Text(
+                      l10n.settings_advance_value(i),
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontSize: 21,
                       ),
-                      CupertinoButton(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        onPressed: () {
-                          _save(
-                            ref,
-                            settings.copyWith(
-                              notificationDaysBefore: selectedIndex + 1,
-                            ),
-                          );
-                          Navigator.of(ctx).pop();
-                        },
-                        child: Text(
-                          l10n.common_ok,
-                          style: TextStyle(
-                            color: colors.accentFlow,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 17,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: CupertinoPicker(
-                    scrollController: FixedExtentScrollController(
-                      initialItem: selectedIndex,
                     ),
-                    itemExtent: 44,
-                    onSelectedItemChanged: (i) => selectedIndex = i,
-                    children: [
-                      for (int i = 1; i <= AppConstants.kMaxAdvanceDays; i++)
-                        Center(
-                          child: Text(
-                            l10n.settings_advance_value(i),
-                            style: TextStyle(
-                              color: colors.textPrimary,
-                              fontSize: 21,
-                            ),
-                          ),
-                        ),
-                    ],
                   ),
-                ),
               ],
             ),
           ),
+          onAutoSave: () => _save(
+            ref,
+            settings.copyWith(notificationDaysBefore: selectedIndex + 1),
+          ),
+          onRestore: () {
+            selectedIndex = seededIndex;
+            _save(
+              ref,
+              settings.copyWith(notificationDaysBefore: seededIndex + 1),
+            );
+          },
         );
       },
     );
@@ -920,6 +846,157 @@ class SettingsScreen extends ConsumerWidget {
 // ---------------------------------------------------------------------------
 // Private sub-widgets
 // ---------------------------------------------------------------------------
+
+/// Wheel-stop debounce window. After the wheel emits its last
+/// [CupertinoDatePicker.onDateTimeChanged] / [CupertinoPicker.onSelectedItemChanged],
+/// the autosave fires this far in the future. Cancelled on close (OK / barrier
+/// dismiss), on Ripristina (then resave original synchronously), and on tap-OK
+/// when a timer is still pending (then synchronous save before pop).
+const Duration _kPickerAutoSaveDebounce = Duration(milliseconds: 250);
+
+/// Shared chrome for the two iOS Cupertino pickers.
+///
+/// Owns the 310 px container, CupertinoTheme wrap, 44 px toolbar Row with
+/// rc13 styling, and an [Expanded] slot for the wheel widget.
+///
+/// [wheelBuilder] receives a [resetKey] (bumped on Ripristina in T-03 so the
+/// wheel re-seeds) and a [scheduleAutoSave] callback (wired in T-03 to drive
+/// the 250 ms debounce Timer). In T-01 [scheduleAutoSave] is `() {}`.
+///
+/// Toolbar: left = Ripristina (cancel pending debounce, resave seed, wheel
+/// rebuilds, modal stays open), right = OK (flush pending debounce if active,
+/// then close modal).
+class _CupertinoPickerScaffold extends StatefulWidget {
+  const _CupertinoPickerScaffold({
+    required this.wheelBuilder,
+    required this.onAutoSave,
+    required this.onRestore,
+  });
+
+  /// Builds the wheel widget. Receives [resetKey] and [scheduleAutoSave].
+  final Widget Function(
+    Key resetKey,
+    void Function() scheduleAutoSave,
+  ) wheelBuilder;
+
+  /// Called synchronously by the OK button to persist the current selection.
+  final VoidCallback onAutoSave;
+
+  /// Called when the user requests a reset (T-03). Unused in T-01.
+  final VoidCallback onRestore;
+
+  @override
+  State<_CupertinoPickerScaffold> createState() =>
+      _CupertinoPickerScaffoldState();
+}
+
+class _CupertinoPickerScaffoldState extends State<_CupertinoPickerScaffold> {
+  /// Bumped on every Ripristina tap to force the wheel widget to rebuild and
+  /// re-seed from the closure-captured initial value. Non-final by design.
+  Key _resetKey = UniqueKey();
+
+  /// Pending autosave timer. Scheduled after each wheel move, cancelled on
+  /// close, on Ripristina (then synchronous resave), and on tap-OK when still
+  /// active (then synchronous flush before pop).
+  Timer? _debounce;
+
+  /// Schedules (or reschedules) the autosave debounce.
+  ///
+  /// Called from [wheelBuilder]'s [scheduleAutoSave] callback on every
+  /// [onSelectedItemChanged] / [onDateTimeChanged] event.
+  void _scheduleAutoSave() {
+    _debounce?.cancel();
+    _debounce = Timer(_kPickerAutoSaveDebounce, () {
+      _debounce = null;
+      widget.onAutoSave();
+    });
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final colors = MetraColors.of(context);
+
+    return CupertinoTheme(
+      data: CupertinoThemeData(
+        brightness: Theme.of(context).brightness,
+        primaryColor: colors.accentFlow,
+      ),
+      child: Container(
+        height: 310,
+        color: colors.bgSurface,
+        child: Column(
+          children: [
+            SizedBox(
+              height: 44,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Left button: Ripristina — resets wheel to seed, resaves
+                  // original synchronously, and keeps the modal open.
+                  Semantics(
+                    label: l10n.common_restore,
+                    button: true,
+                    child: CupertinoButton(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      onPressed: () {
+                        // Cancel any pending debounce before restoring.
+                        _debounce?.cancel();
+                        _debounce = null;
+                        // Resave the seed value synchronously.
+                        widget.onRestore();
+                        // Bump the key so the wheel rebuilds to the seed.
+                        setState(() => _resetKey = UniqueKey());
+                        // Modal stays open — do NOT pop.
+                      },
+                      child: Text(
+                        l10n.common_restore,
+                        style: TextStyle(
+                          color: colors.textSecondary,
+                          fontSize: 17,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Right button: OK — pure close. Flushes pending debounce
+                  // synchronously if one is still active.
+                  CupertinoButton(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    onPressed: () {
+                      if (_debounce?.isActive == true) {
+                        _debounce!.cancel();
+                        _debounce = null;
+                        widget.onAutoSave();
+                      }
+                      Navigator.of(context).pop();
+                    },
+                    child: Text(
+                      l10n.common_ok,
+                      style: TextStyle(
+                        color: colors.accentFlow,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 17,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: widget.wheelBuilder(_resetKey, _scheduleAutoSave),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _MetraToggle extends StatelessWidget {
   const _MetraToggle({required this.value, required this.onChanged});

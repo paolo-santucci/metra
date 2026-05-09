@@ -27,6 +27,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get common_ok => 'OK';
 
   @override
+  String get common_restore => 'Ripristina';
+
+  @override
   String get common_error_generic => 'Qualcosa è andato storto. Riprova.';
 
   @override

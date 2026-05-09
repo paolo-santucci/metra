@@ -1,6 +1,6 @@
 {
   "@@locale": "it",
-  "@@last_modified": "2026-05-08",
+  "@@last_modified": "2026-05-09",
 
   "common_appName": "Mētra",
   "@common_appName": {
@@ -30,6 +30,11 @@
   "common_ok": "OK",
   "@common_ok": {
     "description": "Generic confirmation button"
+  },
+
+  "common_restore": "Ripristina",
+  "@common_restore": {
+    "description": "Restore/reset action — used by the Cupertino picker toolbar to reset the wheel to its initial value without closing the modal"
   },
 
   "common_error_generic": "Qualcosa è andato storto. Riprova.",

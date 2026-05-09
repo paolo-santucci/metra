@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "@@last_modified": "2026-05-08",
+  "@@last_modified": "2026-05-09",
 
   "common_appName": "Mētra",
   "common_loading": "Loading…",
@@ -8,6 +8,10 @@
   "common_cancel": "Cancel",
   "common_delete": "Delete",
   "common_ok": "OK",
+  "common_restore": "Restore",
+  "@common_restore": {
+    "description": "Restore/reset action — used by the Cupertino picker toolbar to reset the wheel to its initial value without closing the modal"
+  },
   "common_error_generic": "Something went wrong. Please try again.",
 
   "daily_entry_title": "Daily log",
