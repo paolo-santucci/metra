@@ -36,6 +36,16 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            // R8 is enabled by the Flutter Gradle plugin for release builds.
+            // Declared explicitly here so the config is readable and custom
+            // proguard-rules.pro is applied (required for Gson TypeToken
+            // compatibility with flutter_local_notifications).
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }
