@@ -21,6 +21,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart' as intl;
 import 'package:metra/core/theme/metra_theme.dart';
 import 'package:metra/domain/entities/cycle_prediction.dart';
 import 'package:metra/domain/entities/daily_log_entity.dart';
@@ -105,6 +106,38 @@ class _StubCalendarMonthNotifierForYear extends CalendarMonthNotifier {
 
   @override
   void goToNextMonth() {}
+}
+
+/// Navigable stub: `goToPrevMonth` / `goToNextMonth` actually transition state
+/// so that [CalendarScreen]'s navigation callbacks can be exercised.
+class _NavigableCalendarMonthNotifier extends CalendarMonthNotifier {
+  _NavigableCalendarMonthNotifier({
+    required this.initialYear,
+    required this.initialMonth,
+  });
+
+  final int initialYear;
+  final int initialMonth;
+
+  @override
+  Future<CalendarMonthState> build() async =>
+      CalendarMonthState(year: initialYear, month: initialMonth);
+
+  @override
+  void goToPrevMonth() {
+    final current = state.requireValue;
+    final prevMonth = current.month == 1 ? 12 : current.month - 1;
+    final prevYear = current.month == 1 ? current.year - 1 : current.year;
+    state = AsyncData(CalendarMonthState(year: prevYear, month: prevMonth));
+  }
+
+  @override
+  void goToNextMonth() {
+    final current = state.requireValue;
+    final nextMonth = current.month == 12 ? 1 : current.month + 1;
+    final nextYear = current.month == 12 ? current.year + 1 : current.year;
+    state = AsyncData(CalendarMonthState(year: nextYear, month: nextMonth));
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -664,6 +697,64 @@ void main() {
       expect(
         find.bySemanticsLabel(RegExp(r'^Ciclo previsto,')),
         findsNothing,
+      );
+    });
+  });
+
+  group('CalendarScreen — month navigation syncs selected date', () {
+    testWidgets(
+        'navigating to the previous month updates detail card to that month',
+        (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final now = DateTime.now();
+      final prevMonth = now.month == 1 ? 12 : now.month - 1;
+      final prevYear = now.month == 1 ? now.year - 1 : now.year;
+
+      // Lowercase month names used by intl/DateFormat in Italian locale.
+      final currentMonthName = intl.DateFormat('MMMM', 'it')
+          .format(DateTime(now.year, now.month));
+      final prevMonthName = intl.DateFormat('MMMM', 'it')
+          .format(DateTime(prevYear, prevMonth));
+
+      await tester.pumpWidget(
+        _wrapWithRouter([
+          calendarMonthProvider.overrideWith(
+            () => _NavigableCalendarMonthNotifier(
+              initialYear: now.year,
+              initialMonth: now.month,
+            ),
+          ),
+        ]),
+      );
+      await tester.pumpAndSettle();
+
+      // Initially the detail card shows today's month.
+      expect(
+        find.textContaining(currentMonthName),
+        findsOneWidget,
+        reason: 'Detail card must show current month before navigation',
+      );
+
+      // Tap the prev chevron.
+      await tester.tap(find.byIcon(Icons.chevron_left));
+      await tester.pumpAndSettle();
+
+      // After navigating back the detail card must show the previous month.
+      expect(
+        find.textContaining(prevMonthName),
+        findsOneWidget,
+        reason: 'Detail card must show previous-month date after navigating back',
+      );
+      // Current month must no longer appear in the detail card title.
+      // Header title is capitalised ("Maggio 2026"), detail card uses lowercase
+      // ("10 maggio") — textContaining is case-sensitive, so only the detail
+      // card label matches the lowercase currentMonthName.
+      expect(
+        find.textContaining(currentMonthName),
+        findsNothing,
+        reason: 'Current month must not appear in detail card after navigating back',
       );
     });
   });

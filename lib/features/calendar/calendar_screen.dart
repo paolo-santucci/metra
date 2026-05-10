@@ -126,12 +126,46 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     title: title,
                     prevLabel: l10n.calendar_prev_month,
                     nextLabel: l10n.calendar_next_month,
-                    onPrev: () => ref
-                        .read(calendarMonthProvider.notifier)
-                        .goToPrevMonth(),
-                    onNext: () => ref
-                        .read(calendarMonthProvider.notifier)
-                        .goToNextMonth(),
+                    onPrev: () {
+                      ref
+                          .read(calendarMonthProvider.notifier)
+                          .goToPrevMonth();
+                      // Keep selected day in sync with the displayed month.
+                      final prevMonth = monthState.month == 1
+                          ? 12
+                          : monthState.month - 1;
+                      final prevYear = monthState.month == 1
+                          ? monthState.year - 1
+                          : monthState.year;
+                      final clampedDay = _selectedDate.day.clamp(
+                        1,
+                        DateUtils.getDaysInMonth(prevYear, prevMonth),
+                      );
+                      setState(
+                        () => _selectedDate =
+                            DateTime.utc(prevYear, prevMonth, clampedDay),
+                      );
+                    },
+                    onNext: () {
+                      ref
+                          .read(calendarMonthProvider.notifier)
+                          .goToNextMonth();
+                      // Keep selected day in sync with the displayed month.
+                      final nextMonth = monthState.month == 12
+                          ? 1
+                          : monthState.month + 1;
+                      final nextYear = monthState.month == 12
+                          ? monthState.year + 1
+                          : monthState.year;
+                      final daysInNextMonth =
+                          DateUtils.getDaysInMonth(nextYear, nextMonth);
+                      final clampedDay =
+                          _selectedDate.day.clamp(1, daysInNextMonth);
+                      setState(
+                        () => _selectedDate =
+                            DateTime.utc(nextYear, nextMonth, clampedDay),
+                      );
+                    },
                     onToday: () {
                       ref.read(calendarMonthProvider.notifier).goToToday();
                       final today = DateTime.now();
