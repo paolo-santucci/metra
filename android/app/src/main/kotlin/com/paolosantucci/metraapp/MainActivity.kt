@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
-package com.paolosantucci.metra
+package com.paolosantucci.metraapp
 
 import android.content.Intent
 import android.net.Uri
