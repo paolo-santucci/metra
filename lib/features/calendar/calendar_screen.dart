@@ -61,14 +61,21 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     _selectedDate = DateTime.utc(now.year, now.month, now.day);
   }
 
-  // Italian day-of-week initials, Monday first (Bible § 8.2).
-  static const List<String> _dayHeaders = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
+  // Monday-anchored reference date used to generate locale-aware day initials.
+  static final DateTime _weekAnchorMonday = DateTime(2024, 1, 1);
 
   @override
   Widget build(BuildContext context) {
     // safe: delegates registered in MetraApp
     final l10n = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).toString();
+    // Narrow weekday initials for the current locale, Monday first (Bible § 8.2).
+    final dayHeaders = List.generate(
+      7,
+      (i) => intl.DateFormat('EEEEE', locale)
+          .format(_weekAnchorMonday.add(Duration(days: i)))
+          .toUpperCase(),
+    );
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final colors = MetraColors.of(context);
     final bgColor = colors.bgPrimary;
@@ -142,7 +149,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 ),
                 SliverToBoxAdapter(
                   child: _DayOfWeekHeader(
-                    labels: _dayHeaders,
+                    labels: dayHeaders,
                     isDark: isDark,
                   ),
                 ),
