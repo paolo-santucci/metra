@@ -356,6 +356,17 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
+  String get archive_card_duration_unknown => 'Durata —';
+
+  @override
+  String archive_card_footer_unknown(String day) {
+    return 'Ciclo — · dal $day';
+  }
+
+  @override
+  String get archive_card_note_label => 'Nota';
+
+  @override
   String get table_col_month => 'Mese';
 
   @override
@@ -369,6 +380,11 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get table_cycle_dash => '—';
+
+  @override
+  String table_days_short(int n) {
+    return '${n}g';
+  }
 
   @override
   String get stats_insufficient_data => 'Dati insufficienti';

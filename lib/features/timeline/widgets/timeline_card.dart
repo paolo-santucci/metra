@@ -125,13 +125,16 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = MetraColors.of(context);
     final l10n = AppLocalizations.of(context)!;
-    final rawMonth = intl.DateFormat.yMMM('it').format(summary.cycle.startDate);
+    final locale = Localizations.localeOf(context).toString();
+    final rawMonth =
+        intl.DateFormat.yMMM(locale).format(summary.cycle.startDate);
     final monthLabel = rawMonth.isEmpty
         ? rawMonth
         : rawMonth[0].toUpperCase() + rawMonth.substring(1);
     final n = summary.cycle.periodLength;
-    final durationLabel =
-        n != null ? l10n.archive_card_duration_days(n) : 'Durata —g';
+    final durationLabel = n != null
+        ? l10n.archive_card_duration_days(n)
+        : l10n.archive_card_duration_unknown;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -191,7 +194,8 @@ class _FlowPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = MetraColors.of(context);
-    final label = flow != null ? _flowLabel(flow!) : '—';
+    final l10n = AppLocalizations.of(context)!;
+    final label = flow != null ? _flowLabel(flow!, l10n) : l10n.table_cycle_dash;
     return _MiniChip(
       svgBody: MetraIcons.dropFilled,
       iconColor: colors.terracottaDeep,
@@ -201,11 +205,13 @@ class _FlowPill extends StatelessWidget {
     );
   }
 
-  static String _flowLabel(FlowIntensity intensity) => switch (intensity) {
-        FlowIntensity.light => 'Leggero',
-        FlowIntensity.medium => 'Moderato',
-        FlowIntensity.heavy => 'Abbondante',
-        FlowIntensity.veryHeavy => 'Molto abbondante',
+  static String _flowLabel(FlowIntensity intensity, AppLocalizations l10n) =>
+      switch (intensity) {
+        FlowIntensity.light => l10n.daily_entry_flow_intensity_light,
+        FlowIntensity.medium => l10n.daily_entry_flow_intensity_medium,
+        FlowIntensity.heavy => l10n.daily_entry_flow_intensity_heavy,
+        // veryHeavy maps to heavy — same treatment as the calendar detail card
+        FlowIntensity.veryHeavy => l10n.daily_entry_flow_intensity_heavy,
       };
 }
 
@@ -314,13 +320,14 @@ class _Footer extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = MetraColors.of(context);
     final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).toString();
     final len = summary.cycle.cycleLength;
     final dayStr =
-        intl.DateFormat('d MMM', 'it').format(summary.cycle.startDate);
+        intl.DateFormat('d MMM', locale).format(summary.cycle.startDate);
 
     final text = len != null
         ? l10n.archive_card_footer(len, dayStr)
-        : 'Ciclo —g · dal $dayStr';
+        : l10n.archive_card_footer_unknown(dayStr);
 
     return Padding(
       padding: const EdgeInsets.only(top: 8),
@@ -341,10 +348,11 @@ class _NotaPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = MetraColors.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return _MiniChip(
       svgBody: MetraIcons.pen,
       iconColor: colors.ink.withValues(alpha: 0.68),
-      label: 'Nota',
+      label: l10n.archive_card_note_label,
       labelColor: colors.ink.withValues(alpha: 0.65),
       bg: colors.ink.withValues(alpha: 0.06),
     );

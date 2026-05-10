@@ -322,6 +322,20 @@
     }
   },
 
+  "archive_card_duration_unknown": "Duration —",
+  "@archive_card_duration_unknown": { "description": "Duration label on an archive card when period length is unknown" },
+
+  "archive_card_footer_unknown": "Cycle — · from {day}",
+  "@archive_card_footer_unknown": {
+    "description": "Footer on an archive card when cycle length is unknown",
+    "placeholders": {
+      "day": { "type": "String" }
+    }
+  },
+
+  "archive_card_note_label": "Note",
+  "@archive_card_note_label": { "description": "Note pill label on an archive card" },
+
   "table_col_month": "Month",
   "@table_col_month": { "description": "Table column header: month (§ 10.2)" },
 
@@ -333,6 +347,15 @@
 
   "table_col_cycle": "Cycle",
   "table_cycle_dash": "—",
+
+  "table_days_short": "{n}d",
+  "@table_days_short": {
+    "description": "Compact days count in a table cell, e.g. '28d'",
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+
   "stats_insufficient_data": "Insufficient data",
   "@stats_insufficient_data": { "description": "Shown when there are no complete cycles to display" },
 

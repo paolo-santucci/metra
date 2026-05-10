@@ -692,6 +692,24 @@ abstract class AppLocalizations {
   /// **'Ciclo {len}g · dal {day}'**
   String archive_card_footer(int len, String day);
 
+  /// Duration label on an archive card when period length is unknown
+  ///
+  /// In it, this message translates to:
+  /// **'Durata —'**
+  String get archive_card_duration_unknown;
+
+  /// Footer on an archive card when cycle length is unknown
+  ///
+  /// In it, this message translates to:
+  /// **'Ciclo — · dal {day}'**
+  String archive_card_footer_unknown(String day);
+
+  /// Note pill label on an archive card
+  ///
+  /// In it, this message translates to:
+  /// **'Nota'**
+  String get archive_card_note_label;
+
   /// Table column header: month (§ 10.2)
   ///
   /// In it, this message translates to:
@@ -721,6 +739,12 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'—'**
   String get table_cycle_dash;
+
+  /// Compact days count in a table cell, e.g. '28g'
+  ///
+  /// In it, this message translates to:
+  /// **'{n}g'**
+  String table_days_short(int n);
 
   /// Shown when there are no complete cycles to display
   ///

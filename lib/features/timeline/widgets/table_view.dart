@@ -111,7 +111,9 @@ class _DataRow extends StatelessWidget {
     final ink = colors.ink;
     final tcScura = colors.terracottaDeep;
 
-    final raw = intl.DateFormat.yMMM('it').format(summary.cycle.startDate);
+    final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).toString();
+    final raw = intl.DateFormat.yMMM(locale).format(summary.cycle.startDate);
     final month = raw[0].toUpperCase() + raw.substring(1);
 
     final meseStyle = GoogleFonts.inter(fontSize: 14, color: ink);
@@ -120,6 +122,9 @@ class _DataRow extends StatelessWidget {
       color: ink.withValues(alpha: 0.60),
     );
     final flussoStyle = GoogleFonts.inter(fontSize: 13, color: tcScura);
+
+    final cycleLen = summary.cycle.cycleLength;
+    final periodLen = summary.cycle.periodLength;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 4),
@@ -137,19 +142,23 @@ class _DataRow extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         ciclo: Text(
-          '${summary.cycle.cycleLength ?? '—'}g',
+          cycleLen != null
+              ? l10n.table_days_short(cycleLen)
+              : l10n.table_cycle_dash,
           style: secondaryStyle,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
         dur: Text(
-          '${summary.cycle.periodLength ?? '—'}g',
+          periodLen != null
+              ? l10n.table_days_short(periodLen)
+              : l10n.table_cycle_dash,
           style: secondaryStyle,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
         flusso: Text(
-          _flowLabel(summary.dominantFlow),
+          _flowLabel(summary.dominantFlow, l10n),
           style: flussoStyle,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -158,18 +167,18 @@ class _DataRow extends StatelessWidget {
     );
   }
 
-  String _flowLabel(FlowIntensity? flow) {
+  static String _flowLabel(FlowIntensity? flow, AppLocalizations l10n) {
     switch (flow) {
       case null:
-        return '—';
+        return l10n.table_cycle_dash;
       case FlowIntensity.light:
-        return 'Leggero';
+        return l10n.daily_entry_flow_intensity_light;
       case FlowIntensity.medium:
-        return 'Moderato';
+        return l10n.daily_entry_flow_intensity_medium;
       case FlowIntensity.heavy:
-      // veryHeavy is a v3 back-compat value — treated as Abbondante
+      // veryHeavy is a v3 back-compat value — treated as heavy
       case FlowIntensity.veryHeavy:
-        return 'Abbondante';
+        return l10n.daily_entry_flow_intensity_heavy;
     }
   }
 }

@@ -567,6 +567,20 @@
     }
   },
 
+  "archive_card_duration_unknown": "Durata —",
+  "@archive_card_duration_unknown": { "description": "Duration label on an archive card when period length is unknown" },
+
+  "archive_card_footer_unknown": "Ciclo — · dal {day}",
+  "@archive_card_footer_unknown": {
+    "description": "Footer on an archive card when cycle length is unknown",
+    "placeholders": {
+      "day": { "type": "String" }
+    }
+  },
+
+  "archive_card_note_label": "Nota",
+  "@archive_card_note_label": { "description": "Note pill label on an archive card" },
+
   "table_col_month": "Mese",
   "@table_col_month": { "description": "Table column header: month (§ 10.2)" },
 
@@ -581,6 +595,14 @@
 
   "table_cycle_dash": "—",
   "@table_cycle_dash": { "description": "Placeholder shown when cycle length is unknown" },
+
+  "table_days_short": "{n}g",
+  "@table_days_short": {
+    "description": "Compact days count in a table cell, e.g. '28g'",
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
 
   "stats_insufficient_data": "Dati insufficienti",
   "@stats_insufficient_data": { "description": "Shown when there are no complete cycles to display" },
