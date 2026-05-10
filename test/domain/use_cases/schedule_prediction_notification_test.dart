@@ -702,6 +702,138 @@ void main() {
     );
   });
 
+  // ---------------------------------------------------------------------------
+  // skipIfPast — settings-change guard
+  // ---------------------------------------------------------------------------
+  group('skipIfPast — settings-change guard', () {
+    // Shared prediction and settings for this group.
+    const baseSettings = AppSettingsData(
+      languageCode: 'it',
+      painEnabled: true,
+      notesEnabled: true,
+      notificationsEnabled: true,
+      notificationDaysBefore: 2,
+      onboardingCompleted: false,
+    );
+
+    test(
+      'given_skipIfPast_true_and_same_day_past_time_then_no_show_no_schedule',
+      () async {
+        // Scenario: user opens Settings at 09:30 and changes notificationDaysBefore
+        // such that the computed notifyAt is today at 08:00 (already past).
+        // Expected: execute() returns silently — no immediate notification.
+        final today = DateTime.now();
+        final todayAt0930 = DateTime(today.year, today.month, today.day, 9, 30);
+        final fakeSvc = FakeNotificationService(now: () => todayAt0930);
+        final uc = SchedulePredictionNotification(fakeSvc);
+
+        // windowStart = tomorrow → notifyAt = today at 08:00 (past relative to 09:30)
+        final windowStart = DateTime(
+          today.year,
+          today.month,
+          today.day,
+        ).add(const Duration(days: 1));
+        final sameDayPred = CyclePrediction(
+          expectedStart: windowStart.add(const Duration(days: 2)),
+          windowStart: windowStart,
+          windowEnd: windowStart.add(const Duration(days: 4)),
+          cyclesUsed: 3,
+        );
+
+        await uc.execute(
+          prediction: sameDayPred,
+          settings: baseSettings.copyWith(
+            notificationDaysBefore: 1,
+            notificationTimeMinutes: 480, // 08:00
+          ),
+          title: 't',
+          body: 'b',
+          skipIfPast: true,
+          clock: () => todayAt0930,
+        );
+
+        expect(
+          fakeSvc.shown,
+          isEmpty,
+          reason: 'skipIfPast: true must suppress the immediate-show path',
+        );
+        expect(fakeSvc.scheduled, isEmpty);
+        expect(fakeSvc.cancelCount, equals(1));
+      },
+    );
+
+    test(
+      'given_skipIfPast_false_and_same_day_past_time_then_immediate_show_preserved',
+      () async {
+        // Regression guard: skipIfPast defaults to false, so the BUG-005
+        // cold-start immediate-show path is preserved for the prediction
+        // data-change listener.
+        final today = DateTime.now();
+        final todayAt0930 = DateTime(today.year, today.month, today.day, 9, 30);
+        final fakeSvc = FakeNotificationService(now: () => todayAt0930);
+        final uc = SchedulePredictionNotification(fakeSvc);
+
+        final windowStart = DateTime(
+          today.year,
+          today.month,
+          today.day,
+        ).add(const Duration(days: 1));
+        final sameDayPred = CyclePrediction(
+          expectedStart: windowStart.add(const Duration(days: 2)),
+          windowStart: windowStart,
+          windowEnd: windowStart.add(const Duration(days: 4)),
+          cyclesUsed: 3,
+        );
+
+        await uc.execute(
+          prediction: sameDayPred,
+          settings: baseSettings.copyWith(
+            notificationDaysBefore: 1,
+            notificationTimeMinutes: 480, // 08:00
+          ),
+          title: 't',
+          body: 'b',
+          // skipIfPast defaults to false — BUG-005 path must still fire
+          clock: () => todayAt0930,
+        );
+
+        expect(
+          fakeSvc.shown,
+          hasLength(1),
+          reason: 'skipIfPast: false (default) must preserve BUG-005 immediate-show',
+        );
+        expect(fakeSvc.scheduled, isEmpty);
+      },
+    );
+
+    test(
+      'given_skipIfPast_true_and_future_notification_time_then_schedule_proceeds',
+      () async {
+        // skipIfPast: true must NOT suppress scheduling when notifyAt is in the
+        // future — it only blocks past/same-day-past times.
+        final svc = FakeNotificationService();
+        final uc = SchedulePredictionNotification(svc);
+        final farFuturePred = CyclePrediction(
+          expectedStart: DateTime.utc(2099, 8, 22),
+          windowStart: DateTime.utc(2099, 8, 20),
+          windowEnd: DateTime.utc(2099, 8, 24),
+          cyclesUsed: 3,
+        );
+
+        await uc.execute(
+          prediction: farFuturePred,
+          settings: baseSettings,
+          title: 't',
+          body: 'b',
+          skipIfPast: true,
+        );
+
+        expect(svc.scheduled, hasLength(1));
+        expect(svc.shown, isEmpty);
+      },
+    );
+  });
+
   group('cold-start regression (BUG-005)', () {
     test(
       'cold_start_after_09_on_notification_day_shows_immediately_not_lost',

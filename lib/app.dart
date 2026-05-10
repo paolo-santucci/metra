@@ -227,6 +227,12 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
                     currentSettings.notificationDaysBefore,
                   )
                 : '',
+            // skipIfPast: true — settings change only: if the computed
+            // notification time is already in the past (including same-day-past)
+            // skip silently. This prevents the service's shouldShowImmediately
+            // path from firing a spurious notification when the user adjusts
+            // advance days or notification time in Settings.
+            skipIfPast: true,
           );
         } on PlatformException {
           // BUG-002: SCHEDULE_EXACT_ALARM revoked; silently no-op.

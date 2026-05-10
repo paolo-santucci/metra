@@ -33,6 +33,7 @@ import '../../domain/entities/pain_symptom_type.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/repository_providers.dart';
 import '../settings/state/settings_notifier.dart';
+import '../timeline/state/timeline_controller.dart';
 import 'state/daily_entry_controller.dart';
 import 'widgets/circle_pain_picker.dart';
 import 'widgets/flow_intensity_dots.dart';
@@ -183,6 +184,7 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
           ],
         );
         ref.invalidate(painSymptomsProvider(widget.date));
+        ref.invalidate(timelineProvider);
       } catch (e) {
         assert(() {
           debugPrint('replacePainSymptoms failed: $e');

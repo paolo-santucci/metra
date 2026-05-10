@@ -30,6 +30,8 @@ class SchedulePredictionNotification {
     required AppSettingsData settings,
     required String title,
     required String body,
+    bool skipIfPast = false,
+    DateTime Function()? clock,
   }) async {
     await _notifService.cancelPredictionNotifications();
     if (prediction == null || !settings.notificationsEnabled) return;
@@ -61,7 +63,14 @@ class SchedulePredictionNotification {
       settings.notificationTimeMinutes % 60,
     );
 
-    final now = DateTime.now();
+    final now = clock != null ? clock() : DateTime.now();
+    // Settings-change guard: when the user adjusts advance days or notification
+    // time in Settings, the computed notifyAt may already be in the past
+    // (including same-day-past). Without this guard the service's
+    // shouldShowImmediately path fires and the notification pops up immediately.
+    // The prediction-data-change listener passes skipIfPast: false (default),
+    // preserving the BUG-005 cold-start immediate-show behavior.
+    if (skipIfPast && notifyAt.isBefore(now)) return;
     final today = DateTime(now.year, now.month, now.day);
     if (notifyAt.toLocal().isBefore(today)) return;
 

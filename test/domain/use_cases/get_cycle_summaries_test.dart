@@ -455,6 +455,67 @@ void main() {
       expect(result.first.hasNote, isTrue);
     });
 
+    // ── Regression: timeline stale-symptoms race condition ────────────────
+    //
+    // Root cause (fixed 2026-05-10): notifier.save() triggers recompute() →
+    // CycleEntries stream fires → _enrich() runs BEFORE replacePainSymptoms()
+    // is called, so the summary has empty symptoms.  After replacePainSymptoms()
+    // completes there is no second CycleEntries event, so the timeline never
+    // refreshed. Fix: ref.invalidate(timelineProvider) after the symptom write
+    // forces a new TimelineNotifier.build() → new uc() call → new stream
+    // subscription → fresh _enrich() with updated symptoms.
+    //
+    // This test models that sequence: first uc().first simulates the racy enrich
+    // (no symptoms yet), replacePainSymptoms() then commits the data, and a
+    // second uc().first (simulating provider rebuild after invalidation) must
+    // return the custom symptom.
+    test(
+      'given_symptoms_absent_on_first_enrich_when_symptoms_saved_and_stream_resubscribed_then_custom_symptom_present',
+      () async {
+        final logRepo = FakeDailyLogRepository();
+        final cycleRepo = FakeCycleEntryRepository();
+        cycleRepo.entries.add(
+          CycleEntryEntity(
+            id: 1,
+            startDate: jan15,
+            endDate: jan20,
+            cycleLength: 28,
+            periodLength: 6,
+          ),
+        );
+        logRepo.savedLogs.add(DailyLogEntity(date: jan15));
+
+        final uc = GetCycleSummaries(logRepo, cycleRepo);
+
+        // First subscription — symptoms not yet written (race condition state).
+        final firstResult = await uc().first;
+        expect(firstResult.first.symptoms, isEmpty);
+
+        // replacePainSymptoms() now commits the custom symptom.
+        await logRepo.replacePainSymptoms(
+          jan15,
+          [
+            const PainSymptomData(
+              symptomType: PainSymptomType.custom,
+              customLabel: 'Vertigini',
+            ),
+          ],
+        );
+
+        // Second subscription — models provider rebuild after
+        // ref.invalidate(timelineProvider).  Must return the saved symptom.
+        final secondResult = await uc().first;
+        expect(secondResult.first.symptoms, hasLength(1));
+        expect(
+          secondResult.first.symptoms.first,
+          const PainSymptomData(
+            symptomType: PainSymptomType.custom,
+            customLabel: 'Vertigini',
+          ),
+        );
+      },
+    );
+
     test('hasNote ignores empty string notes', () async {
       final logRepo = FakeDailyLogRepository();
       final cycleRepo = FakeCycleEntryRepository();
