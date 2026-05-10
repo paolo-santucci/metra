@@ -183,6 +183,16 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
         final currentSettings = next.valueOrNull;
         if (currentSettings == null) return;
 
+        // Deduplicate: SettingsNotifier.save() updates state = AsyncData(s)
+        // immediately, then the Drift stream rebuild fires the notifier again
+        // with the identical value — causing a second call to execute() per
+        // save. AppSettingsData.== is structural (all fields compared), so
+        // this guard collapses the double-fire into a single scheduling call.
+        if (prev is AsyncData<AppSettingsData> &&
+            prev.requireValue == currentSettings) {
+          return;
+        }
+
         // BUG-002 fix: only request OS permission when the user explicitly
         // enables notifications (AsyncData → AsyncData transition). The
         // AsyncLoading → AsyncData cold-start transition must NOT trigger

@@ -18,8 +18,6 @@
 class AppConstants {
   AppConstants._();
 
-  static const String kAppVersion = '0.1.0';
-
   static const String kUrlHelp =
       'https://paolo-santucci.github.io/metra/help/it/';
   static const String kUrlHelpEn =

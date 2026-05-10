@@ -37,6 +37,7 @@ import '../../domain/entities/first_day_of_week_setting.dart';
 import '../../domain/services/csv_codec.dart';
 import '../../domain/use_cases/import_daily_logs.dart';
 import '../../l10n/app_localizations.dart';
+import '../../providers/app_info_provider.dart';
 import '../../providers/use_case_providers.dart';
 import '../backup/state/backup_notifier.dart';
 import '../backup/state/backup_state.dart';
@@ -298,7 +299,10 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: MetraSpacing.s2),
                   Text(
-                    AppConstants.kAppVersion,
+                    // Read version from the native bundle at runtime so the
+                    // displayed string is always in sync with pubspec.yaml
+                    // without any manual update on every release.
+                    ref.watch(appVersionProvider).valueOrNull ?? '',
                     style: MetraTypography.sectionLabel.copyWith(
                       color: textSecondary,
                     ),

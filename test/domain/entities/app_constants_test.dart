@@ -20,9 +20,9 @@ import 'package:metra/core/constants/app_constants.dart';
 
 void main() {
   group('AppConstants', () {
-    test('kAppVersion is the expected version string', () {
-      expect(AppConstants.kAppVersion, '0.1.0');
-    });
+    // kAppVersion was removed: version is now read at runtime from the native
+    // bundle via appVersionProvider (package_info_plus) to stay in sync with
+    // pubspec.yaml automatically across releases.
 
     test('kUrlHelp is a valid Italian help URL', () {
       expect(
