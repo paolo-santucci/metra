@@ -70,8 +70,6 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Métra uses the system file picker to let you select backup and data files. The file picker includes the photo library as a source option. Métra does not access, read, or store your photos.</string>
 
-	<key>NSUserNotificationsUsageDescription</key>
-	<string>Métra uses notifications to remind you when your predicted cycle window is approaching.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

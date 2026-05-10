@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- No tracking of any kind -->
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+
+	<!-- No data types collected and linked to the user -->
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+
+	<!--
+		Required Reason APIs used by Métra's Flutter plugin stack.
+		All accesses are for app functionality only — no profiling, no fingerprinting.
+
+		UserDefaults (flutter_secure_storage stores keychain metadata in UserDefaults)
+		  → Reason CA92.1: Read and write settings or configuration for your app.
+
+		File timestamps (Drift/SQLCipher WAL management reads file modification times)
+		  → Reason C617.1: Accessing file timestamps is required for app functionality.
+
+		Disk space (Drift pre-checks available space before WAL checkpoint)
+		  → Reason E174.1: Accessing disk space is required for app functionality.
+
+		System boot time (flutter_local_notifications uses clock_gettime(CLOCK_MONOTONIC)
+		  for alarm scheduling relative to boot time)
+		  → Reason 35F9.1: Accessing system boot time is required for app functionality.
+	-->
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>C617.1</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>E174.1</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategorySystemBootTime</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>35F9.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>
