@@ -290,6 +290,23 @@
     "description": "Theme option: dark mode"
   },
 
+  "settings_first_day_of_week_label": "Primo giorno della settimana",
+  "@settings_first_day_of_week_label": {
+    "description": "Settings row label for the first-day-of-week preference"
+  },
+  "settings_first_day_of_week_system": "Automatico",
+  "@settings_first_day_of_week_system": {
+    "description": "First day of week: follow device locale. 'Automatico' preferred over 'Sistema' (more natural in consumer context)."
+  },
+  "settings_first_day_of_week_sunday": "Domenica",
+  "@settings_first_day_of_week_sunday": {
+    "description": "First day of week: Sunday"
+  },
+  "settings_first_day_of_week_monday": "Lunedì",
+  "@settings_first_day_of_week_monday": {
+    "description": "First day of week: Monday"
+  },
+
   "settings_notifications_label": "Promemoria ciclo",
   "@settings_notifications_label": {
     "description": "Settings row label for cycle reminder notifications toggle"
@@ -1057,6 +1074,12 @@
   "@nav_oggi": {"description": "Bottom nav tab: today entry"},
   "nav_archivio": "Archivio",
   "@nav_archivio": {"description": "Bottom nav tab: archive/timeline"},
+  "nav_calendario": "Calendario",
+  "@nav_calendario": {"description": "Bottom nav tab: calendar"},
+  "nav_statistiche": "Statistiche",
+  "@nav_statistiche": {"description": "Bottom nav tab: statistics"},
+  "nav_impostazioni": "Impostazioni",
+  "@nav_impostazioni": {"description": "Bottom nav tab: settings"},
 
   "calendar_legend_mestruazioni": "Mestruazioni",
   "@calendar_legend_mestruazioni": {

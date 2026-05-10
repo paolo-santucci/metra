@@ -23,10 +23,10 @@ import 'package:metra/data/database/app_database.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 void main() {
-  test('schema version is 7', () {
+  test('schema version is 8', () {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
-    expect(db.schemaVersion, 7);
+    expect(db.schemaVersion, 8);
   });
 
   test(
@@ -74,8 +74,8 @@ void main() {
       expect(rows, hasLength(1));
       expect(rows.first.data['notification_time_minutes'], 540);
 
-      // And: schemaVersion is 7.
-      expect(db.schemaVersion, 7);
+      // And: schemaVersion is 8 (both v6→v7 and v7→v8 migrations ran).
+      expect(db.schemaVersion, 8);
     },
   );
 
@@ -187,9 +187,9 @@ void main() {
   );
 
   test(
-    'onCreate at v7: fresh database has notificationTimeMinutes == 540',
+    'onCreate at v8: fresh database has notificationTimeMinutes == 540 and firstDayOfWeek == 0',
     () async {
-      // Given: a freshly created in-memory database (no v6 snapshot — onCreate
+      // Given: a freshly created in-memory database (no prior snapshot — onCreate
       // runs, onUpgrade does not). No setup callback is needed.
       final db = AppDatabase(NativeDatabase.memory());
       addTearDown(db.close);
@@ -197,11 +197,59 @@ void main() {
       // When: getOrCreateSettings initialises the singleton row.
       final settings = await db.appSettingsDao.getOrCreateSettings();
 
-      // Then: the column default (540) is reflected in the entity field.
+      // Then: both column defaults are reflected in the entity fields.
       expect(settings.notificationTimeMinutes, 540);
+      expect(settings.firstDayOfWeek, 0); // 0 = system
 
-      // And: schemaVersion is 7 (no migration ran — onCreate set it directly).
-      expect(db.schemaVersion, 7);
+      // And: schemaVersion is 8 (no migration ran — onCreate set it directly).
+      expect(db.schemaVersion, 8);
+    },
+  );
+
+  test(
+    'v7→v8 onUpgrade adds first_day_of_week column with default 0',
+    () async {
+      // Given: an in-memory database pre-seeded at user_version=7, with the v7
+      // app_settings schema (no first_day_of_week column) and one existing row.
+      final executor = NativeDatabase.memory(
+        setup: (rawDb) {
+          rawDb.execute('''
+            CREATE TABLE IF NOT EXISTS app_settings (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              language_code TEXT NOT NULL DEFAULT 'it',
+              dark_mode INTEGER,
+              pain_enabled INTEGER NOT NULL DEFAULT 1,
+              notes_enabled INTEGER NOT NULL DEFAULT 1,
+              notification_days_before INTEGER NOT NULL DEFAULT 2,
+              notifications_enabled INTEGER NOT NULL DEFAULT 0,
+              dropbox_email TEXT,
+              last_backup_at INTEGER,
+              onboarding_completed INTEGER NOT NULL DEFAULT 0,
+              declared_cycle_length INTEGER,
+              notification_time_minutes INTEGER NOT NULL DEFAULT 540
+            )
+          ''');
+          rawDb.execute('INSERT INTO app_settings (id) VALUES (1)');
+          rawDb.execute('PRAGMA user_version = 7');
+        },
+      );
+
+      final db = AppDatabase(executor);
+      addTearDown(db.close);
+
+      // Trigger migration.
+      await db.customSelect('SELECT 1').get();
+
+      // Then: the new column exists and carries the default value 0 for the
+      // pre-existing row.
+      final rows = await db
+          .customSelect('SELECT first_day_of_week FROM app_settings')
+          .get();
+      expect(rows, hasLength(1));
+      expect(rows.first.data['first_day_of_week'], 0);
+
+      // And: schemaVersion is 8.
+      expect(db.schemaVersion, 8);
     },
   );
 

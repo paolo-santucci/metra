@@ -111,6 +111,12 @@ class AppSettings extends Table {
   /// Range: [0, 1439]. Default 540 = 09:00 local time.
   IntColumn get notificationTimeMinutes =>
       integer().withDefault(const Constant(540))();
+
+  /// First day of week preference. Stored as [FirstDayOfWeekSetting.index].
+  ///
+  /// 0 = system (follow locale), 1 = sunday, 2 = monday.
+  /// Default 0 (system) — matches DB column default and enum index.
+  IntColumn get firstDayOfWeek => integer().withDefault(const Constant(0))();
 }
 
 /// Local-only audit trail of cloud backup/restore operations.
@@ -144,7 +150,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -243,6 +249,14 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(
               appSettings,
               appSettings.notificationTimeMinutes,
+            );
+          }
+          if (from < 8) {
+            // Add first-day-of-week preference column.
+            // Purely additive; existing rows receive the default (0 = system).
+            await m.addColumn(
+              appSettings,
+              appSettings.firstDayOfWeek,
             );
           }
         },

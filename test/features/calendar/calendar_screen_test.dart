@@ -28,9 +28,12 @@ import 'package:metra/domain/entities/daily_log_entity.dart';
 import 'package:metra/domain/entities/flow_intensity.dart';
 import 'package:metra/domain/entities/flow_type.dart';
 import 'package:metra/features/calendar/calendar_screen.dart';
+import 'package:metra/domain/entities/app_settings_data.dart';
+import 'package:metra/domain/entities/first_day_of_week_setting.dart';
 import 'package:metra/features/calendar/state/calendar_month_controller.dart';
 import 'package:metra/features/calendar/state/prediction_controller.dart';
 import 'package:metra/features/calendar/widgets/calendar_day.dart';
+import 'package:metra/features/settings/state/settings_notifier.dart';
 import 'package:metra/l10n/app_localizations.dart';
 import 'package:metra/providers/repository_providers.dart';
 
@@ -140,6 +143,15 @@ class _NavigableCalendarMonthNotifier extends CalendarMonthNotifier {
   }
 }
 
+class _StubSettingsNotifier extends SettingsNotifier {
+  _StubSettingsNotifier(this._initial);
+
+  final AppSettingsData _initial;
+
+  @override
+  Future<AppSettingsData> build() async => _initial;
+}
+
 // ---------------------------------------------------------------------------
 // Widget helpers
 // ---------------------------------------------------------------------------
@@ -177,6 +189,11 @@ Widget _wrapWithRouter(
       ),
       // Prevent DB access — no symptoms in widget tests by default.
       painSymptomsProvider.overrideWith((ref, date) async => []),
+      // Default: system first-day-of-week (Monday in Italian locale).
+      // Prevents DB access in widget tests; override per-test for specific cases.
+      settingsNotifierProvider.overrideWith(
+        () => _StubSettingsNotifier(const AppSettingsData.defaults()),
+      ),
       ...overrides,
     ],
     child: MaterialApp.router(
@@ -701,6 +718,166 @@ void main() {
     });
   });
 
+  group('CalendarScreen — first day of week', () {
+    // March 2026 starts on Sunday (DateTime(2026,3,1).weekday == 7).
+    // This makes it a clear test case:
+    //   monday-first: 6 leading blanks → day 1 is at column 6 (far right)
+    //   sunday-first: 0 leading blanks → day 1 is at column 0 (far left)
+
+    testWidgets('monday-first: day headers include L as first letter (IT)',
+        (tester) async {
+      await tester.pumpWidget(
+        _wrapWithRouter([
+          calendarMonthProvider.overrideWith(
+            () => _StubCalendarMonthNotifierForYear(year: 2026, month: 3),
+          ),
+          settingsNotifierProvider.overrideWith(
+            () => _StubSettingsNotifier(
+              const AppSettingsData.defaults().copyWith(
+                firstDayOfWeek: FirstDayOfWeekSetting.monday,
+              ),
+            ),
+          ),
+        ]),
+      );
+      await tester.pumpAndSettle();
+
+      // Italian Monday-first: L M M G V S D — 'L' (lunedì) is the first header.
+      expect(find.text('L'), findsOneWidget);
+      expect(find.text('D'), findsOneWidget);
+    });
+
+    testWidgets(
+        'sunday-first: March 2026 day 1 is in leftmost column (no leading blanks)',
+        (tester) async {
+      await tester.binding.setSurfaceSize(const Size(700, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(
+        _wrapWithRouter([
+          calendarMonthProvider.overrideWith(
+            () => _StubCalendarMonthNotifierForYear(year: 2026, month: 3),
+          ),
+          settingsNotifierProvider.overrideWith(
+            () => _StubSettingsNotifier(
+              const AppSettingsData.defaults().copyWith(
+                firstDayOfWeek: FirstDayOfWeekSetting.sunday,
+              ),
+            ),
+          ),
+        ]),
+      );
+      await tester.pumpAndSettle();
+
+      // With sunday-first + March 2026 (starts Sunday): 0 leading blanks.
+      // The first CalendarDay in the viewport is March 1st and it occupies
+      // the leftmost column. Its left edge (dx) should be close to the grid's
+      // left padding (MetraSpacing.s3 = 12 px).
+      final day1 = find.byWidgetPredicate(
+        (w) => w is CalendarDay && w.date == DateTime.utc(2026, 3, 1),
+      );
+      expect(day1, findsOneWidget);
+
+      // Column 0 → left edge < 100 dp.
+      final dx = tester.getTopLeft(day1).dx;
+      expect(
+        dx,
+        lessThan(100),
+        reason:
+            'Day 1 of March 2026 with sunday-first should be at column 0 (left edge < 100 dp), got $dx',
+      );
+    });
+
+    testWidgets(
+        'monday-first: March 2026 day 1 is in rightmost column (6 leading blanks)',
+        (tester) async {
+      await tester.binding.setSurfaceSize(const Size(700, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(
+        _wrapWithRouter([
+          calendarMonthProvider.overrideWith(
+            () => _StubCalendarMonthNotifierForYear(year: 2026, month: 3),
+          ),
+          settingsNotifierProvider.overrideWith(
+            () => _StubSettingsNotifier(
+              const AppSettingsData.defaults().copyWith(
+                firstDayOfWeek: FirstDayOfWeekSetting.monday,
+              ),
+            ),
+          ),
+        ]),
+      );
+      await tester.pumpAndSettle();
+
+      // With monday-first + March 2026 (starts Sunday = weekday 7):
+      // leadingBlanks = (7 - 1 + 7) % 7 = 6 → day 1 is at column 6 (rightmost).
+      final day1 = find.byWidgetPredicate(
+        (w) => w is CalendarDay && w.date == DateTime.utc(2026, 3, 1),
+      );
+      expect(day1, findsOneWidget);
+
+      // Column 6 (rightmost) → left edge > 500 dp on a 700 dp surface.
+      final dx = tester.getTopLeft(day1).dx;
+      expect(
+        dx,
+        greaterThan(500),
+        reason:
+            'Day 1 of March 2026 with monday-first should be at column 6 (left edge > 500 dp), got $dx',
+      );
+    });
+
+    testWidgets(
+        'changing setting from monday to sunday re-renders grid (day 1 moves)',
+        (tester) async {
+      await tester.binding.setSurfaceSize(const Size(700, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      late _StubSettingsNotifier stub;
+
+      await tester.pumpWidget(
+        _wrapWithRouter([
+          calendarMonthProvider.overrideWith(
+            () => _StubCalendarMonthNotifierForYear(year: 2026, month: 3),
+          ),
+          settingsNotifierProvider.overrideWith(() {
+            stub = _StubSettingsNotifier(
+              const AppSettingsData.defaults().copyWith(
+                firstDayOfWeek: FirstDayOfWeekSetting.monday,
+              ),
+            );
+            return stub;
+          }),
+        ]),
+      );
+      await tester.pumpAndSettle();
+
+      final day1Monday = find.byWidgetPredicate(
+        (w) => w is CalendarDay && w.date == DateTime.utc(2026, 3, 1),
+      );
+      final dxMonday = tester.getTopLeft(day1Monday).dx;
+
+      // Switch to sunday-first.
+      stub.state = AsyncData(
+        const AppSettingsData.defaults()
+            .copyWith(firstDayOfWeek: FirstDayOfWeekSetting.sunday),
+      );
+      await tester.pumpAndSettle();
+
+      final day1Sunday = find.byWidgetPredicate(
+        (w) => w is CalendarDay && w.date == DateTime.utc(2026, 3, 1),
+      );
+      final dxSunday = tester.getTopLeft(day1Sunday).dx;
+
+      expect(
+        dxSunday,
+        lessThan(dxMonday),
+        reason:
+            'Day 1 should shift left when switching from monday-first to sunday-first',
+      );
+    });
+  });
+
   group('CalendarScreen — month navigation syncs selected date', () {
     testWidgets(
         'navigating to the previous month updates detail card to that month',
@@ -713,10 +890,10 @@ void main() {
       final prevYear = now.month == 1 ? now.year - 1 : now.year;
 
       // Lowercase month names used by intl/DateFormat in Italian locale.
-      final currentMonthName = intl.DateFormat('MMMM', 'it')
-          .format(DateTime(now.year, now.month));
-      final prevMonthName = intl.DateFormat('MMMM', 'it')
-          .format(DateTime(prevYear, prevMonth));
+      final currentMonthName =
+          intl.DateFormat('MMMM', 'it').format(DateTime(now.year, now.month));
+      final prevMonthName =
+          intl.DateFormat('MMMM', 'it').format(DateTime(prevYear, prevMonth));
 
       await tester.pumpWidget(
         _wrapWithRouter([
@@ -745,7 +922,8 @@ void main() {
       expect(
         find.textContaining(prevMonthName),
         findsOneWidget,
-        reason: 'Detail card must show previous-month date after navigating back',
+        reason:
+            'Detail card must show previous-month date after navigating back',
       );
       // Current month must no longer appear in the detail card title.
       // Header title is capitalised ("Maggio 2026"), detail card uses lowercase
@@ -754,7 +932,8 @@ void main() {
       expect(
         find.textContaining(currentMonthName),
         findsNothing,
-        reason: 'Current month must not appear in detail card after navigating back',
+        reason:
+            'Current month must not appear in detail card after navigating back',
       );
     });
   });

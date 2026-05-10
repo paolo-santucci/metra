@@ -16,6 +16,7 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:metra/core/constants/app_constants.dart';
+import 'package:metra/domain/entities/first_day_of_week_setting.dart';
 
 class AppSettingsData {
   const AppSettingsData({
@@ -30,6 +31,7 @@ class AppSettingsData {
     required this.onboardingCompleted,
     this.declaredCycleLength,
     this.notificationTimeMinutes = AppConstants.kDefaultNotificationTimeMinutes,
+    this.firstDayOfWeek = FirstDayOfWeekSetting.system,
   });
 
   /// Factory returning the defaults that match DB column defaults.
@@ -66,6 +68,12 @@ class AppSettingsData {
   /// measured cycle gaps exist. Null means no value was declared.
   final int? declaredCycleLength;
 
+  /// User preference for the first day of the week in the calendar grid.
+  ///
+  /// Defaults to [FirstDayOfWeekSetting.system], which delegates to
+  /// [MaterialLocalizations.firstDayOfWeekIndex] at render time.
+  final FirstDayOfWeekSetting firstDayOfWeek;
+
   AppSettingsData copyWith({
     String? languageCode,
     bool? darkMode,
@@ -77,6 +85,7 @@ class AppSettingsData {
     DateTime? lastBackupAt,
     bool? onboardingCompleted,
     int? notificationTimeMinutes,
+    FirstDayOfWeekSetting? firstDayOfWeek,
   }) {
     return AppSettingsData(
       languageCode: languageCode ?? this.languageCode,
@@ -95,6 +104,7 @@ class AppSettingsData {
       declaredCycleLength: declaredCycleLength,
       notificationTimeMinutes:
           notificationTimeMinutes ?? this.notificationTimeMinutes,
+      firstDayOfWeek: firstDayOfWeek ?? this.firstDayOfWeek,
     );
   }
 
@@ -113,7 +123,8 @@ class AppSettingsData {
           lastBackupAt == other.lastBackupAt &&
           onboardingCompleted == other.onboardingCompleted &&
           declaredCycleLength == other.declaredCycleLength &&
-          notificationTimeMinutes == other.notificationTimeMinutes;
+          notificationTimeMinutes == other.notificationTimeMinutes &&
+          firstDayOfWeek == other.firstDayOfWeek;
 
   @override
   int get hashCode =>
@@ -127,7 +138,8 @@ class AppSettingsData {
       lastBackupAt.hashCode ^
       onboardingCompleted.hashCode ^
       declaredCycleLength.hashCode ^
-      notificationTimeMinutes.hashCode;
+      notificationTimeMinutes.hashCode ^
+      firstDayOfWeek.hashCode;
 }
 
 class _AppSettingsDataDefaults extends AppSettingsData {
@@ -141,5 +153,6 @@ class _AppSettingsDataDefaults extends AppSettingsData {
           notificationsEnabled: false,
           onboardingCompleted: false,
           notificationTimeMinutes: AppConstants.kDefaultNotificationTimeMinutes,
+          firstDayOfWeek: FirstDayOfWeekSetting.system,
         );
 }

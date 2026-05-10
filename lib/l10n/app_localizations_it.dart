@@ -187,6 +187,18 @@ class AppLocalizationsIt extends AppLocalizations {
   String get settings_theme_dark => 'Scuro';
 
   @override
+  String get settings_first_day_of_week_label => 'Primo giorno della settimana';
+
+  @override
+  String get settings_first_day_of_week_system => 'Automatico';
+
+  @override
+  String get settings_first_day_of_week_sunday => 'Domenica';
+
+  @override
+  String get settings_first_day_of_week_monday => 'Lunedì';
+
+  @override
   String get settings_notifications_label => 'Promemoria ciclo';
 
   @override
@@ -724,6 +736,15 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get nav_archivio => 'Archivio';
+
+  @override
+  String get nav_calendario => 'Calendario';
+
+  @override
+  String get nav_statistiche => 'Statistiche';
+
+  @override
+  String get nav_impostazioni => 'Impostazioni';
 
   @override
   String get calendar_legend_mestruazioni => 'Mestruazioni';

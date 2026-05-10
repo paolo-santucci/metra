@@ -428,6 +428,30 @@ abstract class AppLocalizations {
   /// **'Scuro'**
   String get settings_theme_dark;
 
+  /// Settings row label for the first-day-of-week preference
+  ///
+  /// In it, this message translates to:
+  /// **'Primo giorno della settimana'**
+  String get settings_first_day_of_week_label;
+
+  /// First day of week: follow device locale. 'Automatico' preferred over 'Sistema' (more natural in consumer context).
+  ///
+  /// In it, this message translates to:
+  /// **'Automatico'**
+  String get settings_first_day_of_week_system;
+
+  /// First day of week: Sunday
+  ///
+  /// In it, this message translates to:
+  /// **'Domenica'**
+  String get settings_first_day_of_week_sunday;
+
+  /// First day of week: Monday
+  ///
+  /// In it, this message translates to:
+  /// **'Lunedì'**
+  String get settings_first_day_of_week_monday;
+
   /// Settings row label for cycle reminder notifications toggle
   ///
   /// In it, this message translates to:
@@ -1363,6 +1387,24 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Archivio'**
   String get nav_archivio;
+
+  /// Bottom nav tab: calendar
+  ///
+  /// In it, this message translates to:
+  /// **'Calendario'**
+  String get nav_calendario;
+
+  /// Bottom nav tab: statistics
+  ///
+  /// In it, this message translates to:
+  /// **'Statistiche'**
+  String get nav_statistiche;
+
+  /// Bottom nav tab: settings
+  ///
+  /// In it, this message translates to:
+  /// **'Impostazioni'**
+  String get nav_impostazioni;
 
   /// Calendar legend: flow/mestruazioni chip label
   ///

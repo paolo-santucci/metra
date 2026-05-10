@@ -21,6 +21,7 @@ import '../../core/constants/app_constants.dart';
 import '../../data/database/app_database.dart';
 import '../../data/database/daos/app_settings_dao.dart';
 import '../../domain/entities/app_settings_data.dart';
+import '../../domain/entities/first_day_of_week_setting.dart';
 import '../../domain/repositories/app_settings_repository.dart';
 
 class DriftAppSettingsRepository implements AppSettingsRepository {
@@ -29,6 +30,17 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
   final AppSettingsDao _dao;
 
   // ---- mapping helpers ----
+
+  /// Maps a raw DB integer to [FirstDayOfWeekSetting].
+  ///
+  /// Any out-of-range value (DB corruption, forward-migration artefact) falls
+  /// back to [FirstDayOfWeekSetting.system] rather than throwing.
+  static FirstDayOfWeekSetting _firstDayOfWeekFromIndex(int idx) {
+    if (idx < 0 || idx >= FirstDayOfWeekSetting.values.length) {
+      return FirstDayOfWeekSetting.system;
+    }
+    return FirstDayOfWeekSetting.values[idx];
+  }
 
   static AppSettingsData _fromRow(AppSetting row) => AppSettingsData(
         languageCode: row.languageCode,
@@ -43,6 +55,7 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
         onboardingCompleted: row.onboardingCompleted,
         declaredCycleLength: row.declaredCycleLength,
         notificationTimeMinutes: row.notificationTimeMinutes.clamp(0, 1439),
+        firstDayOfWeek: _firstDayOfWeekFromIndex(row.firstDayOfWeek),
       );
 
   static AppSettingsCompanion _toCompanion(AppSettingsData data) =>
@@ -54,6 +67,7 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
         notificationDaysBefore: Value(data.notificationDaysBefore),
         notificationsEnabled: Value(data.notificationsEnabled),
         notificationTimeMinutes: Value(data.notificationTimeMinutes),
+        firstDayOfWeek: Value(data.firstDayOfWeek.index),
       );
 
   // ---- interface implementation ----

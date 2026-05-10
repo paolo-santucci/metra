@@ -16,10 +16,22 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/widgets/metra_tab_bar.dart';
+import 'package:metra/l10n/app_localizations.dart';
 
-Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
+Widget _wrap(Widget child, {Locale locale = const Locale('it')}) => MaterialApp(
+      locale: locale,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(body: child),
+    );
 
 void main() {
   group('MetraTabBar', () {
@@ -68,15 +80,32 @@ void main() {
       expect(tapped, equals(2));
     });
 
-    testWidgets('shows all Italian tab labels', (tester) async {
+    testWidgets('shows Italian tab labels when locale is it', (tester) async {
       await tester.pumpWidget(
-        _wrap(MetraTabBar(currentIndex: 0, onTabSelected: (_) {})),
+        _wrap(
+          MetraTabBar(currentIndex: 0, onTabSelected: (_) {}),
+          locale: const Locale('it'),
+        ),
       );
+      await tester.pump(); // let localizations settle
       expect(find.text('Calendario'), findsOneWidget);
-      expect(find.text('Oggi'), findsNothing);
       expect(find.text('Archivio'), findsOneWidget);
       expect(find.text('Statistiche'), findsOneWidget);
       expect(find.text('Impostazioni'), findsOneWidget);
+    });
+
+    testWidgets('shows English tab labels when locale is en', (tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          MetraTabBar(currentIndex: 0, onTabSelected: (_) {}),
+          locale: const Locale('en'),
+        ),
+      );
+      await tester.pump(); // let localizations settle
+      expect(find.text('Calendar'), findsOneWidget);
+      expect(find.text('Archive'), findsOneWidget);
+      expect(find.text('Statistics'), findsOneWidget);
+      expect(find.text('Settings'), findsOneWidget);
     });
   });
 }

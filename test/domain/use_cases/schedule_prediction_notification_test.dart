@@ -800,7 +800,8 @@ void main() {
         expect(
           fakeSvc.shown,
           hasLength(1),
-          reason: 'skipIfPast: false (default) must preserve BUG-005 immediate-show',
+          reason:
+              'skipIfPast: false (default) must preserve BUG-005 immediate-show',
         );
         expect(fakeSvc.scheduled, isEmpty);
       },

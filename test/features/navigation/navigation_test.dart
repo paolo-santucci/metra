@@ -133,7 +133,8 @@ void main() {
       expect(tabTaps, findsNWidgets(4));
     });
 
-    testWidgets('shows all Italian tab labels', (tester) async {
+    testWidgets('shows localized tab labels (English in test environment)',
+        (tester) async {
       await tester.pumpWidget(
         MetraApp(
           overrides: [
@@ -146,11 +147,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Calendario'), findsOneWidget);
-      expect(find.text('Oggi'), findsNothing);
-      expect(find.text('Archivio'), findsOneWidget);
-      expect(find.text('Statistiche'), findsOneWidget);
-      expect(find.text('Impostazioni'), findsOneWidget);
+      // In the test environment the system locale is en, so MetraApp resolves
+      // to English. The tab bar must show English labels (not hardcoded Italian).
+      expect(find.text('Calendar'), findsOneWidget);
+      expect(find.text('Archive'), findsOneWidget);
+      expect(find.text('Statistics'), findsOneWidget);
+      expect(find.text('Settings'), findsOneWidget);
     });
 
     testWidgets('Calendar is the initial route', (tester) async {

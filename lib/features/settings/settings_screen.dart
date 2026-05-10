@@ -33,6 +33,7 @@ import '../../core/theme/metra_colors.dart';
 import '../../core/theme/metra_spacing.dart';
 import '../../core/theme/metra_typography.dart';
 import '../../domain/entities/app_settings_data.dart';
+import '../../domain/entities/first_day_of_week_setting.dart';
 import '../../domain/services/csv_codec.dart';
 import '../../domain/use_cases/import_daily_logs.dart';
 import '../../l10n/app_localizations.dart';
@@ -103,6 +104,15 @@ class SettingsScreen extends ConsumerWidget {
                       '${l10n.settings_theme_label}: ${_themeName(l10n, settings.darkMode)}',
                   valueText: _themeName(l10n, settings.darkMode),
                   onTap: () => _showThemePicker(context, ref, settings, l10n),
+                ),
+                const _SettingsDivider(),
+                _SettingsRow(
+                  label: l10n.settings_first_day_of_week_label,
+                  semanticsLabel:
+                      '${l10n.settings_first_day_of_week_label}: ${_firstDayName(l10n, settings.firstDayOfWeek)}',
+                  valueText: _firstDayName(l10n, settings.firstDayOfWeek),
+                  onTap: () =>
+                      _showFirstDayOfWeekPicker(context, ref, settings, l10n),
                 ),
               ],
             ),
@@ -432,6 +442,80 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () {
               Navigator.of(sheetCtx).pop();
               _save(ref, settings.copyWith(darkMode: true));
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _firstDayName(
+    AppLocalizations l10n,
+    FirstDayOfWeekSetting setting,
+  ) =>
+      switch (setting) {
+        FirstDayOfWeekSetting.system => l10n.settings_first_day_of_week_system,
+        FirstDayOfWeekSetting.sunday => l10n.settings_first_day_of_week_sunday,
+        FirstDayOfWeekSetting.monday => l10n.settings_first_day_of_week_monday,
+      };
+
+  static void _showFirstDayOfWeekPicker(
+    BuildContext context,
+    WidgetRef ref,
+    AppSettingsData settings,
+    AppLocalizations l10n,
+  ) {
+    // Same pattern as _showLanguagePicker / _showThemePicker:
+    // useSafeArea omitted to avoid dim-overlay gap under ShellRoute scaffold.
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetCtx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            title: Text(l10n.settings_first_day_of_week_system),
+            trailing: settings.firstDayOfWeek == FirstDayOfWeekSetting.system
+                ? const Icon(Icons.check)
+                : null,
+            onTap: () {
+              Navigator.of(sheetCtx).pop();
+              _save(
+                ref,
+                settings.copyWith(
+                  firstDayOfWeek: FirstDayOfWeekSetting.system,
+                ),
+              );
+            },
+          ),
+          ListTile(
+            title: Text(l10n.settings_first_day_of_week_sunday),
+            trailing: settings.firstDayOfWeek == FirstDayOfWeekSetting.sunday
+                ? const Icon(Icons.check)
+                : null,
+            onTap: () {
+              Navigator.of(sheetCtx).pop();
+              _save(
+                ref,
+                settings.copyWith(
+                  firstDayOfWeek: FirstDayOfWeekSetting.sunday,
+                ),
+              );
+            },
+          ),
+          ListTile(
+            title: Text(l10n.settings_first_day_of_week_monday),
+            trailing: settings.firstDayOfWeek == FirstDayOfWeekSetting.monday
+                ? const Icon(Icons.check)
+                : null,
+            onTap: () {
+              Navigator.of(sheetCtx).pop();
+              _save(
+                ref,
+                settings.copyWith(
+                  firstDayOfWeek: FirstDayOfWeekSetting.monday,
+                ),
+              );
             },
           ),
         ],

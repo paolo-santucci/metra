@@ -27,6 +27,7 @@ import '../../core/theme/metra_typography.dart';
 import '../../core/widgets/metra_icon.dart';
 import '../../domain/entities/cycle_prediction.dart';
 import '../../domain/entities/daily_log_entity.dart';
+import '../../domain/entities/first_day_of_week_setting.dart';
 import '../../domain/entities/flow_intensity.dart';
 import '../../domain/entities/flow_type.dart';
 import '../../domain/entities/pain_symptom_data.dart';
@@ -34,6 +35,7 @@ import '../../domain/entities/pain_symptom_type.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/repository_providers.dart';
 import '../../providers/use_case_providers.dart';
+import '../settings/state/settings_notifier.dart';
 import 'state/calendar_month_controller.dart';
 import 'state/prediction_controller.dart';
 import 'widgets/calendar_day.dart';
@@ -64,16 +66,49 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   // Monday-anchored reference date used to generate locale-aware day initials.
   static final DateTime _weekAnchorMonday = DateTime(2024, 1, 1);
 
+  /// Resolves the user's [FirstDayOfWeekSetting] to a [DateTime] weekday
+  /// constant (1 = Monday … 7 = Sunday) usable in layout calculations.
+  ///
+  /// [MaterialLocalizations.firstDayOfWeekIndex] convention: 0 = Sunday, 1 = Monday.
+  static int resolveFirstWeekday(
+    FirstDayOfWeekSetting setting,
+    BuildContext context,
+  ) {
+    return switch (setting) {
+      FirstDayOfWeekSetting.monday => DateTime.monday, // 1
+      FirstDayOfWeekSetting.sunday => DateTime.sunday, // 7
+      FirstDayOfWeekSetting.system => () {
+          final idx = MaterialLocalizations.of(context).firstDayOfWeekIndex;
+          // firstDayOfWeekIndex: 0 = Sunday (US), 1 = Monday (EU).
+          return idx == 0 ? DateTime.sunday : DateTime.monday;
+        }(),
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     // safe: delegates registered in MetraApp
     final l10n = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).toString();
-    // Narrow weekday initials for the current locale, Monday first (Bible § 8.2).
+
+    // Read first-day-of-week preference; fall back to system if settings
+    // are still loading.
+    final fdowSetting =
+        ref.watch(settingsNotifierProvider).valueOrNull?.firstDayOfWeek ??
+            FirstDayOfWeekSetting.system;
+    final firstWeekday = resolveFirstWeekday(fdowSetting, context);
+
+    // Narrow weekday initials for the current locale, starting at firstWeekday.
+    // _weekAnchorMonday is a known Monday (2024-01-01); offset by (firstWeekday-1)
+    // days to start at the desired day, then rotate with modulo.
     final dayHeaders = List.generate(
       7,
       (i) => intl.DateFormat('EEEEE', locale)
-          .format(_weekAnchorMonday.add(Duration(days: i)))
+          .format(
+            _weekAnchorMonday.add(
+              Duration(days: (firstWeekday - 1 + i) % 7),
+            ),
+          )
           .toUpperCase(),
     );
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
@@ -127,13 +162,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     prevLabel: l10n.calendar_prev_month,
                     nextLabel: l10n.calendar_next_month,
                     onPrev: () {
-                      ref
-                          .read(calendarMonthProvider.notifier)
-                          .goToPrevMonth();
+                      ref.read(calendarMonthProvider.notifier).goToPrevMonth();
                       // Keep selected day in sync with the displayed month.
-                      final prevMonth = monthState.month == 1
-                          ? 12
-                          : monthState.month - 1;
+                      final prevMonth =
+                          monthState.month == 1 ? 12 : monthState.month - 1;
                       final prevYear = monthState.month == 1
                           ? monthState.year - 1
                           : monthState.year;
@@ -147,13 +179,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       );
                     },
                     onNext: () {
-                      ref
-                          .read(calendarMonthProvider.notifier)
-                          .goToNextMonth();
+                      ref.read(calendarMonthProvider.notifier).goToNextMonth();
                       // Keep selected day in sync with the displayed month.
-                      final nextMonth = monthState.month == 12
-                          ? 1
-                          : monthState.month + 1;
+                      final nextMonth =
+                          monthState.month == 12 ? 1 : monthState.month + 1;
                       final nextYear = monthState.month == 12
                           ? monthState.year + 1
                           : monthState.year;
@@ -212,6 +241,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       locale: locale,
                       prediction: prediction,
                       selectedDate: _selectedDate,
+                      firstWeekday: firstWeekday,
                       onDaySelected: (date) =>
                           setState(() => _selectedDate = date),
                     ),
@@ -282,6 +312,7 @@ class _CalendarGrid extends StatelessWidget {
     required this.l10n,
     required this.locale,
     required this.onDaySelected,
+    required this.firstWeekday,
     this.prediction,
     this.selectedDate,
   });
@@ -297,11 +328,20 @@ class _CalendarGrid extends StatelessWidget {
   final DateTime? selectedDate;
   final ValueChanged<DateTime> onDaySelected;
 
-  /// Number of blank leading cells before day 1.
-  /// Dart's DateTime.weekday: 1=Monday…7=Sunday. We want Monday first → offset = weekday - 1.
+  /// First day of the week: 1 = Monday, 7 = Sunday (Dart DateTime convention).
+  final int firstWeekday;
+
+  /// Number of blank leading cells before day 1 of the month.
+  ///
+  /// Formula: `(firstOfMonth - firstWeekday + 7) % 7`
+  /// where both values use Dart's 1=Monday … 7=Sunday weekday convention.
+  ///
+  /// Examples (May 1 2026 = Thursday, weekday = 4):
+  ///   monday-first (firstWeekday=1): (4-1+7)%7 = 3 blanks
+  ///   sunday-first (firstWeekday=7): (4-7+7)%7 = 4 blanks
   int get _leadingBlanks {
     final firstDayWeekday = DateTime(year, month, 1).weekday;
-    return firstDayWeekday - 1; // 0 for Monday, 6 for Sunday
+    return (firstDayWeekday - firstWeekday + 7) % 7;
   }
 
   int get _daysInMonth => DateUtils.getDaysInMonth(year, month);

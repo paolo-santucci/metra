@@ -22,8 +22,15 @@ import 'package:metra/core/constants/app_constants.dart';
 import 'package:metra/data/database/app_database.dart';
 import 'package:metra/data/database/daos/app_settings_dao.dart';
 import 'package:metra/data/repositories/drift_app_settings_repository.dart';
+import 'package:metra/domain/entities/first_day_of_week_setting.dart';
 
 AppDatabase _openTestDb() => AppDatabase(NativeDatabase.memory());
+
+/// Seeds a raw integer into firstDayOfWeek, bypassing entity clamping.
+Future<void> _setRawFirstDayOfWeek(AppDatabase db, int rawValue) async {
+  await (db.update(db.appSettings)..where((t) => t.id.equals(1)))
+      .write(AppSettingsCompanion(firstDayOfWeek: Value(rawValue)));
+}
 
 /// Seeds a raw integer into notificationTimeMinutes, bypassing entity clamping.
 Future<void> _setRawNotificationTimeMinutes(
@@ -55,6 +62,55 @@ void main() {
   });
 
   tearDown(() => db.close());
+
+  // ---- firstDayOfWeek ----
+
+  group('firstDayOfWeek', () {
+    test('default is system (0) from fresh row', () async {
+      final result = await repo.getOrCreate();
+      expect(result.firstDayOfWeek, FirstDayOfWeekSetting.system);
+    });
+
+    test('round-trip: persist sunday → reload → sunday', () async {
+      final initial = await repo.getOrCreate();
+      await repo.updateSettings(
+        initial.copyWith(firstDayOfWeek: FirstDayOfWeekSetting.sunday),
+      );
+      final result = await repo.getOrCreate();
+      expect(result.firstDayOfWeek, FirstDayOfWeekSetting.sunday);
+    });
+
+    test('round-trip: persist monday → reload → monday', () async {
+      final initial = await repo.getOrCreate();
+      await repo.updateSettings(
+        initial.copyWith(firstDayOfWeek: FirstDayOfWeekSetting.monday),
+      );
+      final result = await repo.getOrCreate();
+      expect(result.firstDayOfWeek, FirstDayOfWeekSetting.monday);
+    });
+
+    test('out-of-range DB value 99 is clamped to system', () async {
+      await repo.getOrCreate();
+      await _setRawFirstDayOfWeek(db, 99);
+      final result = await repo.getOrCreate();
+      expect(result.firstDayOfWeek, FirstDayOfWeekSetting.system);
+    });
+
+    test('updateSettings(firstDayOfWeek) does not revert other fields',
+        () async {
+      final initial = await repo.getOrCreate();
+      await repo.updateSettings(
+        initial.copyWith(notificationTimeMinutes: 750),
+      );
+      final before = await repo.getOrCreate();
+      await repo.updateSettings(
+        before.copyWith(firstDayOfWeek: FirstDayOfWeekSetting.sunday),
+      );
+      final after = await repo.getOrCreate();
+      expect(after.firstDayOfWeek, FirstDayOfWeekSetting.sunday);
+      expect(after.notificationTimeMinutes, 750);
+    });
+  });
 
   // ---- _fromRow happy path ----
 

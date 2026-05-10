@@ -19,6 +19,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/domain/entities/app_settings_data.dart';
+import 'package:metra/domain/entities/first_day_of_week_setting.dart';
 
 String readAppSettingsDataSource() =>
     File('lib/domain/entities/app_settings_data.dart').readAsStringSync();
@@ -36,6 +37,7 @@ void main() {
     bool onboardingCompleted = false,
     int? declaredCycleLength,
     int notificationTimeMinutes = 540,
+    FirstDayOfWeekSetting firstDayOfWeek = FirstDayOfWeekSetting.system,
   }) =>
       AppSettingsData(
         languageCode: languageCode,
@@ -49,6 +51,7 @@ void main() {
         onboardingCompleted: onboardingCompleted,
         declaredCycleLength: declaredCycleLength,
         notificationTimeMinutes: notificationTimeMinutes,
+        firstDayOfWeek: firstDayOfWeek,
       );
 
   group('AppSettingsData construction', () {
@@ -356,6 +359,55 @@ void main() {
         isFalse,
         reason: 'domain entity must not reference Flutter TimeOfDay',
       );
+    });
+  });
+
+  group('AppSettingsData firstDayOfWeek', () {
+    test('default is system', () {
+      const defaults = AppSettingsData.defaults();
+      expect(defaults.firstDayOfWeek, FirstDayOfWeekSetting.system);
+    });
+
+    test('copyWith updates firstDayOfWeek', () {
+      final settings = makeSettings();
+      final copy = settings.copyWith(
+        firstDayOfWeek: FirstDayOfWeekSetting.sunday,
+      );
+      expect(copy.firstDayOfWeek, FirstDayOfWeekSetting.sunday);
+    });
+
+    test('copyWith preserves other fields when updating firstDayOfWeek', () {
+      final settings = makeSettings(languageCode: 'it');
+      final copy = settings.copyWith(
+        firstDayOfWeek: FirstDayOfWeekSetting.monday,
+      );
+      expect(copy.languageCode, 'it');
+    });
+
+    test('copyWith without firstDayOfWeek preserves existing value', () {
+      final settings = makeSettings(
+        firstDayOfWeek: FirstDayOfWeekSetting.sunday,
+      );
+      final copy = settings.copyWith(languageCode: 'en');
+      expect(copy.firstDayOfWeek, FirstDayOfWeekSetting.sunday);
+    });
+
+    test('equality — same firstDayOfWeek are equal', () {
+      final a = makeSettings(firstDayOfWeek: FirstDayOfWeekSetting.sunday);
+      final b = makeSettings(firstDayOfWeek: FirstDayOfWeekSetting.sunday);
+      expect(a, equals(b));
+    });
+
+    test('equality — different firstDayOfWeek are not equal', () {
+      final a = makeSettings(firstDayOfWeek: FirstDayOfWeekSetting.system);
+      final b = makeSettings(firstDayOfWeek: FirstDayOfWeekSetting.monday);
+      expect(a, isNot(equals(b)));
+    });
+
+    test('hashCode — same firstDayOfWeek produces same hashCode', () {
+      final a = makeSettings(firstDayOfWeek: FirstDayOfWeekSetting.monday);
+      final b = makeSettings(firstDayOfWeek: FirstDayOfWeekSetting.monday);
+      expect(a.hashCode, equals(b.hashCode));
     });
   });
 

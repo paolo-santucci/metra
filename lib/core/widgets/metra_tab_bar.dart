@@ -18,6 +18,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../l10n/app_localizations.dart';
 import '../theme/metra_colors.dart';
 import 'metra_icon.dart';
 
@@ -42,15 +43,15 @@ class MetraTabBar extends StatelessWidget {
     MetraIcons.settings,
   ];
 
-  static const _labels = <String>[
-    'Calendario',
-    'Archivio',
-    'Statistiche',
-    'Impostazioni',
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final labels = <String>[
+      l10n.nav_calendario,
+      l10n.nav_archivio,
+      l10n.nav_statistiche,
+      l10n.nav_impostazioni,
+    ];
     final colors = MetraColors.of(context);
     final activeColor = colors.terracotta;
     final idleColor = colors.ink.withAlpha(0x68);
@@ -80,7 +81,7 @@ class MetraTabBar extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            _labels[i],
+                            labels[i],
                             style: GoogleFonts.inter(
                               fontSize: 10,
                               fontWeight: i == currentIndex

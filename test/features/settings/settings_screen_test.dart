@@ -23,6 +23,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/theme/metra_colors.dart';
 import 'package:metra/core/theme/metra_theme.dart';
 import 'package:metra/domain/entities/app_settings_data.dart';
+import 'package:metra/domain/entities/first_day_of_week_setting.dart';
 import 'package:metra/domain/use_cases/delete_all_data.dart';
 import 'package:metra/features/backup/state/backup_notifier.dart';
 import 'package:metra/features/backup/state/backup_state.dart';
@@ -1541,4 +1542,91 @@ void main() {
   // "Pianificazione in background" settings row was removed from the UI.
   // The underlying NotificationService.isIgnoringBatteryOptimizations() and
   // openBatteryOptimizationSettings() methods are preserved for future use.
+
+  group('SettingsScreen — first day of week', () {
+    testWidgets('first-day-of-week row is visible in Preferenze section',
+        (tester) async {
+      final stub = _StubSettingsNotifier(defaults);
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      // Row label must appear.
+      expect(find.text('Primo giorno della settimana'), findsOneWidget);
+      // Default value is system → shows "Automatico".
+      expect(find.text('Automatico'), findsOneWidget);
+    });
+
+    testWidgets('tapping first-day-of-week row opens picker with three options',
+        (tester) async {
+      final stub = _StubSettingsNotifier(defaults);
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Primo giorno della settimana'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Automatico'), findsWidgets);
+      expect(find.text('Domenica'), findsOneWidget);
+      expect(find.text('Lunedì'), findsOneWidget);
+    });
+
+    testWidgets('selecting Domenica saves sunday setting', (tester) async {
+      final stub = _StubSettingsNotifier(defaults);
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Primo giorno della settimana'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Domenica'));
+      await tester.pumpAndSettle();
+
+      expect(stub.savedSettings?.firstDayOfWeek, FirstDayOfWeekSetting.sunday);
+    });
+
+    testWidgets('selecting Lunedì saves monday setting', (tester) async {
+      final stub = _StubSettingsNotifier(defaults);
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Primo giorno della settimana'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Lunedì'));
+      await tester.pumpAndSettle();
+
+      expect(stub.savedSettings?.firstDayOfWeek, FirstDayOfWeekSetting.monday);
+    });
+
+    testWidgets('current selection shows check-mark in picker', (tester) async {
+      final stub = _StubSettingsNotifier(
+        defaults.copyWith(firstDayOfWeek: FirstDayOfWeekSetting.sunday),
+      );
+      await tester.pumpWidget(
+        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Primo giorno della settimana'));
+      await tester.pumpAndSettle();
+
+      // The Domenica ListTile should have a trailing check icon.
+      final domenicaTile = find.ancestor(
+        of: find.text('Domenica'),
+        matching: find.byType(ListTile),
+      );
+      expect(
+        find.descendant(of: domenicaTile, matching: find.byIcon(Icons.check)),
+        findsOneWidget,
+      );
+    });
+  });
 }

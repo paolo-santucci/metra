@@ -96,6 +96,10 @@
   "settings_theme_system": "System",
   "settings_theme_light": "Light",
   "settings_theme_dark": "Dark",
+  "settings_first_day_of_week_label": "First day of week",
+  "settings_first_day_of_week_system": "Automatic",
+  "settings_first_day_of_week_sunday": "Sunday",
+  "settings_first_day_of_week_monday": "Monday",
   "settings_notifications_label": "Cycle reminder",
   "settings_notifications_on": "On",
   "settings_notifications_off": "Off",
@@ -648,6 +652,12 @@
   "@nav_oggi": {"description": "Bottom nav tab: today entry"},
   "nav_archivio": "Archive",
   "@nav_archivio": {"description": "Bottom nav tab: archive/timeline"},
+  "nav_calendario": "Calendar",
+  "@nav_calendario": {"description": "Bottom nav tab: calendar"},
+  "nav_statistiche": "Statistics",
+  "@nav_statistiche": {"description": "Bottom nav tab: statistics"},
+  "nav_impostazioni": "Settings",
+  "@nav_impostazioni": {"description": "Bottom nav tab: settings"},
 
   "calendar_legend_mestruazioni": "Menstruation",
   "@calendar_legend_mestruazioni": {

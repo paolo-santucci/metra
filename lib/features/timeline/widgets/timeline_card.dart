@@ -195,7 +195,8 @@ class _FlowPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = MetraColors.of(context);
     final l10n = AppLocalizations.of(context)!;
-    final label = flow != null ? _flowLabel(flow!, l10n) : l10n.table_cycle_dash;
+    final label =
+        flow != null ? _flowLabel(flow!, l10n) : l10n.table_cycle_dash;
     return _MiniChip(
       svgBody: MetraIcons.dropFilled,
       iconColor: colors.terracottaDeep,
