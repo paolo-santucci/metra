@@ -371,164 +371,7 @@ void main() {
     });
   });
 
-  group('SettingsScreen — advance picker', () {
-    testWidgets('shows all 7 options when picker row is tapped',
-        (tester) async {
-      tester.view.physicalSize = const Size(800, 2000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.reset);
-
-      final stub = _StubSettingsNotifier(
-        defaults.copyWith(notificationsEnabled: true),
-      );
-      await tester.pumpWidget(
-        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Preavviso'));
-      await tester.pumpAndSettle();
-
-      final dialog = find.byType(Dialog);
-      expect(dialog, findsOneWidget);
-      for (final label in [
-        '1 giorno prima',
-        '2 giorni prima',
-        '3 giorni prima',
-        '4 giorni prima',
-        '5 giorni prima',
-        '6 giorni prima',
-        '7 giorni prima',
-      ]) {
-        expect(
-          find.descendant(of: dialog, matching: find.text(label)),
-          findsOneWidget,
-          reason: 'Option "$label" must be visible without scrolling',
-        );
-      }
-    });
-
-    testWidgets('tapping an option saves the correct notificationDaysBefore',
-        (tester) async {
-      tester.view.physicalSize = const Size(800, 2000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.reset);
-
-      final stub = _StubSettingsNotifier(
-        defaults.copyWith(notificationsEnabled: true),
-      );
-      await tester.pumpWidget(
-        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Preavviso'));
-      await tester.pumpAndSettle();
-
-      await tester.tap(
-        find.descendant(
-          of: find.byType(Dialog),
-          matching: find.text('5 giorni prima'),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(stub.savedSettings?.notificationDaysBefore, equals(5));
-    });
-
-    testWidgets('tapping the selected option re-saves the same value',
-        (tester) async {
-      tester.view.physicalSize = const Size(800, 2000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.reset);
-
-      final stub = _StubSettingsNotifier(
-        defaults.copyWith(notificationsEnabled: true),
-      ); // notificationDaysBefore: 2
-      await tester.pumpWidget(
-        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Preavviso'));
-      await tester.pumpAndSettle();
-
-      await tester.tap(
-        find.descendant(
-          of: find.byType(Dialog),
-          matching: find.text('2 giorni prima'),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(stub.savedSettings?.notificationDaysBefore, equals(2));
-    });
-
-    testWidgets('check icon appears only on the currently selected option',
-        (tester) async {
-      tester.view.physicalSize = const Size(800, 2000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.reset);
-
-      final stub = _StubSettingsNotifier(
-        defaults.copyWith(notificationsEnabled: true),
-      ); // notificationDaysBefore: 2
-      await tester.pumpWidget(
-        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Preavviso'));
-      await tester.pumpAndSettle();
-
-      final dialog = find.byType(Dialog);
-      expect(
-        find.descendant(of: dialog, matching: find.byIcon(Icons.check)),
-        findsOneWidget,
-        reason: 'Exactly one check icon must appear (the selected option)',
-      );
-    });
-  });
-
-  group('SettingsScreen — advance picker (narrow viewport)', () {
-    testWidgets('all 7 options are visible on a compact phone screen',
-        (tester) async {
-      tester.view.physicalSize = const Size(360, 640);
-      tester.view.devicePixelRatio = 1.0;
-      tester.view.padding = const FakeViewPadding(bottom: 48);
-      addTearDown(tester.view.reset);
-
-      final stub = _StubSettingsNotifier(
-        defaults.copyWith(notificationsEnabled: true),
-      );
-      await tester.pumpWidget(
-        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Preavviso'));
-      await tester.pumpAndSettle();
-
-      final dialog = find.byType(Dialog);
-      expect(dialog, findsOneWidget);
-      for (final expected in [
-        '1 giorno prima',
-        '2 giorni prima',
-        '3 giorni prima',
-        '4 giorni prima',
-        '5 giorni prima',
-        '6 giorni prima',
-        '7 giorni prima',
-      ]) {
-        expect(
-          find.descendant(of: dialog, matching: find.text(expected)),
-          findsOneWidget,
-        );
-      }
-    });
-  });
-
-  // ── TASK-09 smoke tests (TDD: write first, implement second) ────────────────
+  // ── TASK-09 smoke tests ──────────────────────────────────────────────────────
 
   group('SettingsScreen — Orario notifica row', () {
     testWidgets('row is visible when notificationsEnabled=true',
@@ -590,43 +433,11 @@ void main() {
         await tester.tap(find.text('Preavviso'));
         await tester.pumpAndSettle();
 
-        // No dialog opens when disabled; savedSettings remains null.
-        expect(find.byType(Dialog), findsNothing);
+        // No picker opens when disabled; savedSettings remains null.
+        expect(find.byType(CupertinoPicker), findsNothing);
         expect(stub.savedSettings, isNull);
       },
     );
-  });
-
-  group('SettingsScreen — advance picker 7 rows', () {
-    testWidgets('shows 7 rows on 360x640 viewport', (tester) async {
-      tester.view.physicalSize = const Size(360, 640);
-      tester.view.devicePixelRatio = 1.0;
-      tester.view.padding = const FakeViewPadding(bottom: 48);
-      addTearDown(tester.view.reset);
-
-      final stub = _StubSettingsNotifier(
-        defaults.copyWith(notificationsEnabled: true),
-      );
-      await tester.pumpWidget(
-        _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Preavviso'));
-      await tester.pumpAndSettle();
-
-      final dialog = find.byType(Dialog);
-      expect(dialog, findsOneWidget);
-
-      for (int i = 1; i <= 7; i++) {
-        final label = i == 1 ? '1 giorno prima' : '$i giorni prima';
-        expect(
-          find.descendant(of: dialog, matching: find.text(label)),
-          findsOneWidget,
-          reason: 'Option "$label" must exist in the dialog',
-        );
-      }
-    });
   });
 
   // ── End TASK-09 smoke tests ──────────────────────────────────────────────────
@@ -781,11 +592,14 @@ void main() {
     );
   });
 
-  group('SettingsScreen — advance picker 7 rows FR-12 (wide viewport)', () {
+  group('SettingsScreen — advance picker (CupertinoPicker) platform parity', () {
     testWidgets(
-      'shows all 7 rows on 800x2000 viewport',
+      'android_advance_picker_uses_cupertino_wheel',
       (tester) async {
-        tester.view.physicalSize = const Size(800, 2000);
+        // SimpleDialog replaced by CupertinoPicker on Android for visual
+        // consistency with iOS and the time-picker wheel.
+        debugDefaultTargetPlatformOverride = TargetPlatform.android;
+        tester.view.physicalSize = const Size(800, 4000);
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.reset);
 
@@ -800,60 +614,28 @@ void main() {
         await tester.tap(find.text('Preavviso'));
         await tester.pumpAndSettle();
 
-        final dialog = find.byType(Dialog);
-        expect(dialog, findsOneWidget);
-
-        for (int i = 1; i <= 7; i++) {
-          final label = i == 1 ? '1 giorno prima' : '$i giorni prima';
-          expect(
-            find.descendant(of: dialog, matching: find.text(label)),
-            findsOneWidget,
-            reason:
-                'Option "$label" must be present in the advance picker (wide viewport)',
-          );
-        }
-      },
-    );
-  });
-
-  group('SettingsScreen — picker dialog invariant FR-17', () {
-    testWidgets(
-      'advance picker shows Dialog (not BottomSheet) on wide viewport (FR-17)',
-      (tester) async {
-        tester.view.physicalSize = const Size(800, 2000);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.reset);
-
-        final stub = _StubSettingsNotifier(
-          defaults.copyWith(notificationsEnabled: true),
+        expect(
+          find.byType(CupertinoPicker),
+          findsOneWidget,
+          reason:
+              'Android must open CupertinoPicker for Preavviso, not a SimpleDialog.',
         );
-        await tester.pumpWidget(
-          _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
-        );
-        await tester.pumpAndSettle();
-
-        await tester.tap(find.text('Preavviso'));
-        await tester.pumpAndSettle();
-
         expect(
           find.byType(Dialog),
-          findsOneWidget,
-          reason: 'Advance picker must show as a Dialog, not a BottomSheet',
-        );
-        expect(
-          find.byType(BottomSheet),
           findsNothing,
-          reason: 'Advance picker must show as a Dialog, not a BottomSheet',
+          reason: 'SimpleDialog must not appear on Android after migration.',
         );
+        debugDefaultTargetPlatformOverride = null;
       },
     );
 
     testWidgets(
-      'advance picker shows Dialog (not BottomSheet) on narrow viewport (FR-17)',
+      'should_not_write_when_barrier_dismiss_given_open_advance_picker',
       (tester) async {
-        tester.view.physicalSize = const Size(360, 640);
+        // Opening the Cupertino picker and dismissing via the barrier without
+        // moving the wheel must leave savedSettings null — no debounce fires.
+        tester.view.physicalSize = const Size(800, 4000);
         tester.view.devicePixelRatio = 1.0;
-        tester.view.padding = const FakeViewPadding(bottom: 48);
         addTearDown(tester.view.reset);
 
         final stub = _StubSettingsNotifier(
@@ -867,15 +649,17 @@ void main() {
         await tester.tap(find.text('Preavviso'));
         await tester.pumpAndSettle();
 
+        // Dismiss by tapping above the bottom sheet (Offset(400, 100) is well
+        // above the anchored-at-bottom modal on an 800×4000 logical screen).
+        await tester.tapAt(const Offset(400, 100));
+        await tester.pumpAndSettle();
+
         expect(
-          find.byType(Dialog),
-          findsOneWidget,
-          reason: 'Advance picker must show as a Dialog, not a BottomSheet',
-        );
-        expect(
-          find.byType(BottomSheet),
-          findsNothing,
-          reason: 'Advance picker must show as a Dialog, not a BottomSheet',
+          stub.savedSettings,
+          isNull,
+          reason:
+              'Dismissing the advance picker without wheel movement must not '
+              'trigger any settings write.',
         );
       },
     );
@@ -1202,10 +986,9 @@ void main() {
     );
   });
 
-  group('SettingsScreen — iOS days picker (CupertinoPicker)', () {
+  group('SettingsScreen — advance picker (CupertinoPicker) behaviour', () {
     testWidgets('tap on Preavviso row opens CupertinoPicker modal',
         (tester) async {
-      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
       tester.view.physicalSize = const Size(800, 4000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
@@ -1224,20 +1007,18 @@ void main() {
       expect(
         find.byType(CupertinoPicker),
         findsOneWidget,
-        reason: 'iOS advance row must open CupertinoPicker',
+        reason: 'Preavviso row must open CupertinoPicker on all platforms',
       );
       expect(
         find.byType(Dialog),
         findsNothing,
-        reason: 'SimpleDialog must not appear on iOS',
+        reason: 'SimpleDialog must not appear on any platform',
       );
-      debugDefaultTargetPlatformOverride = null;
     });
 
     testWidgets(
       'Ripristina resets wheel and resaves original; modal stays open (days)',
       (tester) async {
-        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
         tester.view.physicalSize = const Size(800, 4000);
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.reset);
@@ -1260,8 +1041,10 @@ void main() {
         // Drag 2 items upward on the CupertinoPicker (itemExtent=44 → 88 px).
         final pickerFinder = find.byType(CupertinoPicker);
         await tester.drag(pickerFinder, const Offset(0, -88.0));
-        // pumpAndSettle fires the 250 ms debounce timer.
         await tester.pumpAndSettle();
+        // Without iOS scroll physics the snap animation completes in < 250 ms
+        // of fake time. Advance explicitly past the debounce threshold.
+        await tester.pump(const Duration(milliseconds: 300));
 
         // Autosave must have fired.
         expect(
@@ -1299,12 +1082,10 @@ void main() {
           findsNothing,
           reason: 'Annulla must not exist — replaced by Ripristina',
         );
-        debugDefaultTargetPlatformOverride = null;
       },
     );
 
     testWidgets('OK closes the modal (days)', (tester) async {
-      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
       tester.view.physicalSize = const Size(800, 4000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
@@ -1332,11 +1113,9 @@ void main() {
         findsNothing,
         reason: 'OK must close the modal',
       );
-      debugDefaultTargetPlatformOverride = null;
     });
 
     testWidgets('shows day labels near center of picker', (tester) async {
-      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
       tester.view.physicalSize = const Size(800, 4000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
@@ -1374,10 +1153,9 @@ void main() {
         expect(
           find.descendant(of: pickerFinder, matching: find.text(label)),
           findsAtLeastNWidgets(1),
-          reason: 'Day label "$label" must appear in iOS CupertinoPicker',
+          reason: 'Day label "$label" must appear in CupertinoPicker',
         );
       }
-      debugDefaultTargetPlatformOverride = null;
     });
   });
 
@@ -1604,11 +1382,10 @@ void main() {
     );
   });
 
-  group('SettingsScreen — iOS days picker autosave + debounce', () {
+  group('SettingsScreen — advance picker autosave + debounce', () {
     testWidgets(
       'wheel-stop autosave fires after 250 ms (days)',
       (tester) async {
-        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
         tester.view.physicalSize = const Size(800, 4000);
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.reset);
@@ -1632,8 +1409,10 @@ void main() {
         // itemExtent=44; drag(Offset(0, -2*44)) → index seededIndex+2 = 3 → 4 days.
         final pickerFinder = find.byType(CupertinoPicker);
         await tester.drag(pickerFinder, const Offset(0, -2 * 44.0));
-        // pumpAndSettle fires the 250 ms debounce (default step = 100 ms).
         await tester.pumpAndSettle();
+        // Without iOS scroll physics the snap animation completes in < 250 ms
+        // of fake time. Advance explicitly past the debounce threshold.
+        await tester.pump(const Duration(milliseconds: 300));
 
         expect(
           stub.savedSettings?.notificationDaysBefore,
@@ -1645,14 +1424,12 @@ void main() {
           findsOneWidget,
           reason: 'Modal must stay open after autosave',
         );
-        debugDefaultTargetPlatformOverride = null;
       },
     );
 
     testWidgets(
       'OK after autosave saves once with last scrolled value (days)',
       (tester) async {
-        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
         tester.view.physicalSize = const Size(800, 4000);
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.reset);
@@ -1674,8 +1451,10 @@ void main() {
 
         final pickerFinder = find.byType(CupertinoPicker);
         await tester.drag(pickerFinder, const Offset(0, -2 * 44.0));
-        // pumpAndSettle fires autosave.
         await tester.pumpAndSettle();
+        // Without iOS scroll physics the snap animation completes in < 250 ms
+        // of fake time. Advance explicitly past the debounce threshold.
+        await tester.pump(const Duration(milliseconds: 300));
 
         // Reset count; OK must not trigger another save.
         stub.saveCallCount = 0;
@@ -1699,14 +1478,12 @@ void main() {
           reason:
               'OK must not trigger an extra save when debounce already fired',
         );
-        debugDefaultTargetPlatformOverride = null;
       },
     );
 
     testWidgets(
       'tap-OK with debounce still pending flushes synchronously (days)',
       (tester) async {
-        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
         tester.view.physicalSize = const Size(800, 4000);
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.reset);
@@ -1755,7 +1532,6 @@ void main() {
           1,
           reason: 'Exactly one save must occur (the flushed pending debounce)',
         );
-        debugDefaultTargetPlatformOverride = null;
       },
     );
   });

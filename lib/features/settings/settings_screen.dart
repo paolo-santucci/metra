@@ -21,7 +21,6 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -136,7 +135,8 @@ class SettingsScreen extends ConsumerWidget {
                   valueText: l10n
                       .settings_advance_value(settings.notificationDaysBefore),
                   enabled: settings.notificationsEnabled,
-                  onTap: () => _showAdvancePicker(context, ref, settings, l10n),
+                  onTap: () =>
+                      _showCupertinoDaysPicker(context, ref, settings, l10n),
                 ),
                 const _SettingsDivider(),
                 Builder(
@@ -486,7 +486,15 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  static Future<void> _showDaysPickerIOS(
+  /// Shows a Cupertino days-picker wheel seeded with
+  /// [settings.notificationDaysBefore].
+  ///
+  /// Used on both Android and iOS — the Cupertino wheel is the canonical
+  /// picker for this app on all platforms (SimpleDialog removed in favour of
+  /// visual consistency with the time picker). Auto-save fires 250 ms after
+  /// the last wheel movement; Ripristina resets to the seed; OK flushes any
+  /// pending debounce and closes.
+  static Future<void> _showCupertinoDaysPicker(
     BuildContext context,
     WidgetRef ref,
     AppSettingsData settings,
@@ -550,40 +558,6 @@ class SettingsScreen extends ConsumerWidget {
           },
         );
       },
-    );
-  }
-
-  static Future<void> _showAdvancePicker(
-    BuildContext context,
-    WidgetRef ref,
-    AppSettingsData settings,
-    AppLocalizations l10n,
-  ) async {
-    if (defaultTargetPlatform == TargetPlatform.iOS) {
-      return _showDaysPickerIOS(context, ref, settings, l10n);
-    }
-    await showDialog<void>(
-      context: context,
-      builder: (dialogCtx) => SimpleDialog(
-        title: Text(l10n.settings_advance_label),
-        children: [
-          for (int i = 0; i < AppConstants.kMaxAdvanceDays; i++)
-            SimpleDialogOption(
-              onPressed: () {
-                Navigator.of(dialogCtx).pop();
-                _save(ref, settings.copyWith(notificationDaysBefore: i + 1));
-              },
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(l10n.settings_advance_value(i + 1)),
-                  if (settings.notificationDaysBefore == i + 1)
-                    const Icon(Icons.check, size: 18),
-                ],
-              ),
-            ),
-        ],
-      ),
     );
   }
 
