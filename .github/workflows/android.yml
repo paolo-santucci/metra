@@ -65,3 +65,12 @@ jobs:
         with:
           name: release-apks
           path: build/app/outputs/flutter-apk/*-release.apk
+
+      - name: Build release bundle (AAB)
+        run: flutter build appbundle --release --dart-define=DROPBOX_APP_KEY=${{ secrets.DROPBOX_APP_KEY }}
+
+      - name: Upload release AAB
+        uses: actions/upload-artifact@v6
+        with:
+          name: release-aab
+          path: build/app/outputs/bundle/release/app-release.aab
