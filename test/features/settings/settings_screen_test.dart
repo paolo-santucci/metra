@@ -592,7 +592,8 @@ void main() {
     );
   });
 
-  group('SettingsScreen — advance picker (CupertinoPicker) platform parity', () {
+  group('SettingsScreen — advance picker (CupertinoPicker) platform parity',
+      () {
     testWidgets(
       'android_advance_picker_uses_cupertino_wheel',
       (tester) async {

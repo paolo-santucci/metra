@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Explicit network security configuration.
+     Android defaults to cleartext=false since API 28, but making it explicit:
+       1. Documents intent — no cleartext traffic, ever.
+       2. Prevents accidental misconfiguration if targetSdk is lowered or a
+          new build type (e.g. profile) is added without a debug override.
+       3. Satisfies Play Console pre-launch report checks.
+     Reference: https://developer.android.com/training/articles/security-config
+
+     Métra contacts only HTTPS endpoints (Dropbox, OneDrive OAuth).
+     No domain-specific overrides are needed. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <!-- Trust the system CA store only. No user-added CAs, no debug
+                 overrides in release builds. -->
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
