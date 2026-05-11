@@ -64,8 +64,6 @@ La privacy di Mētra non è una policy. È una scelta di architettura.
 - **Nessun server proprietario** — Mētra non ha backend, analytics, né telemetria di alcun tipo.
 - **Open source** — il codice è qui. Ogni affermazione sulla privacy può essere verificata leggendo il sorgente.
 
-[Leggi la privacy policy completa →](/it/privacy)
-
 ---
 
 ## Open source
