@@ -9,12 +9,12 @@
   <!-- hreflang: tell search engines about both language versions -->
   {% if page.lang == 'en' %}
   <link rel="alternate" hreflang="en" href="{{ page.url | absolute_url }}">
-  <link rel="alternate" hreflang="it" href="{{ page.url | replace: '/en/', '/it/' | absolute_url }}">
+  <link rel="alternate" hreflang="it" href="{{ page.url | replace: '/metra/en/', '/metra/it/' | absolute_url }}">
   {% else %}
   <link rel="alternate" hreflang="it" href="{{ page.url | absolute_url }}">
-  <link rel="alternate" hreflang="en" href="{{ page.url | replace: '/it/', '/en/' | absolute_url }}">
+  <link rel="alternate" hreflang="en" href="{{ page.url | replace: '/metra/it/', '/metra/en/' | absolute_url }}">
   {% endif %}
-  <link rel="alternate" hreflang="x-default" href="{{ page.url | replace: '/it/', '/en/' | absolute_url }}">
+  <link rel="alternate" hreflang="x-default" href="{{ page.url | replace: '/metra/it/', '/metra/en/' | absolute_url }}">
 
   <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
   <link rel="icon" type="image/svg+xml" href="{{ '/assets/favicon.svg' | relative_url }}">
@@ -25,7 +25,7 @@
 
   <header class="site-header">
     <div class="site-header__inner">
-      <a href="{{ '/' | relative_url }}" class="site-logo">
+      <a href="{{ '/metra/' | relative_url }}" class="site-logo">
         M<span class="macron-accent">ē</span>tra
       </a>
       <nav class="site-nav">
@@ -37,9 +37,9 @@
 
         <!-- Language switcher -->
         {% if page.lang == 'en' %}
-        <a href="{{ page.url | replace: '/en/', '/it/' | relative_url }}" class="lang-switch" aria-label="Passa all'italiano">IT</a>
+        <a href="{{ page.url | replace: '/metra/en/', '/metra/it/' | relative_url }}" class="lang-switch" aria-label="Passa all'italiano">IT</a>
         {% else %}
-        <a href="{{ page.url | replace: '/it/', '/en/' | relative_url }}" class="lang-switch" aria-label="Switch to English">EN</a>
+        <a href="{{ page.url | replace: '/metra/it/', '/metra/en/' | relative_url }}" class="lang-switch" aria-label="Switch to English">EN</a>
         {% endif %}
       </nav>
     </div>
