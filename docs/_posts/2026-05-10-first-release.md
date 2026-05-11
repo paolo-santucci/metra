@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: page
 title: "Mētra 1.0 — First Stable Release"
 date: 2026-05-10
 tags: [release, updates]
