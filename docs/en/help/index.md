@@ -4,7 +4,7 @@ title: Help
 subtitle: Everything you need to know about Métra.
 lang: en
 lang_ref: help-index
-permalink: /en/help/daily-entry/
+permalink: /en/help/
 help_order: 0
 ---
 ## What to expect the first time you open Métra

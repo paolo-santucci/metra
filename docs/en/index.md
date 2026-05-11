@@ -105,7 +105,7 @@ If you find Mētra useful, you can support development:
 
 ## Need help?
 
-Visit the **[Help centre](/metra/help/)** for usage instructions.
+Visit the **[Help centre]({{ '/en/help/' | relative_url }})** for usage instructions.
 
 ---
 

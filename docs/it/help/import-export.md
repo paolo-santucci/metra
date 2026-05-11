@@ -164,4 +164,4 @@ Le righe con errori vengono saltate; le righe valide vengono comunque importate.
 
 ---
 
-[← Torna alla Guida](/metra/help/it/)
+[← Torna alla Guida]({{ '/it/help/' | relative_url }})

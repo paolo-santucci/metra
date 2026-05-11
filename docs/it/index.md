@@ -3,7 +3,7 @@ layout: home
 title: Métra
 lang: it
 lang_ref: home
-permalink: /metra/it/
+permalink: /it/
 tagline: Un quaderno silenzioso per conoscerti, ciclo dopo ciclo.
 links:
   - label: Scarica su App Store
@@ -94,7 +94,7 @@ Se trovi Mētra utile, puoi sostenere lo sviluppo:
 
 ## Hai bisogno di aiuto?
 
-Consulta il **[Centro assistenza](/metra/help/it/)** per le istruzioni d'uso.
+Consulta il **[Centro assistenza]({{ '/it/help/' | relative_url }})** per le istruzioni d'uso.
 
 ---
 

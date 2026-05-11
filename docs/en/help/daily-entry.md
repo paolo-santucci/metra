@@ -122,4 +122,4 @@ To remove all data for a specific day, open the edit screen for that day and cle
 
 ---
 
-[← Back to Help](/metra/help/)
+[← Back to Help]({{ '/en/help/' | relative_url }})
