@@ -29,23 +29,25 @@
           {% endfor %}
           {% endif %}
         </nav>
-        <div class="lang-switch">
-          {% if page.lang == 'en' %}
-          <span class="lang-switch__current">EN</span>
-          {% assign other = site.pages | where: "lang_ref", page.lang_ref | where: "lang", "it" | first %}
-          {% if other %}
-          <a href="{{ other.url | relative_url }}" class="lang-switch__link">IT</a>
+        <!-- pill slides left (data-active="0") for IT, right (data-active="1") for EN -->
+        <div class="lang-switch" {% if page.lang == 'en' %}data-active="1"{% else %}data-active="0"{% endif %}>
+          <div class="lang-switch__pill"></div>
+          {% if page.lang == 'it' %}
+            <span class="lang-switch__option lang-switch__option--active">IT</span>
+            {% assign en_page = site.pages | where: "lang_ref", page.lang_ref | where: "lang", "en" | first %}
+            {% if en_page %}
+            <a href="{{ en_page.url | relative_url }}" class="lang-switch__option">EN</a>
+            {% else %}
+            <a href="{{ '/en/' | relative_url }}" class="lang-switch__option">EN</a>
+            {% endif %}
           {% else %}
-          <a href="{{ '/it/' | relative_url }}" class="lang-switch__link">IT</a>
-          {% endif %}
-          {% else %}
-          <span class="lang-switch__current">IT</span>
-          {% assign other = site.pages | where: "lang_ref", page.lang_ref | where: "lang", "en" | first %}
-          {% if other %}
-          <a href="{{ other.url | relative_url }}" class="lang-switch__link">EN</a>
-          {% else %}
-          <a href="{{ '/en/' | relative_url }}" class="lang-switch__link">EN</a>
-          {% endif %}
+            {% assign it_page = site.pages | where: "lang_ref", page.lang_ref | where: "lang", "it" | first %}
+            {% if it_page %}
+            <a href="{{ it_page.url | relative_url }}" class="lang-switch__option">IT</a>
+            {% else %}
+            <a href="{{ '/it/' | relative_url }}" class="lang-switch__option">IT</a>
+            {% endif %}
+            <span class="lang-switch__option lang-switch__option--active">EN</span>
           {% endif %}
         </div>
       </div>
