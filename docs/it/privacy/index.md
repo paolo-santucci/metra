@@ -29,4 +29,4 @@ Métra può programmare una notifica locale all'avvicinarsi della finestra previ
 ## Contatti
 
 Domande: apps@paolosantucci.com  
-Codice sorgente: https://github.com/paolo-santucci/metra
+Codice sorgente: [https://github.com/paolo-santucci/metra](https://github.com/paolo-santucci/metra)
