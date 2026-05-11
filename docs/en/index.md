@@ -85,8 +85,6 @@ The openness is not a feature. It is the accountability structure. In a category
 | Android | [Download APK →](https://github.com/paolo-santucci/metra/releases) |
 | iOS | Available on TestFlight — App Store coming soon |
 
-[Leggi in italiano →](../)
-
 ---
 
 
