@@ -1,29 +1,32 @@
 ---
-title: Privacy Policy
 layout: page
+title: Informativa sulla privacy
+lang: it
+lang_ref: privacy-policy
+permalink: /it/privacy/
 ---
 
-# Métra — Privacy Policy
+# Métra — Informativa sulla privacy
 
-**Last updated: 2026-04-29**
+**Ultimo aggiornamento: 29/04/2026**
 
-## What data Métra collects
+## Quali dati raccoglie Métra
 
-Métra stores only the data you enter: cycle dates, flow intensity, pain symptoms, and notes. All data is saved **locally on your device** using an encrypted database (SQLCipher AES-256). No data is ever sent to any server operated by the app developer.
+Métra memorizza solo i dati che inserisci: date del ciclo, intensità del flusso, sintomi dolorosi e note. Tutti i dati sono salvati **localmente sul tuo dispositivo** in un database cifrato (SQLCipher AES-256). Nessun dato viene mai inviato a server gestiti dallo sviluppatore dell'app.
 
-## Optional cloud backup
+## Backup opzionale nel cloud
 
-If you connect Dropbox, Métra uploads an encrypted backup blob. The blob is encrypted on your device with a passphrase you choose. Dropbox cannot read your data. The developer cannot read your data. There is no password reset — you are the only holder of your key.
+Se colleghi Dropbox, Métra carica un blob di backup cifrato. Il blob viene cifrato sul tuo dispositivo con una passphrase che scegli tu. Dropbox non può leggere i tuoi dati. Lo sviluppatore non può leggere i tuoi dati. Non esiste alcuna procedura di recupero password: sei l'unica detentrice della tua chiave.
 
-## Third-party services
+## Servizi di terze parti
 
-Métra does not use analytics, advertising SDKs, or crash reporting tools. The only third-party service is Dropbox (optional, user-initiated).
+Métra non utilizza strumenti di analisi, SDK pubblicitari o servizi di segnalazione dei crash. L'unico servizio di terze parti è Dropbox (facoltativo, attivato dall'utente).
 
-## Local notifications
+## Notifiche locali
 
-Métra can schedule a local notification when your predicted cycle window approaches. This uses the device notification system only — no data leaves your device.
+Métra può programmare una notifica locale all'avvicinarsi della finestra prevista per il ciclo. Viene usato solo il sistema di notifiche del dispositivo: nessun dato esce dal tuo dispositivo.
 
-## Contact
+## Contatti
 
-Questions: paolo@paolosantucci.com  
-Source code: https://github.com/paolo-santucci/metra
+Domande: apps@paolosantucci.com  
+Codice sorgente: https://github.com/paolo-santucci/metra
