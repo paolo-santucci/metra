@@ -11,8 +11,6 @@ navigation_it:
     url: /it/#novita
   - title: Privacy
     url: /it/privacy/
-  - title: Chi siamo
-    url: /it/chi-siamo/
 
 # Navigation — English
 navigation_en:
@@ -22,8 +20,6 @@ navigation_en:
     url: /en/#news
   - title: Privacy
     url: /en/privacy/
-  - title: About
-    url: /en/about/
 
 # Theme
 remote_theme: false
