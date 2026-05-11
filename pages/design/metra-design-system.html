@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Métra — Design System · Canone</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: #E8DFD0; color: #2B2521; }
+.ds-wrap { max-width: 1440px; margin: 0 auto; padding: 56px 40px 120px; }
+.ds-sec { margin-bottom: 72px; }
+.ds-sec-hdr { display: flex; align-items: baseline; gap: 14px; margin-bottom: 28px; padding-bottom: 10px; border-bottom: 1.5px solid rgba(43,37,33,0.14); }
+.ds-sec-num { font-family: 'DM Serif Display', serif; font-size: 13px; color: #C87456; letter-spacing: 0.08em; }
+.ds-sec-title { font-family: 'DM Serif Display', serif; font-size: 22px; color: #2B2521; }
+.ds-row { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+.tlabel { font-family: 'Inter'; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(43,37,33,0.55); margin-bottom: 8px; }
+.pair { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+.lp { background: #FAF5EE; border-radius: 20px; padding: 28px; border: 1px solid rgba(43,37,33,0.08); }
+.dp { background: #251D18; border-radius: 20px; padding: 28px; border: 1px solid rgba(237,228,211,0.07); }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+
+/* ─── DESIGN TOKENS ─────────────────────────────────────────────
+   Source of truth — mirrors metra-screens-light.html (L)
+   and metra-screens-dark.html (D) exactly.
+   Canonical names in screen files shown in comments.
+──────────────────────────────────────────────────────────────── */
+const L = {
+  bg:       '#F4EDE2',  // C.sabbia
+  surface:  '#FAF5EE',  // C.surface
+  surface2: '#FDFAF6',  // C.bianco
+  accent:   '#C87456',  // C.terracotta
+  accentDk: '#9A4D32',  // C.tc_scura — body text on tinted bg, AA body
+  ocra:     '#D4A26A',  // C.ocra
+  lavanda:  '#5B4E7A',  // C.lavanda
+  malva:    '#9E7488',  // C.malva
+  muschio:  '#7A8471',  // C.muschio
+  text:     '#2B2521',  // C.inchiostro
+  sub:      'rgba(43,37,33,0.68)',
+  faint:    'rgba(43,37,33,0.38)',
+  border:   'rgba(43,37,33,0.08)',
+  border2:  'rgba(43,37,33,0.12)',
+};
+
+const D = {
+  bg:       '#1A1410',  // C.sabbia (dark) = notte
+  surface:  '#251D18',  // C.surface (dark) = surface_d
+  surface2: '#2F2520',  // C.bianco (dark) = surface2_d
+  accent:   '#B86848',  // C.terracotta (dark) = tc_spenta
+  accentDk: '#D88868',  // C.tc_scura (dark) = tc_chiara — AA body on tinted
+  ocra:     '#C4956A',  // C.ocra (dark)
+  lavanda:  '#9B8FBF',  // C.lavanda (dark) = lav_chiara
+  malva:    '#C4A0B4',  // C.malva (dark) = malva_chiara
+  muschio:  '#7A8471',  // C.muschio (same both themes)
+  text:     '#EDE4D3',  // C.inchiostro (dark) = avorio
+  sub:      'rgba(237,228,211,0.65)',
+  faint:    'rgba(237,228,211,0.35)',
+  border:   'rgba(237,228,211,0.08)',
+  border2:  'rgba(237,228,211,0.14)',
+};
+
+/* ─── ICONS ─────────────────────────────────────────────────── */
+function Icon({ name, size = 24, color, stroke = 1.5 }) {
+  const c = color || L.text;
+  const p = { stroke: c, strokeWidth: stroke, strokeLinecap: 'round', strokeLinejoin: 'round', fill: 'none' };
+  const icons = {
+    chevron_right: <path d="M9 6l6 6-6 6" {...p}/>,
+    chevron_left:  <path d="M15 6l-6 6 6 6" {...p}/>,
+    chevron_down:  <path d="M6 9l6 6 6-6" {...p}/>,
+    x:             <path d="M18 6L6 18M6 6l12 12" {...p}/>,
+    lock:          <><rect x="5" y="11" width="14" height="10" rx="2" {...p}/><path d="M8 11V7a4 4 0 0 1 8 0v4" {...p}/></>,
+    cloud:         <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" {...p}/>,
+    drop:          <path d="M12 3C12 3 5 10 5 15a7 7 0 0 0 14 0c0-5-7-12-7-12z" {...p}/>,
+    wave:          <path d="M3 12 Q6 9 9 12 Q12 15 15 12 Q18 9 21 12" {...p}/>,
+    plus:          <><path d="M12 5v14M5 12h14" {...p}/></>,
+    check:         <path d="M5 12l5 5 9-9" {...p}/>,
+    settings:      <><circle cx="12" cy="12" r="3" {...p}/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" {...p}/></>,
+    chart:         <><path d="M4 20h16" {...p}/><rect x="5" y="11" width="3" height="9" rx="1" {...p}/><rect x="10.5" y="7" width="3" height="13" rx="1" {...p}/><rect x="16" y="4" width="3" height="16" rx="1" {...p}/></>,
+    calendar:      <><rect x="3" y="4" width="18" height="18" rx="2" {...p}/><path d="M16 2v4M8 2v4M3 10h18" {...p}/></>,
+    note:          <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" {...p}/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z" {...p}/></>,
+    wifi:          <><path d="M5 12.55a11 11 0 0 1 14.08 0" {...p}/><path d="M1.42 9a16 16 0 0 1 21.16 0" {...p}/><path d="M8.53 16.11a6 6 0 0 1 6.95 0" {...p}/><circle cx="12" cy="20" r="1" fill={c} stroke="none"/></>,
+    battery:       <><rect x="1" y="6" width="18" height="12" rx="2" {...p}/><path d="M23 13v-2" {...p}/><rect x="3" y="8" width="12" height="8" rx="1" fill={c} stroke="none" fillOpacity="0.55"/></>,
+    info:          <><circle cx="12" cy="12" r="9" {...p}/><path d="M12 8v1M12 12v4" {...p}/></>,
+    leaf:          <path d="M5 19C5 12 8 5 19 5c0 11-7 14-14 14z" {...p}/>,
+    export:        <><path d="M12 16V4M8 8l4-4 4 4" {...p}/><path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2" {...p}/></>,
+    moon_crescent: <path d="M12 3a9 9 0 1 0 9 9 6.5 6.5 0 0 1-9-9z" {...p}/>,
+    star_small:    <path d="M12 3L14 9.2L20.6 9.2L15.3 13.1L17.3 19.3L12 15.4L6.7 19.3L8.7 13.1L3.4 9.2L10 9.2Z" {...p}/>,
+    today_fold:    <><path d="M5 5 L15 5 L19 9 L19 19 L5 19 Z" {...p}/><path d="M15 5 L19 5 L19 9 Z" {...p}/><rect x="10.5" y="11" width="3" height="3" rx="0.8" fill={c} stroke="none"/></>,
+    filter:        <path d="M22 3H2l8 9.46V19l4 2v-8.54z" {...p}/>,
+    pen:           <path d="M13 2 C19 5 19 14 13 19 L10 22 L11 19 C8 14 9 6 13 2 Z" fill={c} stroke="none" />,
+  };
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">{icons[name] ?? <circle cx="12" cy="12" r="9" stroke={c} strokeWidth={stroke}/>}</svg>;
+}
+
+function DataIcon({ name, size = 12, color }) {
+  const paths = {
+    drop:         <path d="M12 3C12 3 5 10 5 15a7 7 0 0 0 14 0c0-5-7-12-7-12z" fill={color}/>,
+    drop_outline: <path d="M12 3C12 3 5 10 5 15a7 7 0 0 0 14 0c0-5-7-12-7-12z" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>,
+    moon_crescent:<path d="M12 3a9 9 0 1 0 9 9 6.5 6.5 0 0 1-9-9z" fill={color}/>,
+    star_small:   <path d="M12 3L14 9.2L20.6 9.2L15.3 13.1L17.3 19.3L12 15.4L6.7 19.3L8.7 13.1L3.4 9.2L10 9.2Z" fill={color}/>,
+    zap:          <path d="M13 3L5 14L11 14L9 21L19 11L13 11Z" fill={color}/>,
+  };
+  return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">{paths[name] ?? null}</svg>;
+}
+
+function Moon({ phase = 2, size = 24, color }) {
+  const c = color || L.text;
+  const fills = [
+    [],
+    [<path key="a" d="M12 3a9 9 0 0 0 0 18 6 6 0 0 1 0-18z" fill={c} fillOpacity="0.8"/>],
+    [<path key="a" d="M12 3v18a9 9 0 0 0 0-18z" fill={c} fillOpacity="0.8"/>],
+    [<path key="a" d="M12 3a9 9 0 0 1 0 18 4 4 0 0 0 0-18z" fill={c} fillOpacity="0.8"/>],
+    [<circle key="a" cx="12" cy="12" r="9" fill={c} fillOpacity="0.8"/>],
+  ];
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke={c} strokeWidth="1.3"/>
+      {fills[Math.min(phase, 4)]}
+    </svg>
+  );
+}
+
+/* ─── DS SHELL ───────────────────────────────────────────────── */
+function Sec({ num, title, children }) {
+  return (
+    <div className="ds-sec">
+      <div className="ds-sec-hdr">
+        <span className="ds-sec-num">{String(num).padStart(2,'0')}</span>
+        <span className="ds-sec-title">{title}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Swatch({ hex, name, role, dark }) {
+  const isLight = (() => { const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return (r*299+g*587+b*114)/1000 > 140; })();
+  const onSw = isLight ? '#2B2521' : '#EDE4D3';
+  return (
+    <div style={{ width: 148, flexShrink: 0 }}>
+      <div style={{ width: 148, height: 84, background: hex, borderRadius: 10, border: `1px solid ${dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'}`, display: 'flex', alignItems: 'flex-end', padding: '7px 9px', marginBottom: 7 }}>
+        <span style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, color: onSw, opacity: 0.85, fontVariantNumeric: 'tabular-nums' }}>{hex}</span>
+      </div>
+      <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, color: dark ? D.text : L.text, marginBottom: 2 }}>{name}</div>
+      <div style={{ fontFamily: 'Inter', fontSize: 11, color: dark ? D.sub : L.sub, lineHeight: 1.4 }}>{role}</div>
+    </div>
+  );
+}
+
+function CBadge({ ratio, label, dark }) {
+  const pass = ratio >= 4.5, lg = ratio >= 3.0;
+  const col = pass ? '#7A8471' : lg ? '#D4A26A' : '#C0392B';
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+      <div style={{ width: 7, height: 7, borderRadius: '50%', background: col, flexShrink: 0 }}/>
+      <span style={{ fontFamily: 'Inter', fontSize: 12, color: dark ? D.text : L.text }}>{label}: {ratio}:1</span>
+      <span style={{ fontFamily: 'Inter', fontSize: 11, color: col, fontWeight: 600 }}>{pass ? 'AA' : lg ? 'AA Large' : 'FAIL'}</span>
+    </div>
+  );
+}
+
+/* ─── CANONICAL ATOMS (exact match to screen implementations) ─ */
+
+function MetraToggle({ on, onChange, t = L }) {
+  const trackOff = t === D ? 'rgba(237,228,211,0.10)' : 'rgba(43,37,33,0.08)';
+  return (
+    <div onClick={() => onChange(!on)} style={{ width: 48, height: 28, borderRadius: 14, background: on ? t.accent : trackOff, transition: 'background 0.15s', position: 'relative', cursor: 'pointer', flexShrink: 0 }}>
+      <div style={{ position: 'absolute', top: 3, left: on ? 23 : 3, width: 22, height: 22, borderRadius: 11, background: t.surface, transition: 'left 0.15s' }}/>
+    </div>
+  );
+}
+
+function Chip({ label, selected, onToggle, t = L }) {
+  const unselBg = t === D ? 'rgba(237,228,211,0.07)' : 'rgba(43,37,33,0.07)';
+  return (
+    <div onClick={onToggle} style={{ display: 'inline-flex', alignItems: 'center', paddingInline: 14, height: 36, background: selected ? t.accent : unselBg, border: `1px solid ${selected ? 'transparent' : t.border2}`, borderRadius: 18, cursor: 'pointer', transition: 'all 0.15s' }}>
+      <span style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 500, color: selected ? t.bg : t.text }}>{label}</span>
+    </div>
+  );
+}
+
+function FlowTypeChips({ value, onChange, t = L }) {
+  const neutral = t === D ? 'rgba(237,228,211,' : 'rgba(43,37,33,';
+  const types = [
+    { id: 'assente',      label: 'Assente',      variant: 'neutral' },
+    { id: 'intensita',    label: 'Intensità',    variant: 'flow'    },
+    { id: 'spotting',     label: 'Spotting',     variant: 'spot'    },
+  ];
+  return (
+    <div style={{ display: 'flex', gap: 8 }}>
+      {types.map(tp => {
+        const sel = value === tp.id;
+        const bg = !sel ? neutral+'0.04)' : tp.variant==='neutral' ? neutral+'0.08)' : tp.variant==='flow' ? t.accent+'22' : t.accent+'14';
+        const border = !sel ? `1px solid ${neutral}0.1)` : tp.variant==='neutral' ? `1.5px dashed ${neutral}0.32)` : tp.variant==='flow' ? `1.5px solid ${t.accent}BB` : `1.5px solid ${t.accent}66`;
+        const tc = !sel ? neutral+'0.42)' : tp.variant==='neutral' ? t.text : t.accentDk;
+        return (
+          <div key={tp.id} onClick={() => onChange(sel ? null : tp.id)} style={{ flex: 1, height: 44, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: bg, border, cursor: 'pointer', transition: 'all 0.15s' }}>
+            <span style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: sel ? 500 : 400, color: tc }}>{tp.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function FlowIntensityDots({ value, onChange, t = L }) {
+  const R = 18, bx = (R+7)*2, cx = bx/2;
+  const opts = [{ id:1, label:'Leggero', fillOp:0.30 }, { id:2, label:'Moderato', fillOp:0.65 }, { id:3, label:'Abbondante', fillOp:0.94 }];
+  const faint = t === D ? 'rgba(237,228,211,0.4)' : 'rgba(43,37,33,0.4)';
+  return (
+    <div style={{ display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'center', paddingTop: 16, paddingBottom: 2 }}>
+      {opts.map(opt => {
+        const sel = value === opt.id;
+        return (
+          <div key={opt.id} onClick={() => onChange(sel ? null : opt.id)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, cursor: 'pointer' }}>
+            <svg width={bx} height={bx} viewBox={`0 0 ${bx} ${bx}`}>
+              {sel && <circle cx={cx} cy={cx} r={R+5} fill="none" stroke={t.accent} strokeWidth="1.2" opacity="0.3"/>}
+              <circle cx={cx} cy={cx} r={R} fill={t.accent} fillOpacity={opt.fillOp} stroke={t.accent} strokeWidth="1.4"/>
+            </svg>
+            <span style={{ fontFamily: 'Inter', fontSize: 10, color: sel ? t.accentDk : faint, fontWeight: sel ? 600 : 400 }}>{opt.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function PainDots({ value, onChange, t = L }) {
+  const col = t.malva;
+  const faint = t === D ? 'rgba(237,228,211,0.38)' : 'rgba(43,37,33,0.38)';
+  const levels = [{ id:0, label:'Nessuno', fillOp:0 }, { id:1, label:'Lieve', fillOp:0.28 }, { id:2, label:'Moderato', fillOp:0.6 }, { id:3, label:'Intenso', fillOp:0.92 }];
+  const R = 18, bx = (R+7)*2, cx = bx/2;
+  return (
+    <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+      {levels.map(lv => {
+        const sel = value === lv.id;
+        return (
+          <div key={lv.id} onClick={() => onChange(sel ? null : lv.id)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+            <svg width={bx} height={bx} viewBox={`0 0 ${bx} ${bx}`}>
+              {sel && <circle cx={cx} cy={cx} r={R+5} stroke={col} strokeWidth="1.2" fill="none" opacity="0.28"/>}
+              <circle cx={cx} cy={cx} r={R} stroke={col} strokeWidth="1.5" fill={col} fillOpacity={lv.fillOp}/>
+            </svg>
+            <span style={{ fontFamily: 'Inter', fontSize: 10, color: sel ? col : faint, fontWeight: sel ? 600 : 400 }}>{lv.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// §8.3.1 Calendar day state table — Selected state tokens:
+//   Light: bg inchiostro #2B2521 (t.text), text sabbia #F4EDE2 (t.bg), weight 600
+//   Dark:  bg tc_spenta  #B86848 (D.accent), text notte #1A1410 (D.bg), weight 600
+//   Indicators on selected cell use bgPrimary (t.bg) for contrast in both themes.
+function CalDay({ day, monthData, selected, onSelect, t = L }) {
+  if (!day) return <div style={{ width: 48, height: 48 }}/>;
+  const { flow, pred, symptoms=[], pain=[], notesByDay={} } = monthData;
+  const isFlow = flow.includes(day), isPred = pred.includes(day), hasS = symptoms.includes(day), hasP = pain.includes(day);
+  const hasN = notesByDay[day] !== undefined;
+  const isSel = selected === day;
+  const ic = isSel ? t.bg : null;
+  const penColor = t === D ? 'rgba(237,228,211,0.68)' : 'rgba(43,37,33,0.68)';
+  const inds = [
+    isFlow && { name:'drop',         color: ic || t.accentDk,    stroke: false },
+    isPred && { name:'drop_outline', color: ic || t.lavanda,     stroke: false },
+    hasS   && { name:'star_small',   color: ic || t.ocra,        stroke: false },
+    hasP   && { name:'zap',          color: ic || t.malva,       stroke: false },
+    hasN   && { name:'pen',          color: ic || penColor,      stroke: true  },
+  ].filter(Boolean);
+  return (
+    <div onClick={() => onSelect(day)} style={{ width:48, height:48, borderRadius:12, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:1, background: isSel ? (t === D ? t.accent : t.text) : isFlow ? `${t.accent}22` : 'transparent', border: isSel ? 'none' : isFlow ? `1px solid ${t.accent}44` : isPred ? `1.5px solid ${t.lavanda}66` : '1px solid transparent', cursor:'pointer' }}>
+      <span style={{ fontFamily:'Inter', fontSize:15, fontWeight: isSel ? 600 : 400, color: isSel ? t.bg : t.text }}>{day}</span>
+      {inds.length > 0 && <div style={{ display:'flex', gap: inds.length >= 4 ? 1 : 2, alignItems:'center' }}>{inds.map(ind => ind.stroke ? <Icon key={ind.name} name={ind.name} size={11} color={ind.color} stroke={1.5}/> : <DataIcon key={ind.name} name={ind.name} size={11} color={ind.color}/>)}</div>}
+    </div>
+  );
+}
+
+function SettingsRow({ label, value, toggle, destructive, t = L }) {
+  const labelColor = destructive ? t.accentDk : t.text;
+  const bg = destructive ? `${t.accent}0D` : 'transparent';
+  return (
+    <div style={{ height:56, paddingInline:20, display:'flex', alignItems:'center', justifyContent:'space-between', background:bg, cursor:'pointer' }}>
+      <span style={{ fontFamily:'Inter', fontSize:15, fontWeight:500, color:labelColor, flex:1 }}>{label}</span>
+      {toggle ? toggle : (
+        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+          {value && <span style={{ fontFamily:'Inter', fontSize:14, color:t.sub }}>{value}</span>}
+          {!destructive && <Icon name="chevron_right" size={16} color={t.sub}/>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TabBar({ active = 'cal', t = L }) {
+  const tabs = [{ id:'cal', icon:'calendar', label:'Calendario' }, { id:'history', icon:'wave', label:'Archivio' }, { id:'stats', icon:'chart', label:'Statistiche' }, { id:'settings', icon:'settings', label:'Impostazioni' }];
+  const tabBg  = t === D ? 'rgba(26,20,16,0.96)'  : 'rgba(244,237,226,0.96)';
+  const topB   = t === D ? 'rgba(237,228,211,0.08)' : 'rgba(43,37,33,0.08)';
+  return (
+    <div style={{ height:84, background:tabBg, backdropFilter:'blur(16px)', borderTop:`1px solid ${topB}`, display:'flex', alignItems:'flex-start', paddingTop:10 }}>
+      {tabs.map(tb => {
+        const on = tb.id === active;
+        return (
+          <div key={tb.id} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
+            <Icon name={tb.icon} size={24} color={on ? t.accent : t.faint} stroke={on ? 2 : 1.5}/>
+            <span style={{ fontFamily:'Inter', fontSize:10, fontWeight: on ? 600 : 400, color: on ? t.accent : t.faint }}>{tb.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─── SECTIONS ───────────────────────────────────────────────── */
+
+function S01_Palette() {
+  return (
+    <Sec num={1} title="Palette — Light & Dark">
+      <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
+        <div>
+          <div className="tlabel" style={{ marginBottom:14 }}>Light</div>
+          <div className="ds-row">
+            {[
+              [L.bg,      'Sabbia',        'Background phone · page'],
+              [L.surface, 'Surface',       'Card · sezioni'],
+              [L.surface2,'Bianco',        'Elementi elevati'],
+              [L.accent,  'Terracotta',    'Flusso · accento primario · CTA'],
+              [L.accentDk,'TC Scura',      'Body text su sfondo tinto · AA'],
+              [L.ocra,    'Ocra',          'Sintomi · warmth'],
+              [L.lavanda, 'Lavanda Notte', 'Previsione futura'],
+              [L.malva,   'Malva',         'Dolore · intensità'],
+              [L.muschio, 'Muschio',       'Conferma · stato OK'],
+              [L.text,    'Inchiostro',    'Testo primario'],
+            ].map(([hex,name,role]) => <Swatch key={hex} hex={hex} name={name} role={role}/>)}
+          </div>
+        </div>
+        <div style={{ background:D.bg, borderRadius:20, padding:'24px 28px', border:'1px solid rgba(255,255,255,0.06)' }}>
+          <div className="tlabel" style={{ color:D.faint, marginBottom:14 }}>Dark</div>
+          <div className="ds-row">
+            {[
+              [D.bg,      'Notte',         'Background phone · page dark'],
+              [D.surface, 'Surface',       'Card · sezioni dark'],
+              [D.surface2,'Surface 2',     'Input · elementi elevati dark'],
+              [D.accent,  'TC Spenta',     'Flusso · accento dark'],
+              [D.accentDk,'TC Chiara',     'Body text su sfondo tinto dark · AA'],
+              [D.ocra,    'Ocra',          'Sintomi dark'],
+              [D.lavanda, 'Lav. Chiara',   'Previsione dark'],
+              [D.malva,   'Malva Chiara',  'Dolore dark'],
+              [D.text,    'Avorio',        'Testo primario dark'],
+            ].map(([hex,name,role]) => <Swatch key={hex} hex={hex} name={name} role={role} dark/>)}
+          </div>
+        </div>
+      </div>
+    </Sec>
+  );
+}
+
+function S02_Tipografia() {
+  const scales = [
+    { lbl:'Display — DM Serif Display · 34 / lh 1.2', s:{ fontFamily:'DM Serif Display', fontSize:34, lineHeight:1.2 }, txt:'Il tuo ritmo, custodito.' },
+    { lbl:'Title — DM Serif Display · 26 / lh 1.1',   s:{ fontFamily:'DM Serif Display', fontSize:26, lineHeight:1.1 }, txt:'Aprile 2025' },
+    { lbl:'Heading — DM Serif Display · 20 / lh 1.2', s:{ fontFamily:'DM Serif Display', fontSize:20, lineHeight:1.2 }, txt:'Sabato 10 aprile' },
+    { lbl:'Body — Inter · 16 / lh 1.55',              s:{ fontFamily:'Inter', fontSize:16, lineHeight:1.55 }, txt:'Tutto rimane sul tuo telefono: nessun account, nessun cloud.' },
+    { lbl:'Body Sm — Inter · 15 / lh 1.5',            s:{ fontFamily:'Inter', fontSize:15, lineHeight:1.5 }, txt:'Dolore moderato, stanchezza.' },
+    { lbl:'Caption — Inter · 13 / lh 1.4 · op 0.65',  s:{ fontFamily:'Inter', fontSize:13, lineHeight:1.4, opacity:0.65 }, txt:'Ultimo aggiornamento: oggi, 20:14' },
+    { lbl:'Label — Inter · 11 · 600 · UPPER · ls .06', s:{ fontFamily:'Inter', fontSize:11, fontWeight:600, letterSpacing:'0.06em', textTransform:'uppercase', opacity:0.4 }, txt:'FLUSSO · DOLORE · NOTE' },
+  ];
+  return (
+    <Sec num={2} title="Tipografia">
+      <div className="pair">
+        <div className="lp" style={{ flex:'1 1 400px' }}>
+          <div className="tlabel" style={{ marginBottom:24 }}>Scala Light</div>
+          {scales.map((sc, i) => (
+            <div key={i} style={{ marginBottom:20 }}>
+              <div className="tlabel" style={{ marginBottom:5 }}>{sc.lbl}</div>
+              <div style={{ ...sc.s, color:L.text }}>{sc.txt}</div>
+            </div>
+          ))}
+          <div style={{ height:1, background:L.border, marginBlock:20 }}/>
+          <div className="tlabel" style={{ marginBottom:12 }}>Voci alternative (tweakable)</div>
+          <div style={{ marginBottom:16 }}>
+            <div className="tlabel" style={{ marginBottom:5 }}>Cormorant Garamond · 34</div>
+            <div style={{ fontFamily:'Cormorant Garamond', fontSize:34, lineHeight:1.2, color:L.text }}>Il tuo ritmo, custodito.</div>
+          </div>
+          <div style={{ marginBottom:16 }}>
+            <div className="tlabel" style={{ marginBottom:5 }}>Inter · 34 · 300</div>
+            <div style={{ fontFamily:'Inter', fontSize:34, lineHeight:1.2, fontWeight:300, color:L.text }}>Il tuo ritmo, custodito.</div>
+          </div>
+          <div style={{ marginTop:16, padding:'14px 16px', background:`${L.accent}0D`, borderRadius:10, border:`1px solid ${L.accent}28` }}>
+            <div style={{ fontFamily:'DM Serif Display', fontSize:20, color:L.accentDk, marginBottom:4 }}>Wordmark: Mētra</div>
+            <div style={{ fontFamily:'Inter', fontSize:12, color:L.sub, lineHeight:1.5 }}>Il macron sulla ē è elemento identitario. Mai sostituire con e comune.</div>
+          </div>
+        </div>
+        <div className="dp" style={{ flex:'1 1 400px' }}>
+          <div className="tlabel" style={{ color:D.faint, marginBottom:24 }}>Scala Dark</div>
+          {scales.map((sc, i) => (
+            <div key={i} style={{ marginBottom:20 }}>
+              <div className="tlabel" style={{ color:D.faint, marginBottom:5 }}>{sc.lbl}</div>
+              <div style={{ ...sc.s, color:D.text }}>{sc.txt}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Sec>
+  );
+}
+
+function S03_Iconografia() {
+  const lineIcons = [
+    ['calendar','Calendario'],['wave','Archivio'],['chart','Statistiche'],['settings','Impostazioni'],
+    ['drop','Flusso'],['moon_crescent','Luna'],['star_small','Sintomi'],['today_fold','Giornata'],
+    ['lock','Privacy'],['cloud','Backup'],['export','Esporta'],['info','Info'],
+    ['leaf','Natura'],['note','Nota'],['pen','Penna'],['filter','Filtro'],
+    ['chevron_right','Avanti'],['chevron_left','Indietro'],['chevron_down','Espandi'],
+    ['plus','Aggiungi'],['check','Conferma'],['x','Chiudi'],
+  ];
+  const dataIcons = [['drop','Flusso'],['drop_outline','Previsione'],['star_small','Sintomo'],['zap','Dolore'],['moon_crescent','Luna']];
+  function IconGrid({ t, dark }) {
+    return (
+      <div className={dark ? 'dp' : 'lp'} style={{ flex:1 }}>
+        <div className="tlabel" style={{ color:dark?D.faint:undefined, marginBottom:16 }}>Line Icons · {dark?'Dark':'Light'}</div>
+        <div style={{ display:'flex', flexWrap:'wrap', gap:16 }}>
+          {lineIcons.map(([name,label]) => (
+            <div key={name} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, width:52 }}>
+              <div style={{ width:42, height:42, borderRadius:10, background: dark?'rgba(237,228,211,0.06)':'rgba(43,37,33,0.05)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <Icon name={name} size={21} color={t.text}/>
+              </div>
+              <span style={{ fontFamily:'Inter', fontSize:10, color:t.faint, textAlign:'center' }}>{label}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ height:1, background:t.border, marginBlock:18 }}/>
+        <div className="tlabel" style={{ color:dark?D.faint:undefined, marginBottom:12 }}>Data Icons (filled)</div>
+        <div style={{ display:'flex', gap:20 }}>
+          {dataIcons.map(([name,label]) => (
+            <div key={name} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6 }}>
+              <DataIcon name={name} size={24} color={t.accentDk}/>
+              <span style={{ fontFamily:'Inter', fontSize:10, color:t.faint }}>{label}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ height:1, background:t.border, marginBlock:18 }}/>
+        <div className="tlabel" style={{ color:dark?D.faint:undefined, marginBottom:12 }}>Fasi lunari (ornamentale)</div>
+        <div style={{ display:'flex', gap:18 }}>
+          {[0,1,2,3,4].map(p => <Moon key={p} phase={p} size={28} color={t.text}/>)}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <Sec num={3} title="Iconografia — line icons · stroke 1.5–2pt · data icons filled">
+      <div className="pair">
+        <IconGrid t={L} dark={false}/>
+        <IconGrid t={D} dark={true}/>
+      </div>
+    </Sec>
+  );
+}
+
+function S04_Bottoni() {
+  function Panel({ t, dark }) {
+    const sep = dark ? D.border : L.border;
+    return (
+      <div className={dark?'dp':'lp'} style={{ flex:'1 1 280px' }}>
+        <div className="tlabel" style={{ color:dark?D.faint:undefined, marginBottom:20 }}>{dark?'Dark':'Light'}</div>
+
+        <div className="tlabel" style={{ color:dark?D.faint:undefined, marginBottom:8 }}>Filled Accent — CTA principale</div>
+        <div style={{ height:56, background:t.accent, borderRadius:16, display:'flex', alignItems:'center', justifyContent:'center', gap:8, marginBottom:20, cursor:'pointer' }}>
+          <Icon name="check" size={18} color={t.bg} stroke={2}/>
+          <span style={{ fontFamily:'Inter', fontSize:16, fontWeight:500, color:t.bg }}>Salva giornata</span>
+        </div>
+
+        {/* §5.1 Inchiostro CTA — Dark-theme variant:
+             bg rgba(237,228,211,0.10) [textPrimary @ 0x1A],
+             border 1px solid rgba(237,228,211,0.18) [textPrimary @ 0x2E],
+             label avorio #EDE4D3. Terracotta CTA unaffected. */}
+        <div className="tlabel" style={{ color:dark?D.faint:undefined, marginBottom:8 }}>Filled Ink / Frosted — CTA neutrale</div>
+        <div style={{ height:56, background: dark?'rgba(237,228,211,0.10)':t.text, border: dark?'1px solid rgba(237,228,211,0.18)':'none', borderRadius:16, display:'flex', alignItems:'center', justifyContent:'center', marginBottom:20, cursor:'pointer' }}>
+          <span style={{ fontFamily:'Inter', fontSize:16, fontWeight:500, color: dark?t.text:t.bg }}>Inizia</span>
+        </div>
+
+        <div className="tlabel" style={{ color:dark?D.faint:undefined, marginBottom:8 }}>Ghost Accent — azioni contestuali</div>
+        <div style={{ height:44, background:`${t.accent}10`, border:`1px solid ${t.accent}22`, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', gap:6, marginBottom:8, cursor:'pointer' }}>
+          <Icon name="note" size={16} color={t.accent}/>
+          <span style={{ fontFamily:'Inter', fontSize:14, fontWeight:500, color:t.accentDk }}>Aggiungi giornata</span>
+        </div>
+        <div style={{ display:'flex', justifyContent:'center', marginBottom:20 }}>
+          <div style={{ height:36, paddingInline:18, background:`${t.accent}14`, border:`1px solid ${t.accent}28`, borderRadius:18, display:'inline-flex', alignItems:'center', cursor:'pointer' }}>
+            <span style={{ fontFamily:'Inter', fontSize:13, fontWeight:500, color:t.accentDk }}>Ko-fi · Sostieni il progetto</span>
+          </div>
+        </div>
+
+        <div className="tlabel" style={{ color:dark?D.faint:undefined, marginBottom:8 }}>Destructive — azione irreversibile</div>
+        <div style={{ background:t.surface, borderRadius:16, border:`1px solid ${t.border}`, overflow:'hidden' }}>
+          <div style={{ height:56, paddingInline:20, background:`${t.accent}0D`, display:'flex', alignItems:'center', cursor:'pointer' }}>
+            <span style={{ fontFamily:'Inter', fontSize:15, fontWeight:500, color:t.accentDk }}>Elimina tutti i dati</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <Sec num={4} title="Bottoni — tutti i pattern">
+      <div className="pair">
+        <Panel t={L} dark={false}/>
+        <Panel t={D} dark={true}/>
+      </div>
+    </Sec>
+  );
+}
+
+function S05_Toggle() {
+  const [lA, setLA] = useState(true);
+  const [lB, setLB] = useState(false);
+  const [dA, setDA] = useState(true);
+  const [dB, setDB] = useState(false);
+  function Row({ label, on, set, t, dark }) {
+    return (
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:16, width:260 }}>
+        <span style={{ fontFamily:'Inter', fontSize:15, color:t.text }}>{label}</span>
+        <MetraToggle on={on} onChange={set} t={t}/>
+      </div>
+    );
+  }
+  return (
+    <Sec num={5} title="Toggle — MetraToggle">
+      <div className="pair">
+        <div className="lp">
+          <div className="tlabel" style={{ marginBottom:16 }}>Light</div>
+          <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+            <Row label="Promemoria ciclo" on={lA} set={setLA} t={L}/>
+            <Row label="Note giornaliere" on={lB} set={setLB} t={L}/>
+          </div>
+        </div>
+        <div className="dp">
+          <div className="tlabel" style={{ color:D.faint, marginBottom:16 }}>Dark</div>
+          <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+            <Row label="Promemoria ciclo" on={dA} set={setDA} t={D} dark/>
+            <Row label="Note giornaliere" on={dB} set={setDB} t={D} dark/>
+          </div>
+        </div>
+      </div>
+    </Sec>
+  );
+}
+
+function S06_Chip() {
+  const SYMS = ['Mal di testa','Stanchezza','Mal di schiena','Nausea','Gonfiore'];
+  function ChipGroup({ t, dark }) {
+    const [sel, setSel] = useState(new Set(['Stanchezza']));
+    const [adding, setAdding] = useState(false);
+    const toggle = s => setSel(p => { const n=new Set(p); n.has(s)?n.delete(s):n.add(s); return n; });
+    const dashColor = dark ? 'rgba(237,228,211,0.25)' : 'rgba(43,37,33,0.25)';
+    return (
+      <div style={{ display:'flex', flexWrap:'wrap', gap:8, alignItems:'center' }}>
+        {SYMS.map(s => <Chip key={s} label={s} selected={sel.has(s)} onToggle={() => toggle(s)} t={t}/>)}
+        {adding
+          ? <div style={{ display:'inline-flex', alignItems:'center', height:36, borderRadius:18, border:`1.5px solid ${t.accent}`, background:`${t.accent}0D`, overflow:'hidden', paddingLeft:12, gap:0 }}>
+              <span style={{ fontFamily:'Inter', fontSize:13, color:t.text, opacity:0.5 }}>es. Vertigini</span>
+              <div onClick={() => setAdding(false)} style={{ height:36, paddingInline:12, background:t.accent, display:'flex', alignItems:'center', cursor:'pointer' }}>
+                <span style={{ fontFamily:'Inter', fontSize:13, fontWeight:500, color:t.bg }}>OK</span>
+              </div>
+            </div>
+          : <div onClick={() => setAdding(true)} style={{ display:'inline-flex', alignItems:'center', gap:5, paddingInline:14, height:36, borderRadius:18, border:`1px dashed ${dashColor}`, cursor:'pointer' }}>
+              <span style={{ fontFamily:'Inter', fontSize:18, color:t.faint, lineHeight:1, marginTop:-1 }}>+</span>
+              <span style={{ fontFamily:'Inter', fontSize:13, color:t.faint }}>Aggiungi</span>
+            </div>
+        }
+      </div>
+    );
+  }
+  return (
+    <Sec num={6} title="Chip sintomi — con inline add">
+      <div className="pair">
+        <div className="lp" style={{ flex:1 }}>
+          <div className="tlabel" style={{ marginBottom:16 }}>Light</div>
+          <ChipGroup t={L}/>
+        </div>
+        <div className="dp" style={{ flex:1 }}>
+          <div className="tlabel" style={{ color:D.faint, marginBottom:16 }}>Dark</div>
+          <ChipGroup t={D} dark/>
+        </div>
+      </div>
+    </Sec>
+  );
+}
+
+function S07_Segmented() {
+  function Seg({ t, dark }) {
+    const [v, setV] = useState('timeline');
+    const trackBg = dark ? 'rgba(237,228,211,0.10)' : 'rgba(43,37,33,0.08)';
+    const activeBg = dark ? D.bg : L.bg;
+    const inactiveColor = dark ? 'rgba(237,228,211,0.50)' : 'rgba(43,37,33,0.50)';
+    return (
+      <div>
+        <div style={{ display:'inline-flex', background:trackBg, borderRadius:10, padding:3, gap:2 }}>
+          {['timeline','tabella'].map(opt => (
+            <div key={opt} onClick={() => setV(opt)} style={{ paddingInline:18, height:34, borderRadius:8, cursor:'pointer', background: v===opt ? activeBg : 'transparent', boxShadow: v===opt ? '0 1px 4px rgba(0,0,0,0.12)' : 'none', display:'flex', alignItems:'center', transition:'all 0.15s' }}>
+              <span style={{ fontFamily:'Inter', fontSize:14, fontWeight: v===opt?500:400, color: v===opt?t.text:inactiveColor, textTransform:'capitalize' }}>{opt}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ fontFamily:'Inter', fontSize:12, color:t.faint, marginTop:10, lineHeight:1.5 }}>Track: {dark?'rgba(237,228,211,0.10)':'rgba(43,37,33,0.08)'}<br/>Active bg: {dark?'notte #1A1410':'sabbia #F4EDE2'}</div>
+      </div>
+    );
+  }
+  return (
+    <Sec num={7} title="Segmented Control — Archivio">
+      <div className="pair">
+        <div className="lp"><div className="tlabel" style={{ marginBottom:16 }}>Light</div><Seg t={L}/></div>
+        <div className="dp"><div className="tlabel" style={{ color:D.faint, marginBottom:16 }}>Dark</div><Seg t={D} dark/></div>
+      </div>
+    </Sec>
+  );
+}
+
+function S08_Input() {
+  function InputField({ state, t, dark }) {
+    const bg = dark ? D.surface2 : 'rgba(43,37,33,0.04)';
+    const borders = { default: dark?'rgba(237,228,211,0.12)':'rgba(43,37,33,0.15)', focus:t.accent, error:'#C0392B', disabled: dark?'rgba(237,228,211,0.05)':'rgba(43,37,33,0.08)' };
+    const isDisabled = state==='disabled';
+    return (
+      <div style={{ width:220 }}>
+        <div className="tlabel" style={{ color:dark?D.faint:undefined, marginBottom:6 }}>{state}</div>
+        <div style={{ height:52, background: isDisabled?(dark?'rgba(255,255,255,0.02)':'rgba(0,0,0,0.03)'):bg, border:`1.5px solid ${borders[state]}`, borderRadius:12, display:'flex', alignItems:'center', paddingInline:16, boxShadow: state==='focus'?`0 0 0 3px ${t.accent}22`:'none', opacity:isDisabled?0.5:1 }}>
+          <span style={{ fontFamily:'Inter', fontSize:15, color: state==='default'?`${t.text}50`:t.text }}>{state==='focus'?'10 aprile 2025':'Data ultimo ciclo'}</span>
+        </div>
+        {state==='error' && <div style={{ fontFamily:'Inter', fontSize:12, color:'#C0392B', marginTop:4, paddingLeft:4 }}>Data non valida — formato DD/MM</div>}
+      </div>
+    );
+  }
+  return (
+    <Sec num={8} title="Input & Textarea">
+      <div className="pair">
+        {[{t:L,dark:false},{t:D,dark:true}].map(({ t, dark }) => (
+          <div key={dark?'d':'l'} className={dark?'dp':'lp'} style={{ flex:1 }}>
+            <div className="tlabel" style={{ color:dark?D.faint:undefined, marginBottom:16 }}>{dark?'Dark':'Light'}</div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:14, marginBottom:20 }}>
+              {['default','focus','error','disabled'].map(s => <InputField key={s} state={s} t={t} dark={dark}/>)}
+            </div>
+            <div className="tlabel" style={{ color:dark?D.faint:undefined, marginBottom:8 }}>Nota libera (textarea)</div>
+            <div style={{ minHeight:72, background: dark?D.surface2:'rgba(43,37,33,0.04)', border:`1.5px solid ${dark?'rgba(237,228,211,0.12)':'rgba(43,37,33,0.12)'}`, borderRadius:12, padding:'12px 14px' }}>
+              <span style={{ fontFamily:'Inter', fontSize:15, color:`${t.text}50` }}>Circostanze, colore, consistenza…</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Sec>
+  );
+}
+
+function S09_Flusso() {
+  function FlowPanel({ t, dark }) {
+    const [flowType, setFlowType] = useState('intensita');
+    const [flowInt, setFlowInt] = useState(2);
+    const handle = tp => { const next=tp===flowType?null:tp; if(next!=='intensita')setFlowInt(null);else setFlowInt(2); setFlowType(next); };
+    const neutral = dark ? 'rgba(237,228,211,' : 'rgba(43,37,33,';
+    return (
+      <div>
+        <FlowTypeChips value={flowType} onChange={handle} t={t}/>
+        {flowType==='intensita' && <FlowIntensityDots value={flowInt} onChange={setFlowInt} t={t}/>}
+        {flowType==='spotting' && <div style={{ marginTop:14, padding:'11px 14px', borderRadius:10, background:`${t.accent}0D`, border:`1px solid ${t.accent}28` }}><span style={{ fontFamily:'Inter', fontSize:12, color:neutral+'0.65)', lineHeight:1.55 }}>Piccola perdita fuori dal flusso mestruale.</span></div>}
+        {flowType==='assente' && <div style={{ marginTop:14, display:'flex', alignItems:'center', gap:8 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5 9-9" stroke={neutral+'0.35)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg><span style={{ fontFamily:'Inter', fontSize:12, color:neutral+'0.45)' }}>Nessun flusso oggi</span></div>}
+      </div>
+    );
+  }
+  return (
+    <Sec num={9} title="Flusso — chips tipo + dots intensità">
+      <div className="pair">
+        <div className="lp" style={{ flex:1 }}><div className="tlabel" style={{ marginBottom:16 }}>Light</div><FlowPanel t={L}/></div>
+        <div className="dp" style={{ flex:1 }}><div className="tlabel" style={{ color:D.faint, marginBottom:16 }}>Dark</div><FlowPanel t={D} dark/></div>
+      </div>
+    </Sec>
+  );
+}
+
+function S10_Dolore() {
+  function PainPanel({ t, dark }) {
+    const [pain, setPain] = useState(null);
+    return (
+      <div>
+        <div style={{ fontFamily:'Inter', fontSize:12, fontWeight:600, letterSpacing:'0.06em', textTransform:'uppercase', color:t.faint, marginBottom:14 }}>Intensità dolore</div>
+        <PainDots value={pain} onChange={setPain} t={t}/>
+      </div>
+    );
+  }
+  return (
+    <Sec num={10} title="Dolore — 4 livelli di intensità">
+      <div className="pair">
+        <div className="lp" style={{ flex:1 }}><div className="tlabel" style={{ marginBottom:16 }}>Light</div><PainPanel t={L}/></div>
+        <div className="dp" style={{ flex:1 }}><div className="tlabel" style={{ color:D.faint, marginBottom:16 }}>Dark</div><PainPanel t={D} dark/></div>
+      </div>
+    </Sec>
+  );
+}
+
+function S11_Calendario() {
+  const SAMPLE = { flow:[10,11,12,13,14], pred:[7,8,9], symptoms:[13,16], pain:[11,12,13], notesByDay:{13:'ciclo',16:'sintomi'} };
+  const DAY_LABELS = ['L','M','M','G','V','S','D'];
+  function Grid({ t, dark }) {
+    const [sel, setSel] = useState(13);
+    const cells = [null, ...Array.from({length:30},(_,i)=>i+1)];
+    return (
+      <div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', marginBottom:4 }}>
+          {DAY_LABELS.map((d,i) => <div key={i} style={{ textAlign:'center', fontFamily:'Inter', fontSize:12, fontWeight:600, color:t.faint, letterSpacing:'0.04em' }}>{d}</div>)}
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:'2px 0' }}>
+          {cells.map((day,i) => <CalDay key={i} day={day} monthData={SAMPLE} selected={sel} onSelect={setSel} t={t}/>)}
+        </div>
+        <div style={{ display:'flex', gap:14, flexWrap:'wrap', marginTop:12, paddingTop:10, borderTop:`1px solid ${t.border}` }}>
+          {[{ icon:'drop', color:t.accentDk, lbl:'Flusso' }, { icon:'star_small', color:t.ocra, lbl:'Sintomi' }, { icon:'zap', color:t.malva, lbl:'Dolore' }, { icon:'drop_outline', color:t.lavanda, lbl:'Previsione' }].map(l => (
+            <div key={l.lbl} style={{ display:'flex', alignItems:'center', gap:5 }}>
+              <DataIcon name={l.icon} size={14} color={l.color}/>
+              <span style={{ fontFamily:'Inter', fontSize:11, color:t.sub }}>{l.lbl}</span>
+            </div>
+          ))}
+          <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+            <Icon name="pen" size={14} color={t === D ? 'rgba(237,228,211,0.68)' : 'rgba(43,37,33,0.68)'} stroke={1.5}/>
+            <span style={{ fontFamily:'Inter', fontSize:11, color:t.sub }}>Note</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <Sec num={11} title="Calendario — griglia + stati + legenda">
+      <div className="pair">
+        <div className="lp" style={{ flex:1 }}><div className="tlabel" style={{ marginBottom:14 }}>Light</div><Grid t={L}/></div>
+        <div className="dp" style={{ flex:1 }}><div className="tlabel" style={{ color:D.faint, marginBottom:14 }}>Dark</div><Grid t={D} dark/></div>
+      </div>
+    </Sec>
+  );
+}
+
+function S12_CardGiornata() {
+  function DayCard({ t, dark }) {
+    return (
+      <div style={{ background:t.surface, borderRadius:20, border:`1px solid ${t.border}`, padding:'16px 20px', maxWidth:320 }}>
+        <div style={{ marginBottom:10 }}>
+          <div style={{ fontFamily:'DM Serif Display', fontSize:20, color:t.text }}>Sabato 13 aprile</div>
+          <div style={{ fontFamily:'Inter', fontSize:13, color:t.sub, marginTop:2 }}>Giorno 4 del ciclo</div>
+        </div>
+        <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:10 }}>
+          <div style={{ height:24, paddingInline:8, background:`${t.accent}15`, borderRadius:6, display:'flex', alignItems:'center', gap:4 }}>
+            <DataIcon name="drop" size={11} color={t.accent}/>
+            <span style={{ fontFamily:'Inter', fontSize:11, color:t.accentDk }}>Leggero</span>
+          </div>
+          <div style={{ height:24, paddingInline:8, background:`${t.malva}1F`, borderRadius:6, display:'flex', alignItems:'center', gap:4 }}>
+            <DataIcon name="zap" size={11} color={t.malva}/>
+            <span style={{ fontFamily:'Inter', fontSize:11, color:t.malva }}>Forte</span>
+          </div>
+          <div style={{ height:24, paddingInline:8, background:`${t.ocra}18`, borderRadius:6, display:'flex', alignItems:'center', gap:4 }}>
+            <DataIcon name="star_small" size={11} color={t.ocra}/>
+            <span style={{ fontFamily:'Inter', fontSize:11, color:t.accentDk }}>Stanchezza</span>
+          </div>
+        </div>
+        <div style={{ fontFamily:'Inter', fontSize:13, color:t.sub, lineHeight:1.5, marginBottom:12 }}>Ciclo molto doloroso oggi.</div>
+        <div style={{ height:44, background:`${t.accent}10`, border:`1px solid ${t.accent}22`, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', gap:6, cursor:'pointer' }}>
+          <Icon name="note" size={16} color={t.accent}/>
+          <span style={{ fontFamily:'Inter', fontSize:14, fontWeight:500, color:t.accentDk }}>Modifica giornata</span>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <Sec num={12} title="Card Giornata — detail panel con pill">
+      <div className="pair">
+        <div className="lp"><div className="tlabel" style={{ marginBottom:16 }}>Light</div><DayCard t={L}/></div>
+        <div className="dp"><div className="tlabel" style={{ color:D.faint, marginBottom:16 }}>Dark</div><DayCard t={D} dark/></div>
+      </div>
+    </Sec>
+  );
+}
+
+function S13_Statistiche() {
+  function MBar({ value, max, color, label, t }) {
+    return (
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, flex:1 }}>
+        <div style={{ height:80, display:'flex', alignItems:'flex-end' }}>
+          <div style={{ width:28, background:color, borderRadius:'4px 4px 0 0', height:`${value/max*80}px`, opacity:0.85 }}/>
+        </div>
+        <span style={{ fontFamily:'Inter', fontSize:10, color:t.sub }}>{label}</span>
+        <span style={{ fontFamily:'Inter', fontSize:13, fontWeight:500, color:t.text }}>{value}</span>
+      </div>
+    );
+  }
+  function StatCard({ title, value, unit, sub, accent, t }) {
+    return (
+      <div style={{ flex:'1 1 calc(50% - 6px)', background:t.surface, borderRadius:16, border:`1px solid ${accent?t.accent+'44':t.border}`, padding:'16px 18px' }}>
+        <div style={{ fontFamily:'Inter', fontSize:12, color:t.sub, marginBottom:6 }}>{title}</div>
+        <div style={{ display:'flex', alignItems:'baseline', gap:4 }}>
+          <span style={{ fontFamily:'DM Serif Display', fontSize:32, color:accent?t.accent:t.text }}>{value}</span>
+          <span style={{ fontFamily:'Inter', fontSize:14, color:t.sub }}>{unit}</span>
+        </div>
+        {sub && <div style={{ fontFamily:'Inter', fontSize:12, color:t.sub, marginTop:4 }}>{sub}</div>}
+      </div>
+    );
+  }
+  function StatsPanel({ t, dark }) {
+    const barBg = dark ? 'rgba(237,228,211,0.08)' : 'rgba(43,37,33,0.08)';
+    return (
+      <div>
+        <div style={{ display:'flex', flexWrap:'wrap', gap:10, marginBottom:14 }}>
+          <StatCard title="Durata media ciclo" value="28" unit="g" sub="Range: 27–30g" accent t={t}/>
+          <StatCard title="Durata media flusso" value="4.8" unit="g" t={t}/>
+          <StatCard title="Dolore medio" value="2.4" unit="/3" sub="Trend in calo" t={t}/>
+          <StatCard title="Cicli tracciati" value="6" unit="totali" t={t}/>
+        </div>
+        <div style={{ background:t.surface, borderRadius:16, border:`1px solid ${t.border}`, padding:'18px 16px', marginBottom:10 }}>
+          <div style={{ fontFamily:'Inter', fontSize:13, fontWeight:500, color:t.text, marginBottom:14 }}>Durata ciclo (giorni)</div>
+          <div style={{ display:'flex', gap:4, alignItems:'flex-end' }}>
+            {[28,27,29,28,30,28].map((v,i) => <MBar key={i} value={v} max={35} color={t.accent} label={['A','M','F','G','D','N'][i]} t={t}/>)}
+          </div>
+        </div>
+        <div style={{ background:t.surface, borderRadius:16, border:`1px solid ${t.border}`, padding:'18px 16px' }}>
+          <div style={{ fontFamily:'Inter', fontSize:13, fontWeight:500, color:t.text, marginBottom:12 }}>Sintomi più frequenti</div>
+          {[{lbl:'Stanchezza',n:4},{lbl:'Mal di testa',n:3},{lbl:'Mal di schiena',n:2}].map(s => (
+            <div key={s.lbl} style={{ marginBottom:10 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
+                <span style={{ fontFamily:'Inter', fontSize:13, color:t.text }}>{s.lbl}</span>
+                <span style={{ fontFamily:'Inter', fontSize:13, color:t.sub }}>{s.n}/6</span>
+              </div>
+              <div style={{ height:6, background:barBg, borderRadius:3 }}>
+                <div style={{ height:6, borderRadius:3, background:t.ocra, width:`${s.n/6*100}%` }}/>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <Sec num={13} title="Statistiche — StatCard + bar chart + frequenza sintomi">
+      <div className="pair">
+        <div className="lp" style={{ flex:1 }}><div className="tlabel" style={{ marginBottom:16 }}>Light</div><StatsPanel t={L}/></div>
+        <div className="dp" style={{ flex:1 }}><div className="tlabel" style={{ color:D.faint, marginBottom:16 }}>Dark</div><StatsPanel t={D} dark/></div>
+      </div>
+    </Sec>
+  );
+}
+
+function S14_Impostazioni() {
+  function SettingsPanel({ t, dark }) {
+    const [n1, setN1] = useState(true);
+    const [n2, setN2] = useState(false);
+    const sep = dark ? 'rgba(237,228,211,0.07)' : 'rgba(43,37,33,0.07)';
+    const SLabel = ({ children }) => <div style={{ fontFamily:'Inter', fontSize:12, fontWeight:600, letterSpacing:'0.06em', textTransform:'uppercase', color:t.faint, paddingInline:4, marginBottom:10 }}>{children}</div>;
+    const SCard = ({ children }) => <div style={{ background:t.surface, borderRadius:16, border:`1px solid ${t.border}`, overflow:'hidden', marginBottom:20 }}>{children}</div>;
+    return (
+      <div style={{ width:320 }}>
+        <SLabel>Notifiche</SLabel>
+        <SCard>
+          <SettingsRow label="Promemoria ciclo" toggle={<MetraToggle on={n1} onChange={setN1} t={t}/>} t={t}/>
+          <div style={{ height:1, background:sep }}/>
+          <SettingsRow label="Preavviso" value="3 giorni prima" t={t}/>
+          <div style={{ height:1, background:sep }}/>
+          <SettingsRow label="Orario" value="alle 09:00" t={t}/>
+        </SCard>
+        <SLabel>Dati</SLabel>
+        <SCard>
+          <SettingsRow label="Backup" value="Non configurato" t={t}/>
+          <div style={{ height:1, background:sep }}/>
+          <SettingsRow label="Note giornaliere" toggle={<MetraToggle on={n2} onChange={setN2} t={t}/>} t={t}/>
+          <div style={{ height:1, background:sep }}/>
+          <SettingsRow label="Esporta CSV" t={t}/>
+        </SCard>
+        <SLabel>Azioni irreversibili</SLabel>
+        <SCard>
+          <SettingsRow label="Elimina tutti i dati" destructive t={t}/>
+        </SCard>
+      </div>
+    );
+  }
+  return (
+    <Sec num={14} title="Impostazioni — SettingsRow · Card · Divider">
+      <div className="pair">
+        <div className="lp"><div className="tlabel" style={{ marginBottom:16 }}>Light</div><SettingsPanel t={L}/></div>
+        <div className="dp"><div className="tlabel" style={{ color:D.faint, marginBottom:16 }}>Dark</div><SettingsPanel t={D} dark/></div>
+      </div>
+    </Sec>
+  );
+}
+
+function S15_TabBar() {
+  const TABS = ['cal','history','stats','settings'];
+  return (
+    <Sec num={15} title="TabBar — navigazione principale">
+      <div className="pair">
+        {[{t:L,dark:false},{t:D,dark:true}].map(({ t, dark }) => (
+          <div key={dark?'d':'l'} style={{ flex:1 }}>
+            <div className="tlabel" style={{ color:dark?D.faint:undefined, marginBottom:12 }}>{dark?'Dark':'Light'}</div>
+            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+              {TABS.map(active => (
+                <div key={active} style={{ borderRadius:14, overflow:'hidden', border:`1px solid ${dark?D.border:L.border}` }}>
+                  <TabBar active={active} t={t}/>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Sec>
+  );
+}
+
+function S16_Contrasto() {
+  return (
+    <Sec num={16} title="Contrasto & Accessibilità — WCAG 2.2">
+      <div className="pair">
+        <div className="lp" style={{ minWidth:280 }}>
+          <div className="tlabel" style={{ marginBottom:16 }}>Light — coppie critiche</div>
+          <CBadge ratio={6.8} label="Inchiostro / Sabbia (body)"/>
+          <CBadge ratio={4.7} label="TC Scura / Sabbia (body)"/>
+          <CBadge ratio={3.1} label="Terracotta / Sabbia (large)"/>
+          <CBadge ratio={5.2} label="Lavanda / Sabbia (body)"/>
+          <CBadge ratio={4.2} label="Malva / Sabbia (body)"/>
+          <CBadge ratio={4.9} label="Muschio / Sabbia (body)"/>
+          <div style={{ marginTop:14, padding:'12px 14px', background:`${L.accent}0D`, borderRadius:10, border:`1px solid ${L.accent}22` }}>
+            <div style={{ fontFamily:'Inter', fontSize:12, color:L.accentDk, lineHeight:1.5 }}>⚠ Terracotta su Sabbia: 3.1:1 → solo large text (≥18pt) o grafica. Body text → TC Scura (#9A4D32).</div>
+          </div>
+        </div>
+        <div className="dp" style={{ minWidth:280 }}>
+          <div className="tlabel" style={{ color:D.faint, marginBottom:16 }}>Dark — coppie critiche</div>
+          <CBadge ratio={11.2} label="Avorio / Notte (body)" dark/>
+          <CBadge ratio={4.8}  label="TC Spenta / Notte (body)" dark/>
+          <CBadge ratio={4.7}  label="TC Chiara / Notte (body)" dark/>
+          <CBadge ratio={4.7}  label="Notte / TC Spenta (button label)" dark/>
+          <CBadge ratio={5.6}  label="Lav. Chiara / Notte (body)" dark/>
+          <CBadge ratio={3.5}  label="Malva Chiara / Notte (large)" dark/>
+          <div style={{ marginTop:14, padding:'12px 14px', background:`${D.accent}14`, borderRadius:10, border:`1px solid ${D.accent}28` }}>
+            <div style={{ fontFamily:'Inter', fontSize:12, color:D.accentDk, lineHeight:1.5 }}>⚠ TC Chiara (#D88868) per body text su sfondo tinto dark — ~4.7:1. TC Spenta (#B86848) per accenti grafici non testuali.</div>
+          </div>
+        </div>
+      </div>
+    </Sec>
+  );
+}
+
+function S17_Spacing() {
+  return (
+    <Sec num={17} title="Spacing · Border Radius · Elevazione">
+      <div className="lp">
+        <div style={{ display:'flex', gap:40, flexWrap:'wrap', alignItems:'flex-start' }}>
+          <div>
+            <div className="tlabel" style={{ marginBottom:16 }}>Border Radius</div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:14, alignItems:'flex-end' }}>
+              {[[6,'xs','chip sm'],[10,'sm','btn sm · seg'],[12,'md','input · day'],[14,'md+','timeline card'],[16,'lg','card · btn'],[20,'xl','panel'],[44,'phone','shell']].map(([r,n,use]) => (
+                <div key={n} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6 }}>
+                  <div style={{ width:50, height:50, background:`${L.accent}18`, border:`1.5px solid ${L.accent}`, borderRadius:Math.min(r,25) }}/>
+                  <span style={{ fontFamily:'Inter', fontSize:10, fontWeight:600, color:L.accentDk }}>{n}·{r}px</span>
+                  <span style={{ fontFamily:'Inter', fontSize:10, color:L.faint }}>{use}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="tlabel" style={{ marginBottom:16 }}>Spacing Scale — base 4pt</div>
+            <div style={{ display:'flex', gap:8, alignItems:'flex-end' }}>
+              {[4,8,12,16,20,24,28,32,40,48].map(s => (
+                <div key={s} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6 }}>
+                  <div style={{ width:Math.max(s*0.7,8), height:Math.max(s*0.7,8), background:`${L.accent}22`, borderRadius:3 }}/>
+                  <span style={{ fontFamily:'Inter', fontSize:9, color:L.faint }}>{s}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="tlabel" style={{ marginBottom:16 }}>Elevazione (ombre light)</div>
+            <div style={{ display:'flex', gap:18 }}>
+              {[['Nessuna','none'],['Subtle','0 1px 4px rgba(43,37,33,0.08)'],['Card','0 2px 12px rgba(43,37,33,0.10)'],['Modal','0 8px 32px rgba(43,37,33,0.18)']].map(([n,sh]) => (
+                <div key={n} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:10 }}>
+                  <div style={{ width:60, height:60, background:'#fff', borderRadius:12, boxShadow:sh }}/>
+                  <span style={{ fontFamily:'Inter', fontSize:10, color:L.faint }}>{n}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </Sec>
+  );
+}
+
+function S18_TokenRef() {
+  const rows = [
+    { grp:'Light' },
+    { tok:'L.bg / C.sabbia',        hex:L.bg,       role:'Background phone · page' },
+    { tok:'L.surface / C.surface',  hex:L.surface,  role:'Card · sezioni' },
+    { tok:'L.surface2 / C.bianco',  hex:L.surface2, role:'Elementi elevati puri' },
+    { tok:'L.accent / C.terracotta',hex:L.accent,   role:'Flusso · accento primario · CTA filled' },
+    { tok:'L.accentDk / C.tc_scura',hex:L.accentDk, role:'Body text su sfondo tinto · AA body (4.7:1)' },
+    { tok:'L.ocra / C.ocra',        hex:L.ocra,     role:'Sintomi · warmth' },
+    { tok:'L.lavanda / C.lavanda',  hex:L.lavanda,  role:'Previsione futura' },
+    { tok:'L.malva / C.malva',      hex:L.malva,    role:'Dolore · intensità' },
+    { tok:'L.muschio / C.muschio',  hex:L.muschio,  role:'Conferma · stato OK' },
+    { tok:'L.text / C.inchiostro',  hex:L.text,     role:'Testo primario' },
+    { sep:true },
+    { grp:'Dark' },
+    { tok:'D.bg / C.sabbia·dark',   hex:D.bg,       role:'Background phone dark · notte', dk:true },
+    { tok:'D.surface / C.surface',  hex:D.surface,  role:'Card · sezioni dark · surface_d', dk:true },
+    { tok:'D.surface2 / C.bianco',  hex:D.surface2, role:'Input · elementi elevati · surface2_d', dk:true },
+    { tok:'D.accent / C.terracotta',hex:D.accent,   role:'Flusso · accento dark · tc_spenta', dk:true },
+    { tok:'D.accentDk / C.tc_scura',hex:D.accentDk, role:'Body text su sfondo tinto dark · tc_chiara · AA', dk:true },
+    { tok:'D.ocra / C.ocra',        hex:D.ocra,     role:'Sintomi dark', dk:true },
+    { tok:'D.lavanda / C.lavanda',  hex:D.lavanda,  role:'Previsione dark · lav_chiara', dk:true },
+    { tok:'D.malva / C.malva',      hex:D.malva,    role:'Dolore dark · malva_chiara', dk:true },
+    { tok:'D.text / C.inchiostro',  hex:D.text,     role:'Testo primario dark · avorio', dk:true },
+    { sep:true },
+    { grp:'Canvas (fuori dalla phone shell)' },
+    { tok:'canvas·light', hex:'#E8DFD0', role:'Sfondo pagina design system · light' },
+    { tok:'canvas·dark',  hex:'#0D0A08', role:'Sfondo pagina design system · dark' },
+  ];
+  return (
+    <Sec num={18} title="Token Reference — tavola completa">
+      <div style={{ background:L.surface, borderRadius:16, border:`1px solid ${L.border}`, overflow:'hidden' }}>
+        <div style={{ display:'grid', gridTemplateColumns:'230px 100px 1fr', padding:'10px 20px', background:'rgba(43,37,33,0.04)', borderBottom:`1px solid ${L.border}` }}>
+          {['Token','Hex','Ruolo semantico'].map(h => <span key={h} style={{ fontFamily:'Inter', fontSize:11, fontWeight:600, color:L.faint, letterSpacing:'0.04em' }}>{h}</span>)}
+        </div>
+        {rows.map((row, i) => {
+          if (row.sep) return <div key={i} style={{ height:1, background:'rgba(43,37,33,0.08)' }}/>;
+          if (row.grp) return <div key={i} style={{ padding:'8px 20px 4px', fontFamily:'Inter', fontSize:11, fontWeight:600, letterSpacing:'0.06em', textTransform:'uppercase', color:L.faint, background:'rgba(43,37,33,0.02)' }}>{row.grp}</div>;
+          return (
+            <div key={i} style={{ display:'grid', gridTemplateColumns:'230px 100px 1fr', padding:'9px 20px', borderBottom:`1px solid rgba(43,37,33,0.04)`, alignItems:'center' }}>
+              <span style={{ fontFamily:'Inter', fontSize:12, fontWeight:500, color: row.dk ? L.lavanda : L.accentDk, fontVariantNumeric:'tabular-nums' }}>{row.tok}</span>
+              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <div style={{ width:16, height:16, borderRadius:4, background:row.hex, border:'1px solid rgba(43,37,33,0.12)', flexShrink:0 }}/>
+                <span style={{ fontFamily:'Inter', fontSize:12, color:L.sub, fontVariantNumeric:'tabular-nums' }}>{row.hex}</span>
+              </div>
+              <span style={{ fontFamily:'Inter', fontSize:12, color:L.sub }}>{row.role}</span>
+            </div>
+          );
+        })}
+      </div>
+    </Sec>
+  );
+}
+
+/* ─── APP ──────────────────────────────────────────────────── */
+function App() {
+  return (
+    <div className="ds-wrap">
+      <div style={{ marginBottom:64 }}>
+        <div style={{ display:'flex', alignItems:'baseline', gap:20, marginBottom:10 }}>
+          <span style={{ fontFamily:'DM Serif Display', fontSize:36, color:L.text }}>Mētra</span>
+          <span style={{ fontFamily:'Inter', fontSize:12, fontWeight:600, letterSpacing:'0.08em', textTransform:'uppercase', color:L.faint }}>Design System · Canone</span>
+        </div>
+        <p style={{ fontFamily:'Inter', fontSize:14, color:L.sub, maxWidth:660, lineHeight:1.65 }}>
+          Fonte di verità per tutti i token, componenti e pattern di Métra — light e dark. I valori rispecchiano esattamente <code style={{ fontFamily:'Inter', fontSize:13, background:'rgba(43,37,33,0.07)', padding:'1px 5px', borderRadius:4 }}>metra-screens-light.html</code> e <code style={{ fontFamily:'Inter', fontSize:13, background:'rgba(43,37,33,0.07)', padding:'1px 5px', borderRadius:4 }}>metra-screens-dark.html</code>. Qualsiasi modifica al design va applicata prima alle schermate, poi a questo catalogo.
+        </p>
+      </div>
+
+      <S01_Palette/>
+      <S02_Tipografia/>
+      <S03_Iconografia/>
+      <S04_Bottoni/>
+      <S05_Toggle/>
+      <S06_Chip/>
+      <S07_Segmented/>
+      <S08_Input/>
+      <S09_Flusso/>
+      <S10_Dolore/>
+      <S11_Calendario/>
+      <S12_CardGiornata/>
+      <S13_Statistiche/>
+      <S14_Impostazioni/>
+      <S15_TabBar/>
+      <S16_Contrasto/>
+      <S17_Spacing/>
+      <S18_TokenRef/>
+
+      <div style={{ borderTop:`1.5px solid rgba(43,37,33,0.12)`, paddingTop:32, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <span style={{ fontFamily:'DM Serif Display', fontSize:20, color:L.text }}>Mētra</span>
+        <span style={{ fontFamily:'Inter', fontSize:12, color:L.faint }}>Design System · Canone · GPL-3.0</span>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
