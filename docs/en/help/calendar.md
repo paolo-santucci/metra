@@ -1,9 +1,13 @@
 ---
-layout: page
+layout: help
 title: Calendar and visual language
+subtitle: How to read the monthly grid, what each colour and icon means, and how predictions work.
+nav_title: Calendar
+lang: en
+lang_ref: help-calendar
+permalink: /en/help/calendar/
+help_order: 1
 ---
-
-[← Back to Help](/metra/help/) &nbsp;·&nbsp; [🇮🇹 Italiano](/metra/help/it/calendar)
 
 The **Calendar** tab is the main screen of Métra. It shows a monthly grid where every day carries visual information about what you logged — or what the app predicts.
 
@@ -84,7 +88,3 @@ Tapping a day slides up a card with:
 - **Symptom chips** — one chip per symptom recorded that day.
 - **Notes** — free-text note, if any.
 - **Edit button** — opens the [daily entry screen](daily-entry) for that day.
-
----
-
-[← Back to Help](/metra/help/)

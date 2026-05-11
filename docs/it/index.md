@@ -1,15 +1,24 @@
 ---
 layout: home
-title: Mētra
-subtitle: Il tuo ritmo. Custodito.
-description: Mētra è un'app gratuita e open source per il tracciamento del ciclo mestruale. Local-first, cifrata con AES-256, senza account né server. I tuoi dati restano tuoi.
+title: Métra
 lang: it
+lang_ref: home
+permalink: /metra/it/
+tagline: Un quaderno silenzioso per conoscerti, ciclo dopo ciclo.
+links:
+  - label: Scarica su App Store
+    url: "#"
+    primary: true
+  - label: Scarica su Google Play
+    url: "#"
+    primary: true
+  - label: Privacy
+    url: /it/privacy/
+  - label: Guida
+    url: /it/help/
 ---
-
 Esiste una parola che ha tremila anni.
-
 *Mētra.* Dal greco antico — utero, misura, matrice. La stessa radice di *madre* e di *metro*, il ritmo di un verso. L'idea che il corpo abbia la propria misura, il proprio tempo.
-
 Abbiamo chiamato l'app così perché il nome è la promessa.
 
 ---
@@ -21,9 +30,7 @@ Un quaderno digitale per il tracciamento del ciclo mestruale.
 Non una dashboard. Non un coach. Non una community. Un quaderno — silenzioso, caldo, privato — che ti aiuta a riconoscere il tuo ritmo senza interpretarlo per te, giudicarlo rispetto a una norma, o trasformarlo in un prodotto.
 
 Vive sul tuo telefono. Solo lì.
-
 ---
-
 ## Cosa non è Mētra
 
 Mētra non è un tracker della fertilità. Non ha gamification, streak, badge, suggerimenti algoritmici. Non ti chiede di creare un account. Non ti manda notifiche motivazionali. Non ti compara ad altre persone.
@@ -57,7 +64,7 @@ La privacy di Mētra non è una policy. È una scelta di architettura.
 - **Nessun server proprietario** — Mētra non ha backend, analytics, né telemetria di alcun tipo.
 - **Open source** — il codice è qui. Ogni affermazione sulla privacy può essere verificata leggendo il sorgente.
 
-[Leggi la privacy policy completa →](./privacy)
+[Leggi la privacy policy completa →](/it/privacy)
 
 ---
 
@@ -73,16 +80,7 @@ L'apertura non è una funzionalità. È la struttura di accountability. In una c
 
 ---
 
-## Scarica
 
-| Piattaforma | Stato |
-|---|---|
-| Android | [Scarica APK →](https://github.com/paolo-santucci/metra/releases) |
-| iOS | Disponibile su TestFlight — App Store in arrivo |
-
-[Read in English →](./en/)
-
----
 
 ## Aiuta il progetto
 
@@ -102,7 +100,7 @@ Consulta il **[Centro assistenza](/metra/help/it/)** per le istruzioni d'uso.
 
 <div markdown="1" align="center">
 
-*Dal greco antico μήτρα — utero, misura, matrice.*  
+*Dal greco antico μήτρα — utero, misura, matrice.*
 *La stessa radice di madre. La stessa radice di matrix.*
 
 </div>

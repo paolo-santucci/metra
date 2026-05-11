@@ -1,9 +1,13 @@
 ---
-layout: page
+layout: help
 title: Backup su cloud
+subtitle: "Come collegare Dropbox e cosa significa concretamente \"crittografia end-to-end\"."
+nav_title: Backup su cloud
+lang: it
+lang_ref: help-backup
+permalink: /it/help/backup/
+help_order: 4
 ---
-
-[← Torna alla Guida](/metra/help/it/) &nbsp;·&nbsp; [🇬🇧 English](/metra/help/backup)
 
 ## Come funziona il backup di Métra
 
@@ -88,7 +92,3 @@ Tocca **Disconnetti** nella schermata backup per scollegare l'account cloud. Il 
 - Il file di backup ha estensione `.enc` ed è archiviato in una cartella dedicata a Métra nel tuo account cloud.
 
 Puoi verificare tutto questo leggendo il codice sorgente in `lib/data/services/encryption_service.dart`.
-
----
-
-[← Torna alla Guida](/metra/help/it/)

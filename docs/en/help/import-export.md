@@ -1,9 +1,13 @@
 ---
-layout: page
+layout: help
 title: Import and Export (CSV)
+subtitle: "How to export all your data, edit it in a spreadsheet, and import it back; full column reference."
+nav_title: Import and Export (CSV)
+lang: en
+lang_ref: help-import-export
+permalink: /en/help/import-export/
+help_order: 5
 ---
-
-[← Back to Help](/metra/help/) &nbsp;·&nbsp; [🇮🇹 Italiano](/metra/help/it/import-export)
 
 Métra can export all your daily logs to a plain CSV file, and import them back. This is useful for:
 
@@ -157,7 +161,3 @@ Common causes:
 | `pain_intensity` out of range | Use `1`, `2`, `3`, or leave empty. |
 
 Rows with errors are skipped; valid rows are still imported.
-
----
-
-[← Back to Help](/metra/help/)

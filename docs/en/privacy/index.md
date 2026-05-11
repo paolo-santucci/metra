@@ -1,6 +1,9 @@
 ---
-title: Privacy Policy
 layout: page
+title: Privacy Policy
+lang: en
+lang_ref: privacy-policy
+permalink: /en/privacy/
 ---
 
 # Métra — Privacy Policy
@@ -25,5 +28,5 @@ Métra can schedule a local notification when your predicted cycle window approa
 
 ## Contact
 
-Questions: paolo@paolosantucci.com  
+Questions: apps@paolosantucci.com  
 Source code: https://github.com/paolo-santucci/metra

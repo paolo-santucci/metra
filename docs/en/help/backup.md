@@ -1,10 +1,13 @@
 ---
-layout: page
+layout: help
 title: Cloud backup
+subtitle: "How to connect Dropbox and what \"end-to-end encrypted\" means in practice."
+nav_title: Cloud backup
+lang: en
+lang_ref: help-backup
+permalink: /en/help/backup/
+help_order: 4
 ---
-
-[← Back to Help](/metra/help/) &nbsp;·&nbsp; [🇮🇹 Italiano](/metra/help/it/backup)
-
 ## How Métra backup works
 
 Métra is **local-first**: your data never leaves your device unless you explicitly choose to back it up. The backup feature is entirely optional.
@@ -88,7 +91,3 @@ Tap **Disconnect** (Disconnetti) in the backup screen to unlink the cloud accoun
 - The backup file has a `.enc` extension and is stored in a dedicated Métra folder inside your cloud account.
 
 You can verify all of this by reading the source code in `lib/data/services/encryption_service.dart`.
-
----
-
-[← Back to Help](/metra/help/)

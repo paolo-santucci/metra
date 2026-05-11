@@ -1,34 +1,55 @@
 ---
-layout: page
+layout: help
 title: Help
 subtitle: Everything you need to know about Métra.
+lang: en
+lang_ref: help-index
+permalink: /en/help/daily-entry/
+help_order: 0
 ---
+## What to expect the first time you open Métra
 
-[🇮🇹 Versione italiana](/metra/help/it/)
-
-Welcome to the Métra help centre. Find the topic you need below.
-
----
-
-## Getting started
-
-- [First launch — Onboarding](onboarding) — what happens when you open the app for the first time, and how to set your preferences.
-
-## Daily use
-
-- [Calendar and visual language](calendar) — how to read the monthly grid, what each colour and icon means, and how predictions work.
-- [Logging a day](daily-entry) — how to record flow, pain, symptoms, and notes; and how to edit a past day.
-
-## History and analysis
-
-- [Archive and Statistics](archive-stats) — the Timeline and Table views, plus the Statistics screen (cycle length, duration, symptom frequency).
-
-## Data and privacy
-
-- [Cloud backup](backup) — how to connect Dropbox and what "end-to-end encrypted" means in practice.
-- [Import and Export (CSV)](import-export) — how to export all your data, edit it in a spreadsheet, and import it back; full column reference.
+When you launch Métra for the first time you will be greeted by a two-screen onboarding flow. No account to create, no email to enter.
 
 ---
 
-> **Métra stores everything on your device.** No account, no server, no tracking.  
-> Questions or bug reports: [open an issue on GitHub](https://github.com/paolo-santucci/metra/issues).
+### Screen 1 — Welcome
+
+<!-- SCREENSHOT PLACEHOLDER: onboarding-welcome.png -->
+<!-- Full-screen welcome card: Mētra wordmark, tagline, "Inizia" / "Get started" button. -->
+
+You will see the **Mētra** wordmark and a short manifesto about what the app is — and what it isn't. Read it once. It sets the right expectations.
+
+Tap **Inizia** (Get started) to continue.
+
+---
+
+### Screen 2 — Your baseline data
+
+<!-- SCREENSHOT PLACEHOLDER: onboarding-data.png -->
+<!-- Two number steppers: average cycle length and typical period duration. -->
+
+Métra asks for two numbers so that it can immediately start making useful predictions:
+
+| Field | Default | What it means |
+|---|---|---|
+| **Average cycle length** | 28 days | The number of days from the first day of one period to the first day of the next. Most people fall between 21 and 35 days. |
+| **Typical period duration** | 5 days | How many days your period usually lasts. |
+
+Use the **−** and **+** buttons to adjust each value. These are just starting points — Métra will refine its predictions automatically as you log more cycles.
+
+Tap **Tutto pronto →** (All set →) to enter the app.
+
+---
+
+## After onboarding
+
+You land on the **Calendar** tab. Today's date is highlighted. The calendar will already show a predicted period window based on the numbers you entered.
+
+From this point on, everything you do is logged locally on your device. Métra never sends this information anywhere.
+
+---
+
+## Can I change these settings later?
+
+Yes. Go to **Settings → Notification preferences** to update your cycle-length baseline at any time. Predictions update automatically the next time you open the Calendar.

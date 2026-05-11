@@ -1,9 +1,13 @@
 ---
-layout: page
+layout: help
 title: Logging a day
+subtitle: How to record flow, pain, symptoms, and notes; and how to edit a past day.
+nav_title: Logging a day
+lang: en
+lang_ref: help-daily-entry
+permalink: /en/help/daily-entry/
+help_order: 2
 ---
-
-[← Back to Help](/metra/help/) &nbsp;·&nbsp; [🇮🇹 Italiano](/metra/help/it/daily-entry)
 
 You can log today's data from the **Today** tab, or log or edit any past day from the [Calendar](calendar).
 

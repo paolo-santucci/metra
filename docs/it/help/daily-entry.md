@@ -1,11 +1,15 @@
 ---
-layout: page
+layout: help
 title: Registrare un giorno
+subtitle: Come inserire flusso, dolore, sintomi e note; come modificare un giorno passato.
+nav_title: Registrare un giorno
+lang: it
+lang_ref: help-daily-entry
+permalink: /it/help/daily-entry/
+help_order: 2
 ---
 
-[← Torna alla Guida](/metra/help/it/) &nbsp;·&nbsp; [🇬🇧 English](/metra/help/daily-entry)
-
-Puoi registrare i dati di oggi dalla scheda **Oggi**, oppure registrare o modificare qualsiasi giorno passato dal [Calendario](calendar).
+Puoi registrare i dati di oggi dalla scheda **Oggi**, oppure registrare o modificare qualsiasi giorno passato dal [Calendario](/it/help/calendar/).
 
 ---
 
@@ -115,7 +119,3 @@ Puoi modificare qualsiasi giorno passato — non c'è nessun blocco temporale. M
 ## Eliminare una registrazione
 
 Per rimuovere tutti i dati di un giorno specifico, apri la schermata di modifica per quel giorno, svuota tutti i campi e salva. Il giorno tornerà allo stato "non registrato".
-
----
-
-[← Torna alla Guida](/metra/help/it/)

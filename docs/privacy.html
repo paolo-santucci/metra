@@ -1,16 +1,19 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Métra</title>
-  <script>
-    var lang = navigator.language || navigator.userLanguage || '';
-    var dest = lang.startsWith('it') ? '/it/privacy/' : '/en/privacy/';
-    window.location.replace(dest);
-  </script>
-  <noscript>
-    <meta http-equiv="refresh" content="0;url=/en/privacy/">
-  </noscript>
-</head>
-<body></body>
-</html>
+---
+layout: default
+---
+
+<!-- Language-detection redirect -->
+<script>
+(function() {
+  var lang = (navigator.language || navigator.userLanguage || 'it').slice(0, 2);
+  var target = (lang === 'it') ? '/it/privacy/' : '/en/privacy/';
+  var base = '{{ site.baseurl }}';
+  window.location.replace(base + target);
+})();
+</script>
+<noscript>
+  <meta http-equiv="refresh" content="0;url={{ '/it/privacy/' | relative_url }}">
+</noscript>
+<div class="page-wrapper" style="padding:120px 24px;text-align:center;">
+  <p><a href="{{ '/it/privacy/' | relative_url }}">Italiano</a> · <a href="{{ '/en/privacy/' | relative_url }}">English</a></p>
+</div>

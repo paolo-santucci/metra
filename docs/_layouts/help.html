@@ -1,0 +1,68 @@
+---
+layout: default
+---
+
+<div class="help-layout">
+  <aside class="help-sidebar">
+    <div class="help-sidebar__inner">
+      <h2 class="help-sidebar__title">
+        {% if page.lang == 'en' %}Help{% else %}Aiuto{% endif %}
+      </h2>
+      <nav class="help-sidebar__nav">
+        {% assign help_pages = site.pages | where: "layout", "help" | where: "lang", page.lang | sort: "help_order" %}
+        {% for hp in help_pages %}
+        <a href="{{ hp.url | relative_url }}" class="help-sidebar__link {% if hp.url == page.url %}help-sidebar__link--active{% endif %}">
+          {{ hp.nav_title | default: hp.title }}
+        </a>
+        {% endfor %}
+      </nav>
+    </div>
+  </aside>
+
+  <article class="help-content">
+    <header class="help-content__header">
+      {% if page.help_order and page.help_order > 0 %}
+      <a href="{% if page.lang == 'en' %}{{ '/en/help/' | relative_url }}{% else %}{{ '/it/help/' | relative_url }}{% endif %}" class="help-content__back">
+        ← {% if page.lang == 'en' %}Back to Help{% else %}Torna all'Aiuto{% endif %}
+      </a>
+      {% endif %}
+      <h1 class="help-content__title">{{ page.title }}</h1>
+      {% if page.subtitle %}
+      <p class="help-content__subtitle">{{ page.subtitle }}</p>
+      {% endif %}
+    </header>
+
+    <div class="help-content__body">
+      {{ content }}
+    </div>
+
+    {% assign all_help = site.pages | where: "layout", "help" | where: "lang", page.lang | sort: "help_order" %}
+    {% assign current_idx = nil %}
+    {% for hp in all_help %}
+      {% if hp.url == page.url %}
+        {% assign current_idx = forloop.index0 %}
+      {% endif %}
+    {% endfor %}
+
+    {% if current_idx %}
+    <nav class="help-content__pager">
+      {% assign prev_idx = current_idx | minus: 1 %}
+      {% assign next_idx = current_idx | plus: 1 %}
+      {% if prev_idx >= 0 %}
+      <a href="{{ all_help[prev_idx].url | relative_url }}" class="help-content__pager-link help-content__pager-link--prev">
+        <span class="help-content__pager-dir">{% if page.lang == 'en' %}Previous{% else %}Precedente{% endif %}</span>
+        <span class="help-content__pager-title">{{ all_help[prev_idx].nav_title | default: all_help[prev_idx].title }}</span>
+      </a>
+      {% else %}
+      <span></span>
+      {% endif %}
+      {% if next_idx < all_help.size %}
+      <a href="{{ all_help[next_idx].url | relative_url }}" class="help-content__pager-link help-content__pager-link--next">
+        <span class="help-content__pager-dir">{% if page.lang == 'en' %}Next{% else %}Successivo{% endif %}</span>
+        <span class="help-content__pager-title">{{ all_help[next_idx].nav_title | default: all_help[next_idx].title }}</span>
+      </a>
+      {% endif %}
+    </nav>
+    {% endif %}
+  </article>
+</div>

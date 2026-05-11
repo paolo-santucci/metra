@@ -1,9 +1,13 @@
 ---
-layout: page
+layout: help
 title: Calendario e linguaggio visivo
+subtitle: Come leggere la griglia mensile, cosa significano colori e icone, come funzionano le previsioni.
+nav_title: Calendario
+lang: it
+lang_ref: help-calendar
+permalink: /it/help/calendar/
+help_order: 1
 ---
-
-[← Torna alla Guida](/metra/help/it/) &nbsp;·&nbsp; [🇬🇧 English](/metra/help/calendar)
 
 La scheda **Calendario** è la schermata principale di Métra. Mostra una griglia mensile in cui ogni giorno porta informazioni visive su ciò che hai registrato — o su ciò che l'app prevede.
 
@@ -84,7 +88,3 @@ Toccando un giorno si apre un pannello con:
 - **Chip sintomi** — un chip per ogni sintomo registrato quel giorno.
 - **Note** — la nota in testo libero, se presente.
 - **Pulsante Modifica** — apre la [schermata di registrazione](daily-entry) per quel giorno.
-
----
-
-[← Torna alla Guida](/metra/help/it/)

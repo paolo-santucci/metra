@@ -1,9 +1,13 @@
 ---
-layout: page
+layout: help
 title: Archive and Statistics
+subtitle: The Timeline and Table views, plus the Statistics screen (cycle length, duration, symptom frequency).
+nav_title: Archive and Statistics
+lang: en
+lang_ref: help-archive-stats
+permalink: /en/help/archive-stats/
+help_order: 3
 ---
-
-[← Back to Help](/metra/help/) &nbsp;·&nbsp; [🇮🇹 Italiano](/metra/help/it/archive-stats)
 
 ## Archive tab
 
@@ -86,7 +90,3 @@ A bar chart showing the length of each individual cycle in chronological order. 
 A horizontal bar chart showing how often each symptom has appeared across your recorded cycles, expressed as a percentage. The most frequent symptoms appear at the top.
 
 > **No data?** Statistics require at least one complete cycle to be logged. A cycle is considered complete once a new cycle start has been recorded.
-
----
-
-[← Back to Help](/metra/help/)

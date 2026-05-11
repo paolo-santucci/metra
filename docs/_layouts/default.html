@@ -5,17 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% if page.title %}{{ page.title }} · {{ site.title }}{% else %}{{ site.title }}{% endif %}</title>
   <meta name="description" content="{{ page.excerpt | default: site.description | strip_html | strip_newlines | truncate: 160 }}">
-
-  <!-- hreflang: tell search engines about both language versions -->
-  {% if page.lang == 'en' %}
-  <link rel="alternate" hreflang="en" href="{{ page.url | absolute_url }}">
-  <link rel="alternate" hreflang="it" href="{{ page.url | replace: '/metra/en/', '/metra/it/' | absolute_url }}">
-  {% else %}
-  <link rel="alternate" hreflang="it" href="{{ page.url | absolute_url }}">
-  <link rel="alternate" hreflang="en" href="{{ page.url | replace: '/metra/it/', '/metra/en/' | absolute_url }}">
-  {% endif %}
-  <link rel="alternate" hreflang="x-default" href="{{ page.url | replace: '/metra/it/', '/metra/en/' | absolute_url }}">
-
   <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
   <link rel="icon" type="image/svg+xml" href="{{ '/assets/favicon.svg' | relative_url }}">
   {% feed_meta %}
@@ -25,23 +14,41 @@
 
   <header class="site-header">
     <div class="site-header__inner">
-      <a href="{{ '/metra/' | relative_url }}" class="site-logo">
+      <a href="{% if page.lang == 'en' %}{{ '/en/' | relative_url }}{% else %}{{ '/it/' | relative_url }}{% endif %}" class="site-logo">
         M<span class="macron-accent">ē</span>tra
       </a>
-      <nav class="site-nav">
-        {% for item in site.navigation %}
-        <a href="{{ item.url | relative_url }}"{% if page.url == item.url %} class="active"{% endif %}>
-          {{ item.title }}
-        </a>
-        {% endfor %}
-
-        <!-- Language switcher -->
-        {% if page.lang == 'en' %}
-        <a href="{{ page.url | replace: '/metra/en/', '/metra/it/' | relative_url }}" class="lang-switch" aria-label="Passa all'italiano">IT</a>
-        {% else %}
-        <a href="{{ page.url | replace: '/metra/it/', '/metra/en/' | relative_url }}" class="lang-switch" aria-label="Switch to English">EN</a>
-        {% endif %}
-      </nav>
+      <div class="site-header__right">
+        <nav class="site-nav">
+          {% if page.lang == 'en' %}
+          {% for item in site.navigation_en %}
+          <a href="{{ item.url | relative_url }}"{% if page.url == item.url %} class="active"{% endif %}>{{ item.title }}</a>
+          {% endfor %}
+          {% else %}
+          {% for item in site.navigation_it %}
+          <a href="{{ item.url | relative_url }}"{% if page.url == item.url %} class="active"{% endif %}>{{ item.title }}</a>
+          {% endfor %}
+          {% endif %}
+        </nav>
+        <div class="lang-switch">
+          {% if page.lang == 'en' %}
+          <span class="lang-switch__current">EN</span>
+          {% assign other = site.pages | where: "lang_ref", page.lang_ref | where: "lang", "it" | first %}
+          {% if other %}
+          <a href="{{ other.url | relative_url }}" class="lang-switch__link">IT</a>
+          {% else %}
+          <a href="{{ '/it/' | relative_url }}" class="lang-switch__link">IT</a>
+          {% endif %}
+          {% else %}
+          <span class="lang-switch__current">IT</span>
+          {% assign other = site.pages | where: "lang_ref", page.lang_ref | where: "lang", "en" | first %}
+          {% if other %}
+          <a href="{{ other.url | relative_url }}" class="lang-switch__link">EN</a>
+          {% else %}
+          <a href="{{ '/en/' | relative_url }}" class="lang-switch__link">EN</a>
+          {% endif %}
+          {% endif %}
+        </div>
+      </div>
     </div>
   </header>
 

@@ -1,7 +1,32 @@
 title: Métra
 description: Un quaderno silenzioso per conoscerti, ciclo dopo ciclo.
-baseurl: "/metra"
 url: "https://paolo-santucci.github.io"
+baseurl: "/metra"
+
+# Navigation — Italian
+navigation_it:
+  - title: Aiuto
+    url: /it/help/
+  - title: Novità
+    url: /it/#novita
+  - title: Privacy
+    url: /it/privacy/
+  - title: Chi siamo
+    url: /it/chi-siamo/
+
+# Navigation — English
+navigation_en:
+  - title: Help
+    url: /en/help/
+  - title: News
+    url: /en/#news
+  - title: Privacy
+    url: /en/privacy/
+  - title: About
+    url: /en/about/
+
+# Theme
+remote_theme: false
 
 # Build settings
 markdown: kramdown
@@ -19,6 +44,14 @@ sass:
 
 # Defaults
 defaults:
+  - scope:
+      path: "it"
+    values:
+      lang: it
+  - scope:
+      path: "en"
+    values:
+      lang: en
   - scope:
       path: ""
       type: "posts"

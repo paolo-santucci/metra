@@ -1,9 +1,13 @@
 ---
-layout: page
+layout: help
 title: Archivio e Statistiche
+subtitle: Le viste Timeline e Tabella, più la schermata Statistiche (durata del ciclo, sintomi frequenti).
+nav_title: Registrare un giorno
+lang: it
+lang_ref: help-archive-stats
+permalink: /it/help/archive-stats/
+help_order: 3
 ---
-
-[← Torna alla Guida](/metra/help/it/) &nbsp;·&nbsp; [🇬🇧 English](/metra/help/archive-stats)
 
 ## Scheda Archivio
 
@@ -86,7 +90,3 @@ Un grafico a barre che mostra la durata di ogni singolo ciclo in ordine cronolog
 Un grafico a barre orizzontale che mostra con quale frequenza ogni sintomo è comparso nei tuoi cicli registrati, espresso in percentuale. I sintomi più frequenti appaiono in cima.
 
 > **Nessun dato?** Le statistiche richiedono almeno un ciclo completo registrato. Un ciclo si considera completo una volta registrato l'inizio del ciclo successivo.
-
----
-
-[← Torna alla Guida](/metra/help/it/)

@@ -1,9 +1,13 @@
 ---
-layout: page
+layout: help
 title: Importa ed esporta (CSV)
+subtitle: "Come esportare tutti i tuoi dati, modificarli in un foglio di calcolo e reimportarli; riferimento completo alle colonne."
+nav_title: Importa ed esporta (CSV)
+lang: it
+lang_ref: help-import-export
+permalink: /it/help/import-export/
+help_order: 5
 ---
-
-[← Torna alla Guida](/metra/help/it/) &nbsp;·&nbsp; [🇬🇧 English](/metra/help/import-export)
 
 Métra può esportare tutte le tue registrazioni giornaliere in un file CSV semplice e reimportarle. È utile per:
 
