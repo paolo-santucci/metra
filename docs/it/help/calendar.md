@@ -80,4 +80,4 @@ Tocca un giorno per aprire un pannello che raccoglie tutto ciò che riguarda que
 - **Pill dolore** — il livello di dolore (Lieve / Moderato / Intenso), se registrato.
 - **Chip sintomi** — un chip per ogni sintomo registrato quel giorno.
 - **Note** — la nota in testo libero, se presente.
-- Pulsante **Aggiungi giornata** o **Modifica giornata** — apre la [schermata di registrazione](/it/help/daily-entry/) per quel giorno.
+- Pulsante **Aggiungi giornata** o **Modifica giornata** — apre la [schermata di registrazione](/metra/it/help/daily-entry/) per quel giorno.
