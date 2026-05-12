@@ -16,7 +16,7 @@ Quando apri Métra per la prima volta ti trovi davanti a un flusso di benvenuto 
 
 ### Schermata 1 — Benvenuto
 
-![Schermata di benvenuto\: wordmark Mētra, manifesto, pulsante \"Inizia\".](/metra/assets/it/onboarding-welcome.png)
+![Schermata di benvenuto\: wordmark Mētra, manifesto, pulsante 'Inizia'.](/metra/assets/it/onboarding-welcome.png)
 
 Vedrai il wordmark **Mētra** e un breve manifesto su cosa è l'app — e cosa non è. Leggilo una volta. Mette le aspettative giuste.
 
