@@ -6,10 +6,10 @@ lang_ref: home
 permalink: /it/
 tagline: Un quaderno silenzioso per conoscerti, ciclo dopo ciclo.
 links:
-  - label: Scarica su App Store
+  - label: Presto su App Store
     url: "#"
     primary: true
-  - label: Scarica su Google Play
+  - label: Presto su Google Play
     url: "#"
     primary: true
   - label: Privacy

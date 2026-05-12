@@ -6,10 +6,10 @@ lang_ref: home
 permalink: /en/
 tagline: A quiet notebook to know yourself, cycle after cycle.
 links:
-  - label: Download on App Store
+  - label: Soon on App Store
     url: "#"
     primary: true
-  - label: Get it on Google Play
+  - label: Soon on Google Play
     url: "#"
     primary: true
   - label: Privacy
