@@ -1,7 +1,7 @@
 ---
 layout: help
 title: Guida
-subtitle: Benvenuta nel centro assistenza di Métra. 
+subtitle: Benvenuta nel centro assistenza di Mētra.
 lang: it
 lang_ref: help-index
 permalink: /it/help/
@@ -10,7 +10,7 @@ help_order: 0
 
 ## Cosa succede al primo avvio
 
-Quando apri Métra per la prima volta ti trovi davanti a un flusso di benvenuto in due schermate. Non è richiesto nessun account, nessun indirizzo e-mail.
+La prima volta che apri Mētra non trovi un account da creare né un indirizzo e-mail da inserire. Trovi due schermate.
 
 ---
 
@@ -18,7 +18,7 @@ Quando apri Métra per la prima volta ti trovi davanti a un flusso di benvenuto 
 
 ![Schermata di benvenuto\: wordmark Mētra, manifesto, pulsante 'Inizia'.](/metra/assets/onboarding-welcome-it.png)
 
-Vedrai il wordmark **Mētra** e un breve manifesto su cosa è l'app — e cosa non è. Leggilo una volta. Mette le aspettative giuste.
+Vedrai il wordmark **Mētra** e un breve manifesto su cosa è l'app... e cosa non è. Vale la pena leggerlo: fissa le aspettative prima ancora di iniziare a usarla.
 
 Tocca **Inizia** per continuare.
 
@@ -26,16 +26,17 @@ Tocca **Inizia** per continuare.
 
 ### Schermata 2 — I tuoi dati di partenza
 
-![Due stepper numerici\: durata media del ciclo e durata tipica delle mestruazioni.](/metra/assets/onboarding-data-it.png)
+![Schermata con tre campi\: data dell'ultimo ciclo, durata media del ciclo, durata tipica delle mestruazioni.](/metra/assets/onboarding-data-it.png)
 
-Métra ti chiede due numeri per poter subito produrre previsioni utili:
+Mētra ti chiede tre cose per poter produrre subito previsioni calibrate sul tuo ciclo:
 
-| Campo | Valore predefinito | Significato |
-|---|---|---|
-| **Durata media del ciclo** | 28 giorni | Il numero di giorni dal primo giorno di una mestruazione al primo giorno della successiva. Per la maggior parte delle persone è tra 21 e 35 giorni. |
-| **Durata tipica delle mestruazioni** | 5 giorni | Quanti giorni durano di solito le tue mestruazioni. |
+| Campo                        | Valore predefinito | Significato                                                                                                                                         |
+| ---------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Data inizio ultimo ciclo** | data corrente      | Il primo giorno della tua ultima mestruazione. Tocca il campo per aprire il selettore di date.                                                      |
+| **Durata media del ciclo**   | 28 giorni          | Il numero di giorni dal primo giorno di una mestruazione al primo giorno della successiva. Per la maggior parte delle persone è tra 21 e 35 giorni. |
+| **Durata tipica del flusso** | 5 giorni           | Quanti giorni durano di solito il tuo flusso mestruale.                                                                                             |
 
-Usa i pulsanti **−** e **+** per modificare i valori. Sono solo punti di partenza — Métra affinerà le previsioni automaticamente man mano che registri i cicli.
+Tocca il campo data per selezionare la data di inizio del tuo ultimo ciclo. Usa i pulsanti **−** e **+** per modificare la durata del ciclo. Questi sono punti di partenza, non verdetti: Mētra affina le previsioni dai tuoi dati man mano che registri i cicli, non da quelli di nessun'altra.
 
 Tocca **Tutto pronto →** per entrare nell'app.
 
@@ -43,12 +44,7 @@ Tocca **Tutto pronto →** per entrare nell'app.
 
 ## Dopo il primo avvio
 
-Atterri sulla scheda **Calendario**. La data di oggi è evidenziata. Il calendario mostra già una finestra di previsione basata sui numeri che hai inserito.
+Entri nella scheda **Calendario**. La data di oggi è evidenziata. Il calendario mostra già una finestra di previsione costruita sui numeri che hai appena inserito.
 
-Da questo momento, tutto quello che registri viene salvato localmente sul tuo dispositivo. Métra non invia mai queste informazioni da nessuna parte.
+Da questo momento, tutto quello che registri viene salvato localmente sul tuo dispositivo. Mētra non invia queste informazioni da nessuna parte.
 
----
-
-## Posso cambiare queste impostazioni in seguito?
-
-Sì. Vai in **Impostazioni → Notifiche** per aggiornare la tua lunghezza del ciclo di riferimento in qualsiasi momento. Le previsioni si aggiornano automaticamente alla prossima apertura del Calendario.

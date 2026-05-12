@@ -9,27 +9,27 @@ permalink: /it/help/backup/
 help_order: 4
 ---
 
-## Come funziona il backup di Métra
+## Come funziona il backup di Mētra
 
-Métra è **local-first**: i tuoi dati non lasciano mai il dispositivo a meno che tu non scelga esplicitamente di farne un backup. La funzione di backup è completamente facoltativa.
+I tuoi dati non lasciano mai il dispositivo a meno che tu non lo decida. Questa è la premessa di Mētra: **local-first** non è una modalità, è l'impostazione predefinita. Il backup è un'opzione, non un'aspettativa.
 
-Quando attivi il backup, Métra cifra l'intero database sul tuo dispositivo **prima** di caricarlo. Il provider cloud — Dropbox, Google Drive o OneDrive — riceve solo un blob opaco e illeggibile. Non ha accesso ai tuoi dati, e nemmeno nessun altro.
+Quando lo attivi, Mētra cifra l'intero database sul tuo dispositivo **prima** di caricarlo. Dropbox riceve un blob opaco che non può leggere. Nessun altro ha accesso ai tuoi dati, incluso chi ha scritto il codice.
 
-> **Non esiste il recupero della password.** La chiave di cifratura è derivata dalla tua passphrase e vive solo sul tuo dispositivo. Se perdi la passphrase, il backup non può essere recuperato. Conservala in un posto sicuro (es. un gestore di password).
+> ⚠️ **Non esiste il recupero della passphrase.** La chiave di cifratura è derivata dalla tua passphrase e vive solo sul tuo dispositivo, non su un server, non nel cloud. Se perdi la passphrase, il backup non può essere recuperato. Conservala in un posto sicuro, separato dal telefono (es. un gestore di password).
 
 ---
 
 ## Collegare un provider cloud
 
 <!-- SCREENSHOT PLACEHOLDER: backup-connect.png -->
-<!-- Schermata backup prima della connessione: tre pulsanti provider (Dropbox, Google Drive, OneDrive). -->
+<!-- Schermata backup prima della connessione: pulsante di connessione Dropbox. -->
 
-1. Vai in **Impostazioni → Backup su cloud**.
-2. Scegli il tuo provider preferito: **Dropbox**, **Google Drive** o **OneDrive**.
+1. Vai in **Impostazioni → Backup cloud**.
+2. Tocca **Collega Dropbox**.
 3. Verrai reindirizzata alla pagina di accesso del provider nel browser.
-4. Dopo aver autorizzato la connessione, torni a Métra.
+4. Dopo aver autorizzato la connessione, torni a Mētra.
 
-Métra richiede i permessi minimi necessari — solo l'accesso a una cartella dedicata, non all'intero spazio di archiviazione cloud.
+Mētra richiede i permessi minimi: solo l'accesso a una cartella dedicata, non all'intero spazio di archiviazione cloud.
 
 ---
 
@@ -40,12 +40,14 @@ Métra richiede i permessi minimi necessari — solo l'accesso a una cartella de
 
 Una volta collegata:
 
-1. Tocca **Esegui backup**.
-2. Métra ti chiede di inserire — o confermare — la tua **passphrase**. Questa passphrase viene usata per cifrare il file di backup. Sarà necessaria per il ripristino.
-3. Il backup viene cifrato sul dispositivo e caricato. Viene mostrato un indicatore di avanzamento.
+1. Tocca **Salva ora**.
+2. Mētra ti chiede la tua **passphrase**, quella usata per cifrare il file. Ti servirà identica per il ripristino.
+3. Mētra cifra il database sul dispositivo e lo carica. Un indicatore di avanzamento mostra lo stato.
 4. Al termine, la schermata mostra data e ora dell'ultimo backup riuscito.
 
-> **Consiglio:** scegli una passphrase che ricorderai e conservala separatamente dal telefono (es. in un gestore di password). Non esiste nessuna opzione di recupero.
+> **Nota sulla passphrase:** non esiste nessuna opzione di recupero, perché non esiste nessun server che potrebbe eseguirlo. Scegli una passphrase che ricorderai e conservala separatamente dal telefono.
+
+Dopo il backup iniziale, Mētra provvederà autonomamente a fare backup periodici. 
 
 ---
 
@@ -57,7 +59,7 @@ Il backup contiene il contenuto completo del database cifrato:
 - I cicli derivati dalle registrazioni.
 - Le impostazioni dell'app (durata del ciclo di riferimento, preferenze notifiche).
 
-**Non** include lo stato delle notifiche locali — queste vengono ricreate automaticamente dopo un ripristino.
+**Non** include lo stato delle notifiche locali, queste vengono ricreate automaticamente dopo un ripristino.
 
 ---
 
@@ -66,21 +68,21 @@ Il backup contiene il contenuto completo del database cifrato:
 <!-- SCREENSHOT PLACEHOLDER: backup-restore.png -->
 <!-- Flusso di ripristino: dialog inserimento passphrase, poi avanzamento, poi conferma completamento. -->
 
-1. Installa Métra sul nuovo dispositivo (o dopo un ripristino di fabbrica).
-2. Completa il flusso di benvenuto — i numeri inseriti non contano, verranno sovrascritti dal ripristino.
-3. Vai in **Impostazioni → Backup su cloud**.
-4. Collega lo stesso provider usato per il backup.
-5. Tocca **Ripristina**.
+1. Installa Mētra sul nuovo dispositivo (o dopo un ripristino di fabbrica).
+2. Completa il flusso di benvenuto, i numeri inseriti non contano, verranno sovrascritti dal ripristino.
+3. Vai in **Impostazioni → Backup cloud**.
+4. Collega il tuo account Dropbox. Se è presente un backup ti verrà indicato e sarà riportata la data a cui risale.
+5. Tocca **Ripristina dal backup**.
 6. Inserisci la tua passphrase.
-7. Métra scarica il backup, lo decifra e sostituisce il database locale.
+7. Mētra scarica il backup, lo decifra e sostituisce il database locale.
 
-> **Attenzione:** il ripristino sovrascrive tutti i dati attualmente sul dispositivo. Questa operazione non può essere annullata.
+> ⚠️ **Attenzione:** il ripristino sovrascrive tutti i dati attualmente sul dispositivo. Questa operazione non può essere annullata.
 
 ---
 
 ## Scollegare il provider
 
-Tocca **Disconnetti** nella schermata backup per scollegare l'account cloud. Il token OAuth viene rimosso dal dispositivo. Il file di backup già sul cloud **non viene eliminato** — devi farlo manualmente dallo storage cloud se vuoi rimuoverlo.
+Tocca **Disconnetti** nella schermata backup per scollegare l'account cloud. Il file di backup già sul cloud **non viene eliminato**, devi farlo manualmente dall'app o dal sito di Dropbox.
 
 ---
 
@@ -88,7 +90,7 @@ Tocca **Disconnetti** nella schermata backup per scollegare l'account cloud. Il 
 
 - Algoritmo di cifratura: **AES-256-GCM**.
 - Derivazione della chiave: **Argon2id** dalla tua passphrase.
-- La chiave non viene mai salvata nel cloud, mai inviata a nessun server e mai conservata sul dispositivo — viene derivata dalla passphrase ogni volta.
-- Il file di backup ha estensione `.enc` ed è archiviato in una cartella dedicata a Métra nel tuo account cloud.
+- La chiave non viene mai salvata nel cloud, mai inviata a nessun server e mai conservata sul dispositivo: viene derivata dalla passphrase ogni volta che ne hai bisogno, poi scartata.
+- Il file di backup ha estensione `.enc` ed è archiviato in una cartella dedicata a Mētra nel tuo account cloud.
 
-Puoi verificare tutto questo leggendo il codice sorgente in `lib/data/services/encryption_service.dart`.
+Questi non sono annunci di marketing: sono le scelte specifiche nel codice. Puoi verificarlo leggendo `lib/data/services/encryption_service.dart`.
