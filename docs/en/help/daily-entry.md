@@ -9,16 +9,16 @@ permalink: /en/help/daily-entry/
 help_order: 2
 ---
 
-You can log today's data from the **Today** tab, or log or edit any past day from the [Calendar](calendar).
+You can log or edit any present or past day from the [Calendar](/metra/en/help/calendar/), using the **Add day** button, or **Edit day** if there is already a record for that day.
 
 ---
 
 ## Today's entry
 
 <!-- SCREENSHOT PLACEHOLDER: daily-entry-today.png -->
-<!-- The Today screen with all sections expanded: flow chips, intensity dots, pain slider, symptom chips, notes textarea. -->
+<!-- The Today screen with all sections expanded: flow chips, intensity dots, pain selector, symptom chips, notes textarea. -->
 
-The Today screen shows the current date and an entry form with up to four sections. Fill in as much or as little as you like — every field is optional.
+The Today screen shows the current date and four sections. What you fill in is your choice: every field is optional.
 
 ---
 
@@ -29,97 +29,91 @@ The Today screen shows the current date and an entry form with up to four sectio
 Choose one of three options:
 
 | Chip | Meaning |
-|---|---|
-| **Assente** (Absent) | You have confirmed there is no bleeding today. |
-| **Mestruazioni** (Menstruation) | Active menstrual flow. |
+| ------------- | ------------------------------------------------------ |
+| **Absent** | You have confirmed there is no bleeding today. |
+| **Intensity** | Active menstrual flow. |
 | **Spotting** | Light, irregular spotting outside your regular period. |
 
-If you do not tap any chip, the day is saved as "not logged" — different from explicitly marking it as absent.
+If you do not tap any chip, the day is saved as "not logged", which is not the same as explicitly marking it absent. The distinction matters for statistics.
 
-#### Flow intensity (Mestruazioni only)
+#### Flow intensity
 
-When **Mestruazioni** is selected, three filled-dot indicators appear:
+When **Intensity** is selected, three terracotta circle indicators appear:
 
-| Dots | Level |
-|---|---|
-| 1 dot | Light (Leggero) |
-| 2 dots | Moderate (Moderato) |
-| 3 dots | Heavy (Abbondante) |
+| Circle | Level |
+| ---------- | ---------- |
+| 1st circle | Light |
+| 2nd circle | Moderate |
+| 3rd circle | Heavy |
 
-#### Other discharge
-
-A small toggle below the flow chips. Enable it if you want to note the presence of other vaginal discharge that day, without further detail.
+**Moderate** is pre-selected by default, so if you have no interest in tracking intensity detail, you can skip the selection. Tapping the already-selected circle deselects it.
 
 ---
 
-### 2. Pain
+### 2. Pain intensity
 
 <!-- SCREENSHOT PLACEHOLDER: daily-entry-pain.png -->
-<!-- Pain section: toggle to enable, then three-step arc selector (Lieve / Moderata / Intensa). -->
+<!-- Pain intensity section: four inline circles (None / Mild / Moderate / Severe) with increasing fill intensity. -->
 
-Tap the **Pain** section header to expand it. A three-step selector appears:
+The **Pain intensity** section shows four circles in a row, each with increasing fill. Tap the one that matches how you feel:
 
-| Step | Level |
-|---|---|
-| **Lieve** | Mild |
-| **Moderata** | Moderate |
-| **Intensa** | Severe |
+| Circle | Level | Note |
+|---|---|---|
+| **None** | Transparent fill | Explicitly records no pain for the day. |
+| **Mild** | ~28% fill | Mild discomfort; daily activities are not affected. |
+| **Moderate** | ~60% fill | Pain that limits some activities. |
+| **Severe** | ~92% fill | Intense pain, difficult to manage. |
 
-Leave the section collapsed to record no pain for the day.
+Tapping the already-selected circle deselects it — no pain data saved for that day. Choosing **None** is a different action: it actively records that pain was absent.
 
 ---
 
 ### 3. Symptoms
 
 <!-- SCREENSHOT PLACEHOLDER: daily-entry-symptoms.png -->
-<!-- Symptom chip row: pre-defined chips + "+ Add" inline chip. -->
+<!-- Symptom chip row: pre-defined chips + dashed "Add" chip. -->
 
 A row of tappable chips. Tap to toggle a symptom on or off. Available symptoms:
 
-- Back pain (Mal di schiena)
-- Headache (Mal di testa)
-- Migraine (Emicrania)
-- Bloating (Gonfiore)
-- Fatigue (Stanchezza)
-- Nausea
-- Breast tenderness (Tensione al seno)
-- **Custom** — tap the dashed **+ Add** chip to type your own label.
+1. Headache
+2. Fatigue
+3. Back pain
+4. Nausea
+5. Bloating
+6. Breast tenderness
+7. **Custom** — tap the dashed **Add** chip to type your own label.
 
-Multiple symptoms can be selected at the same time. Custom labels are saved and reappear on future entries.
+You can select multiple symptoms at the same time. Custom labels are saved with that entry and do not reappear automatically on future entries. To remove a custom label, tap it again, the chip disappears from the list. Emoji are welcome too.
 
 ---
 
-### 4. Notes
+### 4. Free note
 
-A free-text area. Write anything you like — it is stored only on your device and never analysed or read by the app.
+A free-text area. What you write stays on your device: Mētra stores it and nothing else: no analysis, no reading.
 
 ---
 
 ## Saving the entry
 
-Tap **Salva giornata** (Save day) at the bottom of the screen. The calendar and statistics update immediately.
+Tap **Save day** at the bottom of the screen. The calendar and statistics update immediately.
 
 ---
 
 ## Editing a past day
 
 <!-- SCREENSHOT PLACEHOLDER: daily-entry-historical.png -->
-<!-- Historical entry screen accessed from a calendar day tap → Edit button. -->
+<!-- Historical entry screen accessed from the calendar day detail panel. -->
 
 1. Open the **Calendar** tab.
 2. Tap the day you want to edit.
-3. In the day detail card, tap **Modifica** (Edit).
+3. In the day detail panel, tap **Edit day**.
 4. The entry form opens, pre-filled with the existing data.
-5. Make your changes and tap **Salva**.
+5. Make your changes and tap **Save day**.
 
-You can edit any past day — there is no lock-out period. Editing a day that previously marked the start of a cycle will trigger a recalculation of predictions.
+You can edit any past day, there is no lock-out period. Editing a day that previously marked the start of a cycle will trigger an automatic recalculation of predictions.
 
 ---
 
 ## Deleting an entry
 
-To remove all data for a specific day, open the edit screen for that day and clear every field, then save. The day will return to "not logged" status.
-
----
-
-[← Back to Help]({{ '/en/help/' | relative_url }})
+To remove all data for a day, open its edit screen, tap the trash icon in the top-right corner. You will be asked to confirm before the deletion takes effect.

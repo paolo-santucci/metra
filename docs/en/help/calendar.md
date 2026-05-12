@@ -9,7 +9,7 @@ permalink: /en/help/calendar/
 help_order: 1
 ---
 
-The **Calendar** tab is the main screen of Métra. It shows a monthly grid where every day carries visual information about what you logged — or what the app predicts.
+The **Calendar** tab is the main screen of Mētra. This is where the app's visual language takes shape: colours, icons, a prediction window: a small vocabulary, but one worth learning.
 
 ---
 
@@ -18,73 +18,71 @@ The **Calendar** tab is the main screen of Métra. It shows a monthly grid where
 <!-- SCREENSHOT PLACEHOLDER: calendar-overview.png -->
 <!-- Full calendar screen showing a typical month with flow days, a predicted window, and symptom dots. -->
 
-Each day is a small cell. Days in the past may carry coloured cells and icons under the date number; days in the future may carry prediction markers.
+Each day is a small cell. Past days may have coloured cells and icons under the day number; future days may carry prediction markers.
 
-Tap any day to open its **day detail card**, which shows the full entry for that date.
+Tap any day to open its **day detail panel**, which shows everything recorded for that date.
 
-Use the **← →** arrows in the header to move between months.
+The **← →** arrows in the header move between months; the **Today** button returns to the current month from anywhere. You can also swipe horizontally on the grid: right for the previous month, left for the next: but forward swipes stop at the month after the current one.
 
 ---
 
-## Visual language — colours
+## Visual language: colours
 
-Métra uses a fixed colour vocabulary. Once you learn it you can read an entire month at a glance.
+Mētra uses a fixed colour vocabulary: four colours, four meanings. Once you know them, an entire month reads at a glance.
 
 | Colour | Name | Meaning |
 |---|---|---|
-| **Terracotta** (warm red-orange) | Flow | A day logged as menstruation (full or spotting). |
+| **Terracotta** (warm red-orange) | Flow | A day with menstrual flow or spotting logged. |
 | **Lavender** (muted purple) | Prediction | A day the app predicts will fall inside your next period window. |
-| **Ochre** (warm gold) | Symptom | The day has at least one symptom logged (e.g. headache, bloating). |
+| **Ochre** (warm gold) | Symptoms | The day has at least one symptom logged (e.g. headache, bloating). |
 | **Mauve** (dusty rose) | Pain | The day has a pain intensity recorded. |
 
 ---
 
-## Visual language — icons
+## Visual language: icons
 
-Small icons appear **under the day number** in the grid and inside the day detail card.
+Five icons complete the vocabulary. They appear **under the day number** in the grid and inside the day detail panel.
 
 | Icon | Meaning |
 |---|---|
 | Filled drop | Menstruation logged for this day. |
 | Outline drop | Predicted menstruation (no entry yet). |
-| Four-point star | At least one symptom recorded. |
+| Star | At least one symptom recorded. |
 | Lightning bolt | Pain intensity recorded. |
-| Crescent moon | Current cycle day indicator in the calendar header. |
+| Pen | A free-text note is present for this day. |
 
 ---
 
 ## The legend strip
 
 <!-- SCREENSHOT PLACEHOLDER: calendar-legend.png -->
-<!-- The thin legend bar beneath the day-of-week header showing all four icons with their labels. -->
+<!-- The thin legend bar beneath the day-of-week header showing all five icons with their labels. -->
 
-A legend strip sits just below the day-of-week header (L M M G V S D / M T W T F S S). It shows all four icons with their labels so you never need to memorise them.
+The legend strip sits just below the calendar grid. It shows the five icons described above with their labels: the full vocabulary, always in view.
 
 ---
 
 ## Predictions
 
-Métra calculates a predicted start date for your next period using a **weighted moving average** of your last six logged cycles. More recent cycles carry more weight.
+The math is in the open, not inside a black box. Mētra  calculates a predicted start date using a **weighted moving average of your last six logged cycles**, with more recent cycles carrying more weight. No AI, no opaque model: the formula is documented in the source code.
 
 - The prediction window appears as **lavender outline cells** in the calendar.
-- A **"Giorno N" / "Day N"** label in the calendar header shows where you are in your current cycle.
 - The prediction updates automatically every time you save a daily entry that starts a new cycle.
 
-The app uses transparent mathematics — no black-box algorithm, no "AI" claims. The formula is documented in the source code.
-
-> **No logged cycles yet?** The prediction is based on the baseline you set during onboarding. It becomes more accurate after two or three cycles.
+> **No logged cycles yet?** The prediction is based on the values you entered during first setup. It becomes more accurate after two or three cycles.
 
 ---
 
-## The day detail card
+## The day detail panel
 
 <!-- SCREENSHOT PLACEHOLDER: calendar-day-detail.png -->
-<!-- Day detail card showing flow pill, pain pill, symptom chips, and notes. -->
+<!-- Day detail panel showing flow pill, pain pill, symptom chips, and notes. -->
 
-Tapping a day slides up a card with:
+Tap a day to open a panel that brings together everything for that date:
 
-- **Flow pill** — the logged flow type and intensity, or the predicted status.
-- **Pain pill** — pain level (Lieve / Moderata / Intensa), if recorded.
-- **Symptom chips** — one chip per symptom recorded that day.
-- **Notes** — free-text note, if any.
-- **Edit button** — opens the [daily entry screen](daily-entry) for that day.
+- A **"Cycle day N"** label shows where you are in your current cycle.
+- **Flow pill**: the logged flow type and intensity, or the predicted status.
+- **Pain pill**: pain level (Mild / Moderate / Severe), if recorded.
+- **Symptom chips**: one chip per symptom recorded that day.
+- **Notes**: free-text note, if any.
+- **Add day** or **Edit day** button: opens the [daily entry screen](/en/help/daily-entry/) for that day.

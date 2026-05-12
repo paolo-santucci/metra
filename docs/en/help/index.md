@@ -1,53 +1,49 @@
 ---
 layout: help
-title: Help
-subtitle: Everything you need to know about Métra.
+title: First launch
+subtitle: Welcome in Mētra .
 lang: en
 lang_ref: help-index
 permalink: /en/help/
 help_order: 0
 ---
-## What to expect the first time you open Métra
 
-When you launch Métra for the first time you will be greeted by a two-screen onboarding flow. No account to create, no email to enter.
+## What happens on first launch
+
+The first time you open Mētra, there is no account to create and no email to enter. Two screens, and you're in.
 
 ---
 
 ### Screen 1 — Welcome
 
-![Full-screen welcome card: Métra wordmark, tagline, 'Inizia' / 'Get started' button.](/metra/assets/onboarding-welcome-en.png)
+![Welcome screen: Mētra wordmark, manifesto, 'Get started' button.](/metra/assets/onboarding-welcome-en.png)
 
-You will see the **Mētra** wordmark and a short manifesto about what the app is — and what it isn't. Read it once. It sets the right expectations.
+You see the **Mētra** wordmark and a short manifesto about what the app is — and what it isn't. Worth reading: it sets the frame before you log a single day.
 
-Tap **Inizia** (Get started) to continue.
+Tap **Get started** to continue.
 
 ---
 
 ### Screen 2 — Your baseline data
 
-![Two number steppers: average cycle length and typical period duration.](/metra/assets/onboarding-data-en.png)
+![Setup screen with three fields: last period start date, average cycle length, and typical period duration.](/metra/assets/onboarding-data-en.png)
 
-Métra asks for two numbers so that it can immediately start making useful predictions:
+Mētra  asks for three things so it can start making predictions calibrated to your cycle:
 
-| Field | Default | What it means |
-|---|---|---|
-| **Average cycle length** | 28 days | The number of days from the first day of one period to the first day of the next. Most people fall between 21 and 35 days. |
-| **Typical period duration** | 5 days | How many days your period usually lasts. |
+| Field                         | Default      | What it means                                                                                                                                    |
+| ----------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **First day of your last menstruation** | current date | The first day of your most recent period. Tap the field to open the date picker.                                                                 |
+| **Average cycle length**                | 28 days      | The number of days from the first day of one period to the first day of the next. Most people fall between 21 and 35 days.                       |
+| **Flow duration**                       | 5 days       | How many days your period usually lasts.                                                                                                         |
 
-Use the **−** and **+** buttons to adjust each value. These are just starting points — Métra will refine its predictions automatically as you log more cycles.
+Tap the date field to set when your last period started. Use the **−** and **+** buttons to adjust cycle length. These are starting points, not verdicts: Mētra  refines its predictions from your data as you log cycles — not from anyone else's.
 
-Tap **Tutto pronto →** (All set →) to enter the app.
-
----
-
-## After onboarding
-
-You land on the **Calendar** tab. Today's date is highlighted. The calendar will already show a predicted period window based on the numbers you entered.
-
-From this point on, everything you do is logged locally on your device. Métra never sends this information anywhere.
+Tap **All set →** to enter the app.
 
 ---
 
-## Can I change these settings later?
+## After first launch
 
-Yes. Go to **Settings → Notification preferences** to update your cycle-length baseline at any time. Predictions update automatically the next time you open the Calendar.
+You arrive on the **Calendar** tab. Today's date is highlighted. The calendar already shows a predicted period window built from the numbers you just entered.
+
+From here, everything you log is saved locally on your device. Mētra  does not send this information anywhere.

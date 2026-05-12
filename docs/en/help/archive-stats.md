@@ -1,7 +1,7 @@
 ---
 layout: help
 title: Archive and Statistics
-subtitle: The Timeline and Table views, plus the Statistics screen (cycle length, duration, symptom frequency).
+subtitle: The Timeline and Table views, plus the Statistics screen (cycle length, symptom frequency).
 nav_title: Archive and Statistics
 lang: en
 lang_ref: help-archive-stats
@@ -11,63 +11,63 @@ help_order: 3
 
 ## Archive tab
 
-The **Archive** tab (wave icon) shows your full history. You can view it in two ways, switchable with a segmented control at the top of the screen.
+The **Archive** tab (wave icon) holds the full record of your logged entries. This is the part of the app for reading, not doing. You can view it in two ways, switchable with a segmented control at the top of the screen.
 
 ---
 
 ### Timeline view
 
 <!-- SCREENSHOT PLACEHOLDER: archive-timeline.png -->
-<!-- Timeline view: a vertical list of cycle cards, each showing start date, length, flow pills, and symptom chips. -->
+<!-- Timeline view: a vertical list of cycle cards, each showing start date, length, flow pill, and symptom chips. -->
 
-The Timeline view groups your logs by **cycle**. Each card represents one complete cycle and shows:
+The Timeline view groups your entries by **cycle**, one card per cycle, most recent at the top, earliest at the bottom. Each card shows:
 
 - **Start date** and **cycle length** in days.
-- **Flow pills** — a condensed view of the days logged as menstruation or spotting.
-- **Pain pills** — days with recorded pain and their intensity.
-- **Symptom chips** — all symptoms recorded during that cycle.
+- A series of pastel-coloured labels summarising what was logged during that cycle:
+	- terracotta with a droplet for **flow**, showing the intensity or spotting;
+	- mauve with a lightning bolt for **pain**, showing the recorded intensity;
+	- ochre with a star for **symptoms**, covering all symptoms logged during that cycle;
+	- grey with a pen icon, indicating **notes**.
 
-Scroll upward to go further into the past.
+Scroll up to go further back.
 
 ---
 
 ### Table view
 
 <!-- SCREENSHOT PLACEHOLDER: archive-table.png -->
-<!-- Table view: rows are days, columns are date, flow, pain, symptoms, notes. Colour-coded cells. -->
+<!-- Table view: rows are months, columns are month, cycle, duration, flow. Colour-coded cells. -->
 
-The Table view shows one row per logged day. Columns:
+The Table view shows one row per logged month, useful when you want to compare several months at a glance. Columns:
 
-| Column | Content |
-|---|---|
-| Date | Day and month. |
-| Flow | Flow type and intensity pill. |
-| Pain | Pain level pill, if recorded. |
-| Symptoms | All symptoms for the day, as compact chips. |
-| Notes | First line of any note, truncated. |
-
-Tap a row to open the full day detail. Use the **Filter** button to narrow the table to a specific date range or to days with a particular symptom.
+| Column | Content                                      |
+| ------ | -------------------------------------------- |
+| Month  | Month and year.                              |
+| Cycle  | Number of days in the cycle.                 |
+| Dur.   | Number of menstrual flow days.               |
+| Flow   | Average menstrual flow intensity.            |
 
 ---
 
 ## Statistics tab
 
 <!-- SCREENSHOT PLACEHOLDER: stats-overview.png -->
-<!-- Statistics screen: three stat cards at top (avg cycle, avg duration, logged cycles), then bar charts. -->
+<!-- Statistics screen: four summary cards at top, then bar charts. -->
 
-The **Statistics** tab (chart icon) shows aggregate data about your logged history. All numbers are calculated locally on your device from your entries — no external service is involved.
+The **Statistics** tab is the numerical side of the same archive: where the Timeline and Table show individual days, here Mētra calculates averages and distributions across the full set of parameters logged during your cycles. All calculations run locally on your device — no external service ever sees these numbers.
 
 ---
 
 ### Summary cards
 
-Three headline figures at the top of the screen:
+Four headline figures at the top of the screen:
 
-| Card | Meaning |
-|---|---|
-| **Average cycle length** | Mean number of days across all complete logged cycles. |
-| **Average period duration** | Mean number of consecutive menstruation days per cycle. |
-| **Cycles logged** | Total number of complete cycles in your history. |
+| Card                          | Meaning                                                               |
+| ----------------------------- | --------------------------------------------------------------------- |
+| **Average cycle length**      | Mean number of days across all complete logged cycles.                |
+| **Average period length**     | Mean number of consecutive menstruation days per cycle.               |
+| **Average pain**              | Mean pain level recorded across all cycles, on a 0–3 scale.          |
+| **Tracked cycles**            | Total number of complete cycles in your history.                      |
 
 These cards update every time you save a new entry.
 
@@ -76,9 +76,18 @@ These cards update every time you save a new entry.
 ### Cycle length chart
 
 <!-- SCREENSHOT PLACEHOLDER: stats-cycle-chart.png -->
-<!-- Mini bar chart: one bar per cycle, height = length in days, terracotta colour. -->
+<!-- Bar chart: one bar per cycle, height = length in days, terracotta colour. -->
 
-A bar chart showing the length of each individual cycle in chronological order. This makes it easy to spot irregular cycles or a gradual shift in your rhythm.
+A bar chart showing the length of each cycle in chronological order. If your rhythm has shifted over recent months, this is where it shows.
+
+---
+
+### Pain intensity chart
+
+<!-- SCREENSHOT PLACEHOLDER: stats-pain-chart.png -->
+<!-- Bar chart: one bar per cycle, height = average pain intensity for that cycle, 0–3 scale. -->
+
+A bar chart showing the average pain intensity for each cycle in chronological order, on the same 0–3 scale used when logging. Mētra calculates this locally, nothing transmitted. An outlier cycle stands out immediately.
 
 ---
 
@@ -87,6 +96,6 @@ A bar chart showing the length of each individual cycle in chronological order. 
 <!-- SCREENSHOT PLACEHOLDER: stats-symptoms-chart.png -->
 <!-- Horizontal bar chart: one bar per symptom type, length = percentage of cycles in which it appeared. -->
 
-A horizontal bar chart showing how often each symptom has appeared across your recorded cycles, expressed as a percentage. The most frequent symptoms appear at the top.
+A horizontal bar chart showing how often each symptom has appeared across your recorded cycles. The most frequent symptoms appear at the top. Over time, a pattern you had not noticed can become clear.
 
-> **No data?** Statistics require at least one complete cycle to be logged. A cycle is considered complete once a new cycle start has been recorded.
+> **No data?** Statistics require at least one complete cycle to be logged. A cycle is considered complete once the start of the next cycle is recorded.
