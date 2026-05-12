@@ -40,7 +40,7 @@ Mētra usa un vocabolario cromatico fisso: quattro colori, quattro significati. 
 
 ## Linguaggio visivo: le icone
 
-Sei icone completano il vocabolario. Appaiono **sotto il numero del giorno** nella griglia e nel pannello di dettaglio.
+Cinque icone completano il vocabolario. Appaiono **sotto il numero del giorno** nella griglia e nel pannello di dettaglio.
 
 | Icona                   | Significato                                                                |
 | ----------------------- | -------------------------------------------------------------------------- |

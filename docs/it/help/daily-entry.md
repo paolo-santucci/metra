@@ -9,7 +9,7 @@ permalink: /it/help/daily-entry/
 help_order: 2
 ---
 
-Puoi registrare o modificare qualsiasi giorno presente o passato dal [Calendario](/it/help/calendar/), tramite il pulsante **Aggiungi giornata**, o **Modifica giornata** se c'è già una registrazione per quel giorno.
+Puoi registrare o modificare qualsiasi giorno presente o passato dal [Calendario](/metra/it/help/calendar/), tramite il pulsante **Aggiungi giornata**, o **Modifica giornata** se c'è già una registrazione per quel giorno.
 
 ---
 
