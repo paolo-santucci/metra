@@ -15,7 +15,7 @@ La scheda **Calendario** è la schermata principale di Mētra. È qui che il lin
 
 ## La griglia mensile
 
-![Schermata calendario con un mese tipico: giorni di flusso, icone dei sintomi.](/metra/asset/calendar-overview-it.png)
+![Schermata calendario con un mese tipico: giorni di flusso, icone dei sintomi.](/metra/assets/calendar-overview-it.png)
 
 Ogni giorno è una piccola cella. I giorni passati possono avere celle colorate e icone sotto il numero; i giorni futuri possono avere indicatori di previsione.
 
