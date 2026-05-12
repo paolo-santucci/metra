@@ -6,7 +6,7 @@ layout: default
   <aside class="help-sidebar">
     <div class="help-sidebar__inner">
       <h2 class="help-sidebar__title">
-        {% if page.lang == 'en' %}Help{% else %}Aiuto{% endif %}
+        {% if page.lang == 'en' %}Help{% else %}Guida{% endif %}
       </h2>
       <nav class="help-sidebar__nav">
         {% assign help_pages = site.pages | where: "layout", "help" | where: "lang", page.lang | sort: "help_order" %}
@@ -23,7 +23,7 @@ layout: default
     <header class="help-content__header">
       {% if page.help_order and page.help_order > 0 %}
       <a href="{% if page.lang == 'en' %}{{ '/en/help/' | relative_url }}{% else %}{{ '/it/help/' | relative_url }}{% endif %}" class="help-content__back">
-        ← {% if page.lang == 'en' %}Back to Help{% else %}Torna all'Aiuto{% endif %}
+        ← {% if page.lang == 'en' %}Back to Help{% else %}Torna alla Guida{% endif %}
       </a>
       {% endif %}
       <h1 class="help-content__title">{{ page.title }}</h1>
