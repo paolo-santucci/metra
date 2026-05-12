@@ -15,8 +15,7 @@ When you launch Métra for the first time you will be greeted by a two-screen on
 
 ### Screen 1 — Welcome
 
-<!-- SCREENSHOT PLACEHOLDER: onboarding-welcome.png -->
-<!-- Full-screen welcome card: Mētra wordmark, tagline, "Inizia" / "Get started" button. -->
+![Full-screen welcome card: Métra wordmark, tagline, 'Inizia' / 'Get started' button.](/metra/assets/onboarding-welcome-en.png)
 
 You will see the **Mētra** wordmark and a short manifesto about what the app is — and what it isn't. Read it once. It sets the right expectations.
 
@@ -26,8 +25,7 @@ Tap **Inizia** (Get started) to continue.
 
 ### Screen 2 — Your baseline data
 
-<!-- SCREENSHOT PLACEHOLDER: onboarding-data.png -->
-<!-- Two number steppers: average cycle length and typical period duration. -->
+![Two number steppers: average cycle length and typical period duration.](/metra/assets/onboarding-data-en.png)
 
 Métra asks for two numbers so that it can immediately start making useful predictions:
 
