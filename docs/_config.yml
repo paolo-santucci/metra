@@ -5,7 +5,7 @@ baseurl: "/metra"
 
 # Navigation — Italian
 navigation_it:
-  - title: Aiuto
+  - title: Guida
     url: /it/help/
   - title: Novità
     url: /it/#novita

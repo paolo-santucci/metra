@@ -1,7 +1,7 @@
 ---
 layout: help
-title: Guida
-subtitle: Benvenuta nel centro assistenza di Mētra.
+title: Primo avvio
+subtitle: Benvenuta in Mētra.
 lang: it
 lang_ref: help-index
 permalink: /it/help/
