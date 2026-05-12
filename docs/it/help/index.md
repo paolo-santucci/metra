@@ -16,7 +16,7 @@ Quando apri Métra per la prima volta ti trovi davanti a un flusso di benvenuto 
 
 ### Schermata 1 — Benvenuto
 
-![Schermata di benvenuto\: wordmark Mētra, manifesto, pulsante 'Inizia'.](/metra/assets/it/onboarding-welcome.png)
+![Schermata di benvenuto\: wordmark Mētra, manifesto, pulsante 'Inizia'.](/metra/assets/onboarding-welcome-it.png)
 
 Vedrai il wordmark **Mētra** e un breve manifesto su cosa è l'app — e cosa non è. Leggilo una volta. Mette le aspettative giuste.
 
@@ -26,7 +26,7 @@ Tocca **Inizia** per continuare.
 
 ### Schermata 2 — I tuoi dati di partenza
 
-![Due stepper numerici\: durata media del ciclo e durata tipica delle mestruazioni.](/metra/assets/it/onboarding-data.png)
+![Due stepper numerici\: durata media del ciclo e durata tipica delle mestruazioni.](/metra/assets/onboarding-data-it.png)
 
 Métra ti chiede due numeri per poter subito produrre previsioni utili:
 
