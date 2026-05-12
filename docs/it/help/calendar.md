@@ -15,8 +15,7 @@ La scheda **Calendario** è la schermata principale di Mētra. È qui che il lin
 
 ## La griglia mensile
 
-<!-- SCREENSHOT PLACEHOLDER: calendar-overview.png -->
-<!-- Schermata calendario con un mese tipico: giorni di flusso, finestra di previsione, puntini di sintomi. -->
+![Schermata calendario con un mese tipico: giorni di flusso, icone dei sintomi.](/metra/asset/calendar-overview-it.png)
 
 Ogni giorno è una piccola cella. I giorni passati possono avere celle colorate e icone sotto il numero; i giorni futuri possono avere indicatori di previsione.
 
@@ -55,8 +54,7 @@ Sei icone completano il vocabolario. Appaiono **sotto il numero del giorno** nel
 
 ## La striscia legenda
 
-<!-- SCREENSHOT PLACEHOLDER: calendar-legend.png -->
-<!-- La striscia legenda sotto l'intestazione dei giorni della settimana: le cinque icone con le loro etichette. -->
+![La striscia legenda sotto l'intestazione dei giorni della settimana: le cinque icone con le loro etichette.](/metra/assets/calendar-legend-it.png)
 
 La striscia legenda si trova appena sotto la griglia del calendario. Mostra le cinque icone descritte sopra con le relative etichette: il vocabolario completo, sempre a portata di sguardo.
 
@@ -74,9 +72,6 @@ La matematica è aperta, non in una scatola nera. Mētra calcola la data di iniz
 ---
 
 ## Il pannello di dettaglio del giorno
-
-<!-- SCREENSHOT PLACEHOLDER: calendar-day-detail.png -->
-<!-- Pannello di dettaglio: pill del flusso, pill del dolore, chip dei sintomi, note. -->
 
 Tocca un giorno per aprire un pannello che raccoglie tutto ciò che riguarda quella data:
 
