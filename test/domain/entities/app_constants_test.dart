@@ -24,16 +24,9 @@ void main() {
     // bundle via appVersionProvider (package_info_plus) to stay in sync with
     // pubspec.yaml automatically across releases.
 
-    test('kUrlHelp is a valid Italian help URL', () {
+    test('kUrlHelp points to the help index', () {
       expect(
         AppConstants.kUrlHelp,
-        'https://paolo-santucci.github.io/metra/help/it/',
-      );
-    });
-
-    test('kUrlHelpEn is a valid English help URL', () {
-      expect(
-        AppConstants.kUrlHelpEn,
         'https://paolo-santucci.github.io/metra/help/',
       );
     });
@@ -48,7 +41,7 @@ void main() {
     test('kUrlPrivacy points to the privacy policy page', () {
       expect(
         AppConstants.kUrlPrivacy,
-        'https://paolo-santucci.github.io/metra/privacy',
+        'https://paolo-santucci.github.io/metra/privacy/',
       );
     });
 
