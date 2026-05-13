@@ -15,8 +15,7 @@ Puoi registrare o modificare qualsiasi giorno presente o passato dal [Calendario
 
 ## La registrazione di oggi
 
-<!-- SCREENSHOT PLACEHOLDER: daily-entry-today.png -->
-<!-- Schermata Oggi con tutte le sezioni aperte: chip del flusso, puntini di intensità, selettore dolore, chip sintomi, area note. -->
+ ![Schermata Oggi con tutte le sezioni aperte: chip del flusso, puntini di intensità, selettore dolore, chip sintomi, area note.](/metra/assets/daily-entry-today-it.png)
 
 La schermata Oggi mostra la data corrente e quattro sezioni. Quello che compili è una tua scelta, ogni campo è facoltativo.
 
@@ -70,8 +69,7 @@ Toccare il cerchio già selezionato lo deseleziona: nessun dato relativo al dolo
 
 ### 3. Sintomi
 
-<!-- SCREENSHOT PLACEHOLDER: daily-entry-symptoms.png -->
-<!-- Riga di chip sintomi: chip predefiniti + chip "+ Aggiungi" tratteggiato. -->
+![Riga di pulsati sintomi: pulsanti predefiniti e un pulsante "+ Aggiungi" tratteggiato.](/metra/assets/daily-entry-symptoms-it.png)
 
 Una fila di chip toccabili. Tocca per attivare o disattivare un sintomo. Sintomi disponibili:
 
