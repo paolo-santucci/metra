@@ -31,9 +31,18 @@ class RecomputeCycleEntries {
   final DailyLogRepository _logRepo;
   final CycleEntryRepository _cycleRepo;
 
-  // FIGO minimum inter-cycle gap: two bleeding episodes separated by ≥ this
-  // many days are considered distinct cycles.
-  static const int _kNewCycleGapDays = 21;
+  // Minimum end-to-start gap (last logged flow day of one episode to first
+  // logged flow day of the next) required to treat two bleeding runs as
+  // separate cycles.  7 days is deliberately conservative: a normal period
+  // lasts 4–8 days and the shortest clinically normal cycle is ~21 days
+  // (start-to-start), so the inter-bleed gap in the shortest normal cycle is
+  // at least 13 days.  7 days still correctly splits any case where bleeding
+  // resumes after a full week of nothing (new cycle), while keeping a 5–6 day
+  // mid-period gap (e.g. spotting) in the same episode.
+  // Previously 21, which was incorrectly applied to an end-to-start gap and
+  // caused new-cycle entries to be absorbed into the prior cycle for users
+  // with typical 24–28-day cycles (end-to-start gap ≈ 16–24 days).
+  static const int _kNewCycleGapDays = 7;
 
   // Future-chain mutex; catchError keeps the chain alive after a failed run.
   Future<void> _serialized = Future.value();

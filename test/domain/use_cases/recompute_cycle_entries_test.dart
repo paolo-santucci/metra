@@ -100,18 +100,18 @@ void main() {
       expect(entries[1].cycleLength, isNull);
     });
 
-    test('gap of exactly 21 days → two cycles', () {
+    test('gap of exactly 7 days → two cycles', () {
       final logs = [
         _flowDay(DateTime.utc(2026, 1, 1)),
-        _flowDay(DateTime.utc(2026, 1, 22)), // 21 days later
+        _flowDay(DateTime.utc(2026, 1, 8)), // 7 days later (threshold boundary)
       ];
       expect(RecomputeCycleEntries.compute(logs), hasLength(2));
     });
 
-    test('gap of 20 days → same cycle', () {
+    test('gap of 6 days → same cycle', () {
       final logs = [
         _flowDay(DateTime.utc(2026, 1, 1)),
-        _flowDay(DateTime.utc(2026, 1, 21)), // 20 days later
+        _flowDay(DateTime.utc(2026, 1, 7)), // 6 days later (below threshold)
       ];
       expect(RecomputeCycleEntries.compute(logs), hasLength(1));
     });
@@ -159,14 +159,14 @@ void main() {
       expect(entries[1].cycleLength, 45);
     });
 
-    // Regression: Bug [2] — gap=19 (< threshold) keeps both days in ONE group,
-    // but periodLength must be 2 (flow day count), NOT 20 (calendar span).
+    // Regression: Bug [2] — gap=5 (< threshold of 7) keeps both days in ONE
+    // group, but periodLength must be 2 (flow day count), NOT 6 (calendar span).
     test(
       'given_gap_below_threshold_when_compute_then_periodLength_counts_flow_days_not_span',
       () {
         final logs = [
           _flowDay(DateTime.utc(2026, 1, 1)),
-          _flowDay(DateTime.utc(2026, 1, 20)), // gap = 19 days, below threshold
+          _flowDay(DateTime.utc(2026, 1, 6)), // gap = 5 days, below threshold
         ];
         final entries = RecomputeCycleEntries.compute(logs);
         expect(entries, hasLength(1));
