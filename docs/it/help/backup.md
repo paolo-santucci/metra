@@ -21,8 +21,7 @@ Quando lo attivi, Mētra cifra l'intero database sul tuo dispositivo **prima** d
 
 ## Collegare un provider cloud
 
-<!-- SCREENSHOT PLACEHOLDER: backup-connect.png -->
-<!-- Schermata backup prima della connessione: pulsante di connessione Dropbox. -->
+![Schermata backup prima della connessione: pulsante di connessione Dropbox.](/metra/assets/backup-connect-it.png)
 
 1. Vai in **Impostazioni → Backup cloud**.
 2. Tocca **Collega Dropbox**.
@@ -35,8 +34,7 @@ Mētra richiede i permessi minimi: solo l'accesso a una cartella dedicata, non a
 
 ## Creare un backup
 
-<!-- SCREENSHOT PLACEHOLDER: backup-connected.png -->
-<!-- Schermata backup dopo la connessione: email connessa, data ultimo backup, pulsanti "Esegui backup" e "Disconnetti". -->
+![Schermata backup dopo la connessione: email connessa, data ultimo backup, pulsanti \"Esegui backup\" e \"Disconnetti\".](/metra/assets/backup-connected-it.png)
 
 Una volta collegata:
 
@@ -65,8 +63,7 @@ Il backup contiene il contenuto completo del database cifrato:
 
 ## Ripristinare da un backup
 
-<!-- SCREENSHOT PLACEHOLDER: backup-restore.png -->
-<!-- Flusso di ripristino: dialog inserimento passphrase, poi avanzamento, poi conferma completamento. -->
+![Flusso di ripristino: dialog inserimento passphrase, poi avanzamento, poi conferma completamento.](/metra/assets/backup-restore-it.png)
 
 1. Installa Mētra sul nuovo dispositivo (o dopo un ripristino di fabbrica).
 2. Completa il flusso di benvenuto, i numeri inseriti non contano, verranno sovrascritti dal ripristino.
