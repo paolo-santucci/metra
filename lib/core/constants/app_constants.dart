@@ -18,8 +18,7 @@
 class AppConstants {
   AppConstants._();
 
-  static const String kUrlHelp =
-      'https://paolo-santucci.github.io/metra/help/';
+  static const String kUrlHelp = 'https://paolo-santucci.github.io/metra/help/';
   static const String kUrlGitHub = 'https://github.com/paolo-santucci/metra';
   static const String kUrlPrivacy =
       'https://paolo-santucci.github.io/metra/privacy/';
