@@ -53,11 +53,8 @@ body:
 
   - type: markdown
     attributes:
-      value: |
+      value: >-
           
-  - type: markdown
-    attributes:
-      value: |
           
         ### ℹ️ Environment
           
