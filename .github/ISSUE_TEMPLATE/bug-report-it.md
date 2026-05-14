@@ -1,11 +1,10 @@
 ---
-name: "Problema"
+name: "🇮🇹 Problema"
+about: "Segnala un problema"
 title: "[BUG]: "
 labels:
   - bug
   - needs-triage
-projects:
-  - paolo-santucci/metra
 ---
 
 > If this is mainly a sync/data integrity problem, please use the **Sync / Data Issue** template for faster triage.

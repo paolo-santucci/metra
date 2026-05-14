@@ -1,11 +1,10 @@
 ---
-name: "Feature Request"
+name: "🇬🇧 Feature"
+about: "Request a feature"
 title: "[FEAT] "
-labels: 
+labels:
   - enhancement
   - needs-triage
-projects:
-  - paolo-santucci/metra
 ---
 
 ### ✅ Before submitting
