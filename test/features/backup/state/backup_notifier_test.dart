@@ -12,6 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/errors/metra_exception.dart';
 import 'package:metra/core/utils/result.dart';
 import 'package:metra/data/services/backup/dropbox_provider.dart';
+import 'package:metra/domain/entities/sync_log_entity.dart';
 import 'package:metra/domain/use_cases/backup_data.dart';
 import 'package:metra/domain/use_cases/restore_data.dart';
 import 'package:metra/features/backup/state/backup_notifier.dart';
@@ -22,6 +23,7 @@ import 'package:metra/providers/repository_providers.dart';
 
 import '../../../helpers/fake_app_settings_repository.dart';
 import '../../../helpers/fake_dropbox_provider.dart';
+import '../../../helpers/fake_sync_log_repository.dart';
 import '../../../helpers/in_memory_secure_storage.dart';
 
 class _FakeRunner implements BackupRunner {
@@ -95,12 +97,14 @@ void main() {
   late InMemorySecureStorage storage;
   late _FakeRunner runner;
   late FakeDropboxProvider fakeDropbox;
+  late FakeSyncLogRepository fakeSyncLogRepo;
 
   setUp(() {
     settingsRepo = FakeAppSettingsRepository();
     storage = InMemorySecureStorage();
     runner = _FakeRunner();
     fakeDropbox = FakeDropboxProvider();
+    fakeSyncLogRepo = FakeSyncLogRepository();
   });
 
   ProviderContainer makeContainer() {
@@ -111,6 +115,7 @@ void main() {
         backupDataProvider.overrideWith((_) async => BackupData(runner)),
         restoreDataProvider.overrideWith((_) async => RestoreData(runner)),
         cloudBackupProvider.overrideWithValue(fakeDropbox),
+        syncLogRepositoryProvider.overrideWith((_) async => fakeSyncLogRepo),
       ],
     );
   }
@@ -620,6 +625,153 @@ void main() {
       },
       timeout: const Timeout(Duration(seconds: 10)),
     );
+  });
+
+  // -----------------------------------------------------------------------
+  // FR-11 / FR-12 / FR-13 / FR-14 / FR-16 — backupSilent skip guard
+  // -----------------------------------------------------------------------
+  group('backupSilent skip guard', () {
+    // Helper: seed the settingsRepo and storage, build a container, await
+    // initialization, then return the container.
+    Future<ProviderContainer> buildSkipContainer({
+      required String? dropboxEmail,
+      required DateTime? lastBackupAt,
+      required DateTime? lastWriteAt,
+      bool withPassphrase = true,
+    }) async {
+      // Set dropboxEmail and lastBackupAt via updateBackupState.
+      if (dropboxEmail != null) {
+        await settingsRepo.updateBackupState(
+          dropboxEmail: dropboxEmail,
+          lastBackupAt: lastBackupAt,
+        );
+      }
+      // Set lastLogOrSymptomWriteAt via dedicated writer.
+      if (lastWriteAt != null) {
+        await settingsRepo.updateLastDataWriteAt(lastWriteAt);
+      }
+      if (withPassphrase) {
+        storage.values['metra_backup_passphrase_v1'] = 'test-pass';
+      }
+      final container = makeContainer();
+      addTearDown(container.dispose);
+      await container.read(backupNotifierProvider.future);
+      return container;
+    }
+
+    // Case (a) FR-13: null lastLogOrSymptomWriteAt AND lastBackupAt set → skip
+    test('skips when lastLogOrSymptomWriteAt is null and lastBackupAt is set',
+        () async {
+      final tb = DateTime.utc(2026, 5, 1, 10);
+      final container = await buildSkipContainer(
+        dropboxEmail: 'a@b.com',
+        lastBackupAt: tb,
+        lastWriteAt: null,
+      );
+      await container.read(backupNotifierProvider.notifier).backupSilent();
+      expect(runner.backupCalled, isFalse);
+    });
+
+    // Case (b) FR-11: lastWriteAt == lastBackupAt exactly → skip (boundary)
+    test('skips when lastWriteAt == lastBackupAt exactly (boundary)', () async {
+      final t = DateTime.utc(2026, 5, 1, 10);
+      final container = await buildSkipContainer(
+        dropboxEmail: 'a@b.com',
+        lastBackupAt: t,
+        lastWriteAt: t,
+      );
+      await container.read(backupNotifierProvider.notifier).backupSilent();
+      expect(runner.backupCalled, isFalse);
+    });
+
+    // Case (b) FR-11: lastWriteAt < lastBackupAt → skip
+    test('skips when lastWriteAt is before lastBackupAt', () async {
+      final tb = DateTime.utc(2026, 5, 1, 10);
+      final tw = DateTime.utc(2026, 5, 1, 9);
+      final container = await buildSkipContainer(
+        dropboxEmail: 'a@b.com',
+        lastBackupAt: tb,
+        lastWriteAt: tw,
+      );
+      await container.read(backupNotifierProvider.notifier).backupSilent();
+      expect(runner.backupCalled, isFalse);
+    });
+
+    // Case (c) FR-12: lastBackupAt == null → always proceed (even if lastWriteAt null)
+    test('proceeds when lastBackupAt is null regardless of lastWriteAt',
+        () async {
+      final container = await buildSkipContainer(
+        dropboxEmail: 'a@b.com',
+        lastBackupAt: null,
+        lastWriteAt: null,
+      );
+      await container.read(backupNotifierProvider.notifier).backupSilent();
+      expect(runner.backupCalled, isTrue);
+    });
+
+    // Case (d) FR-11 neg: lastWriteAt > lastBackupAt → proceed
+    test('proceeds when lastWriteAt is after lastBackupAt', () async {
+      final tb = DateTime.utc(2026, 5, 1, 9);
+      final tw = DateTime.utc(2026, 5, 1, 10);
+      final container = await buildSkipContainer(
+        dropboxEmail: 'a@b.com',
+        lastBackupAt: tb,
+        lastWriteAt: tw,
+      );
+      await container.read(backupNotifierProvider.notifier).backupSilent();
+      expect(runner.backupCalled, isTrue);
+    });
+
+    // FR-14: manual path ignores the guard
+    test('backupWithPassphrase uploads even when skip condition holds',
+        () async {
+      final t = DateTime.utc(2026, 5, 1, 10);
+      final container = await buildSkipContainer(
+        dropboxEmail: 'a@b.com',
+        lastBackupAt: t,
+        lastWriteAt: t,
+        withPassphrase: false, // backupWithPassphrase supplies its own
+      );
+      await container
+          .read(backupNotifierProvider.notifier)
+          .backupWithPassphrase('p');
+      expect(runner.backupCalled, isTrue);
+    });
+
+    // FR-16: diagnostic log on skip
+    test(
+        'skip writes SyncLogEntity with operation backupSkipped '
+        'and both timestamps in errorMessage', () async {
+      final tb = DateTime.utc(2026, 5, 1, 10);
+      final tw = DateTime.utc(2026, 4, 30, 9);
+      final container = await buildSkipContainer(
+        dropboxEmail: 'a@b.com',
+        lastBackupAt: tb,
+        lastWriteAt: tw,
+      );
+      await container.read(backupNotifierProvider.notifier).backupSilent();
+      expect(fakeSyncLogRepo.appended, hasLength(1));
+      final e = fakeSyncLogRepo.appended.last;
+      expect(e.operation, SyncOperation.backupSkipped);
+      expect(e.success, isTrue);
+      expect(e.errorMessage, contains('lastWriteAt='));
+      expect(e.errorMessage, contains('lastBackupAt='));
+    });
+
+    // No spurious log on proceed path
+    test('proceed path does NOT append a backupSkipped entry', () async {
+      final container = await buildSkipContainer(
+        dropboxEmail: 'a@b.com',
+        lastBackupAt: null,
+        lastWriteAt: null,
+      );
+      await container.read(backupNotifierProvider.notifier).backupSilent();
+      expect(
+        fakeSyncLogRepo.appended
+            .where((e) => e.operation == SyncOperation.backupSkipped),
+        isEmpty,
+      );
+    });
   });
 
   // -----------------------------------------------------------------------

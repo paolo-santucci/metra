@@ -132,6 +132,14 @@ class SyncOrchestrator implements BackupRunner {
       };
       await _logRepo.deleteAllAndReplace(logs, symptomsMap);
       await _recompute();
+      // FR-15: align lastLogOrSymptomWriteAt to lastBackupAt after a successful
+      // restore. Without this, deleteAllAndReplace() bumps lastLogOrSymptomWriteAt
+      // to the restore time, and the next cold-start would see it > lastBackupAt
+      // and re-upload the just-restored data unnecessarily.
+      final freshSettings = await _settingsRepo.getOrCreate();
+      if (freshSettings.lastBackupAt != null) {
+        await _settingsRepo.updateLastDataWriteAt(freshSettings.lastBackupAt!);
+      }
       await _syncLogRepo.append(
         SyncLogEntity(
           timestamp: ts,

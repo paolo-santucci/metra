@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/errors/metra_exception.dart';
 import '../../../core/utils/result.dart';
 import '../../../data/services/backup/backup_filename.dart';
+import '../../../domain/entities/sync_log_entity.dart';
 import '../../../providers/backup_providers.dart';
 import '../../../providers/encryption_provider.dart';
 import '../../../providers/repository_providers.dart';
@@ -119,6 +120,38 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     // disconnect would cause _runBackup to fire and fail silently on every
     // cold-start (BUG-D04 follow-up / FR-14).
     if (state.valueOrNull is BackupNotConnected) return;
+
+    // FR-11/FR-12/FR-13: skip cold-start backup when no new data has been
+    // written since the last backup. Manual backup (backupWithPassphrase)
+    // bypasses this guard intentionally.
+    final settingsRepo = await ref.read(appSettingsRepositoryProvider.future);
+    final settings = await settingsRepo.getOrCreate();
+    final lastBackupAt = settings.lastBackupAt;
+    final lastWriteAt = settings.lastLogOrSymptomWriteAt;
+
+    // FR-12: first-ever backup always proceeds (no prior backup to compare against).
+    if (lastBackupAt != null) {
+      // FR-13: no log/symptom ever written → nothing to back up.
+      // FR-11: write timestamp not after last backup → nothing new since last upload.
+      if (lastWriteAt == null || !lastWriteAt.isAfter(lastBackupAt)) {
+        // FR-16: append a diagnostic log entry so the user can inspect why
+        // the backup was skipped via the sync log view.
+        final syncLogRepo = await ref.read(syncLogRepositoryProvider.future);
+        await syncLogRepo.append(
+          SyncLogEntity(
+            timestamp: DateTime.now().toUtc(),
+            provider: SyncProvider.dropbox,
+            operation: SyncOperation.backupSkipped,
+            success: true,
+            errorMessage:
+                'skipped: lastWriteAt=$lastWriteAt lastBackupAt=$lastBackupAt',
+          ),
+        );
+        return;
+      }
+    }
+    // Cases: (c) first-ever backup, or (d) new data exists → proceed.
+
     final pass =
         await ref.read(secureStorageProvider).read(key: _passphraseKey);
     if (pass == null) return;

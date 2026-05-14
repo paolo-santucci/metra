@@ -176,6 +176,74 @@ void main() {
       syncLogRepo.appended.clear();
     }
 
+    group('restore alignment (FR-15)', () {
+      test(
+        'aligns lastLogOrSymptomWriteAt to lastBackupAt after successful restore',
+        () async {
+          // Seed a valid encrypted blob (backup() also sets lastBackupAt).
+          await seedBackup();
+          final tb = (await settingsRepo.getOrCreate()).lastBackupAt!;
+          final orch = _make(
+            storage: storage,
+            provider: provider,
+            settingsRepo: settingsRepo,
+            syncLogRepo: syncLogRepo,
+            logRepo: logRepo,
+          );
+          await orch.restore();
+          final after = await settingsRepo.getOrCreate();
+          expect(after.lastLogOrSymptomWriteAt, equals(tb));
+        },
+      );
+
+      test(
+        'does NOT align when lastBackupAt is null',
+        () async {
+          // Blob present but no lastBackupAt in settings.
+          await seedBackup();
+          await settingsRepo.updateBackupState(
+            dropboxEmail: null,
+            lastBackupAt: null,
+          );
+          final orch = _make(
+            storage: storage,
+            provider: provider,
+            settingsRepo: settingsRepo,
+            syncLogRepo: syncLogRepo,
+            logRepo: logRepo,
+          );
+          await orch.restore();
+          final after = await settingsRepo.getOrCreate();
+          // Guard skips alignment when lastBackupAt is null.
+          expect(after.lastLogOrSymptomWriteAt, isNull);
+        },
+      );
+
+      test(
+        'does NOT align when restore fails (wrong passphrase)',
+        () async {
+          // Seed a valid blob and a known lastBackupAt.
+          await seedBackup();
+          // Pre-seed lastLogOrSymptomWriteAt to a sentinel so "unchanged"
+          // is a real equality assertion, not just "still null".
+          final sentinel = DateTime.utc(2026, 3, 1, 8);
+          await settingsRepo.updateLastDataWriteAt(sentinel);
+          // Corrupt the passphrase so decryption fails.
+          storage.values[passphraseKey] = 'wrong-passphrase';
+          final orch = _make(
+            storage: storage,
+            provider: provider,
+            settingsRepo: settingsRepo,
+            syncLogRepo: syncLogRepo,
+            logRepo: logRepo,
+          );
+          await expectLater(orch.restore(), throwsA(isA<MetraException>()));
+          final after = await settingsRepo.getOrCreate();
+          expect(after.lastLogOrSymptomWriteAt, equals(sentinel));
+        },
+      );
+    });
+
     test(
       'happy path: deleteAllAndReplace called, recompute invoked, success log',
       () async {

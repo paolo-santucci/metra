@@ -43,11 +43,13 @@ class DriftSyncLogRepository implements SyncLogRepository {
   static String _operationToString(SyncOperation op) => switch (op) {
         SyncOperation.backup => 'backup',
         SyncOperation.restore => 'restore',
+        SyncOperation.backupSkipped => 'backup_skipped',
       };
 
   static SyncOperation _stringToOperation(String value) => switch (value) {
         'backup' => SyncOperation.backup,
         'restore' => SyncOperation.restore,
+        'backup_skipped' => SyncOperation.backupSkipped,
         _ => throw StateError('Unknown SyncOperation in DB: "$value"'),
       };
 

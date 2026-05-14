@@ -18,7 +18,7 @@
 // googleDrive and oneDrive will be added in v1.1.
 enum SyncProvider { dropbox }
 
-enum SyncOperation { backup, restore }
+enum SyncOperation { backup, restore, backupSkipped }
 
 class SyncLogEntity {
   const SyncLogEntity({
