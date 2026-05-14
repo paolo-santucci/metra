@@ -3,7 +3,7 @@
 #   needs-triage — applied automatically by this form
 
 name: Feature request
-description: Propose a new feature or improvement for Métra
+description: Propose a new feature or improvement for Mētra
 title: "[Feature] "
 labels:
   - feature
@@ -14,9 +14,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thank you for suggesting a feature for Métra.
+        Thank you for suggesting a feature for Mētra.
 
-        Métra is a **privacy-first, local-first** app — it has no proprietary server and collects
+        Mētra is a **privacy-first, local-first** app — it has no proprietary server and collects
         zero telemetry. Please make sure your proposal respects these core principles before submitting.
 
         Features that require data to leave the device without user consent, or that introduce
@@ -103,6 +103,6 @@ body:
       label: Principle alignment
       options:
         - label: >-
-            This feature respects the local-first and no-telemetry principles of Métra. It does not
+            This feature respects the local-first and no-telemetry principles of Mētra. It does not
             require sending personal data to a proprietary server or to any third-party analytics service.
           required: true
