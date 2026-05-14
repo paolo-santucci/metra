@@ -30,8 +30,8 @@ body:
       label: 📱 Platform
       description: Which platform(s) are affected?
       options:
-        - Android
-        - iOS
+        - "Android"
+        - "iOS"
     validations:
       required: true
 
@@ -41,13 +41,13 @@ body:
       label: 🧭 Affected Area
       description: Which area(s) are affected?
       options:
-        - Backup / data consistency
-        - UI / interaction
-        - Import / Export
-        - Settings / preferences
-        - Notifications / reminders
-        - Prediction / calendar
-        - Other
+        - label: Backup / data consistency
+        - label: UI / interaction
+        - label: Import / Export
+        - label: Settings / preferences
+        - label: Notifications / reminders
+        - label: Prediction / calendar
+        - label: Other
     validations:
       required: true				
 
