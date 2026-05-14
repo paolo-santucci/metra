@@ -706,6 +706,7 @@ class SettingsScreen extends ConsumerWidget {
     final messenger = ScaffoldMessenger.of(context);
 
     if (!context.mounted) return;
+    final screenSize = MediaQuery.of(context).size;
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
       builder: (sheetCtx) => SafeArea(
@@ -741,6 +742,22 @@ class SettingsScreen extends ConsumerWidget {
     );
 
     if (confirmed != true) return;
+    if (!context.mounted) return;
+
+    // Capture the render position BEFORE any await — the RenderBox is stable here.
+    // sharePositionOrigin is required on iOS 16+ when UIActivityViewController
+    // returns a non-null popoverPresentationController (always true on iOS 26+).
+    final box = context.findRenderObject() as RenderBox?;
+    final shareRect = box != null
+        ? box.localToGlobal(Offset.zero) & box.size
+        : Rect.fromCenter(
+            center: Offset(
+              screenSize.width / 2,
+              screenSize.height / 2,
+            ),
+            width: 1,
+            height: 1,
+          );
 
     try {
       final exportUc = await ref.read(exportDailyLogsProvider.future);
@@ -756,11 +773,15 @@ class SettingsScreen extends ConsumerWidget {
 
       await Share.shareXFiles(
         [XFile(file.path, mimeType: 'text/csv')],
+        sharePositionOrigin: shareRect,
       );
-    } catch (_) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.common_error_generic)),
-      );
+    } catch (e, st) {
+      debugPrint('CSV export error: $e\n$st');
+      if (context.mounted) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.common_error_generic)),
+        );
+      }
     }
   }
 
