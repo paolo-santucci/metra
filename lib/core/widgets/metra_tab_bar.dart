@@ -57,44 +57,56 @@ class MetraTabBar extends StatelessWidget {
     final idleColor = colors.ink.withAlpha(0x68);
     final bgColor = colors.sand.withAlpha(0xF5);
 
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
         child: SizedBox(
-          height: 84,
+          height: 84 + bottomInset,
           child: ColoredBox(
             color: bgColor,
-            child: Row(
+            child: Column(
               children: [
-                for (int i = 0; i < _icons.length; i++)
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => onTabSelected(i),
-                      behavior: HitTestBehavior.opaque,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          MetraIcon(
-                            svgBody: _icons[i],
-                            size: 24,
-                            color: i == currentIndex ? activeColor : idleColor,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            labels[i],
-                            style: GoogleFonts.inter(
-                              fontSize: 10,
-                              fontWeight: i == currentIndex
-                                  ? FontWeight.w600
-                                  : FontWeight.w400,
-                              color:
-                                  i == currentIndex ? activeColor : idleColor,
+                SizedBox(
+                  height: 84,
+                  child: Row(
+                    children: [
+                      for (int i = 0; i < _icons.length; i++)
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => onTabSelected(i),
+                            behavior: HitTestBehavior.opaque,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                MetraIcon(
+                                  svgBody: _icons[i],
+                                  size: 24,
+                                  color: i == currentIndex
+                                      ? activeColor
+                                      : idleColor,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  labels[i],
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10,
+                                    fontWeight: i == currentIndex
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
+                                    color: i == currentIndex
+                                        ? activeColor
+                                        : idleColor,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
+                        ),
+                    ],
                   ),
+                ),
+                SizedBox(height: bottomInset),
               ],
             ),
           ),
