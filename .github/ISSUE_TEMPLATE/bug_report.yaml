@@ -49,16 +49,18 @@ body:
         - label: Prediction / calendar
         - label: Other
     validations:
-      required: true				
+      required: true
 
-      
   - type: markdown
     attributes:
       value: |
-
-        
-        #### ℹ️ Environment
-        
+          
+  - type: markdown
+    attributes:
+      value: |
+          
+        ### ℹ️ Environment
+          
 
   - type: input
     id: app_version
