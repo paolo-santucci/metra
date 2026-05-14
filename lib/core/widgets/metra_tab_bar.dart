@@ -57,7 +57,7 @@ class MetraTabBar extends StatelessWidget {
     final idleColor = colors.ink.withAlpha(0x68);
     final bgColor = colors.sand.withAlpha(0xF5);
 
-    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
