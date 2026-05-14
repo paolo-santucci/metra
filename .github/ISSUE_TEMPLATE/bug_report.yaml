@@ -32,8 +32,7 @@ body:
       options:
         - label: Android
         - label: iOS
-    validations:
-      required: true
+          required: true
 
   - type: checkboxes
     id: area
@@ -48,9 +47,38 @@ body:
         - label: Notifications / reminders
         - label: Prediction / calendar
         - label: Other
-    validations:
-      required: true				
+          required: true				
 
+  - type: markdown
+    attributes:
+      value: ### ℹ️ Environment
+
+  - type: input
+    id: app_version
+    attributes:
+      label: App version
+      description: The Mētra version shown in Settings → About.
+      placeholder: "e.g. 0.3.0 (build 42)"
+    validations:
+      required: true
+
+  - type: input
+    id: os_version
+    attributes:
+      label: OS version
+      description: Android version (e.g. Android 14) or iOS version (e.g. iOS 17.4).
+      placeholder: "e.g. Android 14 / iOS 17.4"
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: Device model
+      description: The device you are using (e.g. Pixel 8, iPhone 15 Pro).
+      placeholder: "e.g. Pixel 8 / iPhone 15 Pro"
+    validations:
+      required: false          
   - type: textarea
     id: description
     attributes:
@@ -104,32 +132,7 @@ body:
       required: true
 
 
-  - type: input
-    id: os_version
-    attributes:
-      label: OS version
-      description: Android version (e.g. Android 14) or iOS version (e.g. iOS 17.4).
-      placeholder: "e.g. Android 14 / iOS 17.4"
-    validations:
-      required: true
 
-  - type: input
-    id: device
-    attributes:
-      label: Device model
-      description: The device you are using (e.g. Pixel 8, iPhone 15 Pro).
-      placeholder: "e.g. Pixel 8 / iPhone 15 Pro"
-    validations:
-      required: false
-
-  - type: input
-    id: app_version
-    attributes:
-      label: App version
-      description: The Mētra version shown in Settings → About.
-      placeholder: "e.g. 0.3.0 (build 42)"
-    validations:
-      required: true
 
   - type: textarea
     id: logs
