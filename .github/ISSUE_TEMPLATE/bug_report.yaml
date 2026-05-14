@@ -48,7 +48,8 @@ body:
         - label: Notifications / reminders
         - label: Prediction / calendar
         - label: Other
-    required: true				
+    validations:
+      required: true				
 
   - type: markdown
     attributes:
