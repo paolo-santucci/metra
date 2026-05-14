@@ -51,13 +51,20 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
             row.notificationDaysBefore.clamp(1, AppConstants.kMaxAdvanceDays),
         notificationsEnabled: row.notificationsEnabled,
         dropboxEmail: row.dropboxEmail,
-        lastBackupAt: row.lastBackupAt,
+        lastBackupAt: row.lastBackupAt?.toUtc(),
         onboardingCompleted: row.onboardingCompleted,
         declaredCycleLength: row.declaredCycleLength,
         notificationTimeMinutes: row.notificationTimeMinutes.clamp(0, 1439),
         firstDayOfWeek: _firstDayOfWeekFromIndex(row.firstDayOfWeek),
+        lastLogOrSymptomWriteAt: row.lastLogOrSymptomWriteAt?.toUtc(),
       );
 
+  // Excluded from _toCompanion (each owned by a dedicated writer):
+  //   - dropboxEmail, lastBackupAt   → updateBackupState
+  //   - declaredCycleLength          → saveDeclaredCycleLength
+  //   - lastLogOrSymptomWriteAt      → updateLastDataWriteAt
+  // Adding any of these here would cause updateSettings() to silently
+  // overwrite them. See spec FR-03 / NFR-08.
   static AppSettingsCompanion _toCompanion(AppSettingsData data) =>
       AppSettingsCompanion(
         languageCode: Value(data.languageCode),
@@ -110,10 +117,9 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
         AppSettingsCompanion(declaredCycleLength: Value(cycleLength)),
       );
 
-  // TODO(TASK-03): replace this stub with the real implementation that writes
-  // to the lastLogOrSymptomWriteAt column once the DB schema is updated (v9).
-  // This stub exists solely to satisfy the interface contract while TASK-01
-  // and TASK-02 are completed in parallel.
   @override
-  Future<void> updateLastDataWriteAt(DateTime timestamp) async {}
+  Future<void> updateLastDataWriteAt(DateTime timestamp) =>
+      _dao.updateSettings(
+        AppSettingsCompanion(lastLogOrSymptomWriteAt: Value(timestamp)),
+      );
 }

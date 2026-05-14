@@ -26,12 +26,19 @@ import '../../domain/entities/flow_intensity.dart';
 import '../../domain/entities/flow_type.dart';
 import '../../domain/entities/pain_symptom_data.dart';
 import '../../domain/entities/pain_symptom_type.dart';
+import '../../domain/repositories/app_settings_repository.dart';
 import '../../domain/repositories/daily_log_repository.dart';
 
 class DriftDailyLogRepository implements DailyLogRepository {
-  const DriftDailyLogRepository(this._dao);
+  DriftDailyLogRepository(
+    this._dao,
+    this._settingsRepo, {
+    DateTime Function()? now,
+  }) : _now = now ?? (() => DateTime.now().toUtc());
 
   final DailyLogDao _dao;
+  final AppSettingsRepository _settingsRepo;
+  final DateTime Function() _now;
 
   // ---- mapping helpers ----
 
@@ -147,11 +154,16 @@ class DriftDailyLogRepository implements DailyLogRepository {
   }
 
   @override
-  Future<void> saveDailyLog(DailyLogEntity log) =>
-      _dao.upsertDailyLog(_toCompanion(log));
+  Future<void> saveDailyLog(DailyLogEntity log) async {
+    await _dao.upsertDailyLog(_toCompanion(log));
+    await _settingsRepo.updateLastDataWriteAt(_now());
+  }
 
   @override
-  Future<void> deleteDailyLog(DateTime date) => _dao.deleteDailyLog(date);
+  Future<void> deleteDailyLog(DateTime date) async {
+    await _dao.deleteDailyLog(date);
+    await _settingsRepo.updateLastDataWriteAt(_now());
+  }
 
   @override
   Future<List<PainSymptomData>> getPainSymptoms(DateTime date) async {
@@ -171,45 +183,58 @@ class DriftDailyLogRepository implements DailyLogRepository {
   Future<void> replacePainSymptoms(
     DateTime date,
     List<PainSymptomData> symptoms,
-  ) =>
-      _dao.replacePainSymptoms(
-        date,
-        symptoms.map((s) => _symptomToCompanion(date, s)).toList(),
-      );
+  ) async {
+    await _dao.replacePainSymptoms(
+      date,
+      symptoms.map((s) => _symptomToCompanion(date, s)).toList(),
+    );
+    await _settingsRepo.updateLastDataWriteAt(_now());
+  }
 
   @override
-  Future<void> deleteAll() => _dao.deleteAll();
+  Future<void> deleteAll() async {
+    await _dao.deleteAll();
+    await _settingsRepo.updateLastDataWriteAt(_now());
+  }
 
   @override
   Future<void> deleteAllAndReplace(
     List<DailyLogEntity> logs,
     Map<DateTime, List<PainSymptomData>> symptomsMap,
-  ) =>
-      _dao.transaction(() async {
-        // Deletes all daily_logs rows; PainSymptoms cascade-deleted via FK.
-        await _dao.deleteAll();
-        for (final log in logs) {
-          await _dao.upsertDailyLog(_toCompanion(log));
+  ) async {
+    await _dao.transaction(() async {
+      // Deletes all daily_logs rows; PainSymptoms cascade-deleted via FK.
+      await _dao.deleteAll();
+      for (final log in logs) {
+        await _dao.upsertDailyLog(_toCompanion(log));
+      }
+      for (final entry in symptomsMap.entries) {
+        final companions = entry.value
+            .map((s) => _symptomToCompanion(entry.key, s))
+            .toList();
+        if (companions.isNotEmpty) {
+          await _dao.replacePainSymptoms(entry.key, companions);
         }
-        for (final entry in symptomsMap.entries) {
-          final companions = entry.value
-              .map((s) => _symptomToCompanion(entry.key, s))
-              .toList();
-          if (companions.isNotEmpty) {
-            await _dao.replacePainSymptoms(entry.key, companions);
-          }
-        }
-      });
+      }
+    });
+    // Bump fires AFTER the transaction commits, not inside the closure.
+    // Coupling settings writes into the daily-log transaction would break
+    // failure-mode isolation (conformance rule 9).
+    await _settingsRepo.updateLastDataWriteAt(_now());
+  }
 
   @override
-  Future<void> upsertAllLogs(List<DailyLogWithSymptoms> entries) =>
-      _dao.transaction(() async {
-        for (final e in entries) {
-          await _dao.upsertDailyLog(_toCompanion(e.log));
-          await _dao.replacePainSymptoms(
-            e.log.date,
-            e.symptoms.map((s) => _symptomToCompanion(e.log.date, s)).toList(),
-          );
-        }
-      });
+  Future<void> upsertAllLogs(List<DailyLogWithSymptoms> entries) async {
+    await _dao.transaction(() async {
+      for (final e in entries) {
+        await _dao.upsertDailyLog(_toCompanion(e.log));
+        await _dao.replacePainSymptoms(
+          e.log.date,
+          e.symptoms.map((s) => _symptomToCompanion(e.log.date, s)).toList(),
+        );
+      }
+    });
+    // Bump fires AFTER the transaction commits, not inside the closure.
+    await _settingsRepo.updateLastDataWriteAt(_now());
+  }
 }

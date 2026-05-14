@@ -21,10 +21,13 @@ import 'package:metra/data/database/app_database.dart';
 import 'package:metra/data/database/daos/daily_log_dao.dart';
 import 'package:metra/data/repositories/drift_daily_log_repository.dart';
 import 'package:metra/domain/entities/daily_log_entity.dart';
+import 'package:metra/domain/entities/daily_log_with_symptoms.dart';
 import 'package:metra/domain/entities/flow_intensity.dart';
 import 'package:metra/domain/entities/flow_type.dart';
 import 'package:metra/domain/entities/pain_symptom_data.dart';
 import 'package:metra/domain/entities/pain_symptom_type.dart';
+
+import '../../helpers/fake_app_settings_repository.dart';
 
 AppDatabase _openTestDb() => AppDatabase(NativeDatabase.memory());
 
@@ -36,7 +39,7 @@ void main() {
   setUp(() {
     db = _openTestDb();
     dao = db.dailyLogDao;
-    repo = DriftDailyLogRepository(dao);
+    repo = DriftDailyLogRepository(dao, FakeAppSettingsRepository());
   });
 
   tearDown(() => db.close());
@@ -138,5 +141,91 @@ void main() {
     expect(all.length, 2);
     expect(all.first.date, day1);
     expect(all.last.date, day2);
+  });
+
+  group('lastLogOrSymptomWriteAt bumps', () {
+    late FakeAppSettingsRepository fakeSettings;
+    late AppDatabase bumpDb;
+    late DriftDailyLogRepository bumpRepo;
+    final fixedTime = DateTime.utc(2026, 5, 14, 10);
+
+    setUp(() async {
+      fakeSettings = FakeAppSettingsRepository();
+      bumpDb = AppDatabase(NativeDatabase.memory());
+      bumpRepo = DriftDailyLogRepository(
+        bumpDb.dailyLogDao,
+        fakeSettings,
+        now: () => fixedTime,
+      );
+    });
+
+    tearDown(() => bumpDb.close());
+
+    test('saveDailyLog bumps lastLogOrSymptomWriteAt', () async {
+      await bumpRepo.saveDailyLog(makeEntity(DateTime.utc(2026, 5, 14)));
+      expect(
+        (await fakeSettings.getOrCreate()).lastLogOrSymptomWriteAt,
+        equals(fixedTime),
+      );
+    });
+
+    test('deleteDailyLog bumps lastLogOrSymptomWriteAt', () async {
+      await bumpRepo.saveDailyLog(makeEntity(DateTime.utc(2026, 5, 14)));
+      final time2 = DateTime.utc(2026, 5, 14, 11);
+      final repo2 = DriftDailyLogRepository(
+        bumpDb.dailyLogDao,
+        fakeSettings,
+        now: () => time2,
+      );
+      await repo2.deleteDailyLog(DateTime.utc(2026, 5, 14));
+      expect(
+        (await fakeSettings.getOrCreate()).lastLogOrSymptomWriteAt,
+        equals(time2),
+      );
+    });
+
+    test('replacePainSymptoms bumps lastLogOrSymptomWriteAt', () async {
+      await bumpRepo.saveDailyLog(makeEntity(DateTime.utc(2026, 5, 14)));
+      await bumpRepo.replacePainSymptoms(DateTime.utc(2026, 5, 14), []);
+      expect(
+        (await fakeSettings.getOrCreate()).lastLogOrSymptomWriteAt,
+        equals(fixedTime),
+      );
+    });
+
+    test('deleteAll bumps lastLogOrSymptomWriteAt', () async {
+      await bumpRepo.deleteAll();
+      expect(
+        (await fakeSettings.getOrCreate()).lastLogOrSymptomWriteAt,
+        equals(fixedTime),
+      );
+    });
+
+    test(
+        'deleteAllAndReplace bumps lastLogOrSymptomWriteAt after transaction',
+        () async {
+      await bumpRepo.deleteAllAndReplace(
+        [makeEntity(DateTime.utc(2026, 5, 14))],
+        {},
+      );
+      expect(
+        (await fakeSettings.getOrCreate()).lastLogOrSymptomWriteAt,
+        equals(fixedTime),
+      );
+    });
+
+    test('upsertAllLogs bumps lastLogOrSymptomWriteAt after transaction',
+        () async {
+      await bumpRepo.upsertAllLogs([
+        DailyLogWithSymptoms(
+          log: makeEntity(DateTime.utc(2026, 5, 14)),
+          symptoms: [],
+        ),
+      ]);
+      expect(
+        (await fakeSettings.getOrCreate()).lastLogOrSymptomWriteAt,
+        equals(fixedTime),
+      );
+    });
   });
 }

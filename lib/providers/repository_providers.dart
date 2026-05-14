@@ -33,7 +33,8 @@ final dailyLogRepositoryProvider = FutureProvider<DailyLogRepository>((
   ref,
 ) async {
   final db = await ref.watch(databaseProvider.future);
-  return DriftDailyLogRepository(db.dailyLogDao);
+  final settingsRepo = await ref.watch(appSettingsRepositoryProvider.future);
+  return DriftDailyLogRepository(db.dailyLogDao, settingsRepo);
 });
 
 final cycleEntryRepositoryProvider = FutureProvider<CycleEntryRepository>((

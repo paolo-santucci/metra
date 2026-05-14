@@ -221,4 +221,74 @@ void main() {
       expect(emitted!.notificationTimeMinutes, 1080);
     });
   });
+
+  // ---- updateLastDataWriteAt (TASK-03 / FR-02, FR-03) ----
+
+  group('updateLastDataWriteAt', () {
+    test('persists the timestamp and isolates other columns', () async {
+      // getOrCreate must be called first to create the singleton row.
+      await repo.updateSettings(
+        (await repo.getOrCreate()).copyWith(languageCode: 'en'),
+      );
+      final t1 = DateTime.utc(2026, 5, 14, 10);
+      await repo.updateLastDataWriteAt(t1);
+      final after = await repo.getOrCreate();
+      // Drift stores datetimes as Unix epoch and returns local time on Linux;
+      // compare via toUtc() to remain timezone-independent.
+      expect(after.lastLogOrSymptomWriteAt?.toUtc(), equals(t1));
+      expect(after.languageCode, 'en'); // unchanged
+    });
+
+    test('overwrites a previous value', () async {
+      // Ensure the singleton row exists before any targeted update.
+      await repo.getOrCreate();
+      final t0 = DateTime.utc(2026, 5, 14, 10);
+      final t1 = DateTime.utc(2026, 5, 14, 11);
+      await repo.updateLastDataWriteAt(t0);
+      await repo.updateLastDataWriteAt(t1);
+      expect(
+        (await repo.getOrCreate()).lastLogOrSymptomWriteAt?.toUtc(),
+        equals(t1),
+      );
+    });
+  });
+
+  // ---- _toCompanion exclusion regression (TASK-03 / FR-03, NFR-08) ----
+
+  group('_toCompanion exclusion regression', () {
+    test('updateSettings does NOT reset lastLogOrSymptomWriteAt to null',
+        () async {
+      // Ensure row exists before targeted update.
+      await repo.getOrCreate();
+      final t0 = DateTime.utc(2026, 5, 14, 10);
+      await repo.updateLastDataWriteAt(t0);
+      final s = await repo.getOrCreate();
+      await repo.updateSettings(s.copyWith(languageCode: 'en'));
+      final after = await repo.getOrCreate();
+      expect(after.lastLogOrSymptomWriteAt?.toUtc(), equals(t0));
+      expect(after.languageCode, 'en');
+    });
+
+    test(
+        'all three excluded fields survive a round-trip through updateSettings',
+        () async {
+      // Ensure row exists before any targeted update.
+      await repo.getOrCreate();
+      final t0 = DateTime.utc(2026, 5, 14, 10);
+      final tb = DateTime.utc(2026, 5, 14, 9);
+      await repo.updateBackupState(
+        dropboxEmail: 'a@b.com',
+        lastBackupAt: tb,
+      );
+      await repo.saveDeclaredCycleLength(28);
+      await repo.updateLastDataWriteAt(t0);
+      await repo.updateSettings(
+        (await repo.getOrCreate()).copyWith(languageCode: 'en'),
+      );
+      final after = await repo.getOrCreate();
+      expect(after.lastBackupAt?.toUtc(), equals(tb));
+      expect(after.declaredCycleLength, 28);
+      expect(after.lastLogOrSymptomWriteAt?.toUtc(), equals(t0));
+    });
+  });
 }
