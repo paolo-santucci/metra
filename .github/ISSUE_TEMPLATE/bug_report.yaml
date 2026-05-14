@@ -138,7 +138,7 @@ body:
         - label: This worked in a previous version
 
   - type: input
-    id: device
+    id: last_working_ver
     attributes:
       label: 🤔 Last known working version (if known)
       placeholder: "0.0.1"
