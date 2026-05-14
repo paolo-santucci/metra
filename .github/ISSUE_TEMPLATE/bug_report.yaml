@@ -51,11 +51,12 @@ body:
     validations:
       required: true				
 
+      
   - type: markdown
     attributes:
       value: |
         
-        **ℹ️ Environment**
+        ##### ℹ️ Environment
         
 
   - type: input
