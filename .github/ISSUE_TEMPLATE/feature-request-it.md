@@ -1,11 +1,10 @@
 ---
-name: "Nuova funzionalità"
+name: "🇮🇹 Nuova funzionalità"
+about: "Richiedi una nuova funzionalità"
 title: "[FEAT] "
-labels: 
+labels:
   - enhancement
   - needs-triage
-projects:
-  - paolo-santucci/metra
 ---
 
 ### ✅ Before submitting

@@ -13,17 +13,3 @@ contact_links:
       Le vulnerabilità relative alla sicurezza e alla privacy non devono essere rese pubbliche.
       Si prega di segnalarle privatamente via e-mail, in modo che possano essere valutate e corrette
       prima di qualsiasi divulgazione pubblica.
-
-issue_templates:
-  - name: 🇮🇹 Problema
-    description: Segnala un problema
-    template: bug-report-it.md
-  - name: 🇬🇧 Bug
-    description: Report a bug
-    template: bug-report-en.md
-  - name: 🇮🇹 Nuova funzionalità
-    description: Richiedi una nuova funzionalità
-    template: feature-request-it.md
-  - name: 🇬🇧 Feature
-    description: Request a feature
-    template: feature-request-en.md
