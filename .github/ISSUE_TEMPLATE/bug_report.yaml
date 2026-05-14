@@ -53,7 +53,9 @@ body:
 
   - type: markdown
     attributes:
-      value: "### ℹ️ Environment"
+      value: |
+        ### ℹ️ Environment
+        
 
   - type: input
     id: app_version
