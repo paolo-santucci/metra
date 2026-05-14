@@ -24,15 +24,30 @@ body:
         If you believe you have found a **security vulnerability**, do not file a public issue.
         Use the private disclosure link in the issue picker instead.
 
-  - type: dropdown
-	id: platform
+  - type: checkboxes
+    id: platform
     attributes:
       label: 📱 Platform
-      description: What is the affected platform?
+      description: Which platform(s) are affected?
       options:
-        - "Please select a platfrom"
-        - "Android"
-        - "iOS"
+        - Android
+        - iOS
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: area
+    attributes:
+      label: 🧭 Affected Area
+      description: Which area(s) are affected?
+      options:
+        - Backup / data consistency
+        - UI / interaction
+        - Import / Export
+        - Settings / preferences
+        - Notifications / reminders
+        - Prediction / calendar
+        - Other
     validations:
       required: true				
 
@@ -88,18 +103,6 @@ body:
     validations:
       required: true
 
-  - type: dropdown
-    id: platform
-    attributes:
-      label: Platform
-      description: Which platform(s) are affected?
-      options:
-        - "Please select a platform"
-        - Android
-        - iOS
-        - Both (Android and iOS)
-    validations:
-      required: true
 
   - type: input
     id: os_version
