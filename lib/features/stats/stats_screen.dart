@@ -206,55 +206,61 @@ class _SummaryGrid extends StatelessWidget {
 
     final painSub = _painTrendLabel(l10n, statsData.painTrend);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final cardWidth = (constraints.maxWidth - MetraSpacing.sp10) / 2;
-        return Wrap(
-          spacing: MetraSpacing.sp10,
-          runSpacing: MetraSpacing.sp10,
-          children: [
-            SizedBox(
-              width: cardWidth,
-              child: StatSummaryCard(
-                title: l10n.stats_card_cycle_length_title,
-                value: statsData.cycleLengthAvg.toString(),
-                unit: l10n.stats_card_cycle_length_unit,
-                sub: l10n.stats_card_cycle_length_sub(
-                  statsData.cycleLengthMin,
-                  statsData.cycleLengthMax,
+    return Column(
+      children: [
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: StatSummaryCard(
+                  title: l10n.stats_card_cycle_length_title,
+                  value: statsData.cycleLengthAvg.toString(),
+                  unit: l10n.stats_card_cycle_length_unit,
+                  sub: l10n.stats_card_cycle_length_sub(
+                    statsData.cycleLengthMin,
+                    statsData.cycleLengthMax,
+                  ),
+                  isAccent: true,
                 ),
-                isAccent: true,
               ),
-            ),
-            SizedBox(
-              width: cardWidth,
-              child: StatSummaryCard(
-                title: l10n.stats_card_period_length_title,
-                value: periodValue,
-                unit: l10n.stats_card_period_length_unit,
-                sub: periodSub,
+              const SizedBox(width: MetraSpacing.sp10),
+              Expanded(
+                child: StatSummaryCard(
+                  title: l10n.stats_card_period_length_title,
+                  value: periodValue,
+                  unit: l10n.stats_card_period_length_unit,
+                  sub: periodSub,
+                ),
               ),
-            ),
-            SizedBox(
-              width: cardWidth,
-              child: StatSummaryCard(
-                title: l10n.stats_card_pain_title,
-                value: painValue,
-                unit: l10n.stats_card_pain_unit,
-                sub: painSub,
+            ],
+          ),
+        ),
+        const SizedBox(height: MetraSpacing.sp10),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: StatSummaryCard(
+                  title: l10n.stats_card_pain_title,
+                  value: painValue,
+                  unit: l10n.stats_card_pain_unit,
+                  sub: painSub,
+                ),
               ),
-            ),
-            SizedBox(
-              width: cardWidth,
-              child: StatSummaryCard(
-                title: l10n.stats_card_cycles_title,
-                value: statsData.cyclesTrackedCount.toString(),
-                unit: l10n.stats_card_cycles_unit,
+              const SizedBox(width: MetraSpacing.sp10),
+              Expanded(
+                child: StatSummaryCard(
+                  title: l10n.stats_card_cycles_title,
+                  value: statsData.cyclesTrackedCount.toString(),
+                  unit: l10n.stats_card_cycles_unit,
+                ),
               ),
-            ),
-          ],
-        );
-      },
+            ],
+          ),
+        ),
+      ],
     );
   }
 
