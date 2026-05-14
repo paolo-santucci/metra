@@ -57,7 +57,13 @@ class MetraTabBar extends StatelessWidget {
     final idleColor = colors.ink.withAlpha(0x68);
     final bgColor = colors.sand.withAlpha(0xF5);
 
-    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    // Add bottom spacer only on Android — on Android 15+ the Scaffold extends
+    // edge-to-edge and the system nav bar overlaps the tab bar.
+    // On iOS the Scaffold already positions bottomNavigationBar above the
+    // home-indicator safe area; adding a spacer here would double the inset.
+    final bottomInset = Theme.of(context).platform == TargetPlatform.android
+        ? MediaQuery.viewPaddingOf(context).bottom
+        : 0.0;
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
