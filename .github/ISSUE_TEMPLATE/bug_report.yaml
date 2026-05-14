@@ -122,14 +122,6 @@ body:
     validations:
       required: true
 
-  - type: textarea
-    id: actual_behavior
-    attributes:
-      label: 🧨 Actual behavior
-      description: What actually happened instead.
-    validations:
-      required: true
-
   - type: checkboxes
     id: regression
     attributes:
@@ -141,6 +133,7 @@ body:
     id: last_working_ver
     attributes:
       label: 🤔 Last known working version (if known)
+      description: Only if this is a regression.
       placeholder: "0.0.1"
     validations:
       required: false          
