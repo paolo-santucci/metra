@@ -66,7 +66,7 @@ Vedi [Registrazione giornaliera](/metra/it/help/daily-entry/) per una descrizion
 
 ## Dati
 
-![Sezione Dati con le righe Backup cloud (stato), Esporta CSV e Importa CSV.](/metra/assets/settings-data.png)
+![Sezione Dati con le righe Backup cloud (stato), Esporta CSV e Importa CSV.](/metra/assets/settings-data-it.png)
 
 Da qui decidi se e come i tuoi dati si muovono: verso un cloud cifrato, verso un file CSV, o dentro da un file che hai esportato altrove.
 
