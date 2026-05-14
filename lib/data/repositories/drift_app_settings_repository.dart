@@ -118,8 +118,7 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
       );
 
   @override
-  Future<void> updateLastDataWriteAt(DateTime timestamp) =>
-      _dao.updateSettings(
+  Future<void> updateLastDataWriteAt(DateTime timestamp) => _dao.updateSettings(
         AppSettingsCompanion(lastLogOrSymptomWriteAt: Value(timestamp)),
       );
 }

@@ -209,9 +209,8 @@ class DriftDailyLogRepository implements DailyLogRepository {
         await _dao.upsertDailyLog(_toCompanion(log));
       }
       for (final entry in symptomsMap.entries) {
-        final companions = entry.value
-            .map((s) => _symptomToCompanion(entry.key, s))
-            .toList();
+        final companions =
+            entry.value.map((s) => _symptomToCompanion(entry.key, s)).toList();
         if (companions.isNotEmpty) {
           await _dao.replacePainSymptoms(entry.key, companions);
         }

@@ -202,6 +202,40 @@ void main() {
     });
   });
 
+  // ---- TASK-07: concurrent writers (_toCompanion exclusion under concurrency) ----
+
+  group('concurrent writers', () {
+    test(
+      'updateLastDataWriteAt and updateSettings do not clobber each other',
+      () async {
+        // Ensure the singleton row exists before any targeted write.
+        await repo.getOrCreate();
+
+        final t1 = DateTime.utc(2026, 5, 14, 10, 0, 0);
+        await Future.wait([
+          repo.updateLastDataWriteAt(t1),
+          repo.updateSettings(
+            (await repo.getOrCreate()).copyWith(languageCode: 'en'),
+          ),
+        ]);
+
+        final after = await repo.getOrCreate();
+        // Both mutations must survive: _toCompanion exclusion ensures
+        // updateSettings does not reset lastLogOrSymptomWriteAt.
+        expect(
+          after.lastLogOrSymptomWriteAt?.toUtc(),
+          equals(t1),
+          reason: 'updateSettings must not clobber lastLogOrSymptomWriteAt',
+        );
+        expect(
+          after.languageCode,
+          'en',
+          reason: 'updateLastDataWriteAt must not clobber languageCode',
+        );
+      },
+    );
+  });
+
   // ---- Stream re-emit (NFR-10) ----
 
   group('stream re-emit NFR-10', () {

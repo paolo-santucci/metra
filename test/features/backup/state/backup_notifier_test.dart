@@ -65,6 +65,29 @@ class _BlockingRunner implements BackupRunner {
   Future<void> restore() async {}
 }
 
+/// A runner whose [restore] simulates [SyncOrchestrator.restore] alignment:
+/// sets [lastLogOrSymptomWriteAt] = [tb] on the settings repository.
+///
+/// This models the contract verified by the 'restore alignment' group in
+/// sync_orchestrator_test.dart without requiring real encryption/Dropbox wiring
+/// in the notifier-layer integration test.
+class _AligningRestoreRunner implements BackupRunner {
+  _AligningRestoreRunner(this._settingsRepo, this._tb);
+
+  final FakeAppSettingsRepository _settingsRepo;
+  final DateTime _tb;
+  bool restoreCalled = false;
+
+  @override
+  Future<void> backup() async {}
+
+  @override
+  Future<void> restore() async {
+    restoreCalled = true;
+    await _settingsRepo.updateLastDataWriteAt(_tb);
+  }
+}
+
 /// A Dropbox provider whose [authorize] throws the given [error].
 class _ThrowingDropboxProvider implements CloudBackupProvider {
   _ThrowingDropboxProvider(this.error);
@@ -772,6 +795,217 @@ void main() {
         isEmpty,
       );
     });
+  });
+
+  // -----------------------------------------------------------------------
+  // TASK-07: integration group
+  // -----------------------------------------------------------------------
+  group('integration', () {
+    // ----------------------------------------------------------------
+    // Test 4 — Restore → cold-start no-reupload (NFR-06 / FR-15 / NFR-01)
+    //
+    // The runner's restore() simulates SyncOrchestrator.restore() alignment:
+    // it sets lastLogOrSymptomWriteAt = lastBackupAt on the settings repo,
+    // which is the contract verified in sync_orchestrator_test.dart
+    // 'restore alignment' group. This test verifies the chain:
+    //   restore() alignment → skip guard sees lastWriteAt == lastBackupAt
+    //   → backupSilent() skips → 0 bytes uploaded (NFR-01).
+    // ----------------------------------------------------------------
+    test(
+      'after successful restore, next backupSilent does not re-upload',
+      () async {
+        final tb = DateTime.utc(2026, 5, 1, 10, 0, 0);
+
+        // Seed: connected Dropbox with lastBackupAt = T_b.
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'a@b.com',
+          lastBackupAt: tb,
+        );
+        storage.values['metra_backup_passphrase_v1'] = 'test-pass';
+
+        // A runner whose restore() aligns lastLogOrSymptomWriteAt to
+        // lastBackupAt — mirrors SyncOrchestrator.restore() contract.
+        final aligningRunner = _AligningRestoreRunner(settingsRepo, tb);
+
+        final container = ProviderContainer(
+          overrides: [
+            appSettingsRepositoryProvider
+                .overrideWith((_) async => settingsRepo),
+            secureStorageProvider.overrideWithValue(storage),
+            backupDataProvider.overrideWith((_) async => BackupData(runner)),
+            restoreDataProvider
+                .overrideWith((_) async => RestoreData(aligningRunner)),
+            cloudBackupProvider.overrideWithValue(fakeDropbox),
+            syncLogRepositoryProvider.overrideWith((_) async => fakeSyncLogRepo),
+          ],
+        );
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        // Action 1: restore (aligns lastLogOrSymptomWriteAt = lastBackupAt).
+        await container.read(backupNotifierProvider.notifier).restore();
+        expect(aligningRunner.restoreCalled, isTrue);
+
+        // Verify alignment: lastLogOrSymptomWriteAt is now = lastBackupAt.
+        final afterRestore = await settingsRepo.getOrCreate();
+        expect(afterRestore.lastLogOrSymptomWriteAt, equals(tb));
+
+        // Reset the backup runner flag so we can cleanly detect a second upload.
+        runner.backupCalled = false;
+        final filesBeforeSilent = Map<String, dynamic>.from(fakeDropbox.files);
+
+        // Action 2: cold-start backupSilent — must skip because
+        // lastWriteAt (= tb) is not after lastBackupAt (= tb).
+        await container.read(backupNotifierProvider.notifier).backupSilent();
+
+        // Assert: runner NOT called (NFR-01 — 0 new bytes uploaded).
+        expect(
+          runner.backupCalled,
+          isFalse,
+          reason: 'backupSilent should skip when lastWriteAt == lastBackupAt '
+              'after restore alignment',
+        );
+        expect(
+          fakeDropbox.files,
+          equals(filesBeforeSilent),
+          reason: 'NFR-01: no files should have been uploaded',
+        );
+      },
+    );
+
+    // ----------------------------------------------------------------
+    // Test 5 — SyncLog purge clears backup_skipped entries (NFR-04 / FR-16)
+    // ----------------------------------------------------------------
+    test(
+      'backup_skipped entries are cleared by SyncLogRepository.deleteAll()',
+      () async {
+        final tb = DateTime.utc(2026, 5, 1, 10, 0, 0);
+        final tw = DateTime.utc(2026, 4, 30, 9, 0, 0);
+
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'a@b.com',
+          lastBackupAt: tb,
+        );
+        await settingsRepo.updateLastDataWriteAt(tw);
+        storage.values['metra_backup_passphrase_v1'] = 'test-pass';
+
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        // Trigger skip → one backupSkipped entry appended.
+        await container.read(backupNotifierProvider.notifier).backupSilent();
+        expect(
+          fakeSyncLogRepo.appended
+              .where((e) => e.operation == SyncOperation.backupSkipped),
+          hasLength(1),
+          reason: 'precondition: one backupSkipped entry should exist',
+        );
+
+        // Act: "Clear diagnostic logs" path — deleteAll() on the sync log repo.
+        await fakeSyncLogRepo.deleteAll();
+
+        // Assert: log is empty.
+        expect(
+          fakeSyncLogRepo.appended,
+          isEmpty,
+          reason: 'all log entries should be removed after deleteAll()',
+        );
+      },
+    );
+
+    // ----------------------------------------------------------------
+    // Test 6 — _BlockingRunner concurrency: BackupRunning guard fires
+    // before the skip guard (EC-08)
+    //
+    // The first backupSilent() must PROCEED (so lastWriteAt > lastBackupAt),
+    // enter _runBackup(), and block. The second call must return immediately
+    // via the BackupRunning guard — NOT via the skip guard — so no
+    // backupSkipped entry is appended.
+    // ----------------------------------------------------------------
+    test(
+      'second backupSilent during a blocked first call returns immediately '
+      'via BackupRunning guard, not skip guard',
+      () async {
+        // Seed: lastWriteAt > lastBackupAt so the FIRST call proceeds.
+        final tb = DateTime.utc(2026, 5, 1, 9, 0, 0);
+        final tw = DateTime.utc(2026, 5, 1, 10, 0, 0);
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'a@b.com',
+          lastBackupAt: tb,
+        );
+        await settingsRepo.updateLastDataWriteAt(tw);
+        storage.values['metra_backup_passphrase_v1'] = 'test-pass';
+
+        final releaser = Completer<void>();
+        final blockingRunner = _BlockingRunner(releaser);
+
+        final container = ProviderContainer(
+          overrides: [
+            appSettingsRepositoryProvider
+                .overrideWith((_) async => settingsRepo),
+            secureStorageProvider.overrideWithValue(storage),
+            backupDataProvider
+                .overrideWith((_) async => BackupData(blockingRunner)),
+            restoreDataProvider.overrideWith((_) async => RestoreData(runner)),
+            cloudBackupProvider.overrideWithValue(fakeDropbox),
+            syncLogRepositoryProvider.overrideWith((_) async => fakeSyncLogRepo),
+          ],
+        );
+        addTearDown(container.dispose);
+        addTearDown(() {
+          if (!releaser.isCompleted) releaser.complete();
+        });
+
+        await container.read(backupNotifierProvider.future);
+
+        // First call: proceeds (lastWriteAt > lastBackupAt), enters BackupRunning.
+        unawaited(
+          container.read(backupNotifierProvider.notifier).backupSilent(),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(
+          container.read(backupNotifierProvider).valueOrNull,
+          isA<BackupRunning>(),
+          reason: 'first call must have entered BackupRunning',
+        );
+        expect(blockingRunner.backupCallCount, 1);
+
+        // Second call: must return immediately via BackupRunning guard.
+        await container
+            .read(backupNotifierProvider.notifier)
+            .backupSilent()
+            .timeout(
+              const Duration(seconds: 3),
+              onTimeout: () => throw StateError(
+                'second backupSilent did not return within 3 s — '
+                'BackupRunning guard may be missing',
+              ),
+            );
+
+        // Runner was called exactly once (the first call, blocked).
+        expect(
+          blockingRunner.backupCallCount,
+          1,
+          reason: 'runner must be called exactly once',
+        );
+
+        // No backupSkipped entry: the second call was stopped by BackupRunning,
+        // not the skip guard.
+        expect(
+          fakeSyncLogRepo.appended
+              .where((e) => e.operation == SyncOperation.backupSkipped),
+          isEmpty,
+          reason: 'BackupRunning guard must fire before the skip guard — '
+              'no backupSkipped entry should be appended',
+        );
+
+        // Unblock the first call.
+        releaser.complete();
+      },
+      timeout: const Timeout(Duration(seconds: 10)),
+    );
   });
 
   // -----------------------------------------------------------------------
