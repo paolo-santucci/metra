@@ -1,10 +1,10 @@
 ---
-name: "🇮🇹 Problema"
-about: "Segnala un problema"
+name: "\U0001F1EE\U0001F1F9 Problema"
+about: Segnala un problema
 title: "[BUG]: "
-labels:
-  - bug
-  - needs-triage
+labels: bug
+assignees: ''
+
 ---
 
 > If this is mainly a sync/data integrity problem, please use the **Sync / Data Issue** template for faster triage.

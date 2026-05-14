@@ -1,12 +1,10 @@
 ---
-name: "🇬🇧 Bug"
-about: "Report a bug"
+name: "\U0001F1EC\U0001F1E7 Bug"
+about: Report a bug
 title: "[BUG]: "
-labels:
-  - bug
-  - needs-triage
-projects:
-  - paolo-santucci/2
+labels: bug
+assignees: ''
+
 ---
 
 > If this is mainly a sync/data integrity problem, please use the **Sync / Data Issue** template for faster triage.

@@ -1,10 +1,10 @@
 ---
-name: "🇮🇹 Nuova funzionalità"
-about: "Richiedi una nuova funzionalità"
+name: "\U0001F1EE\U0001F1F9 Nuova funzionalità"
+about: Richiedi una nuova funzionalità
 title: "[FEAT] "
-labels:
-  - enhancement
-  - needs-triage
+labels: enhancement
+assignees: ''
+
 ---
 
 ### ✅ Before submitting

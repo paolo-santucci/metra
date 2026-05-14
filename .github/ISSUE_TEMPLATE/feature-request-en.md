@@ -1,10 +1,10 @@
 ---
-name: "🇬🇧 Feature"
-about: "Request a feature"
+name: "\U0001F1EC\U0001F1E7 Feature"
+about: Request a feature
 title: "[FEAT] "
-labels:
-  - enhancement
-  - needs-triage
+labels: enhancement
+assignees: ''
+
 ---
 
 ### ✅ Before submitting
