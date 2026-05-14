@@ -22,8 +22,7 @@ Casi d'uso concreti:
 
 ## Esportare i tuoi dati
 
-<!-- SCREENSHOT PLACEHOLDER: settings-export.png -->
-<!-- Schermata Impostazioni con la riga "Esporta CSV" evidenziata. -->
+![Schermata Impostazioni con la riga \"Esporta CSV\" evidenziata.](/metra/assets/settings-export-it.png)
 
 1. Vai in **Impostazioni**.
 2. Tocca **Esporta CSV**.
@@ -35,8 +34,7 @@ L'export include una riga per ogni giorno con dati registrati, in ordine cronolo
 
 ## Importare i dati
 
-<!-- SCREENSHOT PLACEHOLDER: settings-import.png -->
-<!-- Schermata Impostazioni con la riga "Importa CSV" evidenziata. Dialog di conferma importazione. -->
+![Schermata Impostazioni con la riga \"Importa CSV\" evidenziata.](/metra/assets/settings-import-it.png)
 
 1. Vai in **Impostazioni**.
 2. Tocca **Importa CSV**.
@@ -44,6 +42,8 @@ L'export include una riga per ogni giorno con dati registrati, in ordine cronolo
 4. Mētra analizza il file. Se alcune righe contengono errori, Mētra mostra un riepilogo prima di confermare, puoi annullare in questa fase.
 5. Mētra apre il dialogo **Modalità importazione**. Scegli una delle tre opzioni descritte qui sotto.
 6. Conferma per applicare.
+
+![Dialog di conferma importazione.](/metra/assets/settings-import-confirm-it.png)
 
 ### Modalità importazione
 
