@@ -6,7 +6,7 @@ name: Feature request
 description: Propose a new feature or improvement for Mētra
 title: "[Feature] "
 labels:
-  - feature
+  - enhancement
   - needs-triage
 projects:
   - paolo-santucci/2
