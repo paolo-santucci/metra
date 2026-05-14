@@ -117,6 +117,19 @@ class AppSettings extends Table {
   /// 0 = system (follow locale), 1 = sunday, 2 = monday.
   /// Default 0 (system) — matches DB column default and enum index.
   IntColumn get firstDayOfWeek => integer().withDefault(const Constant(0))();
+
+  /// UTC timestamp of the most recent DailyLog or PainSymptom write.
+  ///
+  /// Set by [DriftDailyLogRepository] after every successful write (saveDailyLog,
+  /// deleteDailyLog, replacePainSymptoms, deleteAll, deleteAllAndReplace,
+  /// upsertAllLogs). Reset to [lastBackupAt] by [SyncOrchestrator.restore()]
+  /// after a successful restore so that the next cold-start backup does not
+  /// re-upload data that was just restored. Null means no log or symptom has
+  /// ever been written on this device (or the app was installed before schema v9).
+  ///
+  /// Not included in [AppSettingsCompanion] built by [DriftAppSettingsRepository._toCompanion]
+  /// — it is owned exclusively by [DriftAppSettingsRepository.updateLastDataWriteAt].
+  DateTimeColumn get lastLogOrSymptomWriteAt => dateTime().nullable()();
 }
 
 /// Local-only audit trail of cloud backup/restore operations.
@@ -150,7 +163,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -257,6 +270,16 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(
               appSettings,
               appSettings.firstDayOfWeek,
+            );
+          }
+          if (from < 9) {
+            // Add UTC timestamp tracking the most recent DailyLog/PainSymptom
+            // write. Nullable — null means no write has occurred on this device
+            // since installation (or device was on schema v8). No backfill: the
+            // skip-backup guard treats null as "nothing new" (FR-13).
+            await m.addColumn(
+              appSettings,
+              appSettings.lastLogOrSymptomWriteAt,
             );
           }
         },

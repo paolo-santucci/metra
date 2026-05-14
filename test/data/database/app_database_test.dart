@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
-import 'package:drift/drift.dart' hide isNotNull;
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/data/database/app_database.dart';
@@ -166,6 +166,19 @@ void main() {
         equals(DateTime.utc(2026, 3, 1).millisecondsSinceEpoch),
       );
     });
+  });
+
+  group('v9 schema (FR-01)', () {
+    test(
+      'fresh v9 database has lastLogOrSymptomWriteAt == null and schemaVersion == 9',
+      () async {
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        expect(db.schemaVersion, 9);
+        final settings = await db.appSettingsDao.getOrCreateSettings();
+        expect(settings.lastLogOrSymptomWriteAt, isNull);
+      },
+    );
   });
 
   group('AppSettingsDao', () {

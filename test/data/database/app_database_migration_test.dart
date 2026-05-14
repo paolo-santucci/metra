@@ -23,10 +23,10 @@ import 'package:metra/data/database/app_database.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 void main() {
-  test('schema version is 8', () {
+  test('schema version is 9', () {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
-    expect(db.schemaVersion, 8);
+    expect(db.schemaVersion, 9);
   });
 
   test(
@@ -74,8 +74,8 @@ void main() {
       expect(rows, hasLength(1));
       expect(rows.first.data['notification_time_minutes'], 540);
 
-      // And: schemaVersion is 8 (both v6→v7 and v7→v8 migrations ran).
-      expect(db.schemaVersion, 8);
+      // And: schemaVersion is 9 (v6→v7, v7→v8, and v8→v9 migrations ran).
+      expect(db.schemaVersion, 9);
     },
   );
 
@@ -187,7 +187,7 @@ void main() {
   );
 
   test(
-    'onCreate at v8: fresh database has notificationTimeMinutes == 540 and firstDayOfWeek == 0',
+    'onCreate at v9: fresh database has notificationTimeMinutes == 540 and firstDayOfWeek == 0',
     () async {
       // Given: a freshly created in-memory database (no prior snapshot — onCreate
       // runs, onUpgrade does not). No setup callback is needed.
@@ -201,8 +201,8 @@ void main() {
       expect(settings.notificationTimeMinutes, 540);
       expect(settings.firstDayOfWeek, 0); // 0 = system
 
-      // And: schemaVersion is 8 (no migration ran — onCreate set it directly).
-      expect(db.schemaVersion, 8);
+      // And: schemaVersion is 9 (no migration ran — onCreate set it directly).
+      expect(db.schemaVersion, 9);
     },
   );
 
@@ -248,8 +248,8 @@ void main() {
       expect(rows, hasLength(1));
       expect(rows.first.data['first_day_of_week'], 0);
 
-      // And: schemaVersion is 8.
-      expect(db.schemaVersion, 8);
+      // And: schemaVersion is 9 (v7→v8 and v8→v9 both ran).
+      expect(db.schemaVersion, 9);
     },
   );
 
@@ -304,6 +304,179 @@ void main() {
       );
     },
   );
+
+  // ---------------------------------------------------------------------------
+  // v8 → v9 migration: add lastLogOrSymptomWriteAt (FR-01, FR-18, NFR-05)
+  // ---------------------------------------------------------------------------
+
+  group('v8 → v9 migration', () {
+    test(
+      'addColumn populates lastLogOrSymptomWriteAt as NULL on existing rows',
+      () async {
+        // Seed an in-memory DB at user_version=8 (full v8 app_settings schema).
+        // Includes 1 app_settings row, 3 daily_logs, 2 pain_symptoms (via
+        // parent rows), and 2 cycle_entries to verify NFR-05 (existing data
+        // is unaffected by the migration).
+        final executor = NativeDatabase.memory(
+          setup: (Database rawDb) {
+            rawDb.execute('''
+              CREATE TABLE IF NOT EXISTS app_settings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                language_code TEXT NOT NULL DEFAULT 'it',
+                dark_mode INTEGER,
+                pain_enabled INTEGER NOT NULL DEFAULT 1,
+                notes_enabled INTEGER NOT NULL DEFAULT 1,
+                notification_days_before INTEGER NOT NULL DEFAULT 2,
+                notifications_enabled INTEGER NOT NULL DEFAULT 0,
+                dropbox_email TEXT,
+                last_backup_at INTEGER,
+                onboarding_completed INTEGER NOT NULL DEFAULT 0,
+                declared_cycle_length INTEGER,
+                notification_time_minutes INTEGER NOT NULL DEFAULT 540,
+                first_day_of_week INTEGER NOT NULL DEFAULT 0
+              )
+            ''');
+            rawDb.execute('''
+              CREATE TABLE IF NOT EXISTS daily_logs (
+                date INTEGER NOT NULL PRIMARY KEY,
+                flow_type INTEGER,
+                flow_intensity INTEGER,
+                spotting INTEGER NOT NULL DEFAULT 0,
+                other_discharge INTEGER NOT NULL DEFAULT 0,
+                pain_enabled INTEGER NOT NULL DEFAULT 0,
+                pain_intensity INTEGER,
+                notes_enabled INTEGER NOT NULL DEFAULT 0,
+                notes TEXT
+              )
+            ''');
+            rawDb.execute('''
+              CREATE TABLE IF NOT EXISTS pain_symptoms (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                daily_log_date INTEGER NOT NULL REFERENCES daily_logs(date)
+                  ON DELETE CASCADE,
+                symptom_type INTEGER NOT NULL,
+                custom_label TEXT
+              )
+            ''');
+            rawDb.execute('''
+              CREATE TABLE IF NOT EXISTS cycle_entries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                start_date INTEGER NOT NULL,
+                end_date INTEGER,
+                cycle_length INTEGER,
+                period_length INTEGER
+              )
+            ''');
+
+            // 1 settings row
+            rawDb.execute('INSERT INTO app_settings (id) VALUES (1)');
+
+            // 3 daily_logs rows
+            rawDb.execute(
+              'INSERT INTO daily_logs (date) VALUES (?), (?), (?)',
+              [1000000, 2000000, 3000000],
+            );
+
+            // 2 pain_symptoms rows (one per the first two daily_logs)
+            rawDb.execute(
+              'INSERT INTO pain_symptoms (daily_log_date, symptom_type) '
+              'VALUES (?, ?), (?, ?)',
+              [1000000, 0, 2000000, 1],
+            );
+
+            // 2 cycle_entries rows
+            rawDb.execute(
+              'INSERT INTO cycle_entries (start_date, cycle_length) '
+              'VALUES (?, ?), (?, ?)',
+              [1000000, 28, 2000000, 29],
+            );
+
+            rawDb.execute('PRAGMA user_version = 8');
+          },
+        );
+
+        // Open with the v9 AppDatabase — triggers onUpgrade(8 → 9).
+        final db = AppDatabase(executor);
+        addTearDown(db.close);
+
+        // Trigger migration.
+        await db.customSelect('SELECT 1').get();
+
+        // The new column must exist and be NULL on the pre-existing row.
+        final settingsRows = await db
+            .customSelect(
+              'SELECT last_log_or_symptom_write_at FROM app_settings',
+            )
+            .get();
+        expect(settingsRows, hasLength(1));
+        expect(settingsRows.first.data['last_log_or_symptom_write_at'], isNull);
+
+        // Existing daily_logs rows must survive unchanged.
+        final logCount = await db
+            .customSelect('SELECT COUNT(*) AS c FROM daily_logs')
+            .getSingle();
+        expect(logCount.data['c'], 3);
+
+        // Existing pain_symptoms rows must survive unchanged.
+        final symptomCount = await db
+            .customSelect('SELECT COUNT(*) AS c FROM pain_symptoms')
+            .getSingle();
+        expect(symptomCount.data['c'], 2);
+
+        // Existing cycle_entries rows must survive unchanged.
+        final cycleCount = await db
+            .customSelect('SELECT COUNT(*) AS c FROM cycle_entries')
+            .getSingle();
+        expect(cycleCount.data['c'], 2);
+
+        // schemaVersion reflects the final target.
+        expect(db.schemaVersion, 9);
+      },
+    );
+
+    test(
+      'v8→v9 migration block uses only addColumn (no customStatement, no UPDATE, no INSERT)',
+      () {
+        final src = File(
+          'lib/data/database/app_database.dart',
+        ).readAsStringSync();
+
+        // Extract the 'if (from < 9) { ... }' block from onUpgrade.
+        final fromLt9Match = RegExp(
+          r'if\s*\(\s*from\s*<\s*9\s*\)\s*\{([^}]*)\}',
+          dotAll: true,
+        ).firstMatch(src);
+        expect(
+          fromLt9Match,
+          isNotNull,
+          reason: 'Expected an "if (from < 9) { ... }" block in onUpgrade',
+        );
+
+        final blockBody = fromLt9Match!.group(1)!;
+
+        expect(
+          blockBody,
+          contains('m.addColumn'),
+          reason: 'v8→v9 block must call m.addColumn',
+        );
+        expect(
+          blockBody,
+          isNot(contains('customStatement')),
+          reason: 'v8→v9 block must not use customStatement',
+        );
+        expect(
+          blockBody,
+          isNot(matches(RegExp(r'\bUPDATE\b', caseSensitive: false))),
+          reason: 'v8→v9 block must not contain UPDATE',
+        );
+        expect(
+          blockBody,
+          isNot(matches(RegExp(r'\bINSERT\b', caseSensitive: false))),
+          reason: 'v8→v9 block must not contain INSERT',
+        );
+      },
+    );
+  });
 
   group('v5 → v6 migration: drop PainSymptomType.cramps', () {
     // The v5→v6 migration removes the `cramps` enum value (was index 0).
