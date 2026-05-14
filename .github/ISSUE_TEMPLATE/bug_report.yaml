@@ -32,7 +32,8 @@ body:
       options:
         - label: Android
         - label: iOS
-          required: true
+    validations:
+      required: true
 
   - type: checkboxes
     id: area
@@ -47,7 +48,7 @@ body:
         - label: Notifications / reminders
         - label: Prediction / calendar
         - label: Other
-      required: true				
+    required: true				
 
   - type: markdown
     attributes:
