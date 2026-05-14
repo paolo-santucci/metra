@@ -51,6 +51,10 @@ class FakeAppSettingsRepository implements AppSettingsRepository {
       dropboxEmail: dropboxEmail,
       lastBackupAt: lastBackupAt,
       onboardingCompleted: current.onboardingCompleted,
+      declaredCycleLength: current.declaredCycleLength,
+      notificationTimeMinutes: current.notificationTimeMinutes,
+      firstDayOfWeek: current.firstDayOfWeek,
+      lastLogOrSymptomWriteAt: current.lastLogOrSymptomWriteAt,
     );
   }
 
@@ -68,6 +72,9 @@ class FakeAppSettingsRepository implements AppSettingsRepository {
       lastBackupAt: current.lastBackupAt,
       onboardingCompleted: true,
       declaredCycleLength: current.declaredCycleLength,
+      notificationTimeMinutes: current.notificationTimeMinutes,
+      firstDayOfWeek: current.firstDayOfWeek,
+      lastLogOrSymptomWriteAt: current.lastLogOrSymptomWriteAt,
     );
   }
 
@@ -85,6 +92,29 @@ class FakeAppSettingsRepository implements AppSettingsRepository {
       lastBackupAt: current.lastBackupAt,
       onboardingCompleted: current.onboardingCompleted,
       declaredCycleLength: cycleLength,
+      notificationTimeMinutes: current.notificationTimeMinutes,
+      firstDayOfWeek: current.firstDayOfWeek,
+      lastLogOrSymptomWriteAt: current.lastLogOrSymptomWriteAt,
+    );
+  }
+
+  @override
+  Future<void> updateLastDataWriteAt(DateTime timestamp) async {
+    final current = storedSettings ?? const AppSettingsData.defaults();
+    storedSettings = AppSettingsData(
+      languageCode: current.languageCode,
+      darkMode: current.darkMode,
+      painEnabled: current.painEnabled,
+      notesEnabled: current.notesEnabled,
+      notificationDaysBefore: current.notificationDaysBefore,
+      notificationsEnabled: current.notificationsEnabled,
+      dropboxEmail: current.dropboxEmail,
+      lastBackupAt: current.lastBackupAt,
+      onboardingCompleted: current.onboardingCompleted,
+      declaredCycleLength: current.declaredCycleLength,
+      notificationTimeMinutes: current.notificationTimeMinutes,
+      firstDayOfWeek: current.firstDayOfWeek,
+      lastLogOrSymptomWriteAt: timestamp,
     );
   }
 }

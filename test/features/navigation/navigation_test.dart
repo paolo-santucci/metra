@@ -89,6 +89,9 @@ class _StubAppSettingsRepository implements AppSettingsRepository {
 
   @override
   Future<void> saveDeclaredCycleLength(int cycleLength) async {}
+
+  @override
+  Future<void> updateLastDataWriteAt(DateTime timestamp) async {}
 }
 
 /// Provider override that injects [_StubCalendarMonthNotifier].

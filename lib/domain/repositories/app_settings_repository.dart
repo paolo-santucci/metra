@@ -42,4 +42,22 @@ abstract class AppSettingsRepository {
   /// Called once from [CompleteOnboarding]. Preserved indefinitely —
   /// [RecomputeCycleEntries] never touches this value.
   Future<void> saveDeclaredCycleLength(int cycleLength);
+
+  /// Persists the last log-or-symptom write timestamp.
+  ///
+  /// Called by [DriftDailyLogRepository] after each successful write to
+  /// DailyLogs or PainSymptoms. Must NOT be called from [updateSettings]
+  /// or any path that touches AppSettings preference fields.
+  ///
+  /// Pre-conditions:
+  ///   - [timestamp] must be UTC (DateTime.isUtc == true).
+  /// Post-conditions:
+  ///   - The persisted [AppSettingsData.lastLogOrSymptomWriteAt] equals
+  ///     [timestamp].
+  ///   - Every other column in AppSettings is byte-for-byte unchanged.
+  /// Errors:
+  ///   - Propagates [DriftWrappedException] on DB failure; caller must not
+  ///     swallow it silently (bump failure means the skip guard may fire
+  ///     a false-skip on the next cold-start).
+  Future<void> updateLastDataWriteAt(DateTime timestamp);
 }

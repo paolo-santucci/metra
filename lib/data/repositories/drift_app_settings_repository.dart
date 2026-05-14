@@ -109,4 +109,11 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
   Future<void> saveDeclaredCycleLength(int cycleLength) => _dao.updateSettings(
         AppSettingsCompanion(declaredCycleLength: Value(cycleLength)),
       );
+
+  // TODO(TASK-03): replace this stub with the real implementation that writes
+  // to the lastLogOrSymptomWriteAt column once the DB schema is updated (v9).
+  // This stub exists solely to satisfy the interface contract while TASK-01
+  // and TASK-02 are completed in parallel.
+  @override
+  Future<void> updateLastDataWriteAt(DateTime timestamp) async {}
 }

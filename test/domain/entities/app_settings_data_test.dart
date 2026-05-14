@@ -38,6 +38,7 @@ void main() {
     int? declaredCycleLength,
     int notificationTimeMinutes = 540,
     FirstDayOfWeekSetting firstDayOfWeek = FirstDayOfWeekSetting.system,
+    DateTime? lastLogOrSymptomWriteAt,
   }) =>
       AppSettingsData(
         languageCode: languageCode,
@@ -52,6 +53,7 @@ void main() {
         declaredCycleLength: declaredCycleLength,
         notificationTimeMinutes: notificationTimeMinutes,
         firstDayOfWeek: firstDayOfWeek,
+        lastLogOrSymptomWriteAt: lastLogOrSymptomWriteAt,
       );
 
   group('AppSettingsData construction', () {
@@ -408,6 +410,43 @@ void main() {
       final a = makeSettings(firstDayOfWeek: FirstDayOfWeekSetting.monday);
       final b = makeSettings(firstDayOfWeek: FirstDayOfWeekSetting.monday);
       expect(a.hashCode, equals(b.hashCode));
+    });
+  });
+
+  group('AppSettingsData lastLogOrSymptomWriteAt', () {
+    test(
+        'given_no_argument_when_constructed_then_lastLogOrSymptomWriteAt_is_null',
+        () {
+      const s = AppSettingsData(
+        languageCode: 'it',
+        painEnabled: true,
+        notesEnabled: true,
+        notificationDaysBefore: 2,
+        notificationsEnabled: false,
+        onboardingCompleted: false,
+      );
+      expect(s.lastLogOrSymptomWriteAt, isNull);
+    });
+
+    test(
+        'given_same_lastLogOrSymptomWriteAt_when_equality_check_then_equal_and_hashCode_matches',
+        () {
+      final t = DateTime.utc(2026, 5, 14, 10);
+      final a = makeSettings(lastLogOrSymptomWriteAt: t);
+      final b = makeSettings(lastLogOrSymptomWriteAt: t);
+      final c = makeSettings(lastLogOrSymptomWriteAt: null);
+      expect(a, equals(b));
+      expect(a, isNot(equals(c)));
+      expect(a.hashCode, equals(b.hashCode));
+    });
+
+    test(
+        'given_lastLogOrSymptomWriteAt_set_when_copyWith_unrelated_field_then_field_preserved',
+        () {
+      final t = DateTime.utc(2026, 5, 14, 10);
+      final s = makeSettings(lastLogOrSymptomWriteAt: t);
+      final after = s.copyWith(languageCode: 'en');
+      expect(after.lastLogOrSymptomWriteAt, equals(t));
     });
   });
 

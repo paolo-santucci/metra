@@ -112,6 +112,9 @@ class _StreamingFakeAppSettingsRepository implements FakeAppSettingsRepository {
     );
     _controller.add(_stored);
   }
+
+  @override
+  Future<void> updateLastDataWriteAt(DateTime timestamp) async {}
 }
 
 ProviderContainer _makeStreamingContainer(

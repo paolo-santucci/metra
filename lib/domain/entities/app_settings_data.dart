@@ -32,6 +32,7 @@ class AppSettingsData {
     this.declaredCycleLength,
     this.notificationTimeMinutes = AppConstants.kDefaultNotificationTimeMinutes,
     this.firstDayOfWeek = FirstDayOfWeekSetting.system,
+    this.lastLogOrSymptomWriteAt,
   });
 
   /// Factory returning the defaults that match DB column defaults.
@@ -74,6 +75,17 @@ class AppSettingsData {
   /// [MaterialLocalizations.firstDayOfWeekIndex] at render time.
   final FirstDayOfWeekSetting firstDayOfWeek;
 
+  /// UTC timestamp of the last write to DailyLogs or PainSymptoms, or null
+  /// if no such write has occurred on this device since installation.
+  ///
+  /// Written exclusively via [AppSettingsRepository.updateLastDataWriteAt].
+  /// Used by [BackupNotifier.backupSilent] as the signal for the skip guard.
+  final DateTime? lastLogOrSymptomWriteAt;
+
+  // lastLogOrSymptomWriteAt intentionally omitted from copyWith — it is
+  // written exclusively via updateLastDataWriteAt() and must never be reset
+  // to null by a general settings update. Mirrors the declaredCycleLength
+  // exclusion pattern.
   AppSettingsData copyWith({
     String? languageCode,
     bool? darkMode,
@@ -105,6 +117,8 @@ class AppSettingsData {
       notificationTimeMinutes:
           notificationTimeMinutes ?? this.notificationTimeMinutes,
       firstDayOfWeek: firstDayOfWeek ?? this.firstDayOfWeek,
+      // lastLogOrSymptomWriteAt preserved as-is (see comment above copyWith).
+      lastLogOrSymptomWriteAt: lastLogOrSymptomWriteAt,
     );
   }
 
@@ -124,7 +138,8 @@ class AppSettingsData {
           onboardingCompleted == other.onboardingCompleted &&
           declaredCycleLength == other.declaredCycleLength &&
           notificationTimeMinutes == other.notificationTimeMinutes &&
-          firstDayOfWeek == other.firstDayOfWeek;
+          firstDayOfWeek == other.firstDayOfWeek &&
+          lastLogOrSymptomWriteAt == other.lastLogOrSymptomWriteAt;
 
   @override
   int get hashCode =>
@@ -139,7 +154,8 @@ class AppSettingsData {
       onboardingCompleted.hashCode ^
       declaredCycleLength.hashCode ^
       notificationTimeMinutes.hashCode ^
-      firstDayOfWeek.hashCode;
+      firstDayOfWeek.hashCode ^
+      lastLogOrSymptomWriteAt.hashCode;
 }
 
 class _AppSettingsDataDefaults extends AppSettingsData {
