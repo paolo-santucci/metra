@@ -54,7 +54,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        ### ℹ️ Environment
+        
+        **ℹ️ Environment**
         
 
   - type: input
