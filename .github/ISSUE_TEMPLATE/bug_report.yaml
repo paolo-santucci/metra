@@ -30,8 +30,8 @@ body:
       label: 📱 Platform
       description: Which platform(s) are affected?
       options:
-        - "Android"
-        - "iOS"
+        - label: Android
+        - label: iOS
     validations:
       required: true
 
