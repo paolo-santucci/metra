@@ -18,8 +18,7 @@ La scheda **Impostazioni** è il posto dove dai forma all'app: scegli la lingua,
 
 ## Preferenze
 
-<!-- SCREENSHOT PLACEHOLDER: settings-preferences.png -->
-<!-- Sezione Preferenze con le tre righe: Lingua, Tema, Primo giorno della settimana. -->
+![Sezione Preferenze con le tre righe: Lingua, Tema, Primo giorno della settimana.](/metra/assets/settings-preferences-it.png)
 
 Aspetto e lingua: tre impostazioni che determinano come appare Mētra ogni volta che la apri.
 
@@ -35,8 +34,7 @@ Aspetto e lingua: tre impostazioni che determinano come appare Mētra ogni volta
 
 ## Notifiche
 
-<!-- SCREENSHOT PLACEHOLDER: settings-notifications.png -->
-<!-- Sezione Notifiche con il toggle Promemoria ciclo attivo e le due righe di configurazione (Preavviso, Orario notifica). -->
+![Sezione Notifiche con il toggle Promemoria ciclo attivo e le due righe di configurazione (Preavviso, Orario notifica).](/metra/assets/settings-notifications-it.png)
 
 Mētra non invia notifiche di propria iniziativa. Se vuoi un promemoria, lo attivi tu; se non lo vuoi, l'app tace.
 
@@ -54,8 +52,7 @@ Le due righe di configurazione sono attive solo quando il promemoria è abilitat
 
 ## Registro
 
-<!-- SCREENSHOT PLACEHOLDER: settings-log.png -->
-<!-- Sezione Registro con i due toggle: Dolore e Note giornaliere. -->
+![Sezione Registro con i due toggle: Dolore e Note giornaliere.](/metra/assets/settings-log-it.png)
 
 Non tutte le persone vogliono registrare le stesse cose. Questi due toggle decidono quali campi compaiono nella scheda di registrazione giornaliera.
 
@@ -63,14 +60,13 @@ Non tutte le persone vogliono registrare le stesse cose. Questi due toggle decid
 
 **Note giornaliere**: quando disattivato, il campo di testo libero è nascosto. Le note già salvate restano nel database.
 
-Vedi [Registrazione giornaliera](/it/help/daily-entry/) per una descrizione dei campi.
+Vedi [Registrazione giornaliera](/metra/it/help/daily-entry/) per una descrizione dei campi.
 
 ---
 
 ## Dati
 
-<!-- SCREENSHOT PLACEHOLDER: settings-data.png -->
-<!-- Sezione Dati con le righe Backup cloud (stato), Esporta CSV e Importa CSV. -->
+![Sezione Dati con le righe Backup cloud (stato), Esporta CSV e Importa CSV.](/metra/assets/settings-preferences-data.png)
 
 Da qui decidi se e come i tuoi dati si muovono: verso un cloud cifrato, verso un file CSV, o dentro da un file che hai esportato altrove.
 
@@ -84,8 +80,7 @@ Da qui decidi se e come i tuoi dati si muovono: verso un cloud cifrato, verso un
 
 ## Informazioni
 
-<!-- SCREENSHOT PLACEHOLDER: settings-about.png -->
-<!-- Sezione Informazioni con le tre righe: Guida, Codice sorgente, Informativa sulla privacy. -->
+![Sezione Informazioni con le tre righe: Guida, Codice sorgente, Informativa sulla privacy.](/metra/assets/settings-about-it.png)
 
 Dove trovare questa documentazione, il codice e la dichiarazione su come i dati vengono trattati.
 
@@ -101,8 +96,7 @@ In fondo alla schermata trovi il numero di versione dell'app e un collegamento a
 
 ## Azioni irreversibili
 
-<!-- SCREENSHOT PLACEHOLDER: settings-danger.png -->
-<!-- Sezione Azioni irreversibili con il pulsante rosso "Elimina tutti i dati". -->
+![Sezione Azioni irreversibili con il pulsante rosso \"Elimina tutti i dati\"](/metra/assets/settings-danger-it.png)
 
 **Elimina tutti i dati** — tocca questa riga per aprire una finestra di conferma. Se confermi, Mētra cancella l'intero database locale: tutte le registrazioni giornaliere e i cicli vengono eliminati. Le impostazioni dell'app restano invariate.
 
