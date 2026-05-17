@@ -1,7 +1,7 @@
 schema-version: 2
-last-updated: "2026-05-18T12:00:00+02:00"
-active-plan: ".claude/docs/plans/sp-20260517-m4-notifications-plan.md"
-last-plan: ".claude/docs/plans/archive/sp-20260517-m3-backup-plan.md"
+last-updated: "2026-05-18T13:10:00+02:00"
+active-plan: null
+last-plan: ".claude/docs/plans/sp-20260517-m4-notifications-plan.md"
 
 # Owned by the short-plan skill. update-status preserves verbatim.
 short-plan:
@@ -24,14 +24,14 @@ short-plan:
     triage: done
     spec: done
     plan: done
-    build: pending
+    build: done
   approvals:
     spec: approved
     plan: approved
   rejection-note: null
   build-progress:
-    current-wave: 3
-    waves-completed: [1, 2]
+    current-wave: null
+    waves-completed: [1, 2, 3, 4]
 
 # Owned by the long-plan skill. update-status preserves verbatim.
 long-plan:
@@ -55,28 +55,21 @@ pending-consolidation: []
 
 recently-completed:
   - date: "2026-05-18"
-    summary: "feat(m4-wave2): app.dart dual-branch listener rewrite — FR-08/FR-09/FR-10, result switch, snackbar on failure, cancel-throw catch (TASK-06)"
+    summary: "chore: untrack .trash/ and .claude_reminder, add to .gitignore"
   - date: "2026-05-18"
-    summary: "feat(m4-wave1): iOS permission fix, use-case return type, fake contract, error reporter, ARB key (TASK-01–05, TASK-09)"
-  - date: "2026-05-17"
-    summary: "feat(m3): M3 Backup — retention N=10, restore picker, suspend-on-wipe, filename suffix (FR-12–FR-15)"
-  - date: "2026-05-17"
-    summary: "chore: update STATUS.yaml — M2 build complete (all 4 waves done)"
-  - date: "2026-05-17"
-    summary: "feat(m2): M2 Settings/CSV/Onboarding — FR-05 through FR-11, FR-19 (all waves)"
-  - date: "2026-05-17"
-    summary: "feat(domain+data): M1 foundation — Nullable<T> copyWith, schema v10, NotificationScheduleResult, backupSuspended"
+    summary: "style(m4): dart format + lint fixes (trailing commas, tearoff lambdas, pubspec dep)"
+  - date: "2026-05-18"
+    summary: "docs(m4-wave4): document notification revert-on-failure in help pages (IT + EN)"
+  - date: "2026-05-18"
+    summary: "test(m4-wave3): integration tests for FR-13/14/15/16 failure paths"
+  - date: "2026-05-18"
+    summary: "feat(m4-wave2): app.dart dual-branch listener rewrite + stale use-case test fix"
 
-in-progress:
-  - title: "M4 Notifications — Wave 3 (integration tests for FR-13/14/15/16)"
-    state: "Wave 2 complete (TASK-06 + TASK-07 done); Wave 3 — TASK-08 (flutter-qa-integration)"
-    touched:
-      - "test/app_notification_wiring_test.dart"
-    next-step: "Execute Wave 3: TASK-08 — add 4 new integration tests for FR-13, FR-14, FR-15, FR-16"
-    blocker: null
+in-progress: []
 
 next-steps:
-  - "TestFlight sign-off for FR-17 (iOS permission check + dialog) after build completes"
+  - "TestFlight sign-off for FR-17 (iOS permission check + dialog) — manual test on physical iOS device"
+  - "short-plan-close: archive M4 plan and push pending-consolidation entry"
 
 known-issues:
   - severity: warning
