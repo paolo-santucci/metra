@@ -791,7 +791,9 @@ void main() {
   // Group C — SchedulePredictionNotification.execute (new return-type assertions)
   // FR-04, FR-05, NFR-03, NFR-04, EC-01, EC-02
   // ---------------------------------------------------------------------------
-  group('Group C — SchedulePredictionNotification.execute (return-type assertions)', () {
+  group(
+      'Group C — SchedulePredictionNotification.execute (return-type assertions)',
+      () {
     // Shared far-future prediction: always future → no past-guard fires.
     final validPrediction = CyclePrediction(
       expectedStart: DateTime.utc(2099, 7, 20),

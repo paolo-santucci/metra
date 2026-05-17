@@ -97,7 +97,7 @@ void main() {
         final service = FlutterNotificationService(pluginOverride: plugin);
 
         expect(
-          () => service.hasNotificationPermission(),
+          service.hasNotificationPermission,
           returnsNormally,
         );
         final result = await service.hasNotificationPermission();
@@ -124,7 +124,10 @@ void main() {
 
         expect(result, isTrue);
         expect(iosStub.requestPermissionsCallCount, equals(1));
-        expect(iosStub.lastRequestArgs, equals({'sound': true, 'alert': true, 'badge': true}));
+        expect(
+          iosStub.lastRequestArgs,
+          equals({'sound': true, 'alert': true, 'badge': true}),
+        );
         expect(iosStub.checkPermissionsCallCount, equals(0));
       },
     );
@@ -166,7 +169,7 @@ void main() {
         final service = FlutterNotificationService(pluginOverride: plugin);
 
         expect(
-          () => service.requestPermission(),
+          service.requestPermission,
           returnsNormally,
         );
         final result = await service.requestPermission();

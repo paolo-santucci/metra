@@ -263,7 +263,8 @@ void main() {
   // were replaced here as part of TASK-03.
   // ---------------------------------------------------------------------------
 
-  group('Group D — FakeNotificationService.throwOnNextSchedule (FR-06, TASK-03)',
+  group(
+      'Group D — FakeNotificationService.throwOnNextSchedule (FR-06, TASK-03)',
       () {
     test(
       'should_return_NotificationScheduleFailure_when_throwOnNextSchedule_is_true_given_knob_set',

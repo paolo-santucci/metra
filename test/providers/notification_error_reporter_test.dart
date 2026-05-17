@@ -78,7 +78,8 @@ void main() {
       expect(
         reporter,
         isNot(isA<FakeNotificationErrorReporter>()),
-        reason: 'Production container must return the real reporter, not the fake',
+        reason:
+            'Production container must return the real reporter, not the fake',
       );
     });
 

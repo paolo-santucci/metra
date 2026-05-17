@@ -260,8 +260,7 @@ Future<void> _simulatePredictionListenerFireWithContainer({
   if (next is! AsyncData<CyclePrediction?>) return;
 
   final prediction = next.valueOrNull;
-  final currentSettings =
-      container.read(settingsNotifierProvider).valueOrNull;
+  final currentSettings = container.read(settingsNotifierProvider).valueOrNull;
   if (currentSettings == null) return;
 
   final l10n = await AppLocalizations.delegate.load(const Locale('en'));
@@ -284,7 +283,9 @@ Future<void> _simulatePredictionListenerFireWithContainer({
       case NotificationScheduleFailure(:final error):
         // FR-09 / FR-15: silent drop — no revert, no snackbar.
         // ignore: avoid_print
-        debugPrint('[predictionListener] schedule failure (silent drop): $error');
+        debugPrint(
+          '[predictionListener] schedule failure (silent drop): $error',
+        );
     }
   } on PlatformException catch (e) {
     debugPrint('[predictionListener] PlatformException (cancel path): $e');
@@ -809,8 +810,7 @@ void main() {
         expect(
           fakeReporter.messages,
           isEmpty,
-          reason:
-              'EC-06: no snackbar shown on OS permission denial '
+          reason: 'EC-06: no snackbar shown on OS permission denial '
               '(asymmetry with schedule failure)',
         );
         expect(
@@ -961,8 +961,7 @@ void main() {
         expect(
           fakeReporter.messages.first,
           equals(l10n.notificationScheduleFailedMessage),
-          reason:
-              'FR-14: snackbar message must match the localised '
+          reason: 'FR-14: snackbar message must match the localised '
               'notificationScheduleFailedMessage key',
         );
         expect(
@@ -1231,7 +1230,8 @@ void main() {
             service: fake,
           ),
           returnsNormally,
-          reason: 'FR-15: prediction listener must not throw on schedule failure',
+          reason:
+              'FR-15: prediction listener must not throw on schedule failure',
         );
 
         expect(
@@ -1287,7 +1287,8 @@ void main() {
         expect(
           fakeRepo.storedSettings?.notificationsEnabled,
           isTrue,
-          reason: 'FR-15 contrast: notificationsEnabled unchanged after success',
+          reason:
+              'FR-15 contrast: notificationsEnabled unchanged after success',
         );
       },
     );
@@ -1364,8 +1365,7 @@ void main() {
         expect(
           fakeRepo.storedSettings?.notificationsEnabled,
           isFalse,
-          reason:
-              'FR-16: initial notificationsEnabled=false is preserved — '
+          reason: 'FR-16: initial notificationsEnabled=false is preserved — '
               'no revert save() is called when cancel throws (the PlatformException '
               'is caught by the outer handler before the switch on result)',
         );
@@ -1442,15 +1442,13 @@ void main() {
         expect(
           fake.scheduleCallCount,
           equals(0),
-          reason:
-              'EC-08: no schedule call must happen on cold-start '
+          reason: 'EC-08: no schedule call must happen on cold-start '
               'AsyncLoading → AsyncData transition (prev is! AsyncData guard)',
         );
         expect(
           fake.requestPermissionCallCount,
           equals(0),
-          reason:
-              'EC-08: requestPermission() must not be called on cold-start '
+          reason: 'EC-08: requestPermission() must not be called on cold-start '
               'transition (BUG-002 guard)',
         );
       },
@@ -1553,8 +1551,7 @@ void main() {
         expect(
           find.text(failureMessage),
           findsOneWidget,
-          reason:
-              'NFR-06: the localised failure message must appear in the '
+          reason: 'NFR-06: the localised failure message must appear in the '
               'widget tree so TalkBack/VoiceOver can read it',
         );
 
@@ -1563,8 +1560,7 @@ void main() {
         expect(
           semantics.label,
           equals(failureMessage),
-          reason:
-              'NFR-06: Text inside SnackBar must carry a Semantics label '
+          reason: 'NFR-06: Text inside SnackBar must carry a Semantics label '
               'matching the displayed message (WCAG 2.2 AA)',
         );
       },

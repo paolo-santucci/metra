@@ -168,8 +168,7 @@ class FakeNotificationService implements NotificationService {
       throwOnNextCancel = false; // auto-clear before throw
       throw PlatformException(
         code: 'fake_cancel_failure',
-        message:
-            'FakeNotificationService.throwOnNextCancel injected failure',
+        message: 'FakeNotificationService.throwOnNextCancel injected failure',
       );
     }
     cancelCount++;

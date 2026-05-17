@@ -198,7 +198,9 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
           // FR-10: cancelPredictionNotifications() inside execute() may throw
           // PlatformException (SCHEDULE_EXACT_ALARM revoked or cancel error).
           // The prediction listener never shows UI errors for this path.
-          debugPrint('[predictionListener] PlatformException (cancel path): $e');
+          debugPrint(
+            '[predictionListener] PlatformException (cancel path): $e',
+          );
         }
       },
     );
