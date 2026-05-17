@@ -255,66 +255,61 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
-  // TASK-10: throwOnNextSchedule failure-injection knob (FR-14, EC-11, OQ-M1-05)
+  // Group D — FakeNotificationService schedule contract (FR-06, TASK-03)
+  //
+  // The throwOnNextSchedule knob must RETURN a structured failure result
+  // (NotificationScheduleFailure) — never throw — to match the production
+  // NotificationService contract (FR-06).  The old throw-based assertions
+  // were replaced here as part of TASK-03.
   // ---------------------------------------------------------------------------
 
-  group('FakeNotificationService.throwOnNextSchedule — FR-14, EC-11, OQ-M1-05',
+  group('Group D — FakeNotificationService.throwOnNextSchedule (FR-06, TASK-03)',
       () {
     test(
-      'given_knob_false_when_schedule_then_returns_Success_and_records_one_entry',
+      'should_return_NotificationScheduleFailure_when_throwOnNextSchedule_is_true_given_knob_set',
       () async {
-        final fake = FakeNotificationService();
+        final fake = FakeNotificationService(
+          now: () => DateTime(2099, 1, 1),
+        );
+        fake.throwOnNextSchedule = true;
         final result = await fake.schedulePredictionNotification(
-          DateTime.utc(2026, 6, 1),
+          DateTime.utc(2099, 6, 1),
           'title',
           'body',
         );
-        expect(result, isA<NotificationScheduleSuccess>());
-        expect(fake.scheduled.length + fake.shown.length, equals(1));
-      },
-    );
-
-    test(
-      'given_knob_true_when_schedule_then_throws_PlatformException_and_lists_remain_empty',
-      () async {
-        final fake = FakeNotificationService();
-        fake.throwOnNextSchedule = true;
-        await expectLater(
-          fake.schedulePredictionNotification(
-            DateTime.utc(2026, 6, 1),
-            'title',
-            'body',
-          ),
-          throwsA(
-            allOf(
-              isA<PlatformException>(),
-              predicate<PlatformException>(
-                (e) => e.code == 'fake_schedule_failure',
-              ),
-            ),
-          ),
+        expect(result, isA<NotificationScheduleFailure>());
+        expect(
+          (result as NotificationScheduleFailure).error,
+          isA<PlatformException>(),
         );
+        expect(
+          ((result).error as PlatformException).code,
+          'fake_schedule_failure',
+        );
+        // One-shot: knob auto-clears to false after returning failure.
+        expect(fake.throwOnNextSchedule, isFalse);
+        // Lists remain empty — failure injection suppresses mutation.
         expect(fake.scheduled, isEmpty);
         expect(fake.shown, isEmpty);
-        // One-shot: knob auto-clears to false after the throw.
-        expect(fake.throwOnNextSchedule, isFalse);
       },
     );
 
     test(
-      'given_knob_fired_once_when_second_call_then_succeeds_and_records_one_entry',
+      'should_return_NotificationScheduleSuccess_on_second_call_when_knob_already_consumed_given_single_shot_reset',
       () async {
-        final fake = FakeNotificationService();
+        final fake = FakeNotificationService(
+          now: () => DateTime(2099, 1, 1),
+        );
         fake.throwOnNextSchedule = true;
-        try {
-          await fake.schedulePredictionNotification(
-            DateTime.utc(2026, 6, 1),
-            'title',
-            'body',
-          );
-        } catch (_) {}
+        // Consume the knob — discard result.
+        await fake.schedulePredictionNotification(
+          DateTime.utc(2099, 6, 1),
+          'title',
+          'body',
+        );
+        // Second call must succeed.
         final result2 = await fake.schedulePredictionNotification(
-          DateTime.utc(2026, 6, 2),
+          DateTime.utc(2099, 6, 2),
           'title',
           'body',
         );
@@ -324,25 +319,131 @@ void main() {
     );
 
     test(
-      'given_knob_on_instance_a_when_instance_b_schedules_then_b_succeeds',
+      'should_return_NotificationScheduleSuccess_twice_when_default_state_given_knob_never_set',
       () async {
-        final a = FakeNotificationService()..throwOnNextSchedule = true;
-        final b = FakeNotificationService();
-        await expectLater(
-          a.schedulePredictionNotification(
-            DateTime.utc(2026, 6, 1),
-            'title',
-            'body',
-          ),
-          throwsA(isA<PlatformException>()),
+        final fake = FakeNotificationService(
+          now: () => DateTime(2099, 1, 1),
         );
-        final result = await b.schedulePredictionNotification(
-          DateTime.utc(2026, 6, 1),
+        final result1 = await fake.schedulePredictionNotification(
+          DateTime.utc(2099, 6, 1),
           'title',
           'body',
         );
-        expect(result, isA<NotificationScheduleSuccess>());
+        final result2 = await fake.schedulePredictionNotification(
+          DateTime.utc(2099, 6, 2),
+          'title',
+          'body',
+        );
+        expect(result1, isA<NotificationScheduleSuccess>());
+        expect(result2, isA<NotificationScheduleSuccess>());
+        expect(fake.throwOnNextSchedule, isFalse);
+      },
+    );
+
+    test(
+      'given_knob_fired_once_when_second_call_then_succeeds_and_records_one_entry',
+      () async {
+        final fake = FakeNotificationService(
+          now: () => DateTime(2099, 1, 1),
+        );
+        fake.throwOnNextSchedule = true;
+        // Consume the knob (returns failure, does not throw).
+        await fake.schedulePredictionNotification(
+          DateTime.utc(2099, 6, 1),
+          'title',
+          'body',
+        );
+        final result2 = await fake.schedulePredictionNotification(
+          DateTime.utc(2099, 6, 2),
+          'title',
+          'body',
+        );
+        expect(result2, isA<NotificationScheduleSuccess>());
+        expect(fake.scheduled.length + fake.shown.length, equals(1));
+      },
+    );
+
+    test(
+      'given_knob_on_instance_a_when_instance_b_schedules_then_b_returns_success',
+      () async {
+        DateTime now() => DateTime(2099, 1, 1);
+        final a = FakeNotificationService(now: now)..throwOnNextSchedule = true;
+        final b = FakeNotificationService(now: now);
+        final aResult = await a.schedulePredictionNotification(
+          DateTime.utc(2099, 6, 1),
+          'title',
+          'body',
+        );
+        expect(aResult, isA<NotificationScheduleFailure>());
+        final bResult = await b.schedulePredictionNotification(
+          DateTime.utc(2099, 6, 1),
+          'title',
+          'body',
+        );
+        expect(bResult, isA<NotificationScheduleSuccess>());
       },
     );
   });
+
+  // ---------------------------------------------------------------------------
+  // Group D' — FakeNotificationService cancel knob (FR-16 enabler, OQ-QA-01)
+  // ---------------------------------------------------------------------------
+
+  group(
+    "Group D' — FakeNotificationService.throwOnNextCancel (FR-16, OQ-QA-01)",
+    () {
+      test(
+        'should_throw_PlatformException_when_throwOnNextCancel_is_true_given_knob_set',
+        () async {
+          final fake = FakeNotificationService();
+          fake.throwOnNextCancel = true;
+          await expectLater(
+            fake.cancelPredictionNotifications,
+            throwsA(
+              allOf(
+                isA<PlatformException>(),
+                predicate<PlatformException>(
+                  (e) => e.code == 'fake_cancel_failure',
+                ),
+              ),
+            ),
+          );
+          // One-shot: knob auto-clears to false after the throw.
+          expect(fake.throwOnNextCancel, isFalse);
+          // Counters must NOT increment on the throw path (throw-before-mutation).
+          expect(fake.cancelCount, equals(0));
+          expect(fake.cancelCallCount, equals(0));
+        },
+      );
+
+      test(
+        'should_complete_normally_and_increment_cancelCallCount_when_default_state_given_knob_not_set',
+        () async {
+          final fake = FakeNotificationService();
+          await fake.cancelPredictionNotifications();
+          expect(fake.cancelCallCount, equals(1));
+          expect(fake.cancelCount, equals(1));
+        },
+      );
+
+      test(
+        'should_throw_only_once_and_succeed_on_second_call_given_single_shot_reset',
+        () async {
+          final fake = FakeNotificationService();
+          fake.throwOnNextCancel = true;
+          // First call throws.
+          try {
+            await fake.cancelPredictionNotifications();
+          } on PlatformException {
+            // expected
+          }
+          expect(fake.throwOnNextCancel, isFalse);
+          // Second call must succeed.
+          await fake.cancelPredictionNotifications();
+          expect(fake.cancelCallCount, equals(1));
+          expect(fake.cancelCount, equals(1));
+        },
+      );
+    },
+  );
 }

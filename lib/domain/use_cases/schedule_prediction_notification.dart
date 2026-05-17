@@ -24,7 +24,7 @@ class SchedulePredictionNotification {
 
   final NotificationService _notifService;
 
-  Future<void> execute({
+  Future<NotificationScheduleResult> execute({
     required CyclePrediction? prediction,
     required AppSettingsData settings,
     required String title,
@@ -33,7 +33,9 @@ class SchedulePredictionNotification {
     DateTime Function()? clock,
   }) async {
     await _notifService.cancelPredictionNotifications();
-    if (prediction == null || !settings.notificationsEnabled) return;
+    if (prediction == null || !settings.notificationsEnabled) {
+      return const NotificationScheduleSuccess();
+    }
 
     final base = prediction.windowStart
         .subtract(Duration(days: settings.notificationDaysBefore));
@@ -52,16 +54,18 @@ class SchedulePredictionNotification {
     // shouldShowImmediately path fires and the notification pops up immediately.
     // The prediction-data-change listener passes skipIfPast: false (default),
     // preserving the BUG-005 cold-start immediate-show behavior.
-    if (skipIfPast && notifyAt.isBefore(now)) return;
+    if (skipIfPast && notifyAt.isBefore(now)) {
+      return const NotificationScheduleSuccess();
+    }
     final today = DateTime(now.year, now.month, now.day);
-    if (notifyAt.toLocal().isBefore(today)) return;
+    if (notifyAt.toLocal().isBefore(today)) {
+      return const NotificationScheduleSuccess();
+    }
 
-    // ignore: unused_local_variable
-    final result = await _notifService.schedulePredictionNotification(
+    return await _notifService.schedulePredictionNotification(
       notifyAt,
       title,
       body,
     );
-    // M1: result is intentionally unused — M4 wires the revert-and-notify path here.
   }
 }

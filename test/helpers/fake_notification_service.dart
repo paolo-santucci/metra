@@ -68,11 +68,39 @@ class FakeNotificationService implements NotificationService {
   /// to [_now]. Takes precedence over [nowOverride].
   final DateTime Function()? _nowFn;
 
-  /// Whether the next call to [schedulePredictionNotification] should throw
-  /// a [PlatformException] instead of scheduling. Auto-clears after one use
-  /// (one-shot — FR-14, OQ-M1-05). Set in tests to exercise the caller's
-  /// error-handling path.
+  /// Whether the next call to [schedulePredictionNotification] should return
+  /// a [NotificationScheduleFailure] instead of scheduling. Auto-clears after
+  /// one use (one-shot — FR-06, FR-14, OQ-M1-05, TASK-03). Set in tests to
+  /// exercise the caller's error-handling path.
+  ///
+  /// Important: the knob causes a *return* of a structured failure, not a throw.
+  /// This matches the production [NotificationService.schedulePredictionNotification]
+  /// contract (FR-06).
   bool throwOnNextSchedule = false;
+
+  /// Whether the next call to [cancelPredictionNotifications] should throw
+  /// a [PlatformException]. Auto-clears after one use (one-shot — FR-16,
+  /// OQ-QA-01, TASK-03). Set in tests to exercise the caller's cancel-error
+  /// handling path (outer catch in app.dart listeners — FR-10).
+  ///
+  /// Note: counters ([cancelCount], [cancelCallCount]) do NOT increment on the
+  /// throw path (throw-before-mutation pattern, EC-11).
+  bool throwOnNextCancel = false;
+
+  /// Number of times [schedulePredictionNotification] completed successfully
+  /// (i.e. returned [NotificationScheduleSuccess]). Does NOT count calls that
+  /// returned [NotificationScheduleFailure] via the [throwOnNextSchedule] knob.
+  ///
+  /// Used by TASK-08 integration tests to assert schedule-call counts (e.g.
+  /// FR-14: scheduleCallCount == 0 after a failed toggle-on).
+  int scheduleCallCount = 0;
+
+  /// Number of times [cancelPredictionNotifications] completed without throwing.
+  ///
+  /// Mirrors [cancelCount] with the TASK-08-canonical name. Both counters
+  /// increment together. [cancelCount] is preserved for existing callers.
+  /// Used by TASK-08 integration tests (e.g. FR-14: cancelCallCount == 1).
+  int cancelCallCount = 0;
 
   /// Number of times the immediate-show path was triggered (cold-start same-day case).
   int showCount = 0;
@@ -100,12 +128,18 @@ class FakeNotificationService implements NotificationService {
     String title,
     String body,
   ) async {
-    // One-shot failure injection — FR-14, EC-11 (throw-before-mutation).
+    // One-shot failure injection — FR-06, FR-14, EC-11 (return-before-mutation).
+    // Returns a structured NotificationScheduleFailure; never throws.
+    // This matches the production contract: schedulePredictionNotification wraps
+    // PlatformException into NotificationScheduleFailure and returns it (FR-06).
     if (throwOnNextSchedule) {
-      throwOnNextSchedule = false; // auto-clear before throw
-      throw PlatformException(
-        code: 'fake_schedule_failure',
-        message: 'FakeNotificationService.throwOnNextSchedule injected failure',
+      throwOnNextSchedule = false; // auto-clear before returning failure
+      return NotificationScheduleFailure(
+        PlatformException(
+          code: 'fake_schedule_failure',
+          message:
+              'FakeNotificationService.throwOnNextSchedule injected failure',
+        ),
       );
     }
 
@@ -122,12 +156,24 @@ class FakeNotificationService implements NotificationService {
     } else {
       scheduled.add((notifyAt: notifyAt, title: title, body: body));
     }
+    scheduleCallCount++;
     return const NotificationScheduleSuccess();
   }
 
   @override
   Future<void> cancelPredictionNotifications() async {
+    // One-shot failure injection — FR-16, OQ-QA-01, EC-11 (throw-before-mutation).
+    // Counters do NOT increment when the knob fires.
+    if (throwOnNextCancel) {
+      throwOnNextCancel = false; // auto-clear before throw
+      throw PlatformException(
+        code: 'fake_cancel_failure',
+        message:
+            'FakeNotificationService.throwOnNextCancel injected failure',
+      );
+    }
     cancelCount++;
+    cancelCallCount++;
     scheduled.clear();
     shown.clear();
   }

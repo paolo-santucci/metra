@@ -1,6 +1,6 @@
 {
   "@@locale": "it",
-  "@@last_modified": "2026-05-09",
+  "@@last_modified": "2026-05-18",
 
   "common_appName": "Mētra",
   "@common_appName": {
@@ -263,6 +263,11 @@
         "type": "num"
       }
     }
+  },
+
+  "notificationScheduleFailedMessage": "Impossibile pianificare le notifiche. Riprova più tardi.",
+  "@notificationScheduleFailedMessage": {
+    "description": "Snackbar shown when the notification scheduler fails; the settings toggle reverts to off"
   },
 
   "settings_language_label": "Lingua",

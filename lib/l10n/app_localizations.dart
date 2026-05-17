@@ -398,6 +398,12 @@ abstract class AppLocalizations {
   /// **'{days, plural, =1{domani} other{tra {days} giorni}}'**
   String notification_prediction_body(num days);
 
+  /// Snackbar shown when the notification scheduler fails; the settings toggle reverts to off
+  ///
+  /// In it, this message translates to:
+  /// **'Impossibile pianificare le notifiche. Riprova più tardi.'**
+  String get notificationScheduleFailedMessage;
+
   /// Settings row label for language selection
   ///
   /// In it, this message translates to:

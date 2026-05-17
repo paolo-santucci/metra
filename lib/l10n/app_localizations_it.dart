@@ -172,6 +172,10 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
+  String get notificationScheduleFailedMessage =>
+      'Impossibile pianificare le notifiche. Riprova più tardi.';
+
+  @override
   String get settings_language_label => 'Lingua';
 
   @override

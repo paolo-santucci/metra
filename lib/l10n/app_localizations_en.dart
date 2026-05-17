@@ -172,6 +172,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get notificationScheduleFailedMessage =>
+      'Couldn\'t schedule notifications. Try again later.';
+
+  @override
   String get settings_language_label => 'Language';
 
   @override

@@ -67,28 +67,42 @@ abstract class NotificationService {
   /// Cancels the prediction-reminder notification if one is scheduled.
   Future<void> cancelPredictionNotifications();
 
-  /// Requests the OS-level notification permission (Android 13+ / API 33+).
+  /// Requests the OS-level notification permission.
   ///
-  /// Returns [true] if permission is granted (or pre-granted for the current
-  /// OS version / platform).  On iOS, permissions are handled automatically
-  /// during [initialize] — this method returns [true] on that platform.
-  /// Subsequent calls after denial return [false] immediately without showing
-  /// a dialog again; the user must go to Android Settings to re-enable.
+  /// **Fail-closed policy**: a [null] response from the OS plugin is treated
+  /// as [false] — an explicit request with an indeterminate response is not
+  /// silently granted.
+  ///
+  /// On Android 13+ (API 33+): calls the plugin's
+  /// `requestNotificationsPermission()`. Subsequent calls after denial return
+  /// [false] immediately without showing a dialog again; the user must go to
+  /// Android Settings to re-enable.
+  /// On Android < 13: returns [true] (no runtime permission required).
+  /// On iOS: calls `requestPermissions(sound: true, alert: true, badge: true)`
+  /// on the plugin's [IOSFlutterLocalNotificationsPlugin] resolved via
+  /// `resolvePlatformSpecificImplementation`. A [null] result is fail-closed:
+  /// returns [false].
   ///
   /// Only call this method when the user explicitly enables notifications
   /// (e.g. the settings-toggle-on flow). For cold-start re-checks, use
   /// [hasNotificationPermission] instead — it never shows a system dialog.
   Future<bool> requestPermission();
 
-  /// Read-only check: returns true if Métra currently has the OS-level
+  /// Read-only check: returns [true] if Métra currently has the OS-level
   /// notification permission, without re-prompting the user.
   ///
-  /// On Android < 13: returns true (no runtime permission required).
+  /// **Fail-open policy**: any [null] response or platform query failure is
+  /// treated as [true] — do not block scheduling over a query failure.
+  ///
+  /// On Android < 13: returns [true] (no runtime permission required).
   /// On Android 13+: queries the system permission state without showing
-  /// a dialog (uses the plugin's areNotificationsEnabled()).
-  /// On iOS: returns true if previously granted via [initialize].
-  /// On any platform error: returns true (fail-open: do not block scheduling
-  /// over a query failure).
+  /// a dialog (uses the plugin's `areNotificationsEnabled()`).
+  /// On iOS: calls `checkPermissions()` on the plugin's
+  /// [IOSFlutterLocalNotificationsPlugin] resolved via
+  /// `resolvePlatformSpecificImplementation`; returns
+  /// `NotificationsEnabledOptions.isEnabled`, or [true] on a [null] result
+  /// (fail-open).
+  /// On any platform error: returns [true] (fail-open).
   ///
   /// Use this method for cold-start re-checks (FR-07). Use [requestPermission]
   /// only when the user explicitly enables notifications.

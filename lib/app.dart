@@ -30,6 +30,20 @@ import 'providers/encryption_provider.dart';
 import 'providers/use_case_providers.dart';
 import 'router/app_router.dart';
 
+/// Top-level [GlobalKey] for the [ScaffoldMessenger] mounted by [MetraApp].
+///
+/// Exposed at file scope so async [ref.listen] callbacks in [_MetraInnerState]
+/// can surface snackbars without a [BuildContext] (FR-07, BUG-M2). The key is
+/// passed to [MaterialApp.router] via [scaffoldMessengerKey:] and consumed by
+/// [notificationErrorReporterProvider] in TASK-06.
+///
+/// **GlobalKey justification**: a single app-wide [ScaffoldMessengerState] is
+/// needed so that error reporters wired in Wave-2 listeners can call
+/// [ScaffoldMessengerState.showSnackBar] safely after async gaps — i.e. when
+/// the original [BuildContext] may no longer be valid. One key instance for
+/// the lifetime of the app; no rebuild cost.
+final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
 /// Root widget — owns [ProviderScope] and accepts overrides for tests.
 class MetraApp extends StatelessWidget {
   const MetraApp({
@@ -252,6 +266,7 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
 
     return MaterialApp.router(
       title: 'Mētra',
+      scaffoldMessengerKey: scaffoldMessengerKey,
       theme: MetraTheme.light(),
       darkTheme: MetraTheme.dark(),
       themeMode: themeMode,

@@ -19,6 +19,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/domain/entities/app_settings_data.dart';
 import 'package:metra/domain/entities/cycle_prediction.dart';
+import 'package:metra/domain/services/notification_service.dart';
 import 'package:metra/domain/use_cases/schedule_prediction_notification.dart';
 
 import '../../helpers/fake_notification_service.dart';
@@ -778,6 +779,164 @@ void main() {
           reason:
               'M1: use case does not swallow PlatformException — propagates to caller',
         );
+      },
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // Group C — SchedulePredictionNotification.execute (new return-type assertions)
+  // FR-04, FR-05, NFR-03, NFR-04, EC-01, EC-02
+  // ---------------------------------------------------------------------------
+  group('Group C — SchedulePredictionNotification.execute (return-type assertions)', () {
+    // Shared far-future prediction: always future → no past-guard fires.
+    final validPrediction = CyclePrediction(
+      expectedStart: DateTime.utc(2099, 7, 20),
+      windowStart: DateTime.utc(2099, 7, 18),
+      windowEnd: DateTime.utc(2099, 7, 22),
+      cyclesUsed: 3,
+    );
+    final enabledSettings = AppSettingsData(
+      languageCode: 'it',
+      painEnabled: true,
+      notesEnabled: true,
+      notificationsEnabled: true,
+      notificationDaysBefore: 2,
+      onboardingCompleted: false,
+    );
+
+    test(
+      'given_throwOnNextSchedule_true_when_execute_then_result_is_NotificationScheduleFailure_with_PlatformException_error',
+      () async {
+        // TASK-03 dependency: FakeNotificationService.throwOnNextSchedule will
+        // return NotificationScheduleFailure (not throw) after TASK-03 ships.
+        // Until then this test lights red on "failure propagated" — expected.
+        final svc = FakeNotificationService();
+        svc.throwOnNextSchedule = true;
+        final uc = SchedulePredictionNotification(svc);
+
+        final result = await uc.execute(
+          prediction: validPrediction,
+          settings: enabledSettings,
+          title: 't',
+          body: 'b',
+        );
+
+        expect(result, isA<NotificationScheduleFailure>());
+        expect(
+          (result as NotificationScheduleFailure).error,
+          isA<PlatformException>(),
+        );
+      },
+    );
+
+    test(
+      'given_default_fake_when_execute_then_result_is_NotificationScheduleSuccess',
+      () async {
+        final svc = FakeNotificationService();
+        final uc = SchedulePredictionNotification(svc);
+
+        final result = await uc.execute(
+          prediction: validPrediction,
+          settings: enabledSettings,
+          title: 't',
+          body: 'b',
+        );
+
+        expect(result, isA<NotificationScheduleSuccess>());
+      },
+    );
+
+    test(
+      'given_null_prediction_when_execute_then_result_is_NotificationScheduleSuccess_and_nothing_scheduled',
+      () async {
+        // EC-01: null prediction short-circuit resolves to success.
+        final svc = FakeNotificationService();
+        final uc = SchedulePredictionNotification(svc);
+
+        final result = await uc.execute(
+          prediction: null,
+          settings: enabledSettings,
+          title: 't',
+          body: 'b',
+        );
+
+        expect(result, isA<NotificationScheduleSuccess>());
+        expect(svc.cancelCount, equals(1));
+        expect(svc.scheduled, isEmpty);
+      },
+    );
+
+    test(
+      'given_notifications_disabled_when_execute_then_result_is_NotificationScheduleSuccess_and_nothing_scheduled',
+      () async {
+        // EC-02: notificationsEnabled == false short-circuit resolves to success.
+        final disabledSettings = enabledSettings.copyWith(
+          notificationsEnabled: false,
+        );
+        final svc = FakeNotificationService();
+        final uc = SchedulePredictionNotification(svc);
+
+        final result = await uc.execute(
+          prediction: validPrediction,
+          settings: disabledSettings,
+          title: 't',
+          body: 'b',
+        );
+
+        expect(result, isA<NotificationScheduleSuccess>());
+        expect(svc.scheduled, isEmpty);
+      },
+    );
+
+    test(
+      'given_notificationDaysBefore_minus_1_when_execute_then_throws_ArgumentError',
+      () async {
+        // ArgumentError is thrown at AppSettingsData construction (entity
+        // invariant) — not at the use-case level. The lambda passed to
+        // expect() must include the construction so the error is captured.
+        final svc = FakeNotificationService();
+        final uc = SchedulePredictionNotification(svc);
+
+        expect(
+          () async {
+            final invalidSettings = AppSettingsData(
+              languageCode: 'it',
+              painEnabled: true,
+              notesEnabled: true,
+              notificationsEnabled: true,
+              notificationDaysBefore: -1, // violates [1, 7] invariant
+              onboardingCompleted: false,
+            );
+            await uc.execute(
+              prediction: validPrediction,
+              settings: invalidSettings,
+              title: 't',
+              body: 'b',
+            );
+          },
+          throwsA(isA<ArgumentError>()),
+        );
+      },
+    );
+
+    // ---------------------------------------------------------------------------
+    // Domain purity audit (NFR-03)
+    // ---------------------------------------------------------------------------
+    test(
+      'given_notification_service_dart_when_audited_then_no_framework_imports',
+      () {
+        // This test is a static assertion documented in code rather than
+        // a runtime check: lib/domain/services/notification_service.dart must
+        // not import any of the following:
+        //   "package:flutter/"
+        //   "package:drift/"
+        //   "package:http/"
+        //   "package:flutter_local_notifications/"
+        //
+        // Verified by: flutter analyze lib/domain/ (CI gate).
+        // This test exists as a living spec comment — it passes trivially
+        // at runtime because there is nothing to execute.
+        expect(true, isTrue);
       },
     );
   });

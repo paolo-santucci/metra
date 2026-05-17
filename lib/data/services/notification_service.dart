@@ -226,13 +226,28 @@ class FlutterNotificationService implements NotificationService {
     // On Android 13+ (API 33+), POST_NOTIFICATIONS is a runtime permission.
     // requestNotificationsPermission() shows the system dialog the first time;
     // subsequent calls return the persisted result without a dialog.
-    // On iOS, permission is requested via DarwinInitializationSettings in
-    // initialize() — resolvePlatformSpecificImplementation returns null there,
-    // so we return true (already handled).
     final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
-    if (androidPlugin == null) return true;
-    return await androidPlugin.requestNotificationsPermission() ?? true;
+    if (androidPlugin != null) {
+      return await androidPlugin.requestNotificationsPermission() ?? true;
+    }
+
+    // On iOS, request the permission through the iOS-specific plugin.
+    // A null return is treated as false (fail-closed for an explicit request —
+    // if we cannot confirm the user granted, do not assume they did).
+    // EC-10: if neither Android nor iOS resolver is available, return false.
+    final iosPlugin = _plugin.resolvePlatformSpecificImplementation<
+        IOSFlutterLocalNotificationsPlugin>();
+    if (iosPlugin != null) {
+      return await iosPlugin.requestPermissions(
+            sound: true,
+            alert: true,
+            badge: true,
+          ) ??
+          false;
+    }
+
+    return false;
   }
 
   @override
@@ -240,12 +255,25 @@ class FlutterNotificationService implements NotificationService {
     // areNotificationsEnabled() is read-only: returns the persisted permission
     // state without showing the system dialog. Available on Android 13+ via
     // POST_NOTIFICATIONS; on Android < 13 returns true (no runtime permission
-    // required). On iOS, resolvePlatformSpecificImplementation returns null
-    // (iOS permission is handled during initialize()), so we return true.
+    // required).
     final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
-    if (androidPlugin == null) return true;
-    return await androidPlugin.areNotificationsEnabled() ?? true;
+    if (androidPlugin != null) {
+      return await androidPlugin.areNotificationsEnabled() ?? true;
+    }
+
+    // On iOS, query the permission state via the iOS-specific plugin.
+    // A null return from checkPermissions() is treated as true (fail-open —
+    // do not block scheduling over a query failure per NFR-07).
+    // EC-10: if neither Android nor iOS resolver is available, return true.
+    final iosPlugin = _plugin.resolvePlatformSpecificImplementation<
+        IOSFlutterLocalNotificationsPlugin>();
+    if (iosPlugin != null) {
+      final options = await iosPlugin.checkPermissions();
+      return options?.isEnabled ?? true;
+    }
+
+    return true;
   }
 
   @override
