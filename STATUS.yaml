@@ -24,14 +24,14 @@ short-plan:
     triage: done
     spec: done
     plan: done
-    build: in-progress
+    build: done
   approvals:
     spec: approved
     plan: approved
   rejection-note: null
   build-progress:
     current-wave: 4
-    waves-completed: [1, 2, 3]
+    waves-completed: [1, 2, 3, 4]
 
 # Owned by the long-plan skill. update-status preserves verbatim.
 long-plan:
@@ -54,6 +54,8 @@ long-plan:
 pending-consolidation: []
 
 recently-completed:
+  - date: "2026-05-17"
+    summary: "feat(domain+data): TASK-11 — M1 foundation complete; 33 analyze errors fixed (const-constructor, Nullable<bool> call-sites, missing updateBackupSuspended stub); 1003 tests pass; dart format clean; commit d7abf71"
   - date: "2026-05-17"
     summary: "test: TASK-10 — FakeNotificationService throwOnNextSchedule knob (FR-14, EC-11); return type Future<NotificationScheduleResult>; 4 range-guard tests deleted; 2 new use-case tests; BUG-006 assertion inverted to NotificationScheduleFailure; const removed from AppSettingsData in 4 files (app_test, app_notification_wiring_test, schedule_prediction_notification_test, unchanged notification_service_test); 4 tests added to fake_notification_service_test"
   - date: "2026-05-17"
