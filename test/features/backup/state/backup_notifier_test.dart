@@ -836,7 +836,8 @@ void main() {
             restoreDataProvider
                 .overrideWith((_) async => RestoreData(aligningRunner)),
             cloudBackupProvider.overrideWithValue(fakeDropbox),
-            syncLogRepositoryProvider.overrideWith((_) async => fakeSyncLogRepo),
+            syncLogRepositoryProvider
+                .overrideWith((_) async => fakeSyncLogRepo),
           ],
         );
         addTearDown(container.dispose);
@@ -949,7 +950,8 @@ void main() {
                 .overrideWith((_) async => BackupData(blockingRunner)),
             restoreDataProvider.overrideWith((_) async => RestoreData(runner)),
             cloudBackupProvider.overrideWithValue(fakeDropbox),
-            syncLogRepositoryProvider.overrideWith((_) async => fakeSyncLogRepo),
+            syncLogRepositoryProvider
+                .overrideWith((_) async => fakeSyncLogRepo),
           ],
         );
         addTearDown(container.dispose);
