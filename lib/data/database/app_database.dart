@@ -74,6 +74,11 @@ class CycleEntries extends Table {
   DateTimeColumn get endDate => dateTime().nullable()();
   IntColumn get cycleLength => integer().nullable()();
   IntColumn get periodLength => integer().nullable()();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {startDate},
+      ];
 }
 
 /// User-defined custom pain/symptom types.
@@ -130,6 +135,14 @@ class AppSettings extends Table {
   /// Not included in [AppSettingsCompanion] built by [DriftAppSettingsRepository._toCompanion]
   /// — it is owned exclusively by [DriftAppSettingsRepository.updateLastDataWriteAt].
   DateTimeColumn get lastLogOrSymptomWriteAt => dateTime().nullable()();
+
+  /// Whether cloud backup is temporarily suspended by the user.
+  ///
+  /// When true, [SyncOrchestrator] skips the backup step on cold-start even
+  /// if [lastLogOrSymptomWriteAt] is newer than [lastBackupAt].
+  /// Default false — backup is active by default.
+  BoolColumn get backupSuspended =>
+      boolean().withDefault(const Constant(false))();
 }
 
 /// Local-only audit trail of cloud backup/restore operations.
@@ -163,7 +176,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -281,6 +294,43 @@ class AppDatabase extends _$AppDatabase {
               appSettings,
               appSettings.lastLogOrSymptomWriteAt,
             );
+          }
+          if (from < 10) {
+            // Three-step migration wrapped in a single transaction so that any
+            // failure rolls back all steps atomically (NFR-01).
+            //
+            // Step 1: Deduplicate cycle_entries — keep the row with the smallest
+            //   id for each start_date. Real installations should have no
+            //   duplicates, but the constraint cannot be enforced before this
+            //   clean-up runs.
+            //
+            // Step 2: Rebuild cycle_entries with UNIQUE(start_date) via
+            //   alterTable — Drift's TableMigration picks up the uniqueKeys
+            //   override automatically and recreates the table with the
+            //   constraint (SQLite does not support ADD CONSTRAINT after the
+            //   fact, so a table rebuild is required).
+            //
+            // Step 3: Add backup_suspended column to app_settings with
+            //   default false. Existing rows receive false via the column
+            //   default; no backfill is needed.
+            //
+            // Note: customStatement is intentional here (Step 1) — this
+            // migration block is explicitly excluded from NFR-14 purity checks.
+            await transaction(() async {
+              // Step 1: dedup — keep only the row with the smallest id per
+              // start_date value.
+              await customStatement(
+                'DELETE FROM cycle_entries WHERE id NOT IN '
+                '(SELECT MIN(id) FROM cycle_entries GROUP BY start_date)',
+              );
+
+              // Step 2: rebuild cycle_entries with UNIQUE(start_date).
+              // ignore: experimental_member_use
+              await m.alterTable(TableMigration(cycleEntries));
+
+              // Step 3: add backup_suspended column (default false).
+              await m.addColumn(appSettings, appSettings.backupSuspended);
+            });
           }
         },
       );

@@ -857,6 +857,10 @@ class $CycleEntriesTable extends CycleEntries
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+        {startDate},
+      ];
+  @override
   CycleEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return CycleEntry(
@@ -1423,6 +1427,16 @@ class $AppSettingsTable extends AppSettings
       GeneratedColumn<DateTime>(
           'last_log_or_symptom_write_at', aliasedName, true,
           type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _backupSuspendedMeta =
+      const VerificationMeta('backupSuspended');
+  @override
+  late final GeneratedColumn<bool> backupSuspended = GeneratedColumn<bool>(
+      'backup_suspended', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("backup_suspended" IN (0, 1))'),
+      defaultValue: const Constant(false));
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -1438,7 +1452,8 @@ class $AppSettingsTable extends AppSettings
         declaredCycleLength,
         notificationTimeMinutes,
         firstDayOfWeek,
-        lastLogOrSymptomWriteAt
+        lastLogOrSymptomWriteAt,
+        backupSuspended
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1531,6 +1546,12 @@ class $AppSettingsTable extends AppSettings
               data['last_log_or_symptom_write_at']!,
               _lastLogOrSymptomWriteAtMeta));
     }
+    if (data.containsKey('backup_suspended')) {
+      context.handle(
+          _backupSuspendedMeta,
+          backupSuspended.isAcceptableOrUnknown(
+              data['backup_suspended']!, _backupSuspendedMeta));
+    }
     return context;
   }
 
@@ -1571,6 +1592,8 @@ class $AppSettingsTable extends AppSettings
       lastLogOrSymptomWriteAt: attachedDatabase.typeMapping.read(
           DriftSqlType.dateTime,
           data['${effectivePrefix}last_log_or_symptom_write_at']),
+      backupSuspended: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}backup_suspended'])!,
     );
   }
 
@@ -1622,6 +1645,13 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
   /// Not included in [AppSettingsCompanion] built by [DriftAppSettingsRepository._toCompanion]
   /// — it is owned exclusively by [DriftAppSettingsRepository.updateLastDataWriteAt].
   final DateTime? lastLogOrSymptomWriteAt;
+
+  /// Whether cloud backup is temporarily suspended by the user.
+  ///
+  /// When true, [SyncOrchestrator] skips the backup step on cold-start even
+  /// if [lastLogOrSymptomWriteAt] is newer than [lastBackupAt].
+  /// Default false — backup is active by default.
+  final bool backupSuspended;
   const AppSetting(
       {required this.id,
       required this.languageCode,
@@ -1636,7 +1666,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       this.declaredCycleLength,
       required this.notificationTimeMinutes,
       required this.firstDayOfWeek,
-      this.lastLogOrSymptomWriteAt});
+      this.lastLogOrSymptomWriteAt,
+      required this.backupSuspended});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -1665,6 +1696,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       map['last_log_or_symptom_write_at'] =
           Variable<DateTime>(lastLogOrSymptomWriteAt);
     }
+    map['backup_suspended'] = Variable<bool>(backupSuspended);
     return map;
   }
 
@@ -1694,6 +1726,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       lastLogOrSymptomWriteAt: lastLogOrSymptomWriteAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lastLogOrSymptomWriteAt),
+      backupSuspended: Value(backupSuspended),
     );
   }
 
@@ -1721,6 +1754,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       firstDayOfWeek: serializer.fromJson<int>(json['firstDayOfWeek']),
       lastLogOrSymptomWriteAt:
           serializer.fromJson<DateTime?>(json['lastLogOrSymptomWriteAt']),
+      backupSuspended: serializer.fromJson<bool>(json['backupSuspended']),
     );
   }
   @override
@@ -1743,6 +1777,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       'firstDayOfWeek': serializer.toJson<int>(firstDayOfWeek),
       'lastLogOrSymptomWriteAt':
           serializer.toJson<DateTime?>(lastLogOrSymptomWriteAt),
+      'backupSuspended': serializer.toJson<bool>(backupSuspended),
     };
   }
 
@@ -1760,7 +1795,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           Value<int?> declaredCycleLength = const Value.absent(),
           int? notificationTimeMinutes,
           int? firstDayOfWeek,
-          Value<DateTime?> lastLogOrSymptomWriteAt = const Value.absent()}) =>
+          Value<DateTime?> lastLogOrSymptomWriteAt = const Value.absent(),
+          bool? backupSuspended}) =>
       AppSetting(
         id: id ?? this.id,
         languageCode: languageCode ?? this.languageCode,
@@ -1784,6 +1820,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
         lastLogOrSymptomWriteAt: lastLogOrSymptomWriteAt.present
             ? lastLogOrSymptomWriteAt.value
             : this.lastLogOrSymptomWriteAt,
+        backupSuspended: backupSuspended ?? this.backupSuspended,
       );
   AppSetting copyWithCompanion(AppSettingsCompanion data) {
     return AppSetting(
@@ -1824,6 +1861,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       lastLogOrSymptomWriteAt: data.lastLogOrSymptomWriteAt.present
           ? data.lastLogOrSymptomWriteAt.value
           : this.lastLogOrSymptomWriteAt,
+      backupSuspended: data.backupSuspended.present
+          ? data.backupSuspended.value
+          : this.backupSuspended,
     );
   }
 
@@ -1843,7 +1883,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           ..write('declaredCycleLength: $declaredCycleLength, ')
           ..write('notificationTimeMinutes: $notificationTimeMinutes, ')
           ..write('firstDayOfWeek: $firstDayOfWeek, ')
-          ..write('lastLogOrSymptomWriteAt: $lastLogOrSymptomWriteAt')
+          ..write('lastLogOrSymptomWriteAt: $lastLogOrSymptomWriteAt, ')
+          ..write('backupSuspended: $backupSuspended')
           ..write(')'))
         .toString();
   }
@@ -1863,7 +1904,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       declaredCycleLength,
       notificationTimeMinutes,
       firstDayOfWeek,
-      lastLogOrSymptomWriteAt);
+      lastLogOrSymptomWriteAt,
+      backupSuspended);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1881,7 +1923,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           other.declaredCycleLength == this.declaredCycleLength &&
           other.notificationTimeMinutes == this.notificationTimeMinutes &&
           other.firstDayOfWeek == this.firstDayOfWeek &&
-          other.lastLogOrSymptomWriteAt == this.lastLogOrSymptomWriteAt);
+          other.lastLogOrSymptomWriteAt == this.lastLogOrSymptomWriteAt &&
+          other.backupSuspended == this.backupSuspended);
 }
 
 class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
@@ -1899,6 +1942,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
   final Value<int> notificationTimeMinutes;
   final Value<int> firstDayOfWeek;
   final Value<DateTime?> lastLogOrSymptomWriteAt;
+  final Value<bool> backupSuspended;
   const AppSettingsCompanion({
     this.id = const Value.absent(),
     this.languageCode = const Value.absent(),
@@ -1914,6 +1958,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     this.notificationTimeMinutes = const Value.absent(),
     this.firstDayOfWeek = const Value.absent(),
     this.lastLogOrSymptomWriteAt = const Value.absent(),
+    this.backupSuspended = const Value.absent(),
   });
   AppSettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -1930,6 +1975,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     this.notificationTimeMinutes = const Value.absent(),
     this.firstDayOfWeek = const Value.absent(),
     this.lastLogOrSymptomWriteAt = const Value.absent(),
+    this.backupSuspended = const Value.absent(),
   });
   static Insertable<AppSetting> custom({
     Expression<int>? id,
@@ -1946,6 +1992,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     Expression<int>? notificationTimeMinutes,
     Expression<int>? firstDayOfWeek,
     Expression<DateTime>? lastLogOrSymptomWriteAt,
+    Expression<bool>? backupSuspended,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1968,6 +2015,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
       if (firstDayOfWeek != null) 'first_day_of_week': firstDayOfWeek,
       if (lastLogOrSymptomWriteAt != null)
         'last_log_or_symptom_write_at': lastLogOrSymptomWriteAt,
+      if (backupSuspended != null) 'backup_suspended': backupSuspended,
     });
   }
 
@@ -1985,7 +2033,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
       Value<int?>? declaredCycleLength,
       Value<int>? notificationTimeMinutes,
       Value<int>? firstDayOfWeek,
-      Value<DateTime?>? lastLogOrSymptomWriteAt}) {
+      Value<DateTime?>? lastLogOrSymptomWriteAt,
+      Value<bool>? backupSuspended}) {
     return AppSettingsCompanion(
       id: id ?? this.id,
       languageCode: languageCode ?? this.languageCode,
@@ -2004,6 +2053,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
       firstDayOfWeek: firstDayOfWeek ?? this.firstDayOfWeek,
       lastLogOrSymptomWriteAt:
           lastLogOrSymptomWriteAt ?? this.lastLogOrSymptomWriteAt,
+      backupSuspended: backupSuspended ?? this.backupSuspended,
     );
   }
 
@@ -2055,6 +2105,9 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
       map['last_log_or_symptom_write_at'] =
           Variable<DateTime>(lastLogOrSymptomWriteAt.value);
     }
+    if (backupSuspended.present) {
+      map['backup_suspended'] = Variable<bool>(backupSuspended.value);
+    }
     return map;
   }
 
@@ -2074,7 +2127,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
           ..write('declaredCycleLength: $declaredCycleLength, ')
           ..write('notificationTimeMinutes: $notificationTimeMinutes, ')
           ..write('firstDayOfWeek: $firstDayOfWeek, ')
-          ..write('lastLogOrSymptomWriteAt: $lastLogOrSymptomWriteAt')
+          ..write('lastLogOrSymptomWriteAt: $lastLogOrSymptomWriteAt, ')
+          ..write('backupSuspended: $backupSuspended')
           ..write(')'))
         .toString();
   }
@@ -3356,6 +3410,7 @@ typedef $$AppSettingsTableCreateCompanionBuilder = AppSettingsCompanion
   Value<int> notificationTimeMinutes,
   Value<int> firstDayOfWeek,
   Value<DateTime?> lastLogOrSymptomWriteAt,
+  Value<bool> backupSuspended,
 });
 typedef $$AppSettingsTableUpdateCompanionBuilder = AppSettingsCompanion
     Function({
@@ -3373,6 +3428,7 @@ typedef $$AppSettingsTableUpdateCompanionBuilder = AppSettingsCompanion
   Value<int> notificationTimeMinutes,
   Value<int> firstDayOfWeek,
   Value<DateTime?> lastLogOrSymptomWriteAt,
+  Value<bool> backupSuspended,
 });
 
 class $$AppSettingsTableFilterComposer
@@ -3431,6 +3487,10 @@ class $$AppSettingsTableFilterComposer
 
   ColumnFilters<DateTime> get lastLogOrSymptomWriteAt => $composableBuilder(
       column: $table.lastLogOrSymptomWriteAt,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get backupSuspended => $composableBuilder(
+      column: $table.backupSuspended,
       builder: (column) => ColumnFilters(column));
 }
 
@@ -3495,6 +3555,10 @@ class $$AppSettingsTableOrderingComposer
   ColumnOrderings<DateTime> get lastLogOrSymptomWriteAt => $composableBuilder(
       column: $table.lastLogOrSymptomWriteAt,
       builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get backupSuspended => $composableBuilder(
+      column: $table.backupSuspended,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$AppSettingsTableAnnotationComposer
@@ -3547,6 +3611,9 @@ class $$AppSettingsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get lastLogOrSymptomWriteAt => $composableBuilder(
       column: $table.lastLogOrSymptomWriteAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get backupSuspended => $composableBuilder(
+      column: $table.backupSuspended, builder: (column) => column);
 }
 
 class $$AppSettingsTableTableManager extends RootTableManager<
@@ -3586,6 +3653,7 @@ class $$AppSettingsTableTableManager extends RootTableManager<
             Value<int> notificationTimeMinutes = const Value.absent(),
             Value<int> firstDayOfWeek = const Value.absent(),
             Value<DateTime?> lastLogOrSymptomWriteAt = const Value.absent(),
+            Value<bool> backupSuspended = const Value.absent(),
           }) =>
               AppSettingsCompanion(
             id: id,
@@ -3602,6 +3670,7 @@ class $$AppSettingsTableTableManager extends RootTableManager<
             notificationTimeMinutes: notificationTimeMinutes,
             firstDayOfWeek: firstDayOfWeek,
             lastLogOrSymptomWriteAt: lastLogOrSymptomWriteAt,
+            backupSuspended: backupSuspended,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -3618,6 +3687,7 @@ class $$AppSettingsTableTableManager extends RootTableManager<
             Value<int> notificationTimeMinutes = const Value.absent(),
             Value<int> firstDayOfWeek = const Value.absent(),
             Value<DateTime?> lastLogOrSymptomWriteAt = const Value.absent(),
+            Value<bool> backupSuspended = const Value.absent(),
           }) =>
               AppSettingsCompanion.insert(
             id: id,
@@ -3634,6 +3704,7 @@ class $$AppSettingsTableTableManager extends RootTableManager<
             notificationTimeMinutes: notificationTimeMinutes,
             firstDayOfWeek: firstDayOfWeek,
             lastLogOrSymptomWriteAt: lastLogOrSymptomWriteAt,
+            backupSuspended: backupSuspended,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
