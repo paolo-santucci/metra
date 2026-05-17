@@ -1,37 +1,37 @@
 schema-version: 2
-last-updated: "2026-05-17T19:52:25Z"
-active-plan: null
+last-updated: "2026-05-18T12:00:00+02:00"
+active-plan: ".claude/docs/plans/sp-20260517-m4-notifications-plan.md"
 last-plan: ".claude/docs/plans/archive/sp-20260517-m3-backup-plan.md"
 
 # Owned by the short-plan skill. update-status preserves verbatim.
 short-plan:
-  feature: null
-  slug: null
-  auto: false
-  request-type: null
-  workflow: null
+  feature: "implement M4 Notifications + TestFlight (FR-16, FR-17, FR-18, FR-19)"
+  slug: "m4-notifications"
+  auto: true
+  request-type: bug-fix
+  workflow: canonical
   parent:
-    spec: null
-    plan: null
-    milestone: null
-    frs: null
+    spec: ".claude/docs/specs/lp-20260517-implement-next-patch-spec.md"
+    plan: ".claude/docs/plans/lp-20260517-implement-next-patch-plan.md"
+    milestone: 4
+    frs: "FR-16, FR-17, FR-18, FR-19"
   paths:
-    spec: null
-    plan: null
-    assess-dir: null
+    spec: ".claude/docs/specs/sp-20260517-m4-notifications-spec.md"
+    plan: ".claude/docs/plans/sp-20260517-m4-notifications-plan.md"
+    assess-dir: ".claude/docs/specs/sp-20260517-m4-notifications-assessment"
   phases:
-    assess: pending
-    triage: pending
-    spec: pending
-    plan: pending
+    assess: done
+    triage: done
+    spec: done
+    plan: done
     build: pending
   approvals:
-    spec: null
-    plan: null
+    spec: approved
+    plan: approved
   rejection-note: null
   build-progress:
-    current-wave: null
-    waves-completed: []
+    current-wave: 2
+    waves-completed: [1]
 
 # Owned by the long-plan skill. update-status preserves verbatim.
 long-plan:
@@ -49,27 +49,33 @@ long-plan:
     plan: done
   approvals:
     spec: approved
-    plan: null
+    plan: approved
 
 pending-consolidation: []
 
 recently-completed:
+  - date: "2026-05-18"
+    summary: "feat(m4-wave1): iOS permission fix, use-case return type, fake contract, error reporter, ARB key (TASK-01–05, TASK-09)"
+  - date: "2026-05-17"
+    summary: "feat(m3): M3 Backup — retention N=10, restore picker, suspend-on-wipe, filename suffix (FR-12–FR-15)"
   - date: "2026-05-17"
     summary: "chore: update STATUS.yaml — M2 build complete (all 4 waves done)"
   - date: "2026-05-17"
     summary: "feat(m2): M2 Settings/CSV/Onboarding — FR-05 through FR-11, FR-19 (all waves)"
   - date: "2026-05-17"
-    summary: "chore: update STATUS.yaml — M1 foundation build complete (Wave 4 done)"
-  - date: "2026-05-17"
     summary: "feat(domain+data): M1 foundation — Nullable<T> copyWith, schema v10, NotificationScheduleResult, backupSuspended"
-  - date: "2026-05-17"
-    summary: "test(data): update v9 schema test label to v10 after schemaVersion bump"
 
-in-progress: []
+in-progress:
+  - title: "M4 Notifications — Wave 2 (app.dart listener rewrite + stale use-case test fix)"
+    state: "Wave 1 complete (6/6 tasks, committed 65defb4); Wave 2 starting — TASK-06 + TASK-07 parallel"
+    touched:
+      - "lib/app.dart"
+      - "test/domain/use_cases/schedule_prediction_notification_test.dart"
+    next-step: "Execute Wave 2: TASK-06 (flutter-frontend-engineer) + TASK-07 (flutter-qa-integration) in parallel"
+    blocker: "schedule_prediction_notification_test.dart:771 failing (expected transient) — TASK-07 fixes this wave"
 
 next-steps:
-  - "Commit M3 build (all 6 waves, dart format applied, 1099 tests). TASK-27/31 screenshots deferred — require Android emulator session."
-  - "Approve LP plan (long-plan.approvals.plan: null → approved) then start next SP milestone."
+  - "TestFlight sign-off for FR-17 (iOS permission check + dialog) after build completes"
 
 known-issues:
   - severity: warning
