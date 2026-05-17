@@ -1,5 +1,5 @@
 schema-version: 2
-last-updated: "2026-05-17T14:25:00+02:00"
+last-updated: "2026-05-17T16:45:00+02:00"
 active-plan: ".claude/docs/plans/sp-20260517-m2-settings-csv-onboarding-plan.md"
 last-plan: ".claude/docs/plans/archive/sp-20260517-m1-foundation-plan.md"
 
@@ -24,14 +24,14 @@ short-plan:
     triage: done
     spec: done
     plan: done
-    build: pending
+    build: done
   approvals:
     spec: approved
     plan: approved
   rejection-note: null
   build-progress:
-    current-wave: 3
-    waves-completed: [1, 2]
+    current-wave: 4
+    waves-completed: [1, 2, 3, 4]
 
 # Owned by the long-plan skill. update-status preserves verbatim.
 long-plan:
@@ -55,6 +55,8 @@ pending-consolidation: []
 
 recently-completed:
   - date: "2026-05-17"
+    summary: "feat(m2): M2 Settings/CSV/Onboarding — FR-05 through FR-11, FR-19 complete (all 4 waves, 1030 tests green)"
+  - date: "2026-05-17"
     summary: "M2 plan written and approved (auto mode) — 4 waves, 7 tasks, active plan set"
   - date: "2026-05-17"
     summary: "M2 spec complete (review status) — triage canonical, spec phases 1a/1b/1c done, spec approved in auto mode"
@@ -62,30 +64,13 @@ recently-completed:
     summary: "chore: update STATUS.yaml — M1 foundation build complete (Wave 4 done)"
   - date: "2026-05-17"
     summary: "feat(domain+data): M1 foundation — Nullable<T> copyWith, schema v10, NotificationScheduleResult, backupSuspended"
-  - date: "2026-05-17"
-    summary: "feat(data): schema v9→v10 — backup_suspended column, UNIQUE(start_date) on cycle_entries, dedup migration"
 
-in-progress:
-  - title: "M2 Settings/CSV/Onboarding — build phase (Wave 1)"
-    state: "Plan approved; starting Wave 1 — getByStartDate plumbing + L10n keys in parallel"
-    touched:
-      - ".claude/docs/plans/sp-20260517-m2-settings-csv-onboarding-plan.md"
-      - ".claude/docs/specs/sp-20260517-m2-settings-csv-onboarding-spec.md"
-    next-step: "Execute Wave 1: TASK-01 (getByStartDate) + TASK-02 (L10n keys) in parallel"
-    blocker: null
+in-progress: []
 
 next-steps:
   - "After M2: start M3 Backup sprint (FR-12, FR-13, FR-14, FR-15)"
 
 known-issues:
-  - severity: critical
-    description: "Theme → System uses bare AppSettingsData constructor, silently resets notificationTimeMinutes/firstDayOfWeek (issue #13); fix is in M2 Wave 3 (TASK-05)"
-    impact: high
-    workaround: "Avoid switching to System theme until M2 ships"
-  - severity: critical
-    description: "CSV import rejects pain_intensity=0 despite being valid in-app — round-trip data loss (issue #20); fix is in M2 Wave 2 (TASK-04)"
-    impact: medium
-    workaround: "Manually edit exported CSV to remove pain_intensity=0 rows before re-import"
   - severity: warning
     description: "save_daily_log_test.dart future date rejection — intermittent failure near Italian midnight UTC (timezone/DST boundary)"
     impact: medium
