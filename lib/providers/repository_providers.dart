@@ -41,7 +41,8 @@ final cycleEntryRepositoryProvider = FutureProvider<CycleEntryRepository>((
   ref,
 ) async {
   final db = await ref.watch(databaseProvider.future);
-  return DriftCycleEntryRepository(db.cycleEntryDao);
+  final settingsRepo = await ref.watch(appSettingsRepositoryProvider.future);
+  return DriftCycleEntryRepository(db.cycleEntryDao, settingsRepo);
 });
 
 final appSettingsRepositoryProvider =

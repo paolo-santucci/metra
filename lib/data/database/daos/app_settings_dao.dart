@@ -47,4 +47,13 @@ class AppSettingsDao extends DatabaseAccessor<AppDatabase>
 
   Future<void> updateSettings(AppSettingsCompanion settings) =>
       (update(appSettings)..where((t) => t.id.equals(1))).write(settings);
+
+  /// Writes only the [backupSuspended] column on the singleton row.
+  ///
+  /// Single-column updater — no other column is touched. Called exclusively
+  /// by [DriftAppSettingsRepository.clearBackupSuspended] (passes `false`)
+  /// and [DriftAppSettingsRepository.updateBackupSuspended] (passes any value).
+  Future<void> setBackupSuspended(bool value) =>
+      (update(appSettings)..where((t) => t.id.equals(1)))
+          .write(AppSettingsCompanion(backupSuspended: Value(value)));
 }

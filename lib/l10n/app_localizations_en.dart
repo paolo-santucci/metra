@@ -776,4 +776,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get csvImportConfirmDeleteAction => 'Delete and import';
+
+  @override
+  String get restorePickerTitle => 'Choose version';
+
+  @override
+  String get restorePickerBody => 'Select the backup file to restore:';
+
+  @override
+  String restorePickerRowTemplate(String date, String size) {
+    return '$date · $size';
+  }
+
+  @override
+  String get restorePickerUseNewest => 'Use newest';
+
+  @override
+  String get restorePickerRestoreThisVersion => 'Restore this version';
+
+  @override
+  String get restorePickerEmpty => 'No backup files found.';
+
+  @override
+  String get restorePickerError => 'Failed to load backup files.';
 }

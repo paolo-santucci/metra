@@ -157,6 +157,7 @@ class DriftDailyLogRepository implements DailyLogRepository {
   Future<void> saveDailyLog(DailyLogEntity log) async {
     await _dao.upsertDailyLog(_toCompanion(log));
     await _settingsRepo.updateLastDataWriteAt(_now());
+    await _settingsRepo.clearBackupSuspended();
   }
 
   @override
@@ -189,6 +190,7 @@ class DriftDailyLogRepository implements DailyLogRepository {
       symptoms.map((s) => _symptomToCompanion(date, s)).toList(),
     );
     await _settingsRepo.updateLastDataWriteAt(_now());
+    await _settingsRepo.clearBackupSuspended();
   }
 
   @override
@@ -235,5 +237,6 @@ class DriftDailyLogRepository implements DailyLogRepository {
     });
     // Bump fires AFTER the transaction commits, not inside the closure.
     await _settingsRepo.updateLastDataWriteAt(_now());
+    await _settingsRepo.clearBackupSuspended();
   }
 }

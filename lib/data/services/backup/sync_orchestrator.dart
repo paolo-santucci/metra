@@ -16,11 +16,16 @@ import '../../../domain/repositories/daily_log_repository.dart';
 import '../../../domain/repositories/sync_log_repository.dart';
 import '../../../domain/use_cases/backup_data.dart';
 import '../encryption_service.dart';
+import 'backup_file_entry.dart';
 import 'backup_filename.dart';
 import 'backup_service.dart';
 import 'dropbox_provider.dart';
 
 typedef RecomputeFn = Future<dynamic> Function();
+
+/// Maximum number of backup files to retain in cloud storage.
+/// TASK-15 prune logic references this constant.
+const int kBackupRetentionMaxFiles = 10;
 
 class SyncOrchestrator implements BackupRunner {
   SyncOrchestrator({
@@ -72,16 +77,26 @@ class SyncOrchestrator implements BackupRunner {
       await _provider.upload(blob, filename);
       // Verify that the upload registered before pruning older files.
       final files = await _provider.listFiles();
-      if (!files.contains(filename)) {
+      if (!files.any((e) => e.name == filename)) {
         throw const SyncException('Upload verification failed');
       }
-      // Prune all older backups — best-effort; a single failure does not abort.
-      for (final f in files) {
-        if (f != filename) {
-          try {
-            await _provider.deleteFile(f);
-            // ignore: empty_catches — best-effort delete; non-fatal
-          } catch (_) {}
+      // Prune entries beyond the N=10 retention cap — best-effort; a per-file
+      // failure is logged and does not abort the overall backup operation.
+      // listFiles() returns entries newest-first; take(N) keeps the newest N.
+      final pruneSet = files.skip(kBackupRetentionMaxFiles);
+      for (final BackupFileEntry entry in pruneSet) {
+        try {
+          await _provider.deleteFile(entry.name);
+        } catch (e) {
+          await _syncLogRepo.append(
+            SyncLogEntity(
+              timestamp: _now(),
+              provider: SyncProvider.dropbox,
+              operation: SyncOperation.backup,
+              success: false,
+              errorMessage: 'prune-failure: ${entry.name}: $e',
+            ),
+          );
         }
       }
       final settings = await _settingsRepo.getOrCreate();
@@ -112,7 +127,7 @@ class SyncOrchestrator implements BackupRunner {
   }
 
   @override
-  Future<void> restore() async {
+  Future<void> restore({String? filename}) async {
     final ts = _now();
     try {
       final passphrase = await _secureStorage.read(key: _passphraseKey);
@@ -123,7 +138,9 @@ class SyncOrchestrator implements BackupRunner {
       if (files.isEmpty) {
         throw const SyncException('No backup found');
       }
-      final blob = await _provider.download(files.first);
+      // When filename is null, download the newest file (legacy path).
+      // When filename is non-null, download the exact requested file.
+      final blob = await _provider.download(filename ?? files.first.name);
       final bytes = await _encryption.decrypt(blob, passphrase);
       final snapshot = BackupSnapshot.decode(utf8.decode(bytes));
       final logs = snapshot.logsWithSymptoms.map((lws) => lws.log).toList();

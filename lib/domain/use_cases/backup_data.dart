@@ -10,7 +10,13 @@ import '../../core/utils/result.dart';
 /// Implemented by [SyncOrchestrator].
 abstract class BackupRunner {
   Future<void> backup();
-  Future<void> restore();
+
+  /// Restores data from the backup identified by [filename].
+  ///
+  /// When [filename] is `null`, the runner falls back to the legacy
+  /// "newest file" path — preserving pre-FR-14 behaviour for callers that
+  /// do not (yet) supply an explicit file selection.
+  Future<void> restore({String? filename});
 }
 
 class BackupData {

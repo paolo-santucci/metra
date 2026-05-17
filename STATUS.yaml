@@ -1,37 +1,37 @@
 schema-version: 2
-last-updated: "2026-05-17T16:45:00+02:00"
-active-plan: ".claude/docs/plans/sp-20260517-m2-settings-csv-onboarding-plan.md"
-last-plan: ".claude/docs/plans/archive/sp-20260517-m1-foundation-plan.md"
+last-updated: "2026-05-17T19:52:25Z"
+active-plan: null
+last-plan: ".claude/docs/plans/archive/sp-20260517-m3-backup-plan.md"
 
 # Owned by the short-plan skill. update-status preserves verbatim.
 short-plan:
-  feature: "implement M2 on .claude/docs/plans/lp-20260517-implement-next-patch-plan.md (Settings/CSV/Onboarding — FR-05, FR-06, FR-07, FR-08, FR-09, FR-10, FR-11, FR-19)"
-  slug: "m2-settings-csv-onboarding"
-  auto: true
-  request-type: bug-fix
-  workflow: canonical
+  feature: null
+  slug: null
+  auto: false
+  request-type: null
+  workflow: null
   parent:
-    spec: ".claude/docs/specs/lp-20260517-implement-next-patch-spec.md"
-    plan: ".claude/docs/plans/lp-20260517-implement-next-patch-plan.md"
-    milestone: 2
-    frs: "FR-05, FR-06, FR-07, FR-08, FR-09, FR-10, FR-11, FR-19"
+    spec: null
+    plan: null
+    milestone: null
+    frs: null
   paths:
-    spec: ".claude/docs/specs/sp-20260517-m2-settings-csv-onboarding-spec.md"
-    plan: ".claude/docs/plans/sp-20260517-m2-settings-csv-onboarding-plan.md"
-    assess-dir: ".claude/docs/specs/sp-20260517-m2-settings-csv-onboarding-assessment"
+    spec: null
+    plan: null
+    assess-dir: null
   phases:
-    assess: done
-    triage: done
-    spec: done
-    plan: done
-    build: done
+    assess: pending
+    triage: pending
+    spec: pending
+    plan: pending
+    build: pending
   approvals:
-    spec: approved
-    plan: approved
+    spec: null
+    plan: null
   rejection-note: null
   build-progress:
-    current-wave: 4
-    waves-completed: [1, 2, 3, 4]
+    current-wave: null
+    waves-completed: []
 
 # Owned by the long-plan skill. update-status preserves verbatim.
 long-plan:
@@ -55,20 +55,21 @@ pending-consolidation: []
 
 recently-completed:
   - date: "2026-05-17"
-    summary: "feat(m2): M2 Settings/CSV/Onboarding — FR-05 through FR-11, FR-19 complete (all 4 waves, 1030 tests green)"
+    summary: "chore: update STATUS.yaml — M2 build complete (all 4 waves done)"
   - date: "2026-05-17"
-    summary: "M2 plan written and approved (auto mode) — 4 waves, 7 tasks, active plan set"
-  - date: "2026-05-17"
-    summary: "M2 spec complete (review status) — triage canonical, spec phases 1a/1b/1c done, spec approved in auto mode"
+    summary: "feat(m2): M2 Settings/CSV/Onboarding — FR-05 through FR-11, FR-19 (all waves)"
   - date: "2026-05-17"
     summary: "chore: update STATUS.yaml — M1 foundation build complete (Wave 4 done)"
   - date: "2026-05-17"
     summary: "feat(domain+data): M1 foundation — Nullable<T> copyWith, schema v10, NotificationScheduleResult, backupSuspended"
+  - date: "2026-05-17"
+    summary: "test(data): update v9 schema test label to v10 after schemaVersion bump"
 
 in-progress: []
 
 next-steps:
-  - "After M2: start M3 Backup sprint (FR-12, FR-13, FR-14, FR-15)"
+  - "Commit M3 build (all 6 waves, dart format applied, 1099 tests). TASK-27/31 screenshots deferred — require Android emulator session."
+  - "Approve LP plan (long-plan.approvals.plan: null → approved) then start next SP milestone."
 
 known-issues:
   - severity: warning
@@ -76,6 +77,6 @@ known-issues:
     impact: medium
     workaround: null
   - severity: warning
-    description: "_handleRestore() prompts for passphrase on every restore — acceptable since restore is destructive"
+    description: "TASK-27 and TASK-31 (screenshot refresh for RestorePickerDialog) deferred — require Android emulator with IT/EN locale"
     impact: low
-    workaround: null
+    workaround: "Old restore screenshot in docs/it/help/backup.md and docs/en/help/backup.md; update during next manual QA session"

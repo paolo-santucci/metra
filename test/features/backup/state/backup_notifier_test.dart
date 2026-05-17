@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/errors/metra_exception.dart';
 import 'package:metra/core/utils/result.dart';
+import 'package:metra/data/services/backup/backup_file_entry.dart';
 import 'package:metra/data/services/backup/dropbox_provider.dart';
 import 'package:metra/domain/entities/sync_log_entity.dart';
 import 'package:metra/domain/use_cases/backup_data.dart';
@@ -31,6 +32,8 @@ class _FakeRunner implements BackupRunner {
   Result<void> restoreResult = const Ok(null);
   bool backupCalled = false;
   bool restoreCalled = false;
+  int restoreCallCount = 0;
+  String? lastFilename;
 
   @override
   Future<void> backup() async {
@@ -40,8 +43,10 @@ class _FakeRunner implements BackupRunner {
   }
 
   @override
-  Future<void> restore() async {
+  Future<void> restore({String? filename}) async {
     restoreCalled = true;
+    restoreCallCount++;
+    lastFilename = filename;
     final r = restoreResult;
     if (r is Err<void>) throw r.error;
   }
@@ -62,7 +67,7 @@ class _BlockingRunner implements BackupRunner {
   }
 
   @override
-  Future<void> restore() async {}
+  Future<void> restore({String? filename}) async {}
 }
 
 /// A runner whose [restore] simulates [SyncOrchestrator.restore] alignment:
@@ -82,7 +87,7 @@ class _AligningRestoreRunner implements BackupRunner {
   Future<void> backup() async {}
 
   @override
-  Future<void> restore() async {
+  Future<void> restore({String? filename}) async {
     restoreCalled = true;
     await _settingsRepo.updateLastDataWriteAt(_tb);
   }
@@ -109,7 +114,7 @@ class _ThrowingDropboxProvider implements CloudBackupProvider {
   Future<Uint8List> download(String filename) async => Uint8List(0);
 
   @override
-  Future<List<String>> listFiles() async => [];
+  Future<List<BackupFileEntry>> listFiles() async => [];
 
   @override
   Future<void> deleteFile(String filename) async {}
@@ -1008,6 +1013,177 @@ void main() {
       },
       timeout: const Timeout(Duration(seconds: 10)),
     );
+  });
+
+  // -----------------------------------------------------------------------
+  // TASK-16 — HC-2 / FR-12d / R-M3-A / EC-02 / EC-10
+  // sentinel read PRECEDES any secure-storage operation
+  // -----------------------------------------------------------------------
+  group('TASK-16 — backupSuspended sentinel guard', () {
+    test('FR-12d — backupSilent skips when suspended', () async {
+      await settingsRepo.updateBackupSuspended(true);
+      await settingsRepo.updateBackupState(
+        dropboxEmail: 'a@b.com',
+        lastBackupAt: null,
+      );
+      storage.values['metra_backup_passphrase_v1'] = 'existing-pass';
+
+      final container = makeContainer();
+      addTearDown(container.dispose);
+      await container.read(backupNotifierProvider.future);
+
+      await container.read(backupNotifierProvider.notifier).backupSilent();
+
+      expect(runner.backupCalled, isFalse);
+      expect(
+        fakeSyncLogRepo.appended.last.operation,
+        equals(SyncOperation.backupSkipped),
+      );
+      expect(
+        fakeSyncLogRepo.appended.last.errorMessage,
+        equals('skipped: backupSuspended=true'),
+      );
+    });
+
+    test(
+        'HC-2 / R-M3-A — backupWithPassphrase: sentinel-read precedes secure-storage write',
+        () async {
+      await settingsRepo.updateBackupSuspended(true);
+      await settingsRepo.updateBackupState(
+        dropboxEmail: 'a@b.com',
+        lastBackupAt: null,
+      );
+
+      final container = makeContainer();
+      addTearDown(container.dispose);
+      await container.read(backupNotifierProvider.future);
+
+      // Reset counters after build() completes (build reads settings but not storage).
+      storage.resetCallCounts();
+
+      await container
+          .read(backupNotifierProvider.notifier)
+          .backupWithPassphrase('new-pass');
+
+      // HC-2: zero writes to secure storage when backupSuspended = true.
+      expect(storage.writeCount, equals(0));
+      expect(
+        fakeSyncLogRepo.appended.last.operation,
+        equals(SyncOperation.backupSkipped),
+      );
+    });
+
+    test(
+        'EC-02 — existing old passphrase preserved bit-for-bit under suspended',
+        () async {
+      await settingsRepo.updateBackupSuspended(true);
+      await settingsRepo.updateBackupState(
+        dropboxEmail: 'a@b.com',
+        lastBackupAt: null,
+      );
+      storage.values['metra_backup_passphrase_v1'] = 'old-pass';
+
+      final container = makeContainer();
+      addTearDown(container.dispose);
+      await container.read(backupNotifierProvider.future);
+
+      await container
+          .read(backupNotifierProvider.notifier)
+          .backupWithPassphrase('new-pass');
+
+      expect(
+        storage.values['metra_backup_passphrase_v1'],
+        equals('old-pass'),
+      );
+    });
+
+    test(
+        'EC-10 — passphrase rollback block NOT reached under suspended '
+        '(zero reads and writes to secure storage)', () async {
+      await settingsRepo.updateBackupSuspended(true);
+      await settingsRepo.updateBackupState(
+        dropboxEmail: 'a@b.com',
+        lastBackupAt: null,
+      );
+      storage.values['metra_backup_passphrase_v1'] = 'old-pass';
+
+      final container = makeContainer();
+      addTearDown(container.dispose);
+      await container.read(backupNotifierProvider.future);
+
+      // Reset counters AFTER build() completes so we only count calls inside
+      // backupWithPassphrase() itself.
+      storage.resetCallCounts();
+
+      await container
+          .read(backupNotifierProvider.notifier)
+          .backupWithPassphrase('new-pass');
+
+      // The rollback block reads old passphrase first — if it ran, readCount > 0.
+      expect(storage.writeCount, equals(0));
+      expect(storage.readCount, equals(0));
+    });
+
+    test('Regression: existing write-recency skip-guard still works', () async {
+      // backupSuspended = false (default), so the suspended guard does not fire.
+      await settingsRepo.updateBackupState(
+        dropboxEmail: 'a@b.com',
+        lastBackupAt: DateTime.utc(2026, 5, 17, 12),
+      );
+      await settingsRepo.updateLastDataWriteAt(
+        DateTime.utc(2026, 5, 17, 11),
+      ); // older than lastBackupAt — should skip
+      storage.values['metra_backup_passphrase_v1'] = 'existing-pass';
+
+      final container = makeContainer();
+      addTearDown(container.dispose);
+      await container.read(backupNotifierProvider.future);
+
+      await container.read(backupNotifierProvider.notifier).backupSilent();
+
+      expect(runner.backupCalled, isFalse);
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // TASK-17 — FR-14a / §5.1.10 — restoreWithPassphrase filename forwarding
+  // -----------------------------------------------------------------------
+  group('TASK-17 — restoreWithPassphrase filename forwarding', () {
+    test('FR-14a — restoreWithPassphrase forwards filename', () async {
+      await settingsRepo.updateBackupState(
+        dropboxEmail: 'a@b.com',
+        lastBackupAt: null,
+      );
+      final container = makeContainer();
+      addTearDown(container.dispose);
+      await container.read(backupNotifierProvider.future);
+      await container
+          .read(backupNotifierProvider.notifier)
+          .restoreWithPassphrase(
+            'pass',
+            filename: 'metra_backup_20260517T120000Z_abc123.enc',
+          );
+      expect(
+        runner.lastFilename,
+        equals('metra_backup_20260517T120000Z_abc123.enc'),
+      );
+    });
+
+    test('FR-14a null — restoreWithPassphrase(filename: null) preserves legacy',
+        () async {
+      await settingsRepo.updateBackupState(
+        dropboxEmail: 'a@b.com',
+        lastBackupAt: null,
+      );
+      final container = makeContainer();
+      addTearDown(container.dispose);
+      await container.read(backupNotifierProvider.future);
+      await container
+          .read(backupNotifierProvider.notifier)
+          .restoreWithPassphrase('pass', filename: null);
+      expect(runner.lastFilename, isNull);
+      expect(runner.restoreCallCount, equals(1));
+    });
   });
 
   // -----------------------------------------------------------------------

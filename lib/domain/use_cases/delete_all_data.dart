@@ -15,17 +15,20 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
+import '../repositories/app_settings_repository.dart';
 import '../repositories/cycle_entry_repository.dart';
 import '../repositories/daily_log_repository.dart';
 
 class DeleteAllData {
-  const DeleteAllData(this._logRepo, this._cycleRepo);
+  const DeleteAllData(this._logRepo, this._cycleRepo, this._settingsRepo);
 
   final DailyLogRepository _logRepo;
   final CycleEntryRepository _cycleRepo;
+  final AppSettingsRepository _settingsRepo;
 
   Future<void> execute() async {
     await _logRepo.deleteAll();
     await _cycleRepo.deleteAll();
+    await _settingsRepo.updateBackupSuspended(true);
   }
 }

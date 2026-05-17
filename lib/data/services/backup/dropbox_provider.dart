@@ -25,11 +25,12 @@ import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../core/errors/metra_exception.dart';
+import 'backup_file_entry.dart';
 
 abstract class CloudBackupProvider {
   Future<void> upload(Uint8List blob, String filename);
   Future<Uint8List> download(String filename);
-  Future<List<String>> listFiles();
+  Future<List<BackupFileEntry>> listFiles();
   Future<void> deleteFile(String filename);
 
   // Widening additions (C-08: additive-only)
@@ -206,44 +207,36 @@ class DropboxProvider implements CloudBackupProvider {
   }
 
   @override
-  Future<List<String>> listFiles() async {
+  Future<List<BackupFileEntry>> listFiles() async {
     final res = await _authenticatedPost(
       Uri.https('api.dropboxapi.com', '/2/files/list_folder'),
-      body: jsonEncode({'path': ''}),
+      body: jsonEncode({'path': '', 'recursive': false}),
       headers: {'Content-Type': 'application/json'},
     );
-    if (res.statusCode == 409) {
-      // 409 path/not_found means the folder doesn't exist yet — treat as empty.
-      return [];
-    }
+    // 409 = path/not_found — App folder not yet created (first-ever backup).
+    // Return empty list; this is not an error.
+    if (res.statusCode == 409) return <BackupFileEntry>[];
     if (res.statusCode != 200) {
-      throw SyncException('List failed: ${res.statusCode}');
+      throw SyncException('listFiles failed: ${res.statusCode}');
     }
-    var data = jsonDecode(res.body) as Map<String, dynamic>;
-    final entries = (data['entries'] as List<dynamic>)
-        .cast<Map<String, dynamic>>()
-        .toList();
-    while (data['has_more'] == true) {
-      final continueRes = await _authenticatedPost(
-        Uri.parse('https://api.dropboxapi.com/2/files/list_folder/continue'),
-        body: jsonEncode({'cursor': data['cursor'] as String}),
-        headers: {'Content-Type': 'application/json'},
-      );
-      if (continueRes.statusCode != 200) {
-        break; // best-effort; partial list is acceptable
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    final rawEntries = body['entries'] as List<dynamic>;
+    final entries = <BackupFileEntry>[];
+    for (final e in rawEntries) {
+      final map = e as Map<String, dynamic>;
+      final name = map['name'] as String;
+      if (!name.startsWith(_filePrefix) || !name.endsWith(_fileSuffix)) {
+        continue;
       }
-      final nextData = jsonDecode(continueRes.body) as Map<String, dynamic>;
-      entries.addAll(
-        (nextData['entries'] as List<dynamic>).cast<Map<String, dynamic>>(),
+      final timestamp =
+          DateTime.parse(map['server_modified'] as String).toUtc();
+      final size = map['size'] as int;
+      entries.add(
+        BackupFileEntry(name: name, timestampUtc: timestamp, sizeBytes: size),
       );
-      data = nextData;
     }
-    return entries
-        .where((e) => e['.tag'] == 'file')
-        .map((e) => e['name'] as String)
-        .where((n) => n.startsWith(_filePrefix) && n.endsWith(_fileSuffix))
-        .toList()
-      ..sort((a, b) => b.compareTo(a));
+    entries.sort((a, b) => b.name.compareTo(a.name));
+    return entries;
   }
 
   @override

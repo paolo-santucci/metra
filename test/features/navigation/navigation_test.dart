@@ -95,6 +95,9 @@ class _StubAppSettingsRepository implements AppSettingsRepository {
 
   @override
   Future<void> updateBackupSuspended(bool value) async {}
+
+  @override
+  Future<void> clearBackupSuspended() async {}
 }
 
 /// Provider override that injects [_StubCalendarMonthNotifier].

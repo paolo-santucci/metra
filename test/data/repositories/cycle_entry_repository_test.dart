@@ -22,17 +22,28 @@ import 'package:metra/data/database/daos/cycle_entry_dao.dart';
 import 'package:metra/data/repositories/drift_cycle_entry_repository.dart';
 import 'package:metra/domain/entities/cycle_entry_entity.dart';
 
+import '../../helpers/fake_app_settings_repository.dart';
+
 AppDatabase _openTestDb() => AppDatabase(NativeDatabase.memory());
 
 void main() {
   late AppDatabase db;
   late CycleEntryDao dao;
   late DriftCycleEntryRepository repo;
+  late FakeAppSettingsRepository settingsRepo;
 
   setUp(() {
     db = _openTestDb();
     dao = db.cycleEntryDao;
-    repo = DriftCycleEntryRepository(dao);
+    settingsRepo = FakeAppSettingsRepository();
+    repo = DriftCycleEntryRepository(dao, settingsRepo);
+  });
+
+  test('DriftCycleEntryRepository ctor accepts AppSettingsRepository', () {
+    // Verifies the two-arg constructor compiles and constructs without error.
+    final constructed =
+        DriftCycleEntryRepository(dao, FakeAppSettingsRepository());
+    expect(constructed, isA<DriftCycleEntryRepository>());
   });
 
   tearDown(() => db.close());
@@ -154,5 +165,30 @@ void main() {
     final result = await repo.getByStartDate(DateTime.utc(2025, 2, 15));
 
     expect(result, isNull);
+  });
+
+  // ---- clear-on-write sentinel tests (FR-12b / FR-12c) ----
+
+  test('insert clears sentinel (FR-12b)', () async {
+    await settingsRepo.updateBackupSuspended(true);
+    await repo.insert(makeEntry(startDate: DateTime.utc(2026, 5, 1)));
+    expect((await settingsRepo.getOrCreate()).backupSuspended, isFalse);
+  });
+
+  test('update clears sentinel (FR-12b)', () async {
+    final entry = makeEntry(startDate: DateTime.utc(2026, 5, 1));
+    final inserted = await repo.insert(entry);
+    await settingsRepo.updateBackupSuspended(true);
+    await repo.update(
+      inserted.copyWith(endDate: DateTime.utc(2026, 5, 20)),
+    );
+    expect((await settingsRepo.getOrCreate()).backupSuspended, isFalse);
+  });
+
+  test('replaceAll does NOT clear sentinel (FR-12c — restore/recompute path)',
+      () async {
+    await settingsRepo.updateBackupSuspended(true);
+    await repo.replaceAll([makeEntry(startDate: DateTime.utc(2026, 5, 1))]);
+    expect((await settingsRepo.getOrCreate()).backupSuspended, isTrue);
   });
 }

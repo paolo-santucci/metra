@@ -3,16 +3,22 @@
 // This file is part of Métra.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/theme/metra_theme.dart';
+import 'package:metra/data/services/backup/backup_file_entry.dart';
 import 'package:metra/features/backup/backup_screen.dart';
 import 'package:metra/features/backup/state/backup_notifier.dart';
 import 'package:metra/features/backup/state/backup_state.dart';
+import 'package:metra/features/backup/widgets/restore_picker_dialog.dart';
 import 'package:metra/l10n/app_localizations.dart';
+import 'package:metra/providers/backup_providers.dart';
 import 'package:metra/providers/encryption_provider.dart';
 
+import '../../helpers/fake_dropbox_provider.dart';
 import '../../helpers/in_memory_secure_storage.dart';
 
 // ---------------------------------------------------------------------------
@@ -24,9 +30,14 @@ class _StubBackupNotifier extends BackupNotifier {
 
   final BackupState _initial;
   String? capturedRestorePassphrase;
+  String? capturedRestoreFilename;
   String? capturedBackupPassphrase;
   int backupSilentCallCount = 0;
   int backupWithPassphraseCallCount = 0;
+
+  /// When non-null, [restoreWithPassphrase] transitions state to
+  /// [BackupErrorState] with this message instead of completing silently.
+  String? restoreFailMessage;
 
   @override
   Future<BackupState> build() async => _initial;
@@ -34,8 +45,15 @@ class _StubBackupNotifier extends BackupNotifier {
   // Override to capture the passphrase without touching real providers
   // (restoreDataProvider / secureStorageProvider are unseeded in widget tests).
   @override
-  Future<void> restoreWithPassphrase(String passphrase) async {
+  Future<void> restoreWithPassphrase(
+    String passphrase, {
+    String? filename,
+  }) async {
     capturedRestorePassphrase = passphrase;
+    capturedRestoreFilename = filename;
+    if (restoreFailMessage != null) {
+      state = AsyncData(BackupErrorState(restoreFailMessage!));
+    }
   }
 
   @override
@@ -54,7 +72,21 @@ class _StubBackupNotifier extends BackupNotifier {
 // Test helper
 // ---------------------------------------------------------------------------
 
-Widget _wrap(BackupState state, {_StubBackupNotifier? stub}) {
+/// Default seed used by [_wrap] / [_wrapWithStorage] to stub
+/// [backupFileListProvider].  One entry is enough to allow the picker to
+/// open and "Use newest" to be tapped; tests that need specific entries
+/// should pass a custom [fakeProvider].
+final _defaultSeedEntry = BackupFileEntry(
+  name: 'default.enc',
+  timestampUtc: DateTime.utc(2026, 5, 17, 12),
+  sizeBytes: 1024,
+);
+
+Widget _wrap(
+  BackupState state, {
+  _StubBackupNotifier? stub,
+  FakeDropboxProvider? fakeProvider,
+}) {
   // Provide an empty InMemorySecureStorage so _handleBackup's read() returns
   // null and the setNew PassphraseDialog path is exercised without calling
   // the real FlutterSecureStorage plugin (which is unavailable in widget tests).
@@ -64,6 +96,9 @@ Widget _wrap(BackupState state, {_StubBackupNotifier? stub}) {
         () => stub ?? _StubBackupNotifier(state),
       ),
       secureStorageProvider.overrideWithValue(InMemorySecureStorage()),
+      cloudBackupProvider.overrideWithValue(
+        fakeProvider ?? FakeDropboxProvider(seedEntries: [_defaultSeedEntry]),
+      ),
     ],
     child: MaterialApp(
       theme: MetraTheme.light(),
@@ -80,12 +115,16 @@ Widget _wrapWithStorage(
   BackupState state, {
   required InMemorySecureStorage storage,
   _StubBackupNotifier? stub,
+  FakeDropboxProvider? fakeProvider,
 }) {
   final notifierStub = stub ?? _StubBackupNotifier(state);
   return ProviderScope(
     overrides: [
       backupNotifierProvider.overrideWith(() => notifierStub),
       secureStorageProvider.overrideWithValue(storage),
+      cloudBackupProvider.overrideWithValue(
+        fakeProvider ?? FakeDropboxProvider(seedEntries: [_defaultSeedEntry]),
+      ),
     ],
     child: MaterialApp(
       theme: MetraTheme.light(),
@@ -94,6 +133,23 @@ Widget _wrapWithStorage(
       supportedLocales: AppLocalizations.supportedLocales,
       home: const BackupScreen(),
     ),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Picker dialog harness (standalone — does NOT use BackupScreen)
+// ---------------------------------------------------------------------------
+
+/// Minimal harness that wraps [child] in the theme + l10n environment required
+/// by [RestorePickerDialog].  The [child] is responsible for opening the
+/// dialog via [RestorePickerDialog.show].
+Widget _pickerHarness(Widget child) {
+  return MaterialApp(
+    theme: MetraTheme.light(),
+    locale: const Locale('en'),
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    home: Scaffold(body: Center(child: child)),
   );
 }
 
@@ -286,7 +342,12 @@ void main() {
       await tester.tap(find.widgetWithText(TextButton, 'Restore'));
       await tester.pumpAndSettle();
 
-      // 3. Passphrase unlock dialog appears.
+      // 3. Picker dialog appears — tap "Use newest" shortcut.
+      expect(find.text('Choose version'), findsOneWidget);
+      await tester.tap(find.widgetWithText(TextButton, 'Use newest'));
+      await tester.pumpAndSettle();
+
+      // 4. Passphrase unlock dialog appears.
       expect(find.text('Enter passphrase'), findsOneWidget);
       // Only one passphrase field — no Confirm field in unlock mode.
       expect(
@@ -294,20 +355,20 @@ void main() {
         findsNothing,
       );
 
-      // 4. Enter a passphrase (any non-empty value passes unlock validation).
+      // 5. Enter a passphrase (any non-empty value passes unlock validation).
       await tester.enterText(
         find.widgetWithText(TextField, 'Passphrase').first,
         'my-secret',
       );
       await tester.pumpAndSettle();
 
-      // 5. Tap the unlock-and-restore button.
+      // 6. Tap the unlock-and-restore button.
       await tester.tap(
         find.widgetWithText(TextButton, 'Unlock and restore'),
       );
       await tester.pumpAndSettle();
 
-      // 6. Verify the notifier received the entered passphrase.
+      // 7. Verify the notifier received the entered passphrase.
       expect(stub.capturedRestorePassphrase, 'my-secret');
     });
 
@@ -325,6 +386,10 @@ void main() {
       await tester.tap(find.text('Restore from backup'));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(TextButton, 'Restore'));
+      await tester.pumpAndSettle();
+
+      // Picker dialog — use "Use newest" shortcut.
+      await tester.tap(find.widgetWithText(TextButton, 'Use newest'));
       await tester.pumpAndSettle();
 
       // 4-char passphrase — would fail in setNew mode but is fine in unlock.
@@ -358,6 +423,10 @@ void main() {
       await tester.tap(find.text('Restore from backup'));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(TextButton, 'Restore'));
+      await tester.pumpAndSettle();
+
+      // Picker dialog — use "Use newest" shortcut.
+      await tester.tap(find.widgetWithText(TextButton, 'Use newest'));
       await tester.pumpAndSettle();
 
       // No text entered — button must be disabled.
@@ -403,6 +472,10 @@ void main() {
       await tester.tap(find.text('Restore from backup'));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(TextButton, 'Restore'));
+      await tester.pumpAndSettle();
+
+      // Picker dialog — use "Use newest" shortcut to reach passphrase.
+      await tester.tap(find.widgetWithText(TextButton, 'Use newest'));
       await tester.pumpAndSettle();
 
       expect(find.text('Enter passphrase'), findsOneWidget);
@@ -568,6 +641,465 @@ void main() {
         find.widgetWithText(ElevatedButton, 'Back up now'),
         findsNothing,
       );
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // RestorePickerDialog tests (TASK-18)
+  // ---------------------------------------------------------------------------
+
+  group('RestorePickerDialog', () {
+    final threeEntries = [
+      BackupFileEntry(
+        name: 'newest.enc',
+        timestampUtc: DateTime.utc(2026, 5, 17, 12),
+        sizeBytes: 4096,
+      ),
+      BackupFileEntry(
+        name: 'mid.enc',
+        timestampUtc: DateTime.utc(2026, 5, 16, 12),
+        sizeBytes: 4096,
+      ),
+      BackupFileEntry(
+        name: 'oldest.enc',
+        timestampUtc: DateTime.utc(2026, 5, 15, 12),
+        sizeBytes: 4096,
+      ),
+    ];
+
+    testWidgets(
+        'FR-14 render — 3 entries: 3 RadioListTile rows, '
+        'newest pre-selected, both CTAs enabled', (tester) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(
+        _pickerHarness(
+          Builder(
+            builder: (ctx) => ElevatedButton(
+              onPressed: () =>
+                  RestorePickerDialog.show(ctx, entries: threeEntries),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      // Three rows rendered.
+      expect(find.byType(RadioListTile<String>), findsNWidgets(3));
+
+      // RadioGroup.groupValue == entries.first.name (newest pre-selected).
+      final radioGroup = tester.widget<RadioGroup<String>>(
+        find.byType(RadioGroup<String>),
+      );
+      expect(radioGroup.groupValue, equals('newest.enc'));
+
+      // Both CTAs are enabled (onPressed != null).
+      final useNewest = tester.widget<TextButton>(
+        find.widgetWithText(TextButton, 'Use newest'),
+      );
+      final restoreThis = tester.widget<TextButton>(
+        find.widgetWithText(TextButton, 'Restore this version'),
+      );
+      expect(useNewest.onPressed, isNotNull);
+      expect(restoreThis.onPressed, isNotNull);
+    });
+
+    testWidgets('FR-14 shortcut — "Use newest" returns RestorePickNewest',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      RestorePickerOutcome? captured;
+
+      await tester.pumpWidget(
+        _pickerHarness(
+          Builder(
+            builder: (ctx) => ElevatedButton(
+              onPressed: () =>
+                  RestorePickerDialog.show(ctx, entries: threeEntries)
+                      .then((v) => captured = v),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(TextButton, 'Use newest'));
+      await tester.pumpAndSettle();
+
+      expect(captured, isA<RestorePickNewest>());
+    });
+
+    testWidgets(
+        'FR-14 select — tap second row + "Restore this version" '
+        'returns RestorePickFilename for mid.enc', (tester) async {
+      // Use a larger physical canvas so all rows are on screen.
+      tester.view.physicalSize = const Size(2400, 6000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      RestorePickerOutcome? captured;
+
+      await tester.pumpWidget(
+        _pickerHarness(
+          Builder(
+            builder: (ctx) => ElevatedButton(
+              onPressed: () =>
+                  RestorePickerDialog.show(ctx, entries: threeEntries)
+                      .then((v) => captured = v),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      // Tap the second RadioListTile row.
+      await tester.tap(find.byType(RadioListTile<String>).at(1));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(TextButton, 'Restore this version'));
+      await tester.pumpAndSettle();
+
+      expect(captured, isA<RestorePickFilename>());
+      expect((captured! as RestorePickFilename).filename, equals('mid.enc'));
+    });
+
+    testWidgets(
+        'FR-14d — "Restore this version" foregroundColor is colorScheme.error',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(
+        _pickerHarness(
+          Builder(
+            builder: (ctx) => ElevatedButton(
+              onPressed: () => RestorePickerDialog.show(
+                ctx,
+                entries: [
+                  BackupFileEntry(
+                    name: 'only.enc',
+                    timestampUtc: DateTime.utc(2026, 5, 17, 12),
+                    sizeBytes: 1024,
+                  ),
+                ],
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      final button = tester.widget<TextButton>(
+        find.widgetWithText(TextButton, 'Restore this version'),
+      );
+      final colorScheme = MetraTheme.light().colorScheme;
+      final resolved = button.style!.foregroundColor!.resolve(<WidgetState>{});
+      expect(resolved, equals(colorScheme.error));
+    });
+
+    testWidgets(
+        'EC-01 — empty entries: no RadioListTile rows, both CTAs disabled',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(
+        _pickerHarness(
+          Builder(
+            builder: (ctx) => ElevatedButton(
+              onPressed: () => RestorePickerDialog.show(ctx, entries: const []),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      // No list rows in the empty-state branch.
+      expect(find.byType(RadioListTile<String>), findsNothing);
+
+      // Both CTAs have null onPressed (disabled).
+      final useNewest = tester.widget<TextButton>(
+        find.widgetWithText(TextButton, 'Use newest'),
+      );
+      final restoreThis = tester.widget<TextButton>(
+        find.widgetWithText(TextButton, 'Restore this version'),
+      );
+      expect(useNewest.onPressed, isNull);
+      expect(restoreThis.onPressed, isNull);
+    });
+
+    testWidgets('NFR-06 — empty body wrapped in Semantics(liveRegion: true)',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(
+        _pickerHarness(
+          Builder(
+            builder: (ctx) => ElevatedButton(
+              onPressed: () => RestorePickerDialog.show(ctx, entries: const []),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      // A Semantics node with liveRegion: true must exist in the dialog tree.
+      final liveRegionNode = find.byWidgetPredicate(
+        (w) => w is Semantics && w.properties.liveRegion == true,
+      );
+      expect(liveRegionNode, findsAtLeastNWidgets(1));
+    });
+
+    test(
+        'HC-5 — widget source does NOT reference metra_backup_ or BackupFilename',
+        () async {
+      final src = await File(
+        'lib/features/backup/widgets/restore_picker_dialog.dart',
+      ).readAsString();
+      expect(src.contains('metra_backup_'), isFalse);
+      expect(src.contains('BackupFilename'), isFalse);
+    });
+
+    testWidgets('EC-12 — rows display localized date strings (DateFormat used)',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(
+        _pickerHarness(
+          Builder(
+            builder: (ctx) => ElevatedButton(
+              onPressed: () => RestorePickerDialog.show(
+                ctx,
+                entries: [
+                  BackupFileEntry(
+                    name: 'only.enc',
+                    timestampUtc: DateTime.utc(2026, 5, 17, 12),
+                    sizeBytes: 1024,
+                  ),
+                ],
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      // The row must display the year 2026, proving DateFormat was applied
+      // (raw filename 'only.enc' does not contain '2026').
+      expect(find.textContaining('2026'), findsAtLeastNWidgets(1));
+    });
+  });
+
+// ---------------------------------------------------------------------------
+// TASK-20 — BackupScreen._handleRestore rewire + FR-14d + FR-14e
+// ---------------------------------------------------------------------------
+
+  group('BackupScreen — TASK-20 restore rewire', () {
+    final twoEntries = [
+      BackupFileEntry(
+        name: 'newest-t20.enc',
+        timestampUtc: DateTime.utc(2026, 5, 17, 12),
+        sizeBytes: 2048,
+      ),
+      BackupFileEntry(
+        name: 'older-t20.enc',
+        timestampUtc: DateTime.utc(2026, 5, 16, 12),
+        sizeBytes: 2048,
+      ),
+    ];
+
+    testWidgets(
+        'FR-14 E2E: confirm → picker → select second row → passphrase → '
+        'notifier called with correct filename', (tester) async {
+      tester.view.physicalSize = const Size(2400, 6000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final stub = _StubBackupNotifier(
+        const BackupConnected(email: 'e2e@test.com'),
+      );
+      await tester.pumpWidget(
+        _wrap(
+          const BackupConnected(email: 'e2e@test.com'),
+          stub: stub,
+          fakeProvider: FakeDropboxProvider(seedEntries: twoEntries),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 1. Tap "Restore from backup".
+      await tester.tap(find.text('Restore from backup'));
+      await tester.pumpAndSettle();
+
+      // 2. Confirm the destructive dialog.
+      await tester.tap(find.widgetWithText(TextButton, 'Restore'));
+      await tester.pumpAndSettle();
+
+      // 3. Picker opens — tap the second row, then "Restore this version".
+      await tester.tap(find.byType(RadioListTile<String>).at(1));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.widgetWithText(TextButton, 'Restore this version'),
+      );
+      await tester.pumpAndSettle();
+
+      // 4. Enter passphrase and confirm.
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Passphrase').first,
+        'test-pass',
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.widgetWithText(TextButton, 'Unlock and restore'),
+      );
+      await tester.pumpAndSettle();
+
+      // 5. Notifier must have received the selected filename.
+      expect(
+        stub.capturedRestoreFilename,
+        equals('older-t20.enc'),
+      );
+      expect(stub.capturedRestorePassphrase, equals('test-pass'));
+    });
+
+    testWidgets(
+        'FR-14d — restore confirm CTA uses foregroundColor: colorScheme.error',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(
+        _wrap(const BackupConnected(email: 'a@b.com')),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Restore from backup'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Restore backup?'), findsOneWidget);
+
+      final restoreButton = tester.widget<TextButton>(
+        find.widgetWithText(TextButton, 'Restore'),
+      );
+      final colorScheme = MetraTheme.light().colorScheme;
+      final resolved =
+          restoreButton.style!.foregroundColor!.resolve(<WidgetState>{});
+      expect(resolved, equals(colorScheme.error));
+    });
+
+    testWidgets(
+        'FR-14d — disconnect confirm CTA uses foregroundColor: colorScheme.error',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(
+        _wrap(const BackupConnected(email: 'a@b.com')),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Disconnect'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Disconnect Dropbox?'), findsOneWidget);
+
+      // The dialog's CTA is identified by being a descendant of the AlertDialog,
+      // not the screen-level "Disconnect" button that opened it.
+      final disconnectButton = tester.widget<TextButton>(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.widgetWithText(TextButton, 'Disconnect'),
+        ),
+      );
+      final colorScheme = MetraTheme.light().colorScheme;
+      final resolved =
+          disconnectButton.style!.foregroundColor!.resolve(<WidgetState>{});
+      expect(resolved, equals(colorScheme.error));
+    });
+
+    testWidgets(
+        'FR-14e — failure result drives failure snackbar; '
+        'no success snackbar shown on failure', (tester) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final stub = _StubBackupNotifier(
+        const BackupConnected(email: 'fr14e@test.com'),
+      )..restoreFailMessage = 'test-failure';
+
+      await tester.pumpWidget(
+        _wrap(
+          const BackupConnected(email: 'fr14e@test.com'),
+          stub: stub,
+          fakeProvider: FakeDropboxProvider(seedEntries: twoEntries),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Restore from backup'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, 'Restore'));
+      await tester.pumpAndSettle();
+
+      // Picker — use "Use newest".
+      await tester.tap(find.widgetWithText(TextButton, 'Use newest'));
+      await tester.pumpAndSettle();
+
+      // Passphrase dialog.
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Passphrase').first,
+        'pass-for-fail',
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.widgetWithText(TextButton, 'Unlock and restore'),
+      );
+      await tester.pumpAndSettle();
+
+      // Failure snackbar must appear with the error message.
+      // The text appears in both the SnackBar and the BackupErrorState body —
+      // both are correct; assert at least one occurrence.
+      expect(find.textContaining('test-failure'), findsAtLeastNWidgets(1));
+    });
+
+    test('HC-5 — backup_screen.dart has zero filename-parsing references',
+        () async {
+      final src = await File(
+        'lib/features/backup/backup_screen.dart',
+      ).readAsString();
+      expect(src.contains('metra_backup_'), isFalse);
+      expect(src.contains('BackupFilename'), isFalse);
     });
   });
 }

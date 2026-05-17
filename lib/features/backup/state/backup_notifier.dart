@@ -16,7 +16,14 @@ import '../../../providers/repository_providers.dart';
 import 'backup_state.dart';
 
 class BackupNotifier extends AsyncNotifier<BackupState> {
-  static const _passphraseKey = 'metra_backup_passphrase_v1';
+  /// Secure-storage key for the cached backup passphrase.
+  ///
+  /// Exposed as a public constant so [BackupScreen] can read the cached value
+  /// without hardcoding the literal string in the UI layer.
+  static const kPassphraseKey = 'metra_backup_passphrase_v1';
+
+  // Keep the private alias to avoid changing every internal call-site.
+  static const _passphraseKey = kPassphraseKey;
 
   @override
   Future<BackupState> build() async {
@@ -43,7 +50,8 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
       try {
         final files = await dropbox.listFiles(); // sorted desc, newest first
         if (files.isNotEmpty) {
-          discoveredLastBackupAt = BackupFilename.parseTimestamp(files.first);
+          discoveredLastBackupAt =
+              BackupFilename.parseTimestamp(files.first.name);
         }
       } catch (_) {
         // best-effort: listing failure does not abort the connect flow
@@ -90,6 +98,25 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
 
   Future<void> backupWithPassphrase(String passphrase) async {
     if (state.valueOrNull is BackupRunning) return;
+    // HC-2: sentinel read PRECEDES any secure-storage operation.
+    // If backupSuspended = true (set by DeleteAllData on wipe), skip silently
+    // and log a diagnostic entry — no passphrase is read or written.
+    final settingsForSentinel =
+        await ref.read(appSettingsRepositoryProvider.future);
+    final sentinelSettings = await settingsForSentinel.getOrCreate();
+    if (sentinelSettings.backupSuspended) {
+      final syncLogRepo = await ref.read(syncLogRepositoryProvider.future);
+      await syncLogRepo.append(
+        SyncLogEntity(
+          timestamp: DateTime.now().toUtc(),
+          provider: SyncProvider.dropbox,
+          operation: SyncOperation.backupSkipped,
+          success: true,
+          errorMessage: 'skipped: backupSuspended=true',
+        ),
+      );
+      return;
+    }
     final storage = ref.read(secureStorageProvider);
     // Read the old passphrase so it can be restored if the upload fails.
     // The invariant: after a failed backup the cloud blob is still encrypted
@@ -126,6 +153,23 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     // bypasses this guard intentionally.
     final settingsRepo = await ref.read(appSettingsRepositoryProvider.future);
     final settings = await settingsRepo.getOrCreate();
+
+    // HC-2 sentinel: guard 3 — inserted between BackupNotConnected (guard 2)
+    // and the write-recency check (guard 4). Reuses the settings read above.
+    if (settings.backupSuspended) {
+      final syncLogRepo = await ref.read(syncLogRepositoryProvider.future);
+      await syncLogRepo.append(
+        SyncLogEntity(
+          timestamp: DateTime.now().toUtc(),
+          provider: SyncProvider.dropbox,
+          operation: SyncOperation.backupSkipped,
+          success: true,
+          errorMessage: 'skipped: backupSuspended=true',
+        ),
+      );
+      return;
+    }
+
     final lastBackupAt = settings.lastBackupAt;
     final lastWriteAt = settings.lastLogOrSymptomWriteAt;
 
@@ -180,11 +224,11 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     }
   }
 
-  Future<void> restore() async {
+  Future<void> restore({String? filename}) async {
     state = const AsyncData(BackupRunning(BackupOperation.restoring));
     try {
       final uc = await ref.read(restoreDataProvider.future);
-      final result = await uc();
+      final result = await uc(filename: filename);
       switch (result) {
         case Ok():
           ref.invalidateSelf();
@@ -202,7 +246,10 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     }
   }
 
-  Future<void> restoreWithPassphrase(String passphrase) async {
+  Future<void> restoreWithPassphrase(
+    String passphrase, {
+    String? filename,
+  }) async {
     final storage = ref.read(secureStorageProvider);
     // Read the old passphrase so it can be restored if the download or
     // decryption fails. Invariant: a failed restore must not overwrite
@@ -212,7 +259,7 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     // Write the new passphrase so the orchestrator picks it up during restore.
     await storage.write(key: _passphraseKey, value: passphrase);
 
-    await restore();
+    await restore(filename: filename);
 
     // If the restore failed, restore() sets an error state but does not throw.
     // Detect failure via state and roll back the secure-storage value.

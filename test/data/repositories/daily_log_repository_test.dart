@@ -230,6 +230,84 @@ void main() {
   });
 
   // -----------------------------------------------------------------------
+  // TASK-09: clear-on-write sentinel — FR-12b (user-write) / FR-12c (delete)
+  // -----------------------------------------------------------------------
+  group('FR-12b user-write paths clear backupSuspended', () {
+    late FakeAppSettingsRepository settingsRepo;
+    late AppDatabase clearDb;
+    late DriftDailyLogRepository clearRepo;
+
+    setUp(() {
+      settingsRepo = FakeAppSettingsRepository();
+      clearDb = AppDatabase(NativeDatabase.memory());
+      clearRepo = DriftDailyLogRepository(clearDb.dailyLogDao, settingsRepo);
+    });
+
+    tearDown(() => clearDb.close());
+
+    final date = DateTime.utc(2026, 6, 1);
+
+    test('saveDailyLog clears sentinel', () async {
+      await settingsRepo.updateBackupSuspended(true);
+      await clearRepo.saveDailyLog(makeEntity(date));
+      expect((await settingsRepo.getOrCreate()).backupSuspended, isFalse);
+    });
+
+    test('replacePainSymptoms clears sentinel', () async {
+      await clearRepo.saveDailyLog(makeEntity(date)); // FK parent must exist
+      await settingsRepo.updateBackupSuspended(true);
+      await clearRepo.replacePainSymptoms(
+        date,
+        [const PainSymptomData(symptomType: PainSymptomType.headache)],
+      );
+      expect((await settingsRepo.getOrCreate()).backupSuspended, isFalse);
+    });
+
+    test('upsertAllLogs clears sentinel (CSV import path)', () async {
+      await settingsRepo.updateBackupSuspended(true);
+      await clearRepo.upsertAllLogs([
+        DailyLogWithSymptoms(log: makeEntity(date), symptoms: []),
+      ]);
+      expect((await settingsRepo.getOrCreate()).backupSuspended, isFalse);
+    });
+  });
+
+  group('FR-12c delete and restore paths DO NOT clear backupSuspended', () {
+    late FakeAppSettingsRepository settingsRepo;
+    late AppDatabase clearDb;
+    late DriftDailyLogRepository clearRepo;
+
+    setUp(() {
+      settingsRepo = FakeAppSettingsRepository();
+      clearDb = AppDatabase(NativeDatabase.memory());
+      clearRepo = DriftDailyLogRepository(clearDb.dailyLogDao, settingsRepo);
+    });
+
+    tearDown(() => clearDb.close());
+
+    final date = DateTime.utc(2026, 6, 1);
+
+    test('deleteDailyLog does not clear sentinel', () async {
+      await clearRepo.saveDailyLog(makeEntity(date));
+      await settingsRepo.updateBackupSuspended(true);
+      await clearRepo.deleteDailyLog(date);
+      expect((await settingsRepo.getOrCreate()).backupSuspended, isTrue);
+    });
+
+    test('deleteAll does not clear sentinel', () async {
+      await settingsRepo.updateBackupSuspended(true);
+      await clearRepo.deleteAll();
+      expect((await settingsRepo.getOrCreate()).backupSuspended, isTrue);
+    });
+
+    test('deleteAllAndReplace does not clear sentinel', () async {
+      await settingsRepo.updateBackupSuspended(true);
+      await clearRepo.deleteAllAndReplace([makeEntity(date)], {});
+      expect((await settingsRepo.getOrCreate()).backupSuspended, isTrue);
+    });
+  });
+
+  // -----------------------------------------------------------------------
   // TASK-07: real-Drift bump round-trip across all 6 write methods
   // Platform: Android + Linux (in-memory Drift, no device dependency)
   // -----------------------------------------------------------------------

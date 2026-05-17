@@ -52,26 +52,66 @@ void main() {
     expect(calls.single.bodyBytes, [1, 2, 3]);
   });
 
-  test('listFiles returns sorted backup filenames newest first', () async {
+  // FR-14b — listFiles returns metadata-bearing entries (TASK-13)
+  test('FR-14b — listFiles returns metadata-bearing entries', () async {
     storage.values['metra_dropbox_access_token_v1'] = 'tok';
+    const fixture = '{"entries":['
+        '{"name":"metra_backup_20260517T120000Z_abc123.enc",'
+        '"server_modified":"2026-05-17T12:00:01Z","size":4096},'
+        '{"name":"metra_backup_20260516T120000Z_def456.enc",'
+        '"server_modified":"2026-05-16T12:00:01Z","size":2048},'
+        '{"name":"metra_backup_20260515T120000Z.enc",'
+        '"server_modified":"2026-05-15T12:00:01Z","size":1024},'
+        '{"name":"unrelated.txt","server_modified":"2026-05-14T12:00:01Z","size":512}'
+        ']}';
+    final client = MockClient(
+      (req) async => http.Response(fixture, 200),
+    );
+    final p = DropboxProvider(appKey: 'key', storage: storage, client: client);
+    final entries = await p.listFiles();
+
+    expect(entries, hasLength(3));
+    // Sorted descending by name — newest first.
+    expect(entries[0].name, 'metra_backup_20260517T120000Z_abc123.enc');
+    expect(
+      entries[0].timestampUtc,
+      DateTime.utc(2026, 5, 17, 12, 0, 1),
+    );
+    expect(entries[0].sizeBytes, 4096);
+
+    expect(entries[1].name, 'metra_backup_20260516T120000Z_def456.enc');
+    expect(
+      entries[1].timestampUtc,
+      DateTime.utc(2026, 5, 16, 12, 0, 1),
+    );
+    expect(entries[1].sizeBytes, 2048);
+
+    expect(entries[2].name, 'metra_backup_20260515T120000Z.enc');
+    expect(
+      entries[2].timestampUtc,
+      DateTime.utc(2026, 5, 15, 12, 0, 1),
+    );
+    expect(entries[2].sizeBytes, 1024);
+  });
+
+  // EC-05 / §5.1.5 — HTTP 401 throws SyncException without partial construction
+  test('listFiles HTTP 401 throws SyncException without partial construction',
+      () async {
+    // No refresh token — _refreshAccessToken throws SyncException immediately.
+    storage.values['metra_dropbox_access_token_v1'] = 'expired';
+    var entryConstructed = false;
     final client = MockClient((req) async {
-      return http.Response(
-        jsonEncode({
-          'entries': [
-            {'.tag': 'file', 'name': 'metra_backup_20260428T100000Z.enc'},
-            {'.tag': 'file', 'name': 'metra_backup_20260429T100000Z.enc'},
-            {'.tag': 'file', 'name': 'unrelated.txt'},
-          ],
-        }),
-        200,
-      );
+      if (req.url.path.contains('/oauth2/token')) {
+        return http.Response('', 500); // refresh fails → SyncException
+      }
+      if (!entryConstructed) {
+        entryConstructed = true;
+      }
+      return http.Response('Unauthorized', 401);
     });
     final p = DropboxProvider(appKey: 'key', storage: storage, client: client);
-    final files = await p.listFiles();
-    expect(files, [
-      'metra_backup_20260429T100000Z.enc',
-      'metra_backup_20260428T100000Z.enc',
-    ]);
+    expect(p.listFiles(), throwsA(isA<SyncException>()));
+    expect(entryConstructed, isFalse);
   });
 
   test('listFiles returns [] on 409 path/not_found', () async {

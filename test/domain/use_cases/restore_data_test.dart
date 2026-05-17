@@ -18,50 +18,69 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/errors/metra_exception.dart';
 import 'package:metra/core/utils/result.dart';
-import 'package:metra/domain/use_cases/backup_data.dart';
 import 'package:metra/domain/use_cases/restore_data.dart';
 
-class _FakeRunner implements BackupRunner {
-  Object? restoreError;
-  bool restoreCalled = false;
-
-  @override
-  Future<void> backup() async {}
-
-  @override
-  Future<void> restore() async {
-    restoreCalled = true;
-    if (restoreError != null) throw restoreError!;
-  }
-}
+import '../../helpers/fake_backup_runner.dart';
 
 void main() {
-  test('returns Ok(null) on success', () async {
-    final r = _FakeRunner();
-    final result = await RestoreData(r)();
-    expect(result, isA<Ok<void>>());
-    expect(r.restoreCalled, isTrue);
+  group('RestoreData — existing behaviour', () {
+    test('returns Ok(null) on success', () async {
+      final runner = FakeBackupRunner();
+      final result = await RestoreData(runner)();
+      expect(result, isA<Ok<void>>());
+      expect(runner.restoreCallCount, equals(1));
+    });
+
+    test('returns Err on MetraException (e.g. SyncException)', () async {
+      final runner = FakeBackupRunner()
+        ..restoreError = const SyncException('x');
+      final result = await RestoreData(runner)();
+      expect(result, isA<Err<void>>());
+      expect((result as Err<void>).error, isA<SyncException>());
+    });
+
+    test('wraps unknown error in SyncException Err', () async {
+      final runner = FakeBackupRunner()
+        ..restoreError = StateError('unexpected');
+      final result = await RestoreData(runner)();
+      expect(result, isA<Err<void>>());
+      expect((result as Err<void>).error, isA<SyncException>());
+    });
+
+    test('EncryptionException flows through as Err', () async {
+      final runner = FakeBackupRunner()
+        ..restoreError = const EncryptionException('wrong passphrase');
+      final result = await RestoreData(runner)();
+      expect(result, isA<Err<void>>());
+      expect((result as Err<void>).error, isA<EncryptionException>());
+    });
   });
 
-  test('returns Err on MetraException (e.g. SyncException)', () async {
-    final r = _FakeRunner()..restoreError = const SyncException('x');
-    final result = await RestoreData(r)();
-    expect(result, isA<Err<void>>());
-    expect((result as Err<void>).error, isA<SyncException>());
-  });
+  group('RestoreData — filename forwarding (FR-14a)', () {
+    test(
+      'given_filename_string_when_call_with_filename_then_runner_receives_filename',
+      () async {
+        final runner = FakeBackupRunner();
+        final useCase = RestoreData(runner);
+        await useCase.call(
+          filename: 'metra_backup_20260517T120000Z_abc123.enc',
+        );
+        expect(
+          runner.lastFilename,
+          equals('metra_backup_20260517T120000Z_abc123.enc'),
+        );
+      },
+    );
 
-  test('wraps unknown error in SyncException Err', () async {
-    final r = _FakeRunner()..restoreError = StateError('unexpected');
-    final result = await RestoreData(r)();
-    expect(result, isA<Err<void>>());
-    expect((result as Err<void>).error, isA<SyncException>());
-  });
-
-  test('EncryptionException flows through as Err', () async {
-    final r = _FakeRunner()
-      ..restoreError = const EncryptionException('wrong passphrase');
-    final result = await RestoreData(r)();
-    expect(result, isA<Err<void>>());
-    expect((result as Err<void>).error, isA<EncryptionException>());
+    test(
+      'given_null_filename_when_call_with_null_then_runner_receives_null_and_is_called_once',
+      () async {
+        final runner = FakeBackupRunner();
+        final useCase = RestoreData(runner);
+        await useCase.call(filename: null);
+        expect(runner.lastFilename, isNull);
+        expect(runner.restoreCallCount, equals(1));
+      },
+    );
   });
 }

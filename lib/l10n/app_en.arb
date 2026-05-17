@@ -706,5 +706,48 @@
   "csvImportConfirmDeleteAction": "Delete and import",
   "@csvImportConfirmDeleteAction": {
     "description": "Confirm button label for the deleteAndImport destructive confirmation dialog"
+  },
+
+  "restorePickerTitle": "Choose version",
+  "@restorePickerTitle": {
+    "description": "Title of the RestorePickerDialog — prompts user to choose which backup version to restore"
+  },
+
+  "restorePickerBody": "Select the backup file to restore:",
+  "@restorePickerBody": {
+    "description": "Intro sentence shown above the backup file list in RestorePickerDialog"
+  },
+
+  "restorePickerRowTemplate": "{date} · {size}",
+  "@restorePickerRowTemplate": {
+    "description": "Row label in the backup file list showing date and file size, e.g. '12 May 2026 · 48 KB'",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+
+  "restorePickerUseNewest": "Use newest",
+  "@restorePickerUseNewest": {
+    "description": "Shortcut button that pre-selects the most recent backup file in RestorePickerDialog"
+  },
+
+  "restorePickerRestoreThisVersion": "Restore this version",
+  "@restorePickerRestoreThisVersion": {
+    "description": "Destructive CTA button in RestorePickerDialog that confirms the selected backup version for restore"
+  },
+
+  "restorePickerEmpty": "No backup files found.",
+  "@restorePickerEmpty": {
+    "description": "Empty-state body shown in RestorePickerDialog when no backup files are found in the cloud provider"
+  },
+
+  "restorePickerError": "Failed to load backup files.",
+  "@restorePickerError": {
+    "description": "Error-state body shown in RestorePickerDialog when the backup file list cannot be loaded"
   }
 }

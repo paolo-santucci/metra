@@ -49,6 +49,8 @@ Once connected:
 
 After the initial backup, Mētra will perform periodic backups automatically.
 
+Mētra automatically keeps the 10 most recent encrypted backups in the cloud folder; older blobs are pruned after each successful upload. No user-tunable setting — local-first / respect-the-adult-user posture.
+
 ---
 
 ## What is backed up
@@ -66,15 +68,16 @@ It does **not** include local notification schedule state: those are re-created 
 ## Restoring from a backup
 
 <!-- SCREENSHOT PLACEHOLDER: backup-restore.png -->
-<!-- Restore flow: passphrase entry dialog, then progress, then success confirmation. -->
+<!-- Restore flow: "Choose version" picker dialog, then passphrase entry, then progress and success confirmation. -->
 
 1. Install Mētra on the new device (or after a factory reset).
 2. Complete the onboarding flow, the baseline numbers do not matter, they will be overwritten by the restore.
 3. Go to **Settings → Cloud backup**.
-4. Connect your Dropbox account. If a backup is found, Mētra will indicate it and show when it was created.
-5. Tap **Restore from backup**.
-6. Enter your passphrase.
-7. Mētra downloads the backup, decrypts it, and replaces the local database.
+4. Connect your Dropbox account. If backups are found, Mētra will indicate it and show when the most recent one was created.
+5. Tap **Restore from backup** and confirm in the warning dialog that current data will be replaced.
+6. In the **Choose version** dialog you will see up to 10 available backups (the newest pre-selected), each showing date, time, and size.
+7. Either tap **Use newest** to restore the latest backup directly, or select a row from the list and tap **Restore this version** to pick a specific version.
+8. Enter your passphrase. Mētra downloads the chosen backup, decrypts it, and replaces the local database.
 
 > ⚠️ **Warning:** Restoring overwrites all data currently on the device. This action cannot be undone.
 
@@ -82,7 +85,9 @@ It does **not** include local notification schedule state: those are re-created 
 
 ## Disconnecting the provider
 
-Tap **Disconnect** in the backup screen to unlink the cloud account. The backup file already on the cloud is **not deleted**, you must delete it manually from the Dropbox app or website.
+Tap **Disconnect** in the backup screen to unlink the cloud account. The backup files already on the cloud are **not deleted**, you must delete them manually from the Dropbox app or website.
+
+Mētra now retains up to the 10 most recent encrypted blobs in the App folder.
 
 ---
 

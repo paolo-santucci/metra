@@ -18,9 +18,22 @@
 import 'package:metra/domain/entities/daily_log_entity.dart';
 import 'package:metra/domain/entities/daily_log_with_symptoms.dart';
 import 'package:metra/domain/entities/pain_symptom_data.dart';
+import 'package:metra/domain/repositories/app_settings_repository.dart';
 import 'package:metra/domain/repositories/daily_log_repository.dart';
 
 class FakeDailyLogRepository implements DailyLogRepository {
+  /// Optional settings repository.
+  ///
+  /// When provided, [saveDailyLog], [replacePainSymptoms], and
+  /// [upsertAllLogs] invoke [AppSettingsRepository.clearBackupSuspended]
+  /// after their primary write — mirroring [DriftDailyLogRepository]'s
+  /// FR-12b clear-on-write behaviour.  Existing callers that omit this
+  /// parameter are unaffected.
+  FakeDailyLogRepository({AppSettingsRepository? settingsRepo})
+      : _settingsRepo = settingsRepo;
+
+  final AppSettingsRepository? _settingsRepo;
+
   final List<DailyLogEntity> savedLogs = [];
   final Map<DateTime, List<PainSymptomData>> symptoms = {};
   final List<DateTime> deletedDates = [];
@@ -51,6 +64,7 @@ class FakeDailyLogRepository implements DailyLogRepository {
   Future<void> saveDailyLog(DailyLogEntity log) async {
     savedLogs.removeWhere((l) => l.date == log.date);
     savedLogs.add(log);
+    await _settingsRepo?.clearBackupSuspended();
   }
 
   @override
@@ -86,13 +100,16 @@ class FakeDailyLogRepository implements DailyLogRepository {
   ) async {
     final utcDate = DateTime.utc(date.year, date.month, date.day);
     symptoms[utcDate] = newSymptoms;
+    await _settingsRepo?.clearBackupSuspended();
   }
 
+  final List<String> callLog = [];
   bool deleteAllCalled = false;
 
   @override
   Future<void> deleteAll() async {
     deleteAllCalled = true;
+    callLog.add('deleteAll');
     savedLogs.clear();
     symptoms.clear();
   }
@@ -116,8 +133,15 @@ class FakeDailyLogRepository implements DailyLogRepository {
   @override
   Future<void> upsertAllLogs(List<DailyLogWithSymptoms> entries) async {
     for (final e in entries) {
-      await saveDailyLog(e.log);
-      await replacePainSymptoms(e.log.date, e.symptoms);
+      // Direct list mutation — do NOT call saveDailyLog() here because that
+      // would double-fire clearBackupSuspended.  Mirror the real impl which
+      // writes inside a transaction and calls clearBackupSuspended once after.
+      savedLogs.removeWhere((l) => l.date == e.log.date);
+      savedLogs.add(e.log);
+      final utcDate =
+          DateTime.utc(e.log.date.year, e.log.date.month, e.log.date.day);
+      symptoms[utcDate] = e.symptoms;
     }
+    await _settingsRepo?.clearBackupSuspended();
   }
 }

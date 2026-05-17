@@ -137,6 +137,31 @@ class _StreamingFakeAppSettingsRepository implements FakeAppSettingsRepository {
     );
     _controller.add(_stored);
   }
+
+  @override
+  Future<void> clearBackupSuspended() async {
+    final current = _stored ?? AppSettingsData.defaults();
+    _stored = AppSettingsData(
+      languageCode: current.languageCode,
+      darkMode: current.darkMode,
+      painEnabled: current.painEnabled,
+      notesEnabled: current.notesEnabled,
+      notificationDaysBefore: current.notificationDaysBefore,
+      notificationsEnabled: current.notificationsEnabled,
+      dropboxEmail: current.dropboxEmail,
+      lastBackupAt: current.lastBackupAt,
+      onboardingCompleted: current.onboardingCompleted,
+      declaredCycleLength: current.declaredCycleLength,
+      notificationTimeMinutes: current.notificationTimeMinutes,
+      firstDayOfWeek: current.firstDayOfWeek,
+      lastLogOrSymptomWriteAt: current.lastLogOrSymptomWriteAt,
+      backupSuspended: false,
+    );
+    _controller.add(_stored);
+  }
+
+  @override
+  List<String> get callLog => const [];
 }
 
 ProviderContainer _makeStreamingContainer(

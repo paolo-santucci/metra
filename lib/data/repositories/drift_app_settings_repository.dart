@@ -130,4 +130,7 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
   Future<void> updateBackupSuspended(bool value) => _dao.updateSettings(
         AppSettingsCompanion(backupSuspended: Value(value)),
       );
+
+  @override
+  Future<void> clearBackupSuspended() => _dao.setBackupSuspended(false);
 }

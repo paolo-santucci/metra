@@ -20,19 +20,34 @@ import 'package:metra/domain/entities/cycle_entry_entity.dart';
 import 'package:metra/domain/entities/daily_log_entity.dart';
 import 'package:metra/domain/use_cases/delete_all_data.dart';
 
+import '../../helpers/fake_app_settings_repository.dart';
 import '../../helpers/fake_cycle_entry_repository.dart';
 import '../../helpers/fake_daily_log_repository.dart';
 
 void main() {
   late FakeDailyLogRepository fakeLogRepo;
   late FakeCycleEntryRepository fakeCycleRepo;
+  late FakeAppSettingsRepository fakeSettingsRepo;
   late DeleteAllData useCase;
 
   setUp(() {
     fakeLogRepo = FakeDailyLogRepository();
     fakeCycleRepo = FakeCycleEntryRepository();
-    useCase = DeleteAllData(fakeLogRepo, fakeCycleRepo);
+    fakeSettingsRepo = FakeAppSettingsRepository();
+    useCase = DeleteAllData(fakeLogRepo, fakeCycleRepo, fakeSettingsRepo);
   });
+
+  test(
+    'given_three_repos_when_constructed_then_DeleteAllData_accepts_AppSettingsRepository',
+    () {
+      final instance = DeleteAllData(
+        FakeDailyLogRepository(),
+        FakeCycleEntryRepository(),
+        FakeAppSettingsRepository(),
+      );
+      expect(instance, isA<DeleteAllData>());
+    },
+  );
 
   test('execute() calls deleteAll on both repositories', () async {
     await useCase.execute();
@@ -53,4 +68,35 @@ void main() {
     expect(fakeLogRepo.savedLogs, isEmpty);
     expect(fakeCycleRepo.entries, isEmpty);
   });
+
+  test(
+    'FR-12a — happy path: updateBackupSuspended(true) recorded AFTER both deleteAll calls',
+    () async {
+      final fakeLogs = FakeDailyLogRepository();
+      final fakeCycles = FakeCycleEntryRepository();
+      final fakeSettings = FakeAppSettingsRepository();
+      await DeleteAllData(fakeLogs, fakeCycles, fakeSettings).execute();
+      expect(fakeLogs.callLog, contains('deleteAll'));
+      expect(fakeCycles.callLog, contains('deleteAll'));
+      expect(fakeSettings.callLog, contains('updateBackupSuspended:true'));
+    },
+  );
+
+  test(
+    'NFR-04 — partial failure: cycleRepo.deleteAll throws, settings is not mutated',
+    () async {
+      final fakeLogs = FakeDailyLogRepository();
+      final fakeCycles = FakeCycleEntryRepository()
+        ..throwOnDeleteAll = StateError('boom');
+      final fakeSettings = FakeAppSettingsRepository();
+      await expectLater(
+        DeleteAllData(fakeLogs, fakeCycles, fakeSettings).execute(),
+        throwsA(isA<StateError>()),
+      );
+      expect(
+        fakeSettings.callLog.contains('updateBackupSuspended:true'),
+        isFalse,
+      );
+    },
+  );
 }

@@ -78,4 +78,35 @@ abstract class AppSettingsRepository {
   ///
   /// **Errors**: propagate storage exceptions to the caller unchanged.
   Future<void> updateBackupSuspended(bool value);
+
+  /// Clears the backup-suspended sentinel by writing
+  /// [AppSettingsData.backupSuspended] = `false` in persistent storage.
+  ///
+  /// **Callers** (FR-12b): called by the data-layer write methods that
+  /// represent genuine user-initiated data writes —
+  /// `DriftDailyLogRepository.saveDailyLog`,
+  /// `DriftDailyLogRepository.replacePainSymptoms`,
+  /// `DriftDailyLogRepository.upsertAllLogs`,
+  /// `DriftCycleEntryRepository.insert`, and
+  /// `DriftCycleEntryRepository.update` — each after their primary write
+  /// returns successfully. Delete-path methods (`deleteDailyLog`, `deleteAll`,
+  /// `deleteAllAndReplace`, `replaceAll`) MUST NOT call this method (FR-12c).
+  ///
+  /// **HC-6 decoupling**: this method is a dedicated writer that touches only
+  /// the `backupSuspended` column. It MUST NOT read or write
+  /// `lastLogOrSymptomWriteAt`. Conversely, [updateLastDataWriteAt] MUST NOT
+  /// touch `backupSuspended`. The two writers are independent and MUST NOT
+  /// share a transaction block, so a failure in one cannot corrupt the other.
+  ///
+  /// **Pre-conditions**: A singleton settings row exists (guaranteed by
+  /// [getOrCreate]). If no row exists the implementation must propagate the
+  /// storage error — do not silently swallow it.
+  ///
+  /// **Post-conditions**:
+  ///   - [AppSettingsData.backupSuspended] is `false`.
+  ///   - [AppSettingsData.lastLogOrSymptomWriteAt] is byte-for-byte unchanged.
+  ///   - Every other column in AppSettings is byte-for-byte unchanged.
+  ///
+  /// **Errors**: propagate storage exceptions to the caller unchanged.
+  Future<void> clearBackupSuspended();
 }

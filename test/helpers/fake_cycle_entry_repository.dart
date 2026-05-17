@@ -73,11 +73,18 @@ class FakeCycleEntryRepository implements CycleEntryRepository {
   Future<CycleEntryEntity?> getByStartDate(DateTime startDate) async =>
       entries.where((e) => e.startDate == startDate).firstOrNull;
 
+  final List<String> callLog = [];
   bool deleteAllCalled = false;
+
+  /// When non-null, [deleteAll] throws this error instead of clearing entries.
+  Object? throwOnDeleteAll;
 
   @override
   Future<void> deleteAll() async {
+    if (throwOnDeleteAll != null)
+      throw throwOnDeleteAll!; // safe: null-checked above
     deleteAllCalled = true;
+    callLog.add('deleteAll');
     entries.clear();
   }
 }

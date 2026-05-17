@@ -1465,6 +1465,48 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Elimina e importa'**
   String get csvImportConfirmDeleteAction;
+
+  /// Title of the RestorePickerDialog — prompts user to choose which backup version to restore
+  ///
+  /// In it, this message translates to:
+  /// **'Scegli la versione'**
+  String get restorePickerTitle;
+
+  /// Intro sentence shown above the backup file list in RestorePickerDialog
+  ///
+  /// In it, this message translates to:
+  /// **'Seleziona il file di backup da ripristinare:'**
+  String get restorePickerBody;
+
+  /// Row label in the backup file list showing date and file size, e.g. '12 mag 2026 · 48 KB'
+  ///
+  /// In it, this message translates to:
+  /// **'{date} · {size}'**
+  String restorePickerRowTemplate(String date, String size);
+
+  /// Shortcut button that pre-selects the most recent backup file in RestorePickerDialog
+  ///
+  /// In it, this message translates to:
+  /// **'Usa il più recente'**
+  String get restorePickerUseNewest;
+
+  /// Destructive CTA button in RestorePickerDialog that confirms the selected backup version for restore
+  ///
+  /// In it, this message translates to:
+  /// **'Ripristina questa versione'**
+  String get restorePickerRestoreThisVersion;
+
+  /// Empty-state body shown in RestorePickerDialog when no backup files are found in the cloud provider
+  ///
+  /// In it, this message translates to:
+  /// **'Nessun file di backup trovato.'**
+  String get restorePickerEmpty;
+
+  /// Error-state body shown in RestorePickerDialog when the backup file list cannot be loaded
+  ///
+  /// In it, this message translates to:
+  /// **'Impossibile caricare i file di backup.'**
+  String get restorePickerError;
 }
 
 class _AppLocalizationsDelegate

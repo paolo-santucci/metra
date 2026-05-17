@@ -95,7 +95,8 @@ final schedulePredictionNotificationProvider =
 final deleteAllDataProvider = FutureProvider<DeleteAllData>((ref) async {
   final logRepo = await ref.watch(dailyLogRepositoryProvider.future);
   final cycleRepo = await ref.watch(cycleEntryRepositoryProvider.future);
-  return DeleteAllData(logRepo, cycleRepo);
+  final settingsRepo = await ref.watch(appSettingsRepositoryProvider.future);
+  return DeleteAllData(logRepo, cycleRepo, settingsRepo);
 });
 
 // ── P-5a CSV export / import ──

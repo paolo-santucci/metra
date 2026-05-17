@@ -32,6 +32,7 @@ import 'package:metra/features/settings/state/settings_notifier.dart';
 import 'package:metra/l10n/app_localizations.dart';
 import 'package:metra/providers/use_case_providers.dart';
 
+import '../../helpers/fake_app_settings_repository.dart';
 import '../../helpers/fake_cycle_entry_repository.dart';
 import '../../helpers/fake_daily_log_repository.dart';
 
@@ -255,7 +256,11 @@ void main() {
       final stub = _StubSettingsNotifier(defaults);
       final fakeLogRepo = FakeDailyLogRepository();
       final fakeCycleRepo = FakeCycleEntryRepository();
-      final fakeDeleteUc = DeleteAllData(fakeLogRepo, fakeCycleRepo);
+      final fakeDeleteUc = DeleteAllData(
+        fakeLogRepo,
+        fakeCycleRepo,
+        FakeAppSettingsRepository(),
+      );
 
       await tester.pumpWidget(
         _wrap([

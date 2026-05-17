@@ -1044,6 +1044,146 @@ function S18_TokenRef() {
   );
 }
 
+/* ─── S19 — AlertDialog + RadioListTile list-picker pattern ── */
+function S19_RestorePicker() {
+  const ENTRIES = [
+    { name: 'metra_backup_20260517T142301Z_k7fqx2.enc', ts: '17 mag 2026 · 14:23', size: '48 KB' },
+    { name: 'metra_backup_20260514T091145Z_m3rw9p.enc', ts: '14 mag 2026 · 09:11', size: '46 KB' },
+    { name: 'metra_backup_20260510T183055Z_a1bczy.enc', ts: '10 mag 2026 · 18:30', size: '45 KB' },
+  ];
+
+  function RadioRow({ entry, selected, onSelect, t, dark, first }) {
+    const isSelected = selected === entry.name;
+    const sep = dark ? 'rgba(237,228,211,0.07)' : 'rgba(43,37,33,0.07)';
+    const radioOuter = { width:20, height:20, borderRadius:'50%', border:`2px solid ${isSelected ? t.accent : (dark ? 'rgba(237,228,211,0.35)' : 'rgba(43,37,33,0.35)')}`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 };
+    const radioInner = { width:10, height:10, borderRadius:'50%', background: isSelected ? t.accent : 'transparent' };
+    const newBadgeBg = dark ? `${t.accent}28` : `${t.accent}18`;
+    const newBadgeBd = dark ? `${t.accent}55` : `${t.accent}44`;
+    return (
+      <div onClick={() => onSelect(entry.name)} style={{ borderTop: first ? 'none' : `1px solid ${sep}`, padding:'12px 20px', display:'flex', alignItems:'center', gap:12, cursor:'pointer', background: isSelected ? (dark ? `${t.accent}14` : `${t.accent}0D`) : 'transparent' }}>
+        <div style={radioOuter}><div style={radioInner}/></div>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:2 }}>
+            <span style={{ fontFamily:'Inter', fontSize:14, fontWeight:500, color:t.text, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{entry.ts}</span>
+            {first && <span style={{ fontFamily:'Inter', fontSize:11, fontWeight:600, paddingInline:8, height:20, display:'inline-flex', alignItems:'center', borderRadius:10, background:newBadgeBg, border:`1px solid ${newBadgeBd}`, color:t.accentDk, letterSpacing:'0.04em', flexShrink:0 }}>più recente</span>}
+          </div>
+          <span style={{ fontFamily:'Inter', fontSize:12, color:t.sub }}>{entry.size}</span>
+        </div>
+      </div>
+    );
+  }
+
+  function DialogNormal({ t, dark }) {
+    const [sel, setSel] = React.useState(ENTRIES[0].name);
+    const dialogBg = dark ? '#2F2520' : '#FDFAF6';
+    const overlayBg = dark ? 'rgba(0,0,0,0.60)' : 'rgba(43,37,33,0.40)';
+    const titleColor = t.text;
+    const bodyColor = dark ? 'rgba(237,228,211,0.68)' : 'rgba(43,37,33,0.68)';
+    const cancelColor = dark ? 'rgba(237,228,211,0.55)' : 'rgba(43,37,33,0.55)';
+    const errorColor = dark ? '#F87171' : '#DC2626';
+    const dividerColor = dark ? 'rgba(237,228,211,0.07)' : 'rgba(43,37,33,0.07)';
+    return (
+      <div style={{ position:'relative', width:320, height:380, borderRadius:16, overflow:'hidden', background:overlayBg, display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <div style={{ background:dialogBg, borderRadius:12, width:288, boxShadow:'0 8px 32px rgba(43,37,33,0.18)', overflow:'hidden' }}>
+          {/* Title */}
+          <div style={{ padding:'20px 20px 0' }}>
+            <div style={{ fontFamily:'DM Serif Display', fontSize:20, color:titleColor, marginBottom:8 }}>Scegli versione</div>
+            <div style={{ fontFamily:'Inter', fontSize:14, color:bodyColor, lineHeight:1.5, marginBottom:12 }}>Seleziona il backup da ripristinare. L'operazione sostituirà tutti i dati presenti.</div>
+          </div>
+          {/* Divider */}
+          <div style={{ height:1, background:dividerColor }}/>
+          {/* Scrollable list */}
+          <div style={{ maxHeight:160, overflowY:'auto' }}>
+            {ENTRIES.map((e, i) => (
+              <RadioRow key={e.name} entry={e} selected={sel} onSelect={setSel} t={t} dark={dark} first={i === 0}/>
+            ))}
+          </div>
+          {/* Divider */}
+          <div style={{ height:1, background:dividerColor }}/>
+          {/* Action row */}
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 12px' }}>
+            <button style={{ fontFamily:'Inter', fontSize:14, fontWeight:500, color:t.accent, background:'transparent', border:'none', cursor:'pointer', padding:'8px', borderRadius:8 }}>
+              Usa più recente
+            </button>
+            <div style={{ display:'flex', gap:4 }}>
+              <button style={{ fontFamily:'Inter', fontSize:14, fontWeight:500, color:cancelColor, background:'transparent', border:'none', cursor:'pointer', padding:'8px', borderRadius:8 }}>
+                Annulla
+              </button>
+              <button style={{ fontFamily:'Inter', fontSize:14, fontWeight:600, color:errorColor, background:'transparent', border:'none', cursor:'pointer', padding:'8px', borderRadius:8 }}>
+                Ripristina
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function DialogEmpty({ t, dark }) {
+    const dialogBg = dark ? '#2F2520' : '#FDFAF6';
+    const overlayBg = dark ? 'rgba(0,0,0,0.60)' : 'rgba(43,37,33,0.40)';
+    const titleColor = t.text;
+    const bodyColor = dark ? 'rgba(237,228,211,0.68)' : 'rgba(43,37,33,0.68)';
+    const emptyColor = dark ? 'rgba(237,228,211,0.38)' : 'rgba(43,37,33,0.38)';
+    const cancelColor = dark ? 'rgba(237,228,211,0.55)' : 'rgba(43,37,33,0.55)';
+    const dividerColor = dark ? 'rgba(237,228,211,0.07)' : 'rgba(43,37,33,0.07)';
+    return (
+      <div style={{ position:'relative', width:320, height:280, borderRadius:16, overflow:'hidden', background:overlayBg, display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <div style={{ background:dialogBg, borderRadius:12, width:288, boxShadow:'0 8px 32px rgba(43,37,33,0.18)', overflow:'hidden' }}>
+          {/* Title */}
+          <div style={{ padding:'20px 20px 0' }}>
+            <div style={{ fontFamily:'DM Serif Display', fontSize:20, color:titleColor, marginBottom:8 }}>Scegli versione</div>
+          </div>
+          {/* Divider */}
+          <div style={{ height:1, background:dividerColor }}/>
+          {/* Empty state — Semantics(liveRegion: true) target */}
+          <div style={{ padding:'32px 20px', display:'flex', flexDirection:'column', alignItems:'center', gap:8 }}>
+            <Icon name="cloud" size={28} color={emptyColor} stroke={1.5}/>
+            <span style={{ fontFamily:'Inter', fontSize:14, fontStyle:'italic', color:emptyColor, textAlign:'center', lineHeight:1.5 }}>Nessun backup trovato sul provider.</span>
+          </div>
+          {/* Divider */}
+          <div style={{ height:1, background:dividerColor }}/>
+          {/* Action row — empty state: close only */}
+          <div style={{ display:'flex', justifyContent:'flex-end', padding:'8px 12px' }}>
+            <button style={{ fontFamily:'Inter', fontSize:14, fontWeight:500, color:cancelColor, background:'transparent', border:'none', cursor:'pointer', padding:'8px', borderRadius:8 }}>
+              Chiudi
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Sec num={19} title="AlertDialog + RadioListTile — restore version picker">
+      <div style={{ marginBottom:16, fontFamily:'Inter', fontSize:13, color:L.sub, lineHeight:1.65, maxWidth:640, padding:'12px 16px', background:`${L.accent}0D`, borderRadius:10, border:`1px solid ${L.accent}22` }}>
+        <strong style={{ color:L.accentDk }}>HC-1 pattern — FR-14c.</strong> Il picker di versione usa <code style={{ fontFamily:'Inter', fontSize:12, background:'rgba(43,37,33,0.07)', padding:'1px 5px', borderRadius:4 }}>AlertDialog</code> + <code style={{ fontFamily:'Inter', fontSize:12, background:'rgba(43,37,33,0.07)', padding:'1px 5px', borderRadius:4 }}>RadioListTile</code>. Il bottom-sheet è <strong>escluso</strong> per questo pattern (§18.8). La riga di stato vuoto/errore richiede <code style={{ fontFamily:'Inter', fontSize:12, background:'rgba(43,37,33,0.07)', padding:'1px 5px', borderRadius:4 }}>Semantics(liveRegion: true)</code>.
+      </div>
+      <div style={{ display:'flex', gap:24, flexWrap:'wrap', alignItems:'flex-start' }}>
+        <div>
+          <div className="tlabel" style={{ marginBottom:12 }}>Light — versioni disponibili (3 righe, più recente pre-selezionata)</div>
+          <div className="lp" style={{ padding:16 }}><DialogNormal t={L} dark={false}/></div>
+        </div>
+        <div>
+          <div className="tlabel" style={{ marginBottom:12 }}>Dark — versioni disponibili</div>
+          <div className="dp" style={{ padding:16 }}><DialogNormal t={D} dark/></div>
+        </div>
+        <div>
+          <div className="tlabel" style={{ marginBottom:12 }}>Light — stato vuoto (nessun backup)</div>
+          <div className="lp" style={{ padding:16 }}><DialogEmpty t={L} dark={false}/></div>
+        </div>
+        <div>
+          <div className="tlabel" style={{ marginBottom:12 }}>Dark — stato vuoto</div>
+          <div className="dp" style={{ padding:16 }}><DialogEmpty t={D} dark/></div>
+        </div>
+      </div>
+      <div style={{ marginTop:20, fontFamily:'Inter', fontSize:12, color:L.sub, lineHeight:1.65, maxWidth:640 }}>
+        <strong>Anatomia:</strong> (1) titolo DM Serif Display 20; (2) riga body Inter 14 sotto il titolo; (3) lista <code style={{ fontFamily:'Inter', fontSize:11, background:'rgba(43,37,33,0.07)', padding:'1px 4px', borderRadius:3 }}>RadioListTile</code> scrollabile max-h 160 px — ogni riga: radio 20 px · timestamp Inter 14/500 · badge "più recente" su prima voce · size Inter 12 sub; (4) pulsante shortcut <code style={{ fontFamily:'Inter', fontSize:11, background:'rgba(43,37,33,0.07)', padding:'1px 4px', borderRadius:3 }}>Usa più recente</code> a sinistra, colore terracotta; (5) CTA distruttiva <code style={{ fontFamily:'Inter', fontSize:11, background:'rgba(43,37,33,0.07)', padding:'1px 4px', borderRadius:3 }}>Ripristina</code> destra con <code style={{ fontFamily:'Inter', fontSize:11, background:'rgba(43,37,33,0.07)', padding:'1px 4px', borderRadius:3 }}>TextButton.styleFrom(foregroundColor: colorScheme.error)</code>.
+      </div>
+    </Sec>
+  );
+}
+
 /* ─── APP ──────────────────────────────────────────────────── */
 function App() {
   return (
@@ -1076,6 +1216,7 @@ function App() {
       <S16_Contrasto/>
       <S17_Spacing/>
       <S18_TokenRef/>
+      <S19_RestorePicker/>
 
       <div style={{ borderTop:`1.5px solid rgba(43,37,33,0.12)`, paddingTop:32, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <span style={{ fontFamily:'DM Serif Display', fontSize:20, color:L.text }}>Mētra</span>

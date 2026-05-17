@@ -10,11 +10,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/theme/metra_colors.dart';
+import '../../data/services/backup/backup_file_entry.dart';
 import '../../l10n/app_localizations.dart';
+import '../../providers/backup_providers.dart';
 import '../../providers/encryption_provider.dart';
 import 'state/backup_notifier.dart';
 import 'state/backup_state.dart';
 import 'widgets/passphrase_dialog.dart';
+import 'widgets/restore_picker_dialog.dart';
 
 class BackupScreen extends ConsumerWidget {
   const BackupScreen({super.key});
@@ -143,7 +146,7 @@ class _ConnectedBodyState extends ConsumerState<_ConnectedBody> {
     // FR-12 / FR-13: read the cached passphrase BEFORE showing any dialog.
     final cached = await ref
         .read(secureStorageProvider)
-        .read(key: 'metra_backup_passphrase_v1');
+        .read(key: BackupNotifier.kPassphraseKey);
 
     if (!mounted) return;
 
@@ -166,6 +169,8 @@ class _ConnectedBodyState extends ConsumerState<_ConnectedBody> {
   }
 
   Future<void> _handleRestore() async {
+    // Step 1: destructive confirmation — CTA uses error colour (FR-14d).
+    final colorScheme = Theme.of(context).colorScheme;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
@@ -177,6 +182,9 @@ class _ConnectedBodyState extends ConsumerState<_ConnectedBody> {
             child: Text(widget.l10n.common_cancel),
           ),
           TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: colorScheme.error,
+            ),
             onPressed: () => Navigator.of(dialogCtx).pop(true),
             child: Text(widget.l10n.backup_restore_confirm_button),
           ),
@@ -186,24 +194,59 @@ class _ConnectedBodyState extends ConsumerState<_ConnectedBody> {
     if (confirmed != true) return;
     if (!mounted) return;
 
+    // Capture messenger before any async gap (recommended pattern).
     final messenger = ScaffoldMessenger.of(context);
+
+    // Step 2: fetch backup listing; abort + snackbar on error.
+    List<BackupFileEntry> entries;
+    try {
+      entries = await ref.read(backupFileListProvider.future);
+    } catch (_) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(widget.l10n.restorePickerError)),
+      );
+      return;
+    }
+    if (!mounted) return;
+
+    // Step 3: version picker.
+    final outcome = await RestorePickerDialog.show(context, entries: entries);
+    if (outcome == null) return;
+    if (!mounted) return;
+
+    // Step 4: resolve filename from outcome.
+    final String? filename = switch (outcome) {
+      RestorePickNewest() => null,
+      RestorePickFilename(:final filename) => filename,
+    };
+
+    // Step 5: passphrase unlock dialog — capture value via callback.
+    String? enteredPassphrase;
     await PassphraseDialog.show(
       context,
       mode: PassphraseDialogMode.unlock,
-      onConfirmed: (passphrase) {
-        unawaited(
-          ref
-              .read(backupNotifierProvider.notifier)
-              .restoreWithPassphrase(passphrase),
-        );
-        messenger.showSnackBar(
-          SnackBar(content: Text(widget.l10n.backup_restore_in_progress)),
-        );
-      },
+      onConfirmed: (passphrase) => enteredPassphrase = passphrase,
     );
+    if (enteredPassphrase == null) return;
+    if (!mounted) return;
+
+    // Step 6: execute restore and bind snackbar to the actual outcome (FR-14e).
+    await ref
+        .read(backupNotifierProvider.notifier)
+        .restoreWithPassphrase(enteredPassphrase!, filename: filename);
+    if (!mounted) return;
+    // State was set inside restoreWithPassphrase before the future resolved.
+    // Rebuild fires on the next frame; mounted is still true here.
+    final currentState = ref.read(backupNotifierProvider).valueOrNull;
+    if (currentState is BackupErrorState) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(currentState.message)),
+      );
+    }
   }
 
   Future<void> _handleDisconnect() async {
+    final colorScheme = Theme.of(context).colorScheme;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
@@ -215,6 +258,9 @@ class _ConnectedBodyState extends ConsumerState<_ConnectedBody> {
             child: Text(widget.l10n.common_cancel),
           ),
           TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: colorScheme.error,
+            ),
             onPressed: () => Navigator.of(dialogCtx).pop(true),
             child: Text(widget.l10n.backup_disconnect_confirm_button),
           ),

@@ -778,4 +778,28 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get csvImportConfirmDeleteAction => 'Elimina e importa';
+
+  @override
+  String get restorePickerTitle => 'Scegli la versione';
+
+  @override
+  String get restorePickerBody =>
+      'Seleziona il file di backup da ripristinare:';
+
+  @override
+  String restorePickerRowTemplate(String date, String size) {
+    return '$date · $size';
+  }
+
+  @override
+  String get restorePickerUseNewest => 'Usa il più recente';
+
+  @override
+  String get restorePickerRestoreThisVersion => 'Ripristina questa versione';
+
+  @override
+  String get restorePickerEmpty => 'Nessun file di backup trovato.';
+
+  @override
+  String get restorePickerError => 'Impossibile caricare i file di backup.';
 }

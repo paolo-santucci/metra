@@ -126,6 +126,33 @@ void main() {
     });
   });
 
+  group('FakeAppSettingsRepository.clearBackupSuspended — FR-12e, HC-6', () {
+    test(
+        'given_backupSuspended_true_when_clearBackupSuspended_then_backupSuspended_false_and_invocation_recorded',
+        () async {
+      final fake = FakeAppSettingsRepository();
+      await fake.updateBackupSuspended(true);
+      expect((await fake.getOrCreate()).backupSuspended, isTrue);
+      await fake.clearBackupSuspended();
+      final settings = await fake.getOrCreate();
+      expect(settings.backupSuspended, isFalse);
+      expect(fake.callLog, contains('clearBackupSuspended'));
+    });
+
+    test(
+        'given_lastLogOrSymptomWriteAt_set_when_clearBackupSuspended_then_lastLogOrSymptomWriteAt_unchanged',
+        () async {
+      final fake = FakeAppSettingsRepository();
+      final t = DateTime.utc(2026, 1, 1, 12, 0, 0);
+      await fake.updateLastDataWriteAt(t);
+      await fake.clearBackupSuspended();
+      expect(
+        (await fake.getOrCreate()).lastLogOrSymptomWriteAt,
+        equals(t),
+      );
+    });
+  });
+
   group('FakeAppSettingsRepository updateLastDataWriteAt', () {
     test(
         'given_fresh_fake_when_updateLastDataWriteAt_then_field_set_and_others_unchanged',

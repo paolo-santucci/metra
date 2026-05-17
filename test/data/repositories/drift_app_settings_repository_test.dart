@@ -38,6 +38,57 @@ void main() {
 
   tearDown(() => db.close());
 
+  // ---- DriftAppSettingsRepository.clearBackupSuspended — FR-12e, NFR-05, HC-6 ----
+
+  group(
+    'DriftAppSettingsRepository.clearBackupSuspended — FR-12e, NFR-05, HC-6',
+    () {
+      test(
+        'clearBackupSuspended sets backupSuspended=false; lastLogOrSymptomWriteAt unchanged (NFR-05)',
+        () async {
+          await repo.getOrCreate(); // ensure singleton row exists
+          final t = DateTime.utc(2026, 1, 1, 12, 0, 0);
+          await repo.updateLastDataWriteAt(t);
+          await repo.updateBackupSuspended(true);
+          await repo.clearBackupSuspended();
+          final settings = await repo.getOrCreate();
+          expect(settings.backupSuspended, isFalse);
+          expect(settings.lastLogOrSymptomWriteAt, equals(t));
+        },
+      );
+
+      test(
+        'updateLastDataWriteAt does NOT mutate backupSuspended (NFR-05)',
+        () async {
+          await repo.getOrCreate(); // ensure singleton row exists
+          await repo.updateBackupSuspended(true);
+          await repo.updateLastDataWriteAt(DateTime.utc(2026, 1, 1, 12));
+          expect((await repo.getOrCreate()).backupSuspended, isTrue);
+        },
+      );
+
+      test(
+        'clearBackupSuspended on empty DB is a no-op (does not throw)',
+        () async {
+          await repo.clearBackupSuspended(); // expect no throw
+        },
+      );
+
+      test(
+        '_toCompanion exclusion regression: updateSettings does not touch backupSuspended',
+        () async {
+          await repo.getOrCreate(); // ensure singleton row exists
+          await repo.updateBackupSuspended(true);
+          final settings = await repo.getOrCreate();
+          await repo.updateSettings(
+            settings.copyWith(darkMode: const Nullable(false)),
+          );
+          expect((await repo.getOrCreate()).backupSuspended, isTrue);
+        },
+      );
+    },
+  );
+
   // ---- DriftAppSettingsRepository.updateBackupSuspended — FR-07, EC-14 ----
 
   group('DriftAppSettingsRepository.updateBackupSuspended — FR-07, EC-14', () {

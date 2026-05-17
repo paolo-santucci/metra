@@ -17,6 +17,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/services/backup/backup_file_entry.dart';
 import '../data/services/backup/backup_service.dart';
 import '../data/services/backup/dropbox_provider.dart';
 import '../data/services/backup/sync_orchestrator.dart';
@@ -75,4 +76,9 @@ final backupDataProvider = FutureProvider<BackupData>((ref) async {
 final restoreDataProvider = FutureProvider<RestoreData>((ref) async {
   final orch = await ref.watch(syncOrchestratorProvider.future);
   return RestoreData(orch);
+});
+
+final backupFileListProvider =
+    FutureProvider.autoDispose<List<BackupFileEntry>>((ref) async {
+  return ref.watch(cloudBackupProvider).listFiles();
 });

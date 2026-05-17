@@ -20,6 +20,18 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class InMemorySecureStorage implements FlutterSecureStorage {
   final Map<String, String> values = {};
 
+  /// Number of times [read] has been called since construction or last [resetCallCounts].
+  int readCount = 0;
+
+  /// Number of times [write] has been called since construction or last [resetCallCounts].
+  int writeCount = 0;
+
+  /// Resets [readCount] and [writeCount] to zero.
+  void resetCallCounts() {
+    readCount = 0;
+    writeCount = 0;
+  }
+
   @override
   Future<String?> read({
     required String key,
@@ -29,8 +41,10 @@ class InMemorySecureStorage implements FlutterSecureStorage {
     WebOptions? webOptions,
     MacOsOptions? mOptions,
     WindowsOptions? wOptions,
-  }) async =>
-      values[key];
+  }) async {
+    readCount++;
+    return values[key];
+  }
 
   @override
   Future<void> write({
@@ -43,6 +57,7 @@ class InMemorySecureStorage implements FlutterSecureStorage {
     MacOsOptions? mOptions,
     WindowsOptions? wOptions,
   }) async {
+    writeCount++;
     if (value == null) {
       values.remove(key);
     } else {

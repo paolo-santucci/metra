@@ -21,6 +21,14 @@ import 'package:metra/domain/repositories/app_settings_repository.dart';
 class FakeAppSettingsRepository implements AppSettingsRepository {
   AppSettingsData? storedSettings;
 
+  /// Records the name of each mutating method call in invocation order.
+  ///
+  /// Used by downstream tests to assert call-order invariants — e.g. that
+  /// [clearBackupSuspended] fires after the primary write, or that
+  /// [updateBackupSuspended] fires before [clearBackupSuspended] in a
+  /// suspend-then-clear sequence.
+  final List<String> callLog = [];
+
   @override
   Stream<AppSettingsData?> watchSettings() => Stream.value(storedSettings);
 
@@ -143,5 +151,35 @@ class FakeAppSettingsRepository implements AppSettingsRepository {
       lastLogOrSymptomWriteAt: current.lastLogOrSymptomWriteAt,
       backupSuspended: value,
     );
+    callLog.add('updateBackupSuspended:$value');
+  }
+
+  /// Clears the backup-suspended sentinel.
+  ///
+  /// Sets [AppSettingsData.backupSuspended] = `false`. Does NOT mutate
+  /// [AppSettingsData.lastLogOrSymptomWriteAt] (HC-6 decoupling).
+  /// Records the invocation in [callLog] to support call-order assertions.
+  @override
+  Future<void> clearBackupSuspended() async {
+    final current = storedSettings ?? AppSettingsData.defaults();
+    // Dedicated writer — touches only backupSuspended.
+    // lastLogOrSymptomWriteAt is preserved unchanged (HC-6, NFR-05).
+    storedSettings = AppSettingsData(
+      languageCode: current.languageCode,
+      darkMode: current.darkMode,
+      painEnabled: current.painEnabled,
+      notesEnabled: current.notesEnabled,
+      notificationDaysBefore: current.notificationDaysBefore,
+      notificationsEnabled: current.notificationsEnabled,
+      dropboxEmail: current.dropboxEmail,
+      lastBackupAt: current.lastBackupAt,
+      onboardingCompleted: current.onboardingCompleted,
+      declaredCycleLength: current.declaredCycleLength,
+      notificationTimeMinutes: current.notificationTimeMinutes,
+      firstDayOfWeek: current.firstDayOfWeek,
+      lastLogOrSymptomWriteAt: current.lastLogOrSymptomWriteAt,
+      backupSuspended: false,
+    );
+    callLog.add('clearBackupSuspended');
   }
 }

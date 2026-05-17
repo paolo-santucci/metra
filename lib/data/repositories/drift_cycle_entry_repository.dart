@@ -20,12 +20,16 @@ import 'package:drift/drift.dart';
 import '../../data/database/app_database.dart';
 import '../../data/database/daos/cycle_entry_dao.dart';
 import '../../domain/entities/cycle_entry_entity.dart';
+import '../../domain/repositories/app_settings_repository.dart';
 import '../../domain/repositories/cycle_entry_repository.dart';
 
 class DriftCycleEntryRepository implements CycleEntryRepository {
-  const DriftCycleEntryRepository(this._dao);
+  const DriftCycleEntryRepository(this._dao, this._settingsRepo);
 
   final CycleEntryDao _dao;
+
+  /// Injected for clear-on-write (FR-12b): called after insert and update.
+  final AppSettingsRepository _settingsRepo;
 
   // ---- mapping helpers ----
 
@@ -71,12 +75,15 @@ class DriftCycleEntryRepository implements CycleEntryRepository {
   @override
   Future<CycleEntryEntity> insert(CycleEntryEntity entry) async {
     final id = await _dao.insertCycleEntry(_toInsertCompanion(entry));
+    await _settingsRepo.clearBackupSuspended();
     return entry.copyWith(id: id);
   }
 
   @override
-  Future<void> update(CycleEntryEntity entry) =>
-      _dao.updateCycleEntry(_toUpdateCompanion(entry));
+  Future<void> update(CycleEntryEntity entry) async {
+    await _dao.updateCycleEntry(_toUpdateCompanion(entry));
+    await _settingsRepo.clearBackupSuspended();
+  }
 
   @override
   Future<void> delete(int id) => _dao.deleteCycleEntry(id);
