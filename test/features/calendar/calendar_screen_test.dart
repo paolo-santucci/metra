@@ -192,7 +192,7 @@ Widget _wrapWithRouter(
       // Default: system first-day-of-week (Monday in Italian locale).
       // Prevents DB access in widget tests; override per-test for specific cases.
       settingsNotifierProvider.overrideWith(
-        () => _StubSettingsNotifier(const AppSettingsData.defaults()),
+        () => _StubSettingsNotifier(AppSettingsData.defaults()),
       ),
       ...overrides,
     ],
@@ -733,7 +733,7 @@ void main() {
           ),
           settingsNotifierProvider.overrideWith(
             () => _StubSettingsNotifier(
-              const AppSettingsData.defaults().copyWith(
+              AppSettingsData.defaults().copyWith(
                 firstDayOfWeek: FirstDayOfWeekSetting.monday,
               ),
             ),
@@ -760,7 +760,7 @@ void main() {
           ),
           settingsNotifierProvider.overrideWith(
             () => _StubSettingsNotifier(
-              const AppSettingsData.defaults().copyWith(
+              AppSettingsData.defaults().copyWith(
                 firstDayOfWeek: FirstDayOfWeekSetting.sunday,
               ),
             ),
@@ -801,7 +801,7 @@ void main() {
           ),
           settingsNotifierProvider.overrideWith(
             () => _StubSettingsNotifier(
-              const AppSettingsData.defaults().copyWith(
+              AppSettingsData.defaults().copyWith(
                 firstDayOfWeek: FirstDayOfWeekSetting.monday,
               ),
             ),
@@ -842,7 +842,7 @@ void main() {
           ),
           settingsNotifierProvider.overrideWith(() {
             stub = _StubSettingsNotifier(
-              const AppSettingsData.defaults().copyWith(
+              AppSettingsData.defaults().copyWith(
                 firstDayOfWeek: FirstDayOfWeekSetting.monday,
               ),
             );
@@ -859,7 +859,7 @@ void main() {
 
       // Switch to sunday-first.
       stub.state = AsyncData(
-        const AppSettingsData.defaults()
+        AppSettingsData.defaults()
             .copyWith(firstDayOfWeek: FirstDayOfWeekSetting.sunday),
       );
       await tester.pumpAndSettle();

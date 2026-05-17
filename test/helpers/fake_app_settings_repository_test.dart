@@ -16,17 +16,122 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:metra/core/util/nullable.dart';
 import 'package:metra/domain/entities/app_settings_data.dart';
+import 'package:metra/domain/entities/first_day_of_week_setting.dart';
 
 import 'fake_app_settings_repository.dart';
 
 void main() {
+  group('FakeAppSettingsRepository.updateBackupSuspended — FR-07', () {
+    test(
+        'given_fresh_fake_seeded_with_backupSuspended_false_when_updateBackupSuspended_true_then_getOrCreate_returns_backupSuspended_true',
+        () async {
+      final repo = FakeAppSettingsRepository();
+      await repo.updateBackupSuspended(true);
+      final settings = await repo.getOrCreate();
+      expect(settings.backupSuspended, isTrue);
+    });
+
+    test(
+        'EC-14_fully_populated_entity_when_updateBackupSuspended_true_then_backupSuspended_true_and_all_other_fields_preserved',
+        () async {
+      final repo = FakeAppSettingsRepository();
+      repo.storedSettings = AppSettingsData(
+        languageCode: 'it',
+        darkMode: true,
+        painEnabled: true,
+        notesEnabled: true,
+        notificationDaysBefore: 2,
+        notificationsEnabled: false,
+        dropboxEmail: 'x@y',
+        lastBackupAt: DateTime.utc(2025, 1, 1),
+        onboardingCompleted: true,
+        declaredCycleLength: 28,
+        notificationTimeMinutes: 480,
+        firstDayOfWeek: FirstDayOfWeekSetting.monday,
+        lastLogOrSymptomWriteAt: DateTime.utc(2026, 5, 1),
+        backupSuspended: false,
+      );
+      await repo.updateBackupSuspended(true);
+      final s = await repo.getOrCreate();
+      expect(s.backupSuspended, isTrue);
+      expect(s.darkMode, isTrue);
+      expect(s.dropboxEmail, equals('x@y'));
+      expect(s.lastBackupAt, equals(DateTime.utc(2025, 1, 1)));
+      expect(s.lastLogOrSymptomWriteAt, equals(DateTime.utc(2026, 5, 1)));
+      expect(s.notificationTimeMinutes, equals(480));
+    });
+
+    test('fragility_guard_updateBackupState_preserves_backupSuspended_true',
+        () async {
+      final repo = FakeAppSettingsRepository();
+      await repo.updateBackupSuspended(true);
+      await repo.updateBackupState(
+        dropboxEmail: 'a@b.com',
+        lastBackupAt: null,
+      );
+      final after = await repo.getOrCreate();
+      expect(after.backupSuspended, isTrue);
+    });
+
+    test(
+        'fragility_guard_markOnboardingComplete_preserves_backupSuspended_true',
+        () async {
+      final repo = FakeAppSettingsRepository();
+      await repo.updateBackupSuspended(true);
+      await repo.markOnboardingComplete();
+      final after = await repo.getOrCreate();
+      expect(after.backupSuspended, isTrue);
+    });
+
+    test(
+        'fragility_guard_saveDeclaredCycleLength_preserves_backupSuspended_true',
+        () async {
+      final repo = FakeAppSettingsRepository();
+      await repo.updateBackupSuspended(true);
+      await repo.saveDeclaredCycleLength(28);
+      final after = await repo.getOrCreate();
+      expect(after.backupSuspended, isTrue);
+    });
+
+    test('fragility_guard_updateLastDataWriteAt_preserves_backupSuspended_true',
+        () async {
+      final repo = FakeAppSettingsRepository();
+      await repo.updateBackupSuspended(true);
+      await repo.updateLastDataWriteAt(DateTime.utc(2026, 5, 17));
+      final after = await repo.getOrCreate();
+      expect(after.backupSuspended, isTrue);
+    });
+
+    test(
+        'manual_copy_guard_updateSettings_via_copyWith_preserves_backupSuspended_true',
+        () async {
+      final repo = FakeAppSettingsRepository();
+      await repo.updateBackupSuspended(true);
+      final current = await repo.getOrCreate();
+      await repo.updateSettings(
+        current.copyWith(darkMode: const Nullable(true)),
+      );
+      final after = await repo.getOrCreate();
+      expect(after.backupSuspended, isTrue);
+    });
+
+    test(
+        'given_fresh_fake_when_getOrCreate_then_backupSuspended_is_false_by_default',
+        () async {
+      final repo = FakeAppSettingsRepository();
+      final settings = await repo.getOrCreate();
+      expect(settings.backupSuspended, isFalse);
+    });
+  });
+
   group('FakeAppSettingsRepository updateLastDataWriteAt', () {
     test(
         'given_fresh_fake_when_updateLastDataWriteAt_then_field_set_and_others_unchanged',
         () async {
       final fake = FakeAppSettingsRepository();
-      fake.storedSettings = const AppSettingsData.defaults().copyWith(
+      fake.storedSettings = AppSettingsData.defaults().copyWith(
         languageCode: 'en',
       );
       final t1 = DateTime.utc(2026, 5, 14, 10);

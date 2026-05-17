@@ -70,7 +70,7 @@ class _StubTimelineNotifier extends TimelineNotifier {
 class _StubAppSettingsRepository implements AppSettingsRepository {
   @override
   Future<AppSettingsData> getOrCreate() async =>
-      const AppSettingsData.defaults().copyWith(onboardingCompleted: true);
+      AppSettingsData.defaults().copyWith(onboardingCompleted: true);
 
   @override
   Stream<AppSettingsData?> watchSettings() => Stream.value(null);
@@ -92,6 +92,9 @@ class _StubAppSettingsRepository implements AppSettingsRepository {
 
   @override
   Future<void> updateLastDataWriteAt(DateTime timestamp) async {}
+
+  @override
+  Future<void> updateBackupSuspended(bool value) async {}
 }
 
 /// Provider override that injects [_StubCalendarMonthNotifier].

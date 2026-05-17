@@ -36,7 +36,7 @@ class SettingsNotifier extends AsyncNotifier<AppSettingsData> {
     final asyncSettings = ref.watch(appSettingsStreamProvider);
     if (asyncSettings.hasValue) {
       // Stream has emitted at least once — use the live value.
-      return asyncSettings.requireValue ?? const AppSettingsData.defaults();
+      return asyncSettings.requireValue ?? AppSettingsData.defaults();
     }
     // Still loading or errored — fall back to one-shot read so the
     // existing tests that override appSettingsRepositoryProvider (not

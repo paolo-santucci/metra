@@ -32,6 +32,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/theme/metra_colors.dart';
 import '../../core/theme/metra_spacing.dart';
 import '../../core/theme/metra_typography.dart';
+import '../../core/util/nullable.dart';
 import '../../domain/entities/app_settings_data.dart';
 import '../../domain/entities/first_day_of_week_setting.dart';
 import '../../domain/services/csv_codec.dart';
@@ -54,7 +55,7 @@ class SettingsScreen extends ConsumerWidget {
     final textPrimary = colors.textPrimary;
     final textSecondary = colors.textSecondary;
     final settings = ref.watch(settingsNotifierProvider).valueOrNull ??
-        const AppSettingsData.defaults();
+        AppSettingsData.defaults();
     // Backup-row value is state-aware (Design Bible § 18.6): only
     // BackupConnected resolves to "Configurato"; every other state
     // (loading, NotConnected, Running, ErrorState) falls back to
@@ -436,7 +437,7 @@ class SettingsScreen extends ConsumerWidget {
                 settings.darkMode == false ? const Icon(Icons.check) : null,
             onTap: () {
               Navigator.of(sheetCtx).pop();
-              _save(ref, settings.copyWith(darkMode: false));
+              _save(ref, settings.copyWith(darkMode: const Nullable(false)));
             },
           ),
           ListTile(
@@ -445,7 +446,7 @@ class SettingsScreen extends ConsumerWidget {
                 settings.darkMode == true ? const Icon(Icons.check) : null,
             onTap: () {
               Navigator.of(sheetCtx).pop();
-              _save(ref, settings.copyWith(darkMode: true));
+              _save(ref, settings.copyWith(darkMode: const Nullable(true)));
             },
           ),
         ],

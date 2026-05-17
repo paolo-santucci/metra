@@ -216,7 +216,7 @@ void main() {
         addTearDown(container.dispose);
 
         // Emit first settings: declaredCycleLength = null.
-        settingsController.add(const AppSettingsData.defaults());
+        settingsController.add(AppSettingsData.defaults());
         await Future<void>.delayed(Duration.zero);
 
         // First state: null prediction (no declaredCycleLength, no measured
@@ -231,7 +231,7 @@ void main() {
         // Emit second settings: declaredCycleLength = 28 (simulating
         // onboarding).
         settingsController.add(
-          const AppSettingsData(
+          AppSettingsData(
             languageCode: '',
             painEnabled: true,
             notesEnabled: true,
@@ -310,7 +310,7 @@ void main() {
               (ref) => Completer<WatchCyclePrediction>().future,
             ),
             appSettingsStreamProvider.overrideWith(
-              (ref) => Stream.value(const AppSettingsData.defaults()),
+              (ref) => Stream.value(AppSettingsData.defaults()),
             ),
           ],
         );

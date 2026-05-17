@@ -422,7 +422,7 @@ void main() {
 
   group('FR-06 / BUG-B02: settingsNotifierProvider listener scheduler guard',
       () {
-    const baseSettings = AppSettingsData(
+    final baseSettings = AppSettingsData(
       languageCode: 'it',
       painEnabled: true,
       notesEnabled: true,
@@ -438,7 +438,7 @@ void main() {
 
         await _simulateSettingsListenerSchedulerGuard(
           prev: const AsyncLoading<AppSettingsData>(),
-          next: const AsyncData(baseSettings),
+          next: AsyncData(baseSettings),
           scheduler: scheduler,
         );
 
@@ -455,7 +455,7 @@ void main() {
       'AsyncData→AsyncData transition DOES invoke scheduler.execute once (FR-06 normal path)',
       () async {
         final scheduler = _FakeScheduler();
-        const updatedSettings = AppSettingsData(
+        final updatedSettings = AppSettingsData(
           languageCode: 'it',
           painEnabled: true,
           notesEnabled: true,
@@ -465,8 +465,8 @@ void main() {
         );
 
         await _simulateSettingsListenerSchedulerGuard(
-          prev: const AsyncData(baseSettings),
-          next: const AsyncData(updatedSettings),
+          prev: AsyncData(baseSettings),
+          next: AsyncData(updatedSettings),
           scheduler: scheduler,
         );
 
@@ -487,7 +487,7 @@ void main() {
 
         await _simulateSettingsListenerSchedulerGuard(
           prev: null,
-          next: const AsyncData(baseSettings),
+          next: AsyncData(baseSettings),
           scheduler: scheduler,
         );
 
@@ -505,7 +505,7 @@ void main() {
   // ===========================================================================
 
   group('FR-07 / BUG-B03: cold-start POST_NOTIFICATIONS re-check', () {
-    const enabledSettings = AppSettingsData(
+    final enabledSettings = AppSettingsData(
       languageCode: 'it',
       painEnabled: true,
       notesEnabled: true,
@@ -608,7 +608,7 @@ void main() {
     test(
       'notificationsEnabled=false → re-check is skipped entirely (FR-07)',
       () async {
-        const disabledSettings = AppSettingsData(
+        final disabledSettings = AppSettingsData(
           languageCode: 'it',
           painEnabled: true,
           notesEnabled: true,

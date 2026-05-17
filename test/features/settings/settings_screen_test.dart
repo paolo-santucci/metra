@@ -100,7 +100,7 @@ Widget _wrap(
 // ---------------------------------------------------------------------------
 
 void main() {
-  const defaults = AppSettingsData(
+  final defaults = AppSettingsData(
     languageCode: 'it',
     darkMode: null,
     painEnabled: true,
@@ -157,7 +157,7 @@ void main() {
     testWidgets(
       '_languageName returns settings_language_system label when languageCode is empty',
       (tester) async {
-        const systemLocale = AppSettingsData(
+        final systemLocale = AppSettingsData(
           languageCode: '',
           darkMode: null,
           painEnabled: true,

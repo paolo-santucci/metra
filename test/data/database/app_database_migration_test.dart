@@ -567,9 +567,9 @@ void main() {
             // Use explicit id values so we can assert which one survives.
             rawDb.execute(
               'INSERT INTO cycle_entries (id, start_date) VALUES '
-              '(5, 1000), (12, 1000), (27, 1000), '  // date A — only id=5 survives
-              '(3, 2000), '                           // date B — survives
-              '(8, 3000)',                            // date C — survives
+              '(5, 1000), (12, 1000), (27, 1000), ' // date A — only id=5 survives
+              '(3, 2000), ' // date B — survives
+              '(8, 3000)', // date C — survives
             );
 
             setUserVersion9(rawDb);
@@ -974,8 +974,7 @@ void main() {
         // the presence of the thrown exception above (user_version is only bumped
         // after onUpgrade returns normally per Drift source).
       },
-      skip:
-          'Deep in-memory rollback assertion requires shared VFS handle '
+      skip: 'Deep in-memory rollback assertion requires shared VFS handle '
           '(not supported by NativeDatabase.memory). '
           'The test verifies that onUpgrade throws on duplicate column, '
           'which is the necessary precondition for Drift to leave '

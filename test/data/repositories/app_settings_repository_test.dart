@@ -19,6 +19,7 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/constants/app_constants.dart';
+import 'package:metra/core/util/nullable.dart';
 import 'package:metra/data/database/app_database.dart';
 import 'package:metra/data/database/daos/app_settings_dao.dart';
 import 'package:metra/data/repositories/drift_app_settings_repository.dart';
@@ -194,7 +195,8 @@ void main() {
       // Now update an unrelated field.
       final before = await repo.getOrCreate();
       expect(before.notificationTimeMinutes, 750);
-      await repo.updateSettings(before.copyWith(darkMode: true));
+      await repo
+          .updateSettings(before.copyWith(darkMode: const Nullable(true)));
 
       // Confirm 750 survived.
       final after = await repo.getOrCreate();

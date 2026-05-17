@@ -18,6 +18,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:metra/core/util/nullable.dart';
 import 'package:metra/domain/entities/app_settings_data.dart';
 import 'package:metra/domain/entities/first_day_of_week_setting.dart';
 
@@ -39,6 +40,7 @@ void main() {
     int notificationTimeMinutes = 540,
     FirstDayOfWeekSetting firstDayOfWeek = FirstDayOfWeekSetting.system,
     DateTime? lastLogOrSymptomWriteAt,
+    bool backupSuspended = false,
   }) =>
       AppSettingsData(
         languageCode: languageCode,
@@ -54,6 +56,7 @@ void main() {
         notificationTimeMinutes: notificationTimeMinutes,
         firstDayOfWeek: firstDayOfWeek,
         lastLogOrSymptomWriteAt: lastLogOrSymptomWriteAt,
+        backupSuspended: backupSuspended,
       );
 
   group('AppSettingsData construction', () {
@@ -98,7 +101,7 @@ void main() {
 
   group('AppSettingsData.defaults factory', () {
     test('creates instance with expected default values', () {
-      const defaults = AppSettingsData.defaults();
+      final defaults = AppSettingsData.defaults();
 
       expect(defaults.languageCode, '');
       expect(defaults.darkMode, isNull);
@@ -217,13 +220,13 @@ void main() {
     test(
         'given_no_argument_when_constructed_then_notificationTimeMinutes_is_540',
         () {
-      expect(const AppSettingsData.defaults().notificationTimeMinutes, 540);
+      expect(AppSettingsData.defaults().notificationTimeMinutes, 540);
     });
 
     test(
         'given_notificationTimeMinutes_750_darkMode_true_when_copyWith_1080_then_propagates_and_preserves',
         () {
-      const a = AppSettingsData(
+      final a = AppSettingsData(
         languageCode: 'it',
         painEnabled: true,
         notesEnabled: true,
@@ -241,7 +244,7 @@ void main() {
     test(
         'given_notificationTimeMinutes_750_when_copyWith_unrelated_field_then_preserves_notificationTimeMinutes',
         () {
-      const a = AppSettingsData(
+      final a = AppSettingsData(
         languageCode: 'it',
         painEnabled: true,
         notesEnabled: true,
@@ -250,13 +253,16 @@ void main() {
         onboardingCompleted: false,
         notificationTimeMinutes: 750,
       );
-      expect(a.copyWith(darkMode: true).notificationTimeMinutes, 750);
+      expect(
+        a.copyWith(darkMode: const Nullable(true)).notificationTimeMinutes,
+        750,
+      );
     });
 
     test(
         'given_same_notificationTimeMinutes_when_equality_check_then_equal_and_hashCode_matches',
         () {
-      const a = AppSettingsData(
+      final a = AppSettingsData(
         languageCode: 'it',
         painEnabled: true,
         notesEnabled: true,
@@ -265,7 +271,7 @@ void main() {
         onboardingCompleted: false,
         notificationTimeMinutes: 1,
       );
-      const b = AppSettingsData(
+      final b = AppSettingsData(
         languageCode: 'it',
         painEnabled: true,
         notesEnabled: true,
@@ -274,7 +280,7 @@ void main() {
         onboardingCompleted: false,
         notificationTimeMinutes: 1,
       );
-      const c = AppSettingsData(
+      final c = AppSettingsData(
         languageCode: 'it',
         painEnabled: true,
         notesEnabled: true,
@@ -292,7 +298,7 @@ void main() {
     test(
         'given_no_notificationTimeMinutes_arg_when_constructed_then_defaults_to_540',
         () {
-      const settings = AppSettingsData(
+      final settings = AppSettingsData(
         languageCode: 'it',
         painEnabled: true,
         notesEnabled: true,
@@ -305,7 +311,7 @@ void main() {
 
     test('given_notificationTimeMinutes_720_when_constructed_then_returns_720',
         () {
-      const settings = AppSettingsData(
+      final settings = AppSettingsData(
         languageCode: 'it',
         painEnabled: true,
         notesEnabled: true,
@@ -322,7 +328,7 @@ void main() {
     test(
         'given_same_fields_except_notificationTimeMinutes_when_hashCode_compared_then_differs',
         () {
-      const a = AppSettingsData(
+      final a = AppSettingsData(
         languageCode: 'it',
         painEnabled: true,
         notesEnabled: true,
@@ -331,7 +337,7 @@ void main() {
         onboardingCompleted: false,
         notificationTimeMinutes: 540,
       );
-      const b = AppSettingsData(
+      final b = AppSettingsData(
         languageCode: 'it',
         painEnabled: true,
         notesEnabled: true,
@@ -366,7 +372,7 @@ void main() {
 
   group('AppSettingsData firstDayOfWeek', () {
     test('default is system', () {
-      const defaults = AppSettingsData.defaults();
+      final defaults = AppSettingsData.defaults();
       expect(defaults.firstDayOfWeek, FirstDayOfWeekSetting.system);
     });
 
@@ -417,7 +423,7 @@ void main() {
     test(
         'given_no_argument_when_constructed_then_lastLogOrSymptomWriteAt_is_null',
         () {
-      const s = AppSettingsData(
+      final s = AppSettingsData(
         languageCode: 'it',
         painEnabled: true,
         notesEnabled: true,
@@ -467,7 +473,7 @@ void main() {
 
     test('updates darkMode', () {
       final settings = makeSettings(darkMode: null);
-      final copy = settings.copyWith(darkMode: true);
+      final copy = settings.copyWith(darkMode: const Nullable(true));
 
       expect(copy.darkMode, isTrue);
     });
@@ -502,7 +508,8 @@ void main() {
 
     test('updates dropboxEmail', () {
       final settings = makeSettings();
-      final copy = settings.copyWith(dropboxEmail: 'new@example.com');
+      final copy =
+          settings.copyWith(dropboxEmail: const Nullable('new@example.com'));
 
       expect(copy.dropboxEmail, 'new@example.com');
     });
@@ -510,7 +517,7 @@ void main() {
     test('updates lastBackupAt', () {
       final settings = makeSettings();
       final newDate = DateTime.utc(2026, 5, 4);
-      final copy = settings.copyWith(lastBackupAt: newDate);
+      final copy = settings.copyWith(lastBackupAt: Nullable(newDate));
 
       expect(copy.lastBackupAt, newDate);
     });
@@ -540,6 +547,307 @@ void main() {
       final copy = settings.copyWith(languageCode: 'en');
 
       expect(copy.declaredCycleLength, isNull);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // New tests — Wave 2 / TASK-03
+  // ---------------------------------------------------------------------------
+
+  group('Nullable<T> copyWith semantics — FR-01', () {
+    test(
+        'given_darkMode_true_when_copyWith_Nullable_null_then_darkMode_is_null',
+        () {
+      final base = makeSettings(
+        darkMode: true,
+        dropboxEmail: 'a@b.com',
+        lastBackupAt: DateTime.utc(2026, 1, 1),
+        backupSuspended: true,
+        lastLogOrSymptomWriteAt: DateTime.utc(2026, 1, 2),
+        declaredCycleLength: 28,
+      );
+      final out = base.copyWith(darkMode: const Nullable(null));
+      expect(out.darkMode, isNull);
+      // All other fields must be unchanged.
+      expect(out.notificationDaysBefore, base.notificationDaysBefore);
+      expect(out.notificationTimeMinutes, base.notificationTimeMinutes);
+      expect(out.languageCode, base.languageCode);
+      expect(out.dropboxEmail, base.dropboxEmail);
+      expect(out.lastBackupAt, base.lastBackupAt);
+      expect(out.painEnabled, base.painEnabled);
+      expect(out.notesEnabled, base.notesEnabled);
+      expect(out.notificationsEnabled, base.notificationsEnabled);
+      expect(out.onboardingCompleted, base.onboardingCompleted);
+      expect(out.firstDayOfWeek, base.firstDayOfWeek);
+      expect(out.declaredCycleLength, base.declaredCycleLength);
+      expect(out.lastLogOrSymptomWriteAt, base.lastLogOrSymptomWriteAt);
+      expect(out.backupSuspended, base.backupSuspended);
+    });
+
+    test(
+        'given_darkMode_true_when_copyWith_Nullable_false_then_darkMode_is_false',
+        () {
+      final base = makeSettings(darkMode: true);
+      final out = base.copyWith(darkMode: const Nullable(false));
+      expect(out.darkMode, isFalse);
+    });
+
+    test(
+        'given_dropboxEmail_set_when_copyWith_Nullable_null_then_email_is_null',
+        () {
+      final base = makeSettings(dropboxEmail: 'user@example.com');
+      final out = base.copyWith(dropboxEmail: const Nullable(null));
+      expect(out.dropboxEmail, isNull);
+    });
+
+    test(
+        'given_dropboxEmail_null_when_copyWith_Nullable_new_email_then_email_set',
+        () {
+      final base = makeSettings();
+      final out = base.copyWith(
+        dropboxEmail: const Nullable('new@example.com'),
+      );
+      expect(out.dropboxEmail, 'new@example.com');
+    });
+
+    test(
+        'given_lastBackupAt_set_when_copyWith_Nullable_null_then_timestamp_cleared',
+        () {
+      final base = makeSettings(lastBackupAt: DateTime.utc(2026, 5, 1));
+      final out = base.copyWith(lastBackupAt: const Nullable(null));
+      expect(out.lastBackupAt, isNull);
+    });
+
+    test(
+        'given_lastBackupAt_null_when_copyWith_Nullable_date_then_timestamp_set',
+        () {
+      final newDate = DateTime.utc(2026, 1, 1);
+      final base = makeSettings();
+      final out = base.copyWith(lastBackupAt: Nullable(newDate));
+      expect(out.lastBackupAt, newDate);
+    });
+
+    test(
+        'given_all_params_omitted_when_copyWith_then_backupSuspended_lastLogOrSymptomWriteAt_declaredCycleLength_preserved',
+        () {
+      final someDate = DateTime.utc(2026, 3, 15);
+      final base = makeSettings(
+        backupSuspended: true,
+        lastLogOrSymptomWriteAt: someDate,
+        declaredCycleLength: 28,
+      );
+      final out = base.copyWith();
+      expect(out.backupSuspended, isTrue);
+      expect(out.lastLogOrSymptomWriteAt, someDate);
+      expect(out.declaredCycleLength, 28);
+    });
+
+    test(
+        'given_backupSuspended_true_when_copyWith_darkMode_Nullable_null_then_backupSuspended_unchanged',
+        () {
+      final base = makeSettings(backupSuspended: true, darkMode: true);
+      final out = base.copyWith(darkMode: const Nullable(null));
+      expect(out.backupSuspended, isTrue);
+      expect(out.darkMode, isNull);
+    });
+  });
+
+  group('Constructor-time range validation — FR-02', () {
+    test(
+        'given_notificationDaysBefore_0_when_constructed_then_throws_ArgumentError_with_correct_name_and_message',
+        () {
+      expect(
+        () => AppSettingsData(
+          languageCode: 'it',
+          painEnabled: true,
+          notesEnabled: true,
+          notificationDaysBefore: 0,
+          notificationsEnabled: false,
+          onboardingCompleted: false,
+        ),
+        throwsA(
+          allOf(
+            isA<ArgumentError>(),
+            predicate<ArgumentError>(
+              (e) => e.name == 'notificationDaysBefore',
+              'name == notificationDaysBefore',
+            ),
+            predicate<ArgumentError>(
+              (e) => e.message.toString().contains('must be in [1, 7]'),
+              'message contains "must be in [1, 7]"',
+            ),
+          ),
+        ),
+      );
+    });
+
+    test(
+        'given_notificationDaysBefore_8_when_constructed_then_throws_ArgumentError_with_correct_name_and_message',
+        () {
+      expect(
+        () => AppSettingsData(
+          languageCode: 'it',
+          painEnabled: true,
+          notesEnabled: true,
+          notificationDaysBefore: 8,
+          notificationsEnabled: false,
+          onboardingCompleted: false,
+        ),
+        throwsA(
+          allOf(
+            isA<ArgumentError>(),
+            predicate<ArgumentError>(
+              (e) => e.name == 'notificationDaysBefore',
+              'name == notificationDaysBefore',
+            ),
+            predicate<ArgumentError>(
+              (e) => e.message.toString().contains('must be in [1, 7]'),
+              'message contains "must be in [1, 7]"',
+            ),
+          ),
+        ),
+      );
+    });
+
+    test(
+        'given_notificationDaysBefore_1_lower_bound_when_constructed_then_stores_1',
+        () {
+      final settings = AppSettingsData(
+        languageCode: 'it',
+        painEnabled: true,
+        notesEnabled: true,
+        notificationDaysBefore: 1,
+        notificationsEnabled: false,
+        onboardingCompleted: false,
+      );
+      expect(settings.notificationDaysBefore, 1);
+    });
+
+    test(
+        'given_notificationDaysBefore_7_upper_bound_when_constructed_then_stores_7',
+        () {
+      final settings = AppSettingsData(
+        languageCode: 'it',
+        painEnabled: true,
+        notesEnabled: true,
+        notificationDaysBefore: 7,
+        notificationsEnabled: false,
+        onboardingCompleted: false,
+      );
+      expect(settings.notificationDaysBefore, 7);
+    });
+
+    test(
+        'given_notificationTimeMinutes_minus1_when_constructed_then_throws_ArgumentError_with_correct_name_and_message',
+        () {
+      expect(
+        () => AppSettingsData(
+          languageCode: 'it',
+          painEnabled: true,
+          notesEnabled: true,
+          notificationDaysBefore: 2,
+          notificationsEnabled: false,
+          onboardingCompleted: false,
+          notificationTimeMinutes: -1,
+        ),
+        throwsA(
+          allOf(
+            isA<ArgumentError>(),
+            predicate<ArgumentError>(
+              (e) => e.name == 'notificationTimeMinutes',
+              'name == notificationTimeMinutes',
+            ),
+            predicate<ArgumentError>(
+              (e) => e.message.toString().contains('must be in [0, 1439]'),
+              'message contains "must be in [0, 1439]"',
+            ),
+          ),
+        ),
+      );
+    });
+
+    test(
+        'given_notificationTimeMinutes_1440_when_constructed_then_throws_ArgumentError_with_correct_name_and_message',
+        () {
+      expect(
+        () => AppSettingsData(
+          languageCode: 'it',
+          painEnabled: true,
+          notesEnabled: true,
+          notificationDaysBefore: 2,
+          notificationsEnabled: false,
+          onboardingCompleted: false,
+          notificationTimeMinutes: 1440,
+        ),
+        throwsA(
+          allOf(
+            isA<ArgumentError>(),
+            predicate<ArgumentError>(
+              (e) => e.name == 'notificationTimeMinutes',
+              'name == notificationTimeMinutes',
+            ),
+            predicate<ArgumentError>(
+              (e) => e.message.toString().contains('must be in [0, 1439]'),
+              'message contains "must be in [0, 1439]"',
+            ),
+          ),
+        ),
+      );
+    });
+
+    test(
+        'given_notificationTimeMinutes_0_lower_bound_when_constructed_then_stores_0',
+        () {
+      final settings = AppSettingsData(
+        languageCode: 'it',
+        painEnabled: true,
+        notesEnabled: true,
+        notificationDaysBefore: 2,
+        notificationsEnabled: false,
+        onboardingCompleted: false,
+        notificationTimeMinutes: 0,
+      );
+      expect(settings.notificationTimeMinutes, 0);
+    });
+
+    test(
+        'given_notificationTimeMinutes_1439_upper_bound_when_constructed_then_stores_1439',
+        () {
+      final settings = AppSettingsData(
+        languageCode: 'it',
+        painEnabled: true,
+        notesEnabled: true,
+        notificationDaysBefore: 2,
+        notificationsEnabled: false,
+        onboardingCompleted: false,
+        notificationTimeMinutes: 1439,
+      );
+      expect(settings.notificationTimeMinutes, 1439);
+    });
+  });
+
+  group('backupSuspended field — FR-03', () {
+    test('given_backupSuspended_true_when_constructed_then_field_stores_true',
+        () {
+      final settings = makeSettings(backupSuspended: true);
+      expect(settings.backupSuspended, isTrue);
+    });
+
+    test(
+        'given_instances_differing_only_in_backupSuspended_when_compared_then_not_equal',
+        () {
+      final a = makeSettings(backupSuspended: false);
+      final b = makeSettings(backupSuspended: true);
+      expect(a, isNot(equals(b)));
+    });
+
+    test(
+        'given_two_instances_with_backupSuspended_false_and_all_equal_when_compared_then_equal_and_same_hashCode',
+        () {
+      final a = makeSettings(backupSuspended: false);
+      final b = makeSettings(backupSuspended: false);
+      expect(a, equals(b));
+      expect(a.hashCode, b.hashCode);
     });
   });
 }

@@ -1,0 +1,102 @@
+schema-version: 2
+last-updated: "2026-05-17T12:00:00+02:00"
+active-plan: null
+last-plan: null
+
+# Owned by the short-plan skill. update-status preserves verbatim.
+short-plan:
+  feature: "M1 — Foundation: entity + schema + test fake + interface"
+  slug: "m1-foundation"
+  auto: true
+  request-type: feature
+  workflow: canonical
+  parent:
+    spec: ".claude/docs/specs/lp-20260517-implement-next-patch-spec.md"
+    plan: ".claude/docs/plans/lp-20260517-implement-next-patch-plan.md"
+    milestone: 1
+    frs: "FR-01, FR-02, FR-03, FR-04, FR-17"
+  paths:
+    spec: ".claude/docs/specs/sp-20260517-m1-foundation-spec.md"
+    plan: ".claude/docs/plans/sp-20260517-m1-foundation-plan.md"
+    assess-dir: ".claude/docs/specs/sp-20260517-m1-foundation-assessment"
+  phases:
+    assess: done
+    triage: done
+    spec: done
+    plan: done
+    build: in-progress
+  approvals:
+    spec: approved
+    plan: approved
+  rejection-note: null
+  build-progress:
+    current-wave: 4
+    waves-completed: [1, 2, 3]
+
+# Owned by the long-plan skill. update-status preserves verbatim.
+long-plan:
+  feature: "implement issues: #11, #12, #13, #16, #18, #20, #21, #22, #28, #29, #31, #32, #33"
+  slug: "implement-next-patch"
+  auto: false
+  request-type: bug-fix
+  paths:
+    spec: ".claude/docs/specs/lp-20260517-implement-next-patch-spec.md"
+    plan: ".claude/docs/plans/lp-20260517-implement-next-patch-plan.md"
+    assess-dir: ".claude/docs/specs/lp-20260517-implement-next-patch-assessment"
+  phases:
+    assess: done
+    spec: done
+    plan: done
+  approvals:
+    spec: approved
+    plan: null
+
+pending-consolidation: []
+
+recently-completed:
+  - date: "2026-05-17"
+    summary: "test: TASK-10 — FakeNotificationService throwOnNextSchedule knob (FR-14, EC-11); return type Future<NotificationScheduleResult>; 4 range-guard tests deleted; 2 new use-case tests; BUG-006 assertion inverted to NotificationScheduleFailure; const removed from AppSettingsData in 4 files (app_test, app_notification_wiring_test, schedule_prediction_notification_test, unchanged notification_service_test); 4 tests added to fake_notification_service_test"
+  - date: "2026-05-17"
+    summary: "test(helpers): TASK-07 — FakeAppSettingsRepository: updateBackupSuspended impl, backupSuspended added to all 4 manual-copy blocks, 8 new tests (4 fragility guards), const removed from 5 occurrences in fake + 1 in test; navigation_test.dart stub added"
+  - date: "2026-05-17"
+    summary: "feat(data): TASK-06 — DriftAppSettingsRepository: _fromRow+backupSuspended, _toCompanion exclusion, updateBackupSuspended impl; 4 new tests pass"
+  - date: "2026-05-17"
+    summary: "feat(domain): TASK-04 — NotificationScheduleResult sealed class + schedulePredictionNotification return type changed to Future<NotificationScheduleResult>; Wave 2 transient break expected"
+  - date: "2026-05-17"
+    summary: "feat(domain): TASK-05 — add updateBackupSuspended abstract method to AppSettingsRepository"
+  - date: "2026-05-17"
+    summary: "test(data): update v9 schema test label to v10 — commit f35815d"
+  - date: "2026-05-17"
+    summary: "feat(data): schema v9→v10 — backup_suspended, UNIQUE(start_date), dedup migration — commit 2eae6b6"
+  - date: "2026-05-17"
+    summary: "style: dart format backup_notifier_test.dart — commit ccade80, pushed to origin/main"
+  - date: "2026-05-15"
+    summary: "test(backup): Wave 4 — cross-cutting integration tests + dart format; commit ad3435d"
+  - date: "2026-05-15"
+    summary: "feat(backup): Wave 3 — skip guard, backupSkipped log, restore alignment; commit 451f2ce"
+  - date: "2026-05-15"
+    summary: "feat(data): Wave 2 — settings repo writer, daily-log bumps, provider wiring; commit 5af85d2"
+  - date: "2026-05-14"
+    summary: "feat(domain): add lastLogOrSymptomWriteAt field and updateLastDataWriteAt interface; commit 38f84dd"
+
+in-progress: []
+
+next-steps: []
+
+known-issues:
+  - severity: critical
+    description: "Theme → Sistema uses bare AppSettingsData constructor, silently resets notificationTimeMinutes/firstDayOfWeek (issue #13)"
+    impact: high
+    workaround: "Avoid switching to System theme until fixed"
+  - severity: critical
+    description: "CSV import rejects pain_intensity=0 despite being valid in-app — round-trip data loss (issue #20)"
+    impact: medium
+    workaround: "Manually edit exported CSV to remove pain_intensity=0 rows before re-import"
+  - severity: warning
+    description: "save_daily_log_test.dart future date rejection — intermittent failure near Italian midnight UTC (timezone/DST boundary)"
+    impact: medium
+    workaround: null
+  - severity: warning
+    description: "_handleRestore() prompts for passphrase on every restore — acceptable since restore is destructive"
+    impact: low
+    workaround: null

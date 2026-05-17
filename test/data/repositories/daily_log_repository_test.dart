@@ -202,8 +202,7 @@ void main() {
       );
     });
 
-    test(
-        'deleteAllAndReplace bumps lastLogOrSymptomWriteAt after transaction',
+    test('deleteAllAndReplace bumps lastLogOrSymptomWriteAt after transaction',
         () async {
       await bumpRepo.deleteAllAndReplace(
         [makeEntity(DateTime.utc(2026, 5, 14))],
@@ -291,7 +290,8 @@ void main() {
           final ts = (await realSettingsRepo.getOrCreate())
               .lastLogOrSymptomWriteAt
               ?.toUtc();
-          expect(ts, isNotNull, reason: 'bump must set lastLogOrSymptomWriteAt');
+          expect(ts, isNotNull,
+              reason: 'bump must set lastLogOrSymptomWriteAt');
           if (lastTs != null) {
             expect(
               ts!.isAfter(lastTs) || ts == lastTs,

@@ -50,7 +50,7 @@ class _StreamingFakeAppSettingsRepository implements FakeAppSettingsRepository {
 
   @override
   Future<AppSettingsData> getOrCreate() async =>
-      _stored ?? const AppSettingsData.defaults();
+      _stored ?? AppSettingsData.defaults();
 
   @override
   Future<void> updateSettings(AppSettingsData settings) async {
@@ -62,7 +62,7 @@ class _StreamingFakeAppSettingsRepository implements FakeAppSettingsRepository {
     required String? dropboxEmail,
     required DateTime? lastBackupAt,
   }) async {
-    final current = _stored ?? const AppSettingsData.defaults();
+    final current = _stored ?? AppSettingsData.defaults();
     _stored = AppSettingsData(
       languageCode: current.languageCode,
       darkMode: current.darkMode,
@@ -79,7 +79,7 @@ class _StreamingFakeAppSettingsRepository implements FakeAppSettingsRepository {
 
   @override
   Future<void> markOnboardingComplete() async {
-    final current = _stored ?? const AppSettingsData.defaults();
+    final current = _stored ?? AppSettingsData.defaults();
     _stored = AppSettingsData(
       languageCode: current.languageCode,
       darkMode: current.darkMode,
@@ -97,7 +97,7 @@ class _StreamingFakeAppSettingsRepository implements FakeAppSettingsRepository {
 
   @override
   Future<void> saveDeclaredCycleLength(int cycleLength) async {
-    final current = _stored ?? const AppSettingsData.defaults();
+    final current = _stored ?? AppSettingsData.defaults();
     _stored = AppSettingsData(
       languageCode: current.languageCode,
       darkMode: current.darkMode,
@@ -115,6 +115,28 @@ class _StreamingFakeAppSettingsRepository implements FakeAppSettingsRepository {
 
   @override
   Future<void> updateLastDataWriteAt(DateTime timestamp) async {}
+
+  @override
+  Future<void> updateBackupSuspended(bool value) async {
+    final current = _stored ?? AppSettingsData.defaults();
+    _stored = AppSettingsData(
+      languageCode: current.languageCode,
+      darkMode: current.darkMode,
+      painEnabled: current.painEnabled,
+      notesEnabled: current.notesEnabled,
+      notificationDaysBefore: current.notificationDaysBefore,
+      notificationsEnabled: current.notificationsEnabled,
+      dropboxEmail: current.dropboxEmail,
+      lastBackupAt: current.lastBackupAt,
+      onboardingCompleted: current.onboardingCompleted,
+      declaredCycleLength: current.declaredCycleLength,
+      notificationTimeMinutes: current.notificationTimeMinutes,
+      firstDayOfWeek: current.firstDayOfWeek,
+      lastLogOrSymptomWriteAt: current.lastLogOrSymptomWriteAt,
+      backupSuspended: value,
+    );
+    _controller.add(_stored);
+  }
 }
 
 ProviderContainer _makeStreamingContainer(
@@ -145,7 +167,7 @@ void main() {
 
   test('build() returns stored settings', () async {
     final fakeRepo = FakeAppSettingsRepository()
-      ..storedSettings = const AppSettingsData(
+      ..storedSettings = AppSettingsData(
         languageCode: 'en',
         painEnabled: false,
         notesEnabled: true,
@@ -182,7 +204,7 @@ void main() {
 
     await container.read(settingsNotifierProvider.future);
 
-    const updated = AppSettingsData(
+    final updated = AppSettingsData(
       languageCode: 'en',
       painEnabled: false,
       notesEnabled: false,
@@ -212,12 +234,12 @@ void main() {
         addTearDown(fakeRepo.close);
 
         // Emit initial state: no declaredCycleLength yet.
-        fakeRepo.emit(const AppSettingsData.defaults());
+        fakeRepo.emit(AppSettingsData.defaults());
         await Future<void>.delayed(Duration.zero);
 
         // Emit updated state simulating saveDeclaredCycleLength(28).
         fakeRepo.emit(
-          const AppSettingsData(
+          AppSettingsData(
             languageCode: '',
             painEnabled: true,
             notesEnabled: true,
@@ -248,7 +270,7 @@ void main() {
         addTearDown(fakeRepo.close);
 
         // Emit initial state.
-        fakeRepo.emit(const AppSettingsData.defaults());
+        fakeRepo.emit(AppSettingsData.defaults());
         await Future<void>.delayed(Duration.zero);
 
         // Emit updated state simulating updateBackupState.

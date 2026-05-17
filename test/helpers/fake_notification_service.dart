@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
+import 'package:flutter/services.dart';
 import 'package:metra/domain/services/notification_service.dart';
 
 class FakeNotificationService implements NotificationService {
@@ -67,6 +68,12 @@ class FakeNotificationService implements NotificationService {
   /// to [_now]. Takes precedence over [nowOverride].
   final DateTime Function()? _nowFn;
 
+  /// Whether the next call to [schedulePredictionNotification] should throw
+  /// a [PlatformException] instead of scheduling. Auto-clears after one use
+  /// (one-shot — FR-14, OQ-M1-05). Set in tests to exercise the caller's
+  /// error-handling path.
+  bool throwOnNextSchedule = false;
+
   /// Number of times the immediate-show path was triggered (cold-start same-day case).
   int showCount = 0;
 
@@ -88,11 +95,20 @@ class FakeNotificationService implements NotificationService {
   Future<void> initialize() async => initialized = true;
 
   @override
-  Future<void> schedulePredictionNotification(
+  Future<NotificationScheduleResult> schedulePredictionNotification(
     DateTime notifyAt,
     String title,
     String body,
   ) async {
+    // One-shot failure injection — FR-14, EC-11 (throw-before-mutation).
+    if (throwOnNextSchedule) {
+      throwOnNextSchedule = false; // auto-clear before throw
+      throw PlatformException(
+        code: 'fake_schedule_failure',
+        message: 'FakeNotificationService.throwOnNextSchedule injected failure',
+      );
+    }
+
     final local = notifyAt.toLocal();
     final notifyDay = DateTime(local.year, local.month, local.day);
     final nowTime = _now();
@@ -106,6 +122,7 @@ class FakeNotificationService implements NotificationService {
     } else {
       scheduled.add((notifyAt: notifyAt, title: title, body: body));
     }
+    return const NotificationScheduleSuccess();
   }
 
   @override

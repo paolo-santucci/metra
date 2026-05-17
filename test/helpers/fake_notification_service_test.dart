@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/data/services/notification_service.dart';
+import 'package:metra/domain/services/notification_service.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -248,6 +250,98 @@ void main() {
         expect(fake.openBatteryOptimizationSettingsCallCount, equals(1));
         await fake.openBatteryOptimizationSettings();
         expect(fake.openBatteryOptimizationSettingsCallCount, equals(2));
+      },
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // TASK-10: throwOnNextSchedule failure-injection knob (FR-14, EC-11, OQ-M1-05)
+  // ---------------------------------------------------------------------------
+
+  group('FakeNotificationService.throwOnNextSchedule — FR-14, EC-11, OQ-M1-05',
+      () {
+    test(
+      'given_knob_false_when_schedule_then_returns_Success_and_records_one_entry',
+      () async {
+        final fake = FakeNotificationService();
+        final result = await fake.schedulePredictionNotification(
+          DateTime.utc(2026, 6, 1),
+          'title',
+          'body',
+        );
+        expect(result, isA<NotificationScheduleSuccess>());
+        expect(fake.scheduled.length + fake.shown.length, equals(1));
+      },
+    );
+
+    test(
+      'given_knob_true_when_schedule_then_throws_PlatformException_and_lists_remain_empty',
+      () async {
+        final fake = FakeNotificationService();
+        fake.throwOnNextSchedule = true;
+        await expectLater(
+          fake.schedulePredictionNotification(
+            DateTime.utc(2026, 6, 1),
+            'title',
+            'body',
+          ),
+          throwsA(
+            allOf(
+              isA<PlatformException>(),
+              predicate<PlatformException>(
+                (e) => e.code == 'fake_schedule_failure',
+              ),
+            ),
+          ),
+        );
+        expect(fake.scheduled, isEmpty);
+        expect(fake.shown, isEmpty);
+        // One-shot: knob auto-clears to false after the throw.
+        expect(fake.throwOnNextSchedule, isFalse);
+      },
+    );
+
+    test(
+      'given_knob_fired_once_when_second_call_then_succeeds_and_records_one_entry',
+      () async {
+        final fake = FakeNotificationService();
+        fake.throwOnNextSchedule = true;
+        try {
+          await fake.schedulePredictionNotification(
+            DateTime.utc(2026, 6, 1),
+            'title',
+            'body',
+          );
+        } catch (_) {}
+        final result2 = await fake.schedulePredictionNotification(
+          DateTime.utc(2026, 6, 2),
+          'title',
+          'body',
+        );
+        expect(result2, isA<NotificationScheduleSuccess>());
+        expect(fake.scheduled.length + fake.shown.length, equals(1));
+      },
+    );
+
+    test(
+      'given_knob_on_instance_a_when_instance_b_schedules_then_b_succeeds',
+      () async {
+        final a = FakeNotificationService()..throwOnNextSchedule = true;
+        final b = FakeNotificationService();
+        await expectLater(
+          a.schedulePredictionNotification(
+            DateTime.utc(2026, 6, 1),
+            'title',
+            'body',
+          ),
+          throwsA(isA<PlatformException>()),
+        );
+        final result = await b.schedulePredictionNotification(
+          DateTime.utc(2026, 6, 1),
+          'title',
+          'body',
+        );
+        expect(result, isA<NotificationScheduleSuccess>());
       },
     );
   });

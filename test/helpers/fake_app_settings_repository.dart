@@ -26,7 +26,7 @@ class FakeAppSettingsRepository implements AppSettingsRepository {
 
   @override
   Future<AppSettingsData> getOrCreate() async =>
-      storedSettings ?? const AppSettingsData.defaults();
+      storedSettings ?? AppSettingsData.defaults();
 
   @override
   Future<void> updateSettings(AppSettingsData settings) async {
@@ -38,7 +38,7 @@ class FakeAppSettingsRepository implements AppSettingsRepository {
     required String? dropboxEmail,
     required DateTime? lastBackupAt,
   }) async {
-    final current = storedSettings ?? const AppSettingsData.defaults();
+    final current = storedSettings ?? AppSettingsData.defaults();
     // Full constructor used intentionally — copyWith cannot clear nullable
     // fields to null, which is exactly what callers of updateBackupState need.
     storedSettings = AppSettingsData(
@@ -55,12 +55,13 @@ class FakeAppSettingsRepository implements AppSettingsRepository {
       notificationTimeMinutes: current.notificationTimeMinutes,
       firstDayOfWeek: current.firstDayOfWeek,
       lastLogOrSymptomWriteAt: current.lastLogOrSymptomWriteAt,
+      backupSuspended: current.backupSuspended,
     );
   }
 
   @override
   Future<void> markOnboardingComplete() async {
-    final current = storedSettings ?? const AppSettingsData.defaults();
+    final current = storedSettings ?? AppSettingsData.defaults();
     storedSettings = AppSettingsData(
       languageCode: current.languageCode,
       darkMode: current.darkMode,
@@ -75,12 +76,13 @@ class FakeAppSettingsRepository implements AppSettingsRepository {
       notificationTimeMinutes: current.notificationTimeMinutes,
       firstDayOfWeek: current.firstDayOfWeek,
       lastLogOrSymptomWriteAt: current.lastLogOrSymptomWriteAt,
+      backupSuspended: current.backupSuspended,
     );
   }
 
   @override
   Future<void> saveDeclaredCycleLength(int cycleLength) async {
-    final current = storedSettings ?? const AppSettingsData.defaults();
+    final current = storedSettings ?? AppSettingsData.defaults();
     storedSettings = AppSettingsData(
       languageCode: current.languageCode,
       darkMode: current.darkMode,
@@ -95,12 +97,13 @@ class FakeAppSettingsRepository implements AppSettingsRepository {
       notificationTimeMinutes: current.notificationTimeMinutes,
       firstDayOfWeek: current.firstDayOfWeek,
       lastLogOrSymptomWriteAt: current.lastLogOrSymptomWriteAt,
+      backupSuspended: current.backupSuspended,
     );
   }
 
   @override
   Future<void> updateLastDataWriteAt(DateTime timestamp) async {
-    final current = storedSettings ?? const AppSettingsData.defaults();
+    final current = storedSettings ?? AppSettingsData.defaults();
     storedSettings = AppSettingsData(
       languageCode: current.languageCode,
       darkMode: current.darkMode,
@@ -115,6 +118,30 @@ class FakeAppSettingsRepository implements AppSettingsRepository {
       notificationTimeMinutes: current.notificationTimeMinutes,
       firstDayOfWeek: current.firstDayOfWeek,
       lastLogOrSymptomWriteAt: timestamp,
+      backupSuspended: current.backupSuspended,
+    );
+  }
+
+  @override
+  Future<void> updateBackupSuspended(bool value) async {
+    final current = storedSettings ?? AppSettingsData.defaults();
+    // backupSuspended is excluded from copyWith — dedicated-writer pattern.
+    // Full constructor used to set backupSuspended directly.
+    storedSettings = AppSettingsData(
+      languageCode: current.languageCode,
+      darkMode: current.darkMode,
+      painEnabled: current.painEnabled,
+      notesEnabled: current.notesEnabled,
+      notificationDaysBefore: current.notificationDaysBefore,
+      notificationsEnabled: current.notificationsEnabled,
+      dropboxEmail: current.dropboxEmail,
+      lastBackupAt: current.lastBackupAt,
+      onboardingCompleted: current.onboardingCompleted,
+      declaredCycleLength: current.declaredCycleLength,
+      notificationTimeMinutes: current.notificationTimeMinutes,
+      firstDayOfWeek: current.firstDayOfWeek,
+      lastLogOrSymptomWriteAt: current.lastLogOrSymptomWriteAt,
+      backupSuspended: value,
     );
   }
 }

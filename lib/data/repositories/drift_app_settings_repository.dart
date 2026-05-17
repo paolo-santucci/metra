@@ -57,12 +57,14 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
         notificationTimeMinutes: row.notificationTimeMinutes.clamp(0, 1439),
         firstDayOfWeek: _firstDayOfWeekFromIndex(row.firstDayOfWeek),
         lastLogOrSymptomWriteAt: row.lastLogOrSymptomWriteAt?.toUtc(),
+        backupSuspended: row.backupSuspended,
       );
 
   // Excluded from _toCompanion (each owned by a dedicated writer):
   //   - dropboxEmail, lastBackupAt   → updateBackupState
   //   - declaredCycleLength          → saveDeclaredCycleLength
   //   - lastLogOrSymptomWriteAt      → updateLastDataWriteAt
+  //   - backupSuspended              → updateBackupSuspended
   // Adding any of these here would cause updateSettings() to silently
   // overwrite them. See spec FR-03 / NFR-08.
   static AppSettingsCompanion _toCompanion(AppSettingsData data) =>
@@ -75,6 +77,8 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
         notificationsEnabled: Value(data.notificationsEnabled),
         notificationTimeMinutes: Value(data.notificationTimeMinutes),
         firstDayOfWeek: Value(data.firstDayOfWeek.index),
+        // backupSuspended: NOT in _toCompanion — owned by updateBackupSuspended (dedicated-writer pattern).
+        // See AppSettingsRepository.updateBackupSuspended. Analogue: lastLogOrSymptomWriteAt.
       );
 
   // ---- interface implementation ----
@@ -120,5 +124,10 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
   @override
   Future<void> updateLastDataWriteAt(DateTime timestamp) => _dao.updateSettings(
         AppSettingsCompanion(lastLogOrSymptomWriteAt: Value(timestamp)),
+      );
+
+  @override
+  Future<void> updateBackupSuspended(bool value) => _dao.updateSettings(
+        AppSettingsCompanion(backupSuspended: Value(value)),
       );
 }

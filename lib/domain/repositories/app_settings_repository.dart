@@ -60,4 +60,22 @@ abstract class AppSettingsRepository {
   ///     swallow it silently (bump failure means the skip guard may fire
   ///     a false-skip on the next cold-start).
   Future<void> updateLastDataWriteAt(DateTime timestamp);
+
+  /// Updates the [AppSettingsData.backupSuspended] flag in persistent storage.
+  ///
+  /// **Pre-conditions**: A singleton settings row exists (guaranteed by
+  /// [getOrCreate]). If no row exists the implementation must propagate the
+  /// storage error — do not silently swallow it.
+  ///
+  /// **Post-conditions**: Only [AppSettingsData.backupSuspended] changes.
+  /// Every other column is byte-for-byte preserved. This is a dedicated-writer
+  /// method — it must NOT touch any other field (contrast with
+  /// [updateSettings], which updates all non-dedicated-writer columns).
+  ///
+  /// **Callers**: M3 will use this in [DeleteAllData] (suspend before wipe)
+  /// and in the `lastLogOrSymptomWriteAt` bumper. M4 will use it in the
+  /// notification-failure revert path.
+  ///
+  /// **Errors**: propagate storage exceptions to the caller unchanged.
+  Future<void> updateBackupSuspended(bool value);
 }

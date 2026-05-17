@@ -743,7 +743,7 @@ void main() {
     );
 
     test(
-      'schedulePredictionNotification logs (does not silently swallow) PlatformException from zonedSchedule',
+      'schedulePredictionNotification returns NotificationScheduleFailure carrying PlatformException from zonedSchedule',
       () async {
         tz.setLocalLocation(tz.getLocation('Europe/Rome'));
         final plugin = _RecordingPlugin()
@@ -758,8 +758,29 @@ void main() {
         addTearDown(() => debugPrint = originalDebugPrint);
         final notifyAt = DateTime(2099, 6, 10, 9, 0);
 
-        await service.schedulePredictionNotification(notifyAt, 'T', 'B');
+        final result = await service.schedulePredictionNotification(
+          notifyAt,
+          'T',
+          'B',
+        );
 
+        // BUG-006 (M1 update): schedulePredictionNotification now returns
+        // NotificationScheduleFailure carrying the PlatformException instead of
+        // propagating it. The method must NOT throw.
+        expect(
+          result,
+          isA<NotificationScheduleFailure>(),
+          reason:
+              'BUG-006: PlatformException from zonedSchedule must be caught '
+              'and returned as NotificationScheduleFailure, not propagated',
+        );
+        expect(
+          (result as NotificationScheduleFailure).error,
+          isA<PlatformException>(),
+          reason:
+              'BUG-006: the failure result must carry the original PlatformException',
+        );
+        // The debugPrint log is still emitted so the error is observable.
         expect(
           captured.any(
             (m) =>
@@ -767,8 +788,7 @@ void main() {
                 m.contains('exact_alarms_not_permitted'),
           ),
           isTrue,
-          reason:
-              'PlatformException must be surfaced via debugPrint, not swallowed',
+          reason: 'BUG-006: PlatformException must be surfaced via debugPrint',
         );
       },
     );

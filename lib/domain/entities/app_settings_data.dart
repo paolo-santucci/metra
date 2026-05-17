@@ -16,10 +16,11 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:metra/core/constants/app_constants.dart';
+import 'package:metra/core/util/nullable.dart';
 import 'package:metra/domain/entities/first_day_of_week_setting.dart';
 
 class AppSettingsData {
-  const AppSettingsData({
+  AppSettingsData({
     required this.languageCode,
     this.darkMode,
     required this.painEnabled,
@@ -33,10 +34,28 @@ class AppSettingsData {
     this.notificationTimeMinutes = AppConstants.kDefaultNotificationTimeMinutes,
     this.firstDayOfWeek = FirstDayOfWeekSetting.system,
     this.lastLogOrSymptomWriteAt,
-  });
+    // NOT in copyWith — owned by updateBackupSuspended (dedicated-writer pattern).
+    // See AppSettingsRepository.updateBackupSuspended.
+    this.backupSuspended = false,
+  }) {
+    if (notificationDaysBefore < 1 || notificationDaysBefore > 7) {
+      throw ArgumentError.value(
+        notificationDaysBefore,
+        'notificationDaysBefore',
+        'must be in [1, 7]',
+      );
+    }
+    if (notificationTimeMinutes < 0 || notificationTimeMinutes > 1439) {
+      throw ArgumentError.value(
+        notificationTimeMinutes,
+        'notificationTimeMinutes',
+        'must be in [0, 1439]',
+      );
+    }
+  }
 
   /// Factory returning the defaults that match DB column defaults.
-  const factory AppSettingsData.defaults() = _AppSettingsDataDefaults;
+  factory AppSettingsData.defaults() = _AppSettingsDataDefaults;
 
   final String languageCode;
 
@@ -82,33 +101,44 @@ class AppSettingsData {
   /// Used by [BackupNotifier.backupSilent] as the signal for the skip guard.
   final DateTime? lastLogOrSymptomWriteAt;
 
+  /// Whether the user has suspended automated backups.
+  ///
+  /// NOT in copyWith — owned by updateBackupSuspended (dedicated-writer pattern).
+  /// See AppSettingsRepository.updateBackupSuspended.
+  final bool backupSuspended;
+
   // lastLogOrSymptomWriteAt intentionally omitted from copyWith — it is
   // written exclusively via updateLastDataWriteAt() and must never be reset
   // to null by a general settings update. Mirrors the declaredCycleLength
   // exclusion pattern.
+  //
+  // backupSuspended intentionally omitted from copyWith — dedicated-writer
+  // pattern, written exclusively via updateBackupSuspended().
   AppSettingsData copyWith({
     String? languageCode,
-    bool? darkMode,
+    Nullable<bool>? darkMode,
     bool? painEnabled,
     bool? notesEnabled,
     int? notificationDaysBefore,
     bool? notificationsEnabled,
-    String? dropboxEmail,
-    DateTime? lastBackupAt,
+    Nullable<String>? dropboxEmail,
+    Nullable<DateTime>? lastBackupAt,
     bool? onboardingCompleted,
     int? notificationTimeMinutes,
     FirstDayOfWeekSetting? firstDayOfWeek,
   }) {
     return AppSettingsData(
       languageCode: languageCode ?? this.languageCode,
-      darkMode: darkMode ?? this.darkMode,
+      darkMode: darkMode != null ? darkMode.value : this.darkMode,
       painEnabled: painEnabled ?? this.painEnabled,
       notesEnabled: notesEnabled ?? this.notesEnabled,
       notificationDaysBefore:
           notificationDaysBefore ?? this.notificationDaysBefore,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
-      dropboxEmail: dropboxEmail ?? this.dropboxEmail,
-      lastBackupAt: lastBackupAt ?? this.lastBackupAt,
+      dropboxEmail:
+          dropboxEmail != null ? dropboxEmail.value : this.dropboxEmail,
+      lastBackupAt:
+          lastBackupAt != null ? lastBackupAt.value : this.lastBackupAt,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
       // declaredCycleLength intentionally omitted from copyWith — it is
       // written exclusively via saveDeclaredCycleLength() and never needs
@@ -119,6 +149,8 @@ class AppSettingsData {
       firstDayOfWeek: firstDayOfWeek ?? this.firstDayOfWeek,
       // lastLogOrSymptomWriteAt preserved as-is (see comment above copyWith).
       lastLogOrSymptomWriteAt: lastLogOrSymptomWriteAt,
+      // backupSuspended preserved as-is — dedicated-writer pattern.
+      backupSuspended: backupSuspended,
     );
   }
 
@@ -139,7 +171,8 @@ class AppSettingsData {
           declaredCycleLength == other.declaredCycleLength &&
           notificationTimeMinutes == other.notificationTimeMinutes &&
           firstDayOfWeek == other.firstDayOfWeek &&
-          lastLogOrSymptomWriteAt == other.lastLogOrSymptomWriteAt;
+          lastLogOrSymptomWriteAt == other.lastLogOrSymptomWriteAt &&
+          backupSuspended == other.backupSuspended;
 
   @override
   int get hashCode =>
@@ -155,11 +188,12 @@ class AppSettingsData {
       declaredCycleLength.hashCode ^
       notificationTimeMinutes.hashCode ^
       firstDayOfWeek.hashCode ^
-      lastLogOrSymptomWriteAt.hashCode;
+      lastLogOrSymptomWriteAt.hashCode ^
+      backupSuspended.hashCode;
 }
 
 class _AppSettingsDataDefaults extends AppSettingsData {
-  const _AppSettingsDataDefaults()
+  _AppSettingsDataDefaults()
       : super(
           languageCode: '',
           darkMode: null,

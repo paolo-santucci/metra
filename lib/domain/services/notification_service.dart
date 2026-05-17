@@ -15,6 +15,31 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
+/// The result of attempting to schedule a prediction notification.
+///
+/// Callers should switch on this sealed class to handle each case explicitly.
+/// M1: [SchedulePredictionNotification.execute] binds but does not consume the
+/// result — full wiring happens in M4.
+sealed class NotificationScheduleResult {
+  const NotificationScheduleResult();
+}
+
+/// The notification was scheduled successfully.
+final class NotificationScheduleSuccess extends NotificationScheduleResult {
+  const NotificationScheduleSuccess();
+}
+
+/// The scheduling attempt failed; [error] carries the original exception.
+///
+/// [error] is typed [Object] (not [PlatformException]) to keep the domain
+/// layer free of Flutter platform imports — callers in the data layer
+/// may safely cast to [PlatformException] when they know the origin.
+final class NotificationScheduleFailure extends NotificationScheduleResult {
+  const NotificationScheduleFailure(this.error);
+
+  final Object error;
+}
+
 /// Abstract interface for scheduling and cancelling local notifications.
 ///
 /// Lives in the domain layer — no Flutter or platform imports.
@@ -30,7 +55,10 @@ abstract class NotificationService {
   /// The notification fires at the local time encoded in [notifyAt].
   /// Any previously scheduled prediction notification is replaced
   /// (same stable ID is reused).
-  Future<void> schedulePredictionNotification(
+  ///
+  /// Returns [NotificationScheduleSuccess] on success or
+  /// [NotificationScheduleFailure] wrapping the original exception on failure.
+  Future<NotificationScheduleResult> schedulePredictionNotification(
     DateTime notifyAt,
     String title,
     String body,

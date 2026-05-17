@@ -114,7 +114,7 @@ void main() {
       () async {
         final fake = FakeNotificationService()..permissionGranted = false;
 
-        const coldStartSettings = AppSettingsData(
+        final coldStartSettings = AppSettingsData(
           languageCode: '',
           painEnabled: true,
           notesEnabled: true,
@@ -125,7 +125,7 @@ void main() {
 
         await _simulateSettingsListenerGuard(
           prev: const AsyncLoading<AppSettingsData>(),
-          next: const AsyncData(coldStartSettings),
+          next: AsyncData(coldStartSettings),
           service: fake,
         );
 
@@ -143,7 +143,7 @@ void main() {
       () async {
         final fake = FakeNotificationService()..permissionGranted = true;
 
-        const disabledSettings = AppSettingsData(
+        final disabledSettings = AppSettingsData(
           languageCode: '',
           painEnabled: true,
           notesEnabled: true,
@@ -151,7 +151,7 @@ void main() {
           notificationsEnabled: false,
           onboardingCompleted: true,
         );
-        const enabledSettings = AppSettingsData(
+        final enabledSettings = AppSettingsData(
           languageCode: '',
           painEnabled: true,
           notesEnabled: true,
@@ -161,8 +161,8 @@ void main() {
         );
 
         await _simulateSettingsListenerGuard(
-          prev: const AsyncData(disabledSettings),
-          next: const AsyncData(enabledSettings),
+          prev: AsyncData(disabledSettings),
+          next: AsyncData(enabledSettings),
           service: fake,
         );
 
@@ -180,7 +180,7 @@ void main() {
       () async {
         final fake = FakeNotificationService()..permissionGranted = true;
 
-        const disabledSettings = AppSettingsData(
+        final disabledSettings = AppSettingsData(
           languageCode: '',
           painEnabled: true,
           notesEnabled: true,
@@ -190,8 +190,8 @@ void main() {
         );
 
         await _simulateSettingsListenerGuard(
-          prev: const AsyncData(disabledSettings),
-          next: const AsyncData(disabledSettings),
+          prev: AsyncData(disabledSettings),
+          next: AsyncData(disabledSettings),
           service: fake,
         );
 
@@ -210,7 +210,7 @@ void main() {
       () async {
         final fake = FakeNotificationService()..permissionGranted = false;
 
-        const enabledSettings = AppSettingsData(
+        final enabledSettings = AppSettingsData(
           languageCode: '',
           painEnabled: true,
           notesEnabled: true,
@@ -222,7 +222,7 @@ void main() {
         // Riverpod passes null as prev on the very first listen call.
         await _simulateSettingsListenerGuard(
           prev: null,
-          next: const AsyncData(enabledSettings),
+          next: AsyncData(enabledSettings),
           service: fake,
         );
 
@@ -240,7 +240,7 @@ void main() {
       () async {
         final fake = FakeNotificationService()..permissionGranted = true;
 
-        const enabledSettings = AppSettingsData(
+        final enabledSettings = AppSettingsData(
           languageCode: '',
           painEnabled: true,
           notesEnabled: true,
@@ -250,8 +250,8 @@ void main() {
         );
 
         await _simulateSettingsListenerGuard(
-          prev: const AsyncData(enabledSettings),
-          next: const AsyncData(enabledSettings),
+          prev: AsyncData(enabledSettings),
+          next: AsyncData(enabledSettings),
           service: fake,
         );
 
@@ -292,7 +292,7 @@ void main() {
           expectedStart: windowStart.add(const Duration(days: 2)),
           cyclesUsed: 3,
         );
-        const settings = AppSettingsData(
+        final settings = AppSettingsData(
           languageCode: 'en',
           painEnabled: true,
           notesEnabled: true,
@@ -344,7 +344,7 @@ void main() {
           expectedStart: windowStart.add(const Duration(days: 2)),
           cyclesUsed: 3,
         );
-        const settings = AppSettingsData(
+        final settings = AppSettingsData(
           languageCode: 'en',
           painEnabled: true,
           notesEnabled: true,
@@ -386,7 +386,7 @@ void main() {
       () async {
         final fake = FakeNotificationService()..permissionGranted = false;
 
-        const coldStartSettings = AppSettingsData(
+        final coldStartSettings = AppSettingsData(
           languageCode: '',
           painEnabled: true,
           notesEnabled: true,
@@ -398,7 +398,7 @@ void main() {
 
         await _simulateSettingsListenerGuard(
           prev: const AsyncLoading<AppSettingsData>(),
-          next: const AsyncData(coldStartSettings),
+          next: AsyncData(coldStartSettings),
           service: fake,
         );
 
@@ -437,7 +437,7 @@ void main() {
       'happy path: valid prediction + notificationsEnabled → schedules once with correct notifyAt (FR-09)',
       () async {
         final fake = FakeNotificationService()..permissionGranted = true;
-        const settings = AppSettingsData(
+        final settings = AppSettingsData(
           languageCode: 'en',
           painEnabled: true,
           notesEnabled: true,
@@ -482,7 +482,7 @@ void main() {
       'EC-08 negative: notificationsEnabled=false → no schedule, cancel called (FR-03)',
       () async {
         final fake = FakeNotificationService()..permissionGranted = true;
-        const settings = AppSettingsData(
+        final settings = AppSettingsData(
           languageCode: 'en',
           painEnabled: true,
           notesEnabled: true,
@@ -514,7 +514,7 @@ void main() {
       'EC-08 negative: null prediction + notificationsEnabled → no schedule, cancel called',
       () async {
         final fake = FakeNotificationService()..permissionGranted = true;
-        const settings = AppSettingsData(
+        final settings = AppSettingsData(
           languageCode: 'en',
           painEnabled: true,
           notesEnabled: true,

@@ -18,7 +18,6 @@
 import '../entities/app_settings_data.dart';
 import '../entities/cycle_prediction.dart';
 import '../services/notification_service.dart';
-import '../../core/constants/app_constants.dart';
 
 class SchedulePredictionNotification {
   const SchedulePredictionNotification(this._notifService);
@@ -35,23 +34,6 @@ class SchedulePredictionNotification {
   }) async {
     await _notifService.cancelPredictionNotifications();
     if (prediction == null || !settings.notificationsEnabled) return;
-
-    if (settings.notificationDaysBefore < 1 ||
-        settings.notificationDaysBefore > AppConstants.kMaxAdvanceDays) {
-      throw ArgumentError.value(
-        settings.notificationDaysBefore,
-        'notificationDaysBefore',
-        'must be in [1, ${AppConstants.kMaxAdvanceDays}]',
-      );
-    }
-    if (settings.notificationTimeMinutes < 0 ||
-        settings.notificationTimeMinutes > 1439) {
-      throw ArgumentError.value(
-        settings.notificationTimeMinutes,
-        'notificationTimeMinutes',
-        'must be in [0, 1439]',
-      );
-    }
 
     final base = prediction.windowStart
         .subtract(Duration(days: settings.notificationDaysBefore));
@@ -74,6 +56,9 @@ class SchedulePredictionNotification {
     final today = DateTime(now.year, now.month, now.day);
     if (notifyAt.toLocal().isBefore(today)) return;
 
-    await _notifService.schedulePredictionNotification(notifyAt, title, body);
+    // ignore: unused_local_variable
+    final result = await _notifService.schedulePredictionNotification(
+        notifyAt, title, body);
+    // M1: result is intentionally unused — M4 wires the revert-and-notify path here.
   }
 }

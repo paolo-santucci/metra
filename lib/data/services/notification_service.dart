@@ -150,51 +150,51 @@ class FlutterNotificationService implements NotificationService {
   }
 
   @override
-  Future<void> schedulePredictionNotification(
+  Future<NotificationScheduleResult> schedulePredictionNotification(
     DateTime notifyAt,
     String title,
     String body,
   ) async {
-    // Fire at the time encoded in notifyAt on the correct local calendar day.
-    final scheduledDate = computeScheduledTz(notifyAt);
-    final now = tz.TZDateTime.now(tz.local);
-
-    if (scheduledDate.isBefore(now)) {
-      if (shouldShowImmediately(scheduledDate, now)) {
-        // BUG-005 fix: cold-start on notification day after the scheduled time —
-        // the scheduled alarm was cancelled by the listener before we got here.
-        // Show immediately so the notification is not silently lost.
-        await _plugin.show(
-          kPredictionNotificationId,
-          title,
-          body,
-          const NotificationDetails(
-            android: AndroidNotificationDetails(
-              _kChannelId,
-              _kChannelName,
-              importance: Importance.high,
-              priority: Priority.high,
-            ),
-            iOS: DarwinNotificationDetails(),
-          ),
-        );
-      }
-      return;
-    }
-
-    const androidDetails = AndroidNotificationDetails(
-      _kChannelId,
-      _kChannelName,
-      importance: Importance.high,
-      priority: Priority.high,
-    );
-    const iosDetails = DarwinNotificationDetails();
-    const details = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
-
     try {
+      // Fire at the time encoded in notifyAt on the correct local calendar day.
+      final scheduledDate = computeScheduledTz(notifyAt);
+      final now = tz.TZDateTime.now(tz.local);
+
+      if (scheduledDate.isBefore(now)) {
+        if (shouldShowImmediately(scheduledDate, now)) {
+          // BUG-005 fix: cold-start on notification day after the scheduled time —
+          // the scheduled alarm was cancelled by the listener before we got here.
+          // Show immediately so the notification is not silently lost.
+          await _plugin.show(
+            kPredictionNotificationId,
+            title,
+            body,
+            const NotificationDetails(
+              android: AndroidNotificationDetails(
+                _kChannelId,
+                _kChannelName,
+                importance: Importance.high,
+                priority: Priority.high,
+              ),
+              iOS: DarwinNotificationDetails(),
+            ),
+          );
+        }
+        return const NotificationScheduleSuccess();
+      }
+
+      const androidDetails = AndroidNotificationDetails(
+        _kChannelId,
+        _kChannelName,
+        importance: Importance.high,
+        priority: Priority.high,
+      );
+      const iosDetails = DarwinNotificationDetails();
+      const details = NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      );
+
       await _plugin.zonedSchedule(
         kPredictionNotificationId,
         title,
@@ -207,10 +207,12 @@ class FlutterNotificationService implements NotificationService {
             UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: null,
       );
-    } on PlatformException catch (e) {
+      return const NotificationScheduleSuccess();
+    } catch (e) {
       debugPrint(
-        'FlutterNotificationService: zonedSchedule failed (${e.code}): ${e.message}',
+        'FlutterNotificationService: schedulePredictionNotification failed: $e',
       );
+      return NotificationScheduleFailure(e);
     }
   }
 

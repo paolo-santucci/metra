@@ -32,11 +32,11 @@ void main() {
 
   test('returns defaults when no settings exist', () async {
     final settings = await useCase();
-    expect(settings, equals(const AppSettingsData.defaults()));
+    expect(settings, equals(AppSettingsData.defaults()));
   });
 
   test('returns existing settings when already set', () async {
-    const custom = AppSettingsData(
+    final custom = AppSettingsData(
       languageCode: 'en',
       painEnabled: false,
       notesEnabled: true,

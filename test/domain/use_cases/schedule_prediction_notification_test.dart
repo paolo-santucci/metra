@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/domain/entities/app_settings_data.dart';
 import 'package:metra/domain/entities/cycle_prediction.dart';
@@ -43,7 +44,7 @@ void main() {
   group('SchedulePredictionNotification.execute', () {
     // Test 1: null prediction → cancel called, no schedule
     test('null prediction → cancel called, no schedule', () async {
-      const settings = AppSettingsData(
+      final settings = AppSettingsData(
         languageCode: 'it',
         painEnabled: true,
         notesEnabled: true,
@@ -68,7 +69,7 @@ void main() {
       final prediction = makePrediction(
         DateTime.now().add(const Duration(days: 10)),
       );
-      const settings = AppSettingsData(
+      final settings = AppSettingsData(
         languageCode: 'it',
         painEnabled: true,
         notesEnabled: true,
@@ -96,7 +97,7 @@ void main() {
       final prediction = makePrediction(
         twoDaysAgo.add(const Duration(days: 2)),
       ); // expectedStart = now, windowStart = twoDaysAgo
-      const settings = AppSettingsData(
+      final settings = AppSettingsData(
         languageCode: 'it',
         painEnabled: true,
         notesEnabled: true,
@@ -122,7 +123,7 @@ void main() {
       final prediction = makePrediction(
         futureStart.add(const Duration(days: 2)),
       ); // windowStart = futureStart
-      const settings = AppSettingsData(
+      final settings = AppSettingsData(
         languageCode: 'it',
         painEnabled: true,
         notesEnabled: true,
@@ -169,7 +170,7 @@ void main() {
         windowEnd: DateTime.utc(2026, 6, 3),
         cyclesUsed: 3,
       );
-      const settings = AppSettingsData(
+      final settings = AppSettingsData(
         languageCode: 'it',
         painEnabled: true,
         notesEnabled: true,
@@ -203,7 +204,7 @@ void main() {
         windowEnd: DateTime.utc(2026, 6, 3),
         cyclesUsed: 3,
       );
-      const settings = AppSettingsData(
+      final settings = AppSettingsData(
         languageCode: 'it',
         painEnabled: true,
         notesEnabled: true,
@@ -237,7 +238,7 @@ void main() {
         windowEnd: DateTime.utc(2026, 6, 13),
         cyclesUsed: 3,
       );
-      const settings = AppSettingsData(
+      final settings = AppSettingsData(
         languageCode: 'it',
         painEnabled: true,
         notesEnabled: true,
@@ -269,69 +270,13 @@ void main() {
       windowEnd: DateTime.utc(2099, 7, 22),
       cyclesUsed: 3,
     );
-    const baseSettings = AppSettingsData(
+    final baseSettings = AppSettingsData(
       languageCode: 'it',
       painEnabled: true,
       notesEnabled: true,
       notificationsEnabled: true,
       notificationDaysBefore: 2,
       onboardingCompleted: false,
-    );
-
-    test(
-      'given_daysBefore_15_when_execute_then_ArgumentError_naming_notificationDaysBefore',
-      () async {
-        expect(
-          () async => useCase.execute(
-            prediction: pred,
-            settings: baseSettings.copyWith(notificationDaysBefore: 15),
-            title: 't',
-            body: 'b',
-          ),
-          throwsA(
-            isA<ArgumentError>()
-                .having((e) => e.name, 'name', 'notificationDaysBefore')
-                .having(
-                  (e) => e.message,
-                  'message',
-                  contains('[1, 7]'),
-                ),
-          ),
-        );
-        expect(
-          fakeService.cancelCount,
-          equals(1),
-          reason: 'cancel-first invariant holds even on ArgumentError path',
-        );
-      },
-    );
-
-    test(
-      'given_timeMinutes_1440_when_execute_then_ArgumentError_naming_notificationTimeMinutes',
-      () async {
-        expect(
-          () async => useCase.execute(
-            prediction: pred,
-            settings: baseSettings.copyWith(notificationTimeMinutes: 1440),
-            title: 't',
-            body: 'b',
-          ),
-          throwsA(
-            isA<ArgumentError>()
-                .having((e) => e.name, 'name', 'notificationTimeMinutes')
-                .having(
-                  (e) => e.message,
-                  'message',
-                  contains('[0, 1439]'),
-                ),
-          ),
-        );
-        expect(
-          fakeService.cancelCount,
-          equals(1),
-          reason: 'cancel-first invariant holds even on ArgumentError path',
-        );
-      },
     );
 
     test(
@@ -472,7 +417,7 @@ void main() {
       () async {
         final svc = FakeNotificationService();
         final uc = SchedulePredictionNotification(svc);
-        const settings = AppSettingsData(
+        final settings = AppSettingsData(
           languageCode: 'it',
           painEnabled: true,
           notesEnabled: true,
@@ -500,7 +445,7 @@ void main() {
       () async {
         final svc = FakeNotificationService();
         final uc = SchedulePredictionNotification(svc);
-        const settings = AppSettingsData(
+        final settings = AppSettingsData(
           languageCode: 'it',
           painEnabled: true,
           notesEnabled: true,
@@ -522,75 +467,6 @@ void main() {
         expect(notifyAt, equals(DateTime(2099, 8, 12, 9, 0)));
       },
     );
-
-    test(
-      'given_daysBefore_0_when_execute_then_ArgumentError_naming_notificationDaysBefore',
-      () async {
-        final svc = FakeNotificationService();
-        final uc = SchedulePredictionNotification(svc);
-        const settings = AppSettingsData(
-          languageCode: 'it',
-          painEnabled: true,
-          notesEnabled: true,
-          notificationsEnabled: true,
-          notificationDaysBefore: 0, // below minimum
-          onboardingCompleted: false,
-        );
-
-        await expectLater(
-          () => uc.execute(
-            prediction: farFuturePred,
-            settings: settings,
-            title: 't',
-            body: 'b',
-          ),
-          throwsA(
-            isA<ArgumentError>()
-                .having((e) => e.name, 'name', 'notificationDaysBefore')
-                .having(
-                  (e) => e.message,
-                  'message',
-                  contains('[1, 7]'),
-                ),
-          ),
-        );
-      },
-    );
-
-    test(
-      'given_timeMinutes_negative1_when_execute_then_ArgumentError_naming_notificationTimeMinutes',
-      () async {
-        final svc = FakeNotificationService();
-        final uc = SchedulePredictionNotification(svc);
-        const settings = AppSettingsData(
-          languageCode: 'it',
-          painEnabled: true,
-          notesEnabled: true,
-          notificationsEnabled: true,
-          notificationDaysBefore: 2, // valid so we reach the time validator
-          onboardingCompleted: false,
-          notificationTimeMinutes: -1, // below minimum
-        );
-
-        await expectLater(
-          () => uc.execute(
-            prediction: farFuturePred,
-            settings: settings,
-            title: 't',
-            body: 'b',
-          ),
-          throwsA(
-            isA<ArgumentError>()
-                .having((e) => e.name, 'name', 'notificationTimeMinutes')
-                .having(
-                  (e) => e.message,
-                  'message',
-                  contains('[0, 1439]'),
-                ),
-          ),
-        );
-      },
-    );
   });
 
   // ---------------------------------------------------------------------------
@@ -604,7 +480,7 @@ void main() {
       windowEnd: DateTime.utc(2099, 9, 12),
       cyclesUsed: 3,
     );
-    const baseDays = AppSettingsData(
+    final baseDays = AppSettingsData(
       languageCode: 'it',
       painEnabled: true,
       notesEnabled: true,
@@ -674,7 +550,7 @@ void main() {
           windowEnd: DateTime.utc(2099, 10, 22),
           cyclesUsed: 3,
         );
-        const settings = AppSettingsData(
+        final settings = AppSettingsData(
           languageCode: 'it',
           painEnabled: true,
           notesEnabled: true,
@@ -707,7 +583,7 @@ void main() {
   // ---------------------------------------------------------------------------
   group('skipIfPast — settings-change guard', () {
     // Shared prediction and settings for this group.
-    const baseSettings = AppSettingsData(
+    final baseSettings = AppSettingsData(
       languageCode: 'it',
       painEnabled: true,
       notesEnabled: true,
@@ -835,6 +711,77 @@ void main() {
     );
   });
 
+  // ---------------------------------------------------------------------------
+  // TASK-10: range guards moved to entity; failure propagation (FR-16)
+  // ---------------------------------------------------------------------------
+  group(
+      'SchedulePredictionNotification.execute — range guards moved to entity (FR-16)',
+      () {
+    test(
+      'given_valid_settings_when_execute_then_completes_without_ArgumentError',
+      () async {
+        // Validation now happens at AppSettingsData construction (entity layer).
+        // Any AppSettingsData that reaches execute() has already passed
+        // construction-time guards — no ArgumentError at the use-case level.
+        final validSettings = AppSettingsData(
+          languageCode: 'it',
+          painEnabled: true,
+          notesEnabled: true,
+          notificationsEnabled:
+              false, // disabled → cancel path; no schedule needed
+          notificationDaysBefore: 2,
+          onboardingCompleted: false,
+        );
+        await expectLater(
+          useCase.execute(
+            prediction: null,
+            settings: validSettings,
+            title: 't',
+            body: 'b',
+          ),
+          completes,
+          reason: 'valid settings must reach execute() and complete normally',
+        );
+      },
+    );
+
+    test(
+      'given_throwOnNextSchedule_true_when_execute_then_PlatformException_propagates',
+      () async {
+        // M1 note: the use case does NOT catch PlatformException from
+        // schedulePredictionNotification. The exception propagates to the caller.
+        // Full error-handling wiring is planned for M4.
+        // This test documents the current M1 behaviour as-is.
+        fakeService.throwOnNextSchedule = true;
+        final validSettings = AppSettingsData(
+          languageCode: 'it',
+          painEnabled: true,
+          notesEnabled: true,
+          notificationsEnabled: true,
+          notificationDaysBefore: 2,
+          onboardingCompleted: false,
+        );
+        final farFuturePred = CyclePrediction(
+          expectedStart: DateTime.utc(2099, 8, 20),
+          windowStart: DateTime.utc(2099, 8, 18),
+          windowEnd: DateTime.utc(2099, 8, 22),
+          cyclesUsed: 3,
+        );
+        await expectLater(
+          useCase.execute(
+            prediction: farFuturePred,
+            settings: validSettings,
+            title: 't',
+            body: 'b',
+          ),
+          throwsA(isA<PlatformException>()),
+          reason:
+              'M1: use case does not swallow PlatformException — propagates to caller',
+        );
+      },
+    );
+  });
+
   group('cold-start regression (BUG-005)', () {
     test(
       'cold_start_after_09_on_notification_day_shows_immediately_not_lost',
@@ -855,7 +802,7 @@ void main() {
           windowEnd: windowStart.add(const Duration(days: 4)),
           cyclesUsed: 3,
         );
-        const settings = AppSettingsData(
+        final settings = AppSettingsData(
           languageCode: 'it',
           painEnabled: true,
           notesEnabled: true,
