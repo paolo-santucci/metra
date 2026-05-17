@@ -22,11 +22,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/metra_theme.dart';
 import 'domain/entities/app_settings_data.dart';
 import 'domain/entities/cycle_prediction.dart';
+import 'domain/services/notification_service.dart';
 import 'features/backup/state/backup_notifier.dart';
 import 'features/calendar/state/prediction_controller.dart';
 import 'features/settings/state/settings_notifier.dart';
 import 'l10n/app_localizations.dart';
 import 'providers/encryption_provider.dart';
+import 'providers/notification_error_reporter_provider.dart';
 import 'providers/use_case_providers.dart';
 import 'router/app_router.dart';
 
@@ -168,7 +170,11 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
         final scheduler =
             await ref.read(schedulePredictionNotificationProvider.future);
         try {
-          await scheduler.execute(
+          // FR-09: switch on the structured result. Failure path is a silent
+          // drop — no toggle revert, no snackbar. cancelPredictionNotifications()
+          // inside execute() may still throw PlatformException; the outer
+          // on PlatformException handles that path (FR-10).
+          final result = await scheduler.execute(
             prediction: prediction,
             settings: currentSettings,
             title: l10n.notification_prediction_title,
@@ -178,8 +184,21 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
                   )
                 : '',
           );
-        } on PlatformException {
-          // BUG-002: SCHEDULE_EXACT_ALARM revoked; silently no-op.
+          switch (result) {
+            case NotificationScheduleSuccess():
+              // No side effect — prediction successfully scheduled.
+              break;
+            case NotificationScheduleFailure(:final error):
+              // FR-09: silent drop — no revert, no snackbar.
+              debugPrint(
+                '[predictionListener] schedule failure (silent drop): $error',
+              );
+          }
+        } on PlatformException catch (e) {
+          // FR-10: cancelPredictionNotifications() inside execute() may throw
+          // PlatformException (SCHEDULE_EXACT_ALARM revoked or cancel error).
+          // The prediction listener never shows UI errors for this path.
+          debugPrint('[predictionListener] PlatformException (cancel path): $e');
         }
       },
     );
@@ -239,10 +258,17 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
         final prediction = ref.read(cyclePredictionProvider).valueOrNull;
         final l10n = await AppLocalizations.delegate
             .load(Locale(_effectiveLangCode(currentSettings.languageCode)));
+        // FR-08: capture the localised failure message before await so the
+        // locale is pinned to the user's current settings at scheduling time.
+        final failureMessage = l10n.notificationScheduleFailedMessage;
         final scheduler =
             await ref.read(schedulePredictionNotificationProvider.future);
         try {
-          await scheduler.execute(
+          // FR-08: switch on the structured result. On failure, revert the
+          // toggle and surface a localised snackbar. cancelPredictionNotifications()
+          // inside execute() may still throw PlatformException; the outer
+          // on PlatformException handles that path (FR-10).
+          final result = await scheduler.execute(
             prediction: prediction,
             settings: currentSettings,
             title: l10n.notification_prediction_title,
@@ -258,8 +284,26 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
             // advance days or notification time in Settings.
             skipIfPast: true,
           );
-        } on PlatformException {
-          // BUG-002: SCHEDULE_EXACT_ALARM revoked; silently no-op.
+          switch (result) {
+            case NotificationScheduleSuccess():
+              // No side effect — notification successfully scheduled.
+              break;
+            case NotificationScheduleFailure():
+              // FR-08(a): revert the toggle so displayed state matches reality.
+              await ref.read(settingsNotifierProvider.notifier).save(
+                    currentSettings.copyWith(notificationsEnabled: false),
+                  );
+              // FR-08(b): surface a localised error snackbar via the global key.
+              ref
+                  .read(notificationErrorReporterProvider)
+                  .report(failureMessage);
+          }
+        } on PlatformException catch (e) {
+          // FR-10: cancelPredictionNotifications() inside execute() may throw
+          // PlatformException (SCHEDULE_EXACT_ALARM revoked or cancel error).
+          // The schedule path no longer throws after FR-05; this catch is live
+          // only for the cancel-throw path.
+          debugPrint('[settingsListener] PlatformException (cancel path): $e');
         }
       },
     );

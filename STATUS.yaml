@@ -30,8 +30,8 @@ short-plan:
     plan: approved
   rejection-note: null
   build-progress:
-    current-wave: 2
-    waves-completed: [1]
+    current-wave: 3
+    waves-completed: [1, 2]
 
 # Owned by the long-plan skill. update-status preserves verbatim.
 long-plan:
@@ -55,6 +55,8 @@ pending-consolidation: []
 
 recently-completed:
   - date: "2026-05-18"
+    summary: "feat(m4-wave2): app.dart dual-branch listener rewrite — FR-08/FR-09/FR-10, result switch, snackbar on failure, cancel-throw catch (TASK-06)"
+  - date: "2026-05-18"
     summary: "feat(m4-wave1): iOS permission fix, use-case return type, fake contract, error reporter, ARB key (TASK-01–05, TASK-09)"
   - date: "2026-05-17"
     summary: "feat(m3): M3 Backup — retention N=10, restore picker, suspend-on-wipe, filename suffix (FR-12–FR-15)"
@@ -66,13 +68,12 @@ recently-completed:
     summary: "feat(domain+data): M1 foundation — Nullable<T> copyWith, schema v10, NotificationScheduleResult, backupSuspended"
 
 in-progress:
-  - title: "M4 Notifications — Wave 2 (app.dart listener rewrite + stale use-case test fix)"
-    state: "Wave 1 complete (6/6 tasks, committed 65defb4); Wave 2 starting — TASK-06 + TASK-07 parallel"
+  - title: "M4 Notifications — Wave 3 (integration tests for FR-13/14/15/16)"
+    state: "Wave 2 complete (TASK-06 + TASK-07 done); Wave 3 — TASK-08 (flutter-qa-integration)"
     touched:
-      - "lib/app.dart"
-      - "test/domain/use_cases/schedule_prediction_notification_test.dart"
-    next-step: "Execute Wave 2: TASK-06 (flutter-frontend-engineer) + TASK-07 (flutter-qa-integration) in parallel"
-    blocker: "schedule_prediction_notification_test.dart:771 failing (expected transient) — TASK-07 fixes this wave"
+      - "test/app_notification_wiring_test.dart"
+    next-step: "Execute Wave 3: TASK-08 — add 4 new integration tests for FR-13, FR-14, FR-15, FR-16"
+    blocker: null
 
 next-steps:
   - "TestFlight sign-off for FR-17 (iOS permission check + dialog) after build completes"

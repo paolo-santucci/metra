@@ -747,12 +747,12 @@ void main() {
     );
 
     test(
-      'given_throwOnNextSchedule_true_when_execute_then_PlatformException_propagates',
+      'given_throwOnNextSchedule_true_when_execute_then_result_is_NotificationScheduleFailure',
       () async {
-        // M1 note: the use case does NOT catch PlatformException from
-        // schedulePredictionNotification. The exception propagates to the caller.
-        // Full error-handling wiring is planned for M4.
-        // This test documents the current M1 behaviour as-is.
+        // M4 (TASK-07): the use case now returns a structured result instead of
+        // propagating the PlatformException. FakeNotificationService returns a
+        // NotificationScheduleFailure wrapping a PlatformException with code
+        // 'fake_schedule_failure' when throwOnNextSchedule is true (TASK-03).
         fakeService.throwOnNextSchedule = true;
         final validSettings = AppSettingsData(
           languageCode: 'it',
@@ -768,16 +768,20 @@ void main() {
           windowEnd: DateTime.utc(2099, 8, 22),
           cyclesUsed: 3,
         );
-        await expectLater(
-          useCase.execute(
-            prediction: farFuturePred,
-            settings: validSettings,
-            title: 't',
-            body: 'b',
-          ),
-          throwsA(isA<PlatformException>()),
-          reason:
-              'M1: use case does not swallow PlatformException — propagates to caller',
+        final result = await useCase.execute(
+          prediction: farFuturePred,
+          settings: validSettings,
+          title: 't',
+          body: 'b',
+        );
+        expect(result, isA<NotificationScheduleFailure>());
+        expect(
+          (result as NotificationScheduleFailure).error,
+          isA<PlatformException>(),
+        );
+        expect(
+          (result.error as PlatformException).code,
+          'fake_schedule_failure',
         );
       },
     );
