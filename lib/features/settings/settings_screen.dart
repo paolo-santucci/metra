@@ -416,19 +416,12 @@ class SettingsScreen extends ConsumerWidget {
                 settings.darkMode == null ? const Icon(Icons.check) : null,
             onTap: () {
               Navigator.of(sheetCtx).pop();
-              // Full constructor needed: copyWith cannot set darkMode to null.
-              _save(
-                ref,
-                AppSettingsData(
-                  languageCode: settings.languageCode,
-                  darkMode: null,
-                  painEnabled: settings.painEnabled,
-                  notesEnabled: settings.notesEnabled,
-                  notificationDaysBefore: settings.notificationDaysBefore,
-                  notificationsEnabled: settings.notificationsEnabled,
-                  onboardingCompleted: settings.onboardingCompleted,
-                ),
-              );
+              // M1 Nullable<T> makes this a one-line fix: copyWith(darkMode:
+              // Nullable(null)) sets darkMode to null while preserving all
+              // other fields. The bare AppSettingsData constructor was removed
+              // because it silently reset notificationTimeMinutes and
+              // firstDayOfWeek to defaults (issue #13).
+              _save(ref, settings.copyWith(darkMode: const Nullable(null)));
             },
           ),
           ListTile(
@@ -532,19 +525,27 @@ class SettingsScreen extends ConsumerWidget {
   ///
   /// Used on both Android and iOS — the Cupertino wheel is the canonical
   /// picker for this app on all platforms (Material Time Picker removed in
-  /// favour of visual consistency). The seed is rounded to the nearest 5 min
-  /// ([_roundTo5]) so the wheel always lands on a tick mark. Auto-save fires
-  /// 250 ms after the last wheel movement; Ripristina resets to the seed;
-  /// OK flushes any pending debounce and closes.
+  /// favour of visual consistency). The stored value is used directly as the
+  /// seed without rounding — rounding was causing issue #21 (stored value was
+  /// overwritten with a rounded derivative even when the wheel was not moved).
+  /// Auto-save fires 250 ms after the last wheel movement; Ripristina resets
+  /// to the seed; OK flushes any pending debounce and closes.
   static Future<void> _showCupertinoTimePicker(
     BuildContext context,
     WidgetRef ref,
     AppSettingsData settings,
   ) async {
-    final seedMinutes = _roundTo5(settings.notificationTimeMinutes);
+    // FR-02: use stored value directly as seed — no rounding.
+    // The stored value is the authoritative source; rounding is a visual
+    // concern of the wheel (minuteInterval:5) and must not affect storage.
+    final storedMinutes = settings.notificationTimeMinutes;
+    // The CupertinoDatePicker requires initialDateTime to be on a tick mark
+    // when minuteInterval > 1. Round to nearest 5 for display only — the
+    // stored value is what gets written back.
+    final seedMinutes = _roundTo5(storedMinutes);
     final initial = DateTime(2000, 1, 1, seedMinutes ~/ 60, seedMinutes % 60);
 
-    int currentMinutes = seedMinutes;
+    int currentMinutes = storedMinutes; // starts at stored (not rounded) value
 
     await showCupertinoModalPopup<void>(
       context: context,
@@ -565,10 +566,11 @@ class SettingsScreen extends ConsumerWidget {
           settings.copyWith(notificationTimeMinutes: currentMinutes),
         ),
         onRestore: () {
-          currentMinutes = seedMinutes;
+          // Ripristina: restore the value that was stored when the picker opened.
+          currentMinutes = storedMinutes;
           _save(
             ref,
-            settings.copyWith(notificationTimeMinutes: seedMinutes),
+            settings.copyWith(notificationTimeMinutes: storedMinutes),
           );
         },
       ),
@@ -880,6 +882,37 @@ class SettingsScreen extends ConsumerWidget {
       ),
     );
     if (mode == null) return;
+
+    // FR-03: gate the destructive deleteAndImport mode behind a confirmation
+    // dialog. Pattern from _showDeleteConfirmation (canonical destructive style:
+    // foregroundColor = colorScheme.error on the confirm button).
+    if (mode == ImportMode.deleteAndImport) {
+      if (!context.mounted) return;
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogCtx) => AlertDialog(
+          title: Text(l10n.csvImportConfirmDeleteTitle),
+          content: Text(l10n.csvImportConfirmDeleteBody),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(false),
+              child: Text(l10n.common_cancel),
+            ),
+            Semantics(
+              label: l10n.csvImportConfirmDeleteAction,
+              child: TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: Theme.of(dialogCtx).colorScheme.error,
+                ),
+                onPressed: () => Navigator.of(dialogCtx).pop(true),
+                child: Text(l10n.csvImportConfirmDeleteAction),
+              ),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
 
     try {
       final importUc = await ref.read(importDailyLogsProvider.future);

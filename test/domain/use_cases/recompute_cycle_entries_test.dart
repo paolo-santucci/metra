@@ -340,4 +340,6 @@ class _SerializationFakeCycleRepo implements CycleEntryRepository {
   Future<void> delete(int id) async {}
   @override
   Future<void> deleteAll() async {}
+  @override
+  Future<CycleEntryEntity?> getByStartDate(DateTime startDate) async => null;
 }

@@ -22,11 +22,16 @@ class OnboardingState {
     this.lastPeriodDate,
     this.cycleLength = 28,
     this.periodLength = 3,
+    this.isSubmitting = false,
   });
 
   final DateTime? lastPeriodDate;
   final int cycleLength;
   final int periodLength;
+
+  /// True from the first `await` in the submit sequence until completion or
+  /// error. Drives the CTA `onPressed = null` to prevent double-submission.
+  final bool isSubmitting;
 
   bool get canSubmit => lastPeriodDate != null;
 
@@ -34,11 +39,13 @@ class OnboardingState {
     DateTime? lastPeriodDate,
     int? cycleLength,
     int? periodLength,
+    bool? isSubmitting,
   }) =>
       OnboardingState(
         lastPeriodDate: lastPeriodDate ?? this.lastPeriodDate,
         cycleLength: cycleLength ?? this.cycleLength,
         periodLength: periodLength ?? this.periodLength,
+        isSubmitting: isSubmitting ?? this.isSubmitting,
       );
 }
 
@@ -46,7 +53,18 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
   @override
   OnboardingState build() => const OnboardingState();
 
-  void setDate(DateTime date) => state = state.copyWith(lastPeriodDate: date);
+  /// Updates [lastPeriodDate]. Ignores any date strictly after [DateTime.now()]
+  /// (future dates are invalid anchor dates for the menstrual cycle).
+  void setDate(DateTime date) {
+    // FR-07: silently ignore future dates — only the UI date picker is a guard,
+    // but we also enforce the invariant here for defense in depth.
+    if (date.isAfter(DateTime.now())) return;
+    state = state.copyWith(lastPeriodDate: date);
+  }
+
+  /// Sets the [isSubmitting] flag. Called by the UI before the first await
+  /// in the submit sequence, and cleared in a `finally` block.
+  void setSubmitting(bool value) => state = state.copyWith(isSubmitting: value);
 
   void incrementCycleLength() => state = state.copyWith(
         cycleLength: (state.cycleLength + 1).clamp(21, 45),

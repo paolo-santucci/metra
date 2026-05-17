@@ -691,5 +691,20 @@
         "type": "int"
       }
     }
+  },
+
+  "csvImportConfirmDeleteTitle": "Destructive import",
+  "@csvImportConfirmDeleteTitle": {
+    "description": "Title of the confirmation dialog shown before deleteAndImport mode executes"
+  },
+
+  "csvImportConfirmDeleteBody": "This action will delete all existing data and replace it with the contents of the imported file. This cannot be undone.",
+  "@csvImportConfirmDeleteBody": {
+    "description": "Body of the deleteAndImport confirmation dialog warning about irreversible data loss"
+  },
+
+  "csvImportConfirmDeleteAction": "Delete and import",
+  "@csvImportConfirmDeleteAction": {
+    "description": "Confirm button label for the deleteAndImport destructive confirmation dialog"
   }
 }

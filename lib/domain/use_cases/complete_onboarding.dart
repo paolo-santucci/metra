@@ -40,18 +40,44 @@ class CompleteOnboarding {
     required int cycleLength,
     required int periodLength,
   }) async {
-    // The cycle entry is an anchor date only — cycleLength is left null so
-    // RecomputeCycleEntries can fill it in from measured gaps over time.
-    // The declared average is stored separately in AppSettings (Strategy B).
-    await _cycleRepo.insert(
-      CycleEntryEntity(
-        id: 0, // ignored by DB — auto-generated
-        startDate: lastPeriodDate,
-        endDate: null,
-        cycleLength: null,
-        periodLength: periodLength,
-      ),
-    );
+    // Defensive future-date guard: lastPeriodDate must not be in the future.
+    // This prevents invalid anchor entries from being inserted.
+    if (lastPeriodDate.isAfter(DateTime.now())) {
+      throw ArgumentError.value(
+        lastPeriodDate,
+        'lastPeriodDate',
+        'lastPeriodDate must not be in the future',
+      );
+    }
+
+    // Idempotency guard: if an anchor entry already exists for this date,
+    // skip the insert. This makes the use case safe to call multiple times
+    // with the same lastPeriodDate (e.g., on double-tap or retry).
+    final existing = await _cycleRepo.getByStartDate(lastPeriodDate);
+    if (existing == null) {
+      // The cycle entry is an anchor date only — cycleLength is left null so
+      // RecomputeCycleEntries can fill it in from measured gaps over time.
+      // The declared average is stored separately in AppSettings (Strategy B).
+      try {
+        await _cycleRepo.insert(
+          CycleEntryEntity(
+            id: 0, // ignored by DB — auto-generated
+            startDate: lastPeriodDate,
+            endDate: null,
+            cycleLength: null,
+            periodLength: periodLength,
+          ),
+        );
+      } on Exception catch (e) {
+        // Race condition: two concurrent calls may both pass the getByStartDate
+        // check and both attempt to insert. The second will hit the UNIQUE
+        // constraint on start_date. Treat this as idempotent — the entry was
+        // inserted by the first call; the second can proceed safely.
+        // Re-throw any non-UNIQUE exception.
+        if (!e.toString().contains('UNIQUE constraint')) rethrow;
+      }
+    }
+
     final logs = await _logRepo.getAllOrderedByDate();
     final hasFlowLogs = logs.any((l) => l.flowType == FlowType.mestruazioni);
     if (hasFlowLogs) await _recompute();

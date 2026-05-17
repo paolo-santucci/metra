@@ -370,11 +370,19 @@ class _DataPage extends ConsumerWidget {
               onChanged: notifier.setPeriodLength,
             ),
             const Spacer(),
-            FilledButton(
-              style: _inchiostroCtaStyle(context),
-              onPressed:
-                  state.canSubmit ? () => _onSubmit(context, ref, state) : null,
-              child: Text(l10n.onboarding_all_set),
+            Semantics(
+              button: true,
+              label: l10n.onboarding_all_set,
+              enabled: state.canSubmit && !state.isSubmitting,
+              child: FilledButton(
+                style: _inchiostroCtaStyle(context),
+                // FR-06: onPressed is null while submitting or when date not set.
+                // This prevents double-submission on double-tap.
+                onPressed: (state.canSubmit && !state.isSubmitting)
+                    ? () => _onSubmit(context, ref)
+                    : null,
+                child: Text(l10n.onboarding_all_set),
+              ),
             ),
             const SizedBox(height: MetraSpacing.s8),
           ],
@@ -386,16 +394,25 @@ class _DataPage extends ConsumerWidget {
   Future<void> _onSubmit(
     BuildContext context,
     WidgetRef ref,
-    OnboardingState state,
   ) async {
-    final uc = await ref.read(completeOnboardingProvider.future);
-    await uc.execute(
-      lastPeriodDate: state.lastPeriodDate!,
-      cycleLength: state.cycleLength,
-      periodLength: state.periodLength,
-    );
-    if (context.mounted) {
-      context.go('/calendar');
+    final notifier = ref.read(onboardingNotifierProvider.notifier);
+    final state = ref.read(onboardingNotifierProvider);
+
+    // FR-06: set isSubmitting=true before any await; clear in finally.
+    notifier.setSubmitting(true);
+    try {
+      final uc = await ref.read(completeOnboardingProvider.future);
+      await uc.execute(
+        lastPeriodDate: state.lastPeriodDate!,
+        cycleLength: state.cycleLength,
+        periodLength: state.periodLength,
+      );
+      if (context.mounted) {
+        context.go('/calendar');
+      }
+    } finally {
+      // Always re-enable the CTA, regardless of success or failure.
+      notifier.setSubmitting(false);
     }
   }
 }

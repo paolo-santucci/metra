@@ -1113,5 +1113,20 @@
         "type": "int"
       }
     }
+  },
+
+  "csvImportConfirmDeleteTitle": "Importazione distruttiva",
+  "@csvImportConfirmDeleteTitle": {
+    "description": "Title of the confirmation dialog shown before deleteAndImport mode executes"
+  },
+
+  "csvImportConfirmDeleteBody": "Questa azione eliminerà tutti i dati esistenti e li sostituirà con quelli del file importato. L'operazione è irreversibile.",
+  "@csvImportConfirmDeleteBody": {
+    "description": "Body of the deleteAndImport confirmation dialog warning about irreversible data loss"
+  },
+
+  "csvImportConfirmDeleteAction": "Elimina e importa",
+  "@csvImportConfirmDeleteAction": {
+    "description": "Confirm button label for the deleteAndImport destructive confirmation dialog"
   }
 }

@@ -214,4 +214,7 @@ class _StreamingCycleRepo implements CycleEntryRepository {
 
   @override
   Future<void> deleteAll() async {}
+
+  @override
+  Future<CycleEntryEntity?> getByStartDate(DateTime startDate) async => null;
 }

@@ -1447,6 +1447,24 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Giorno {day} del ciclo'**
   String calendar_day_detail_cycle_day(int day);
+
+  /// Title of the confirmation dialog shown before deleteAndImport mode executes
+  ///
+  /// In it, this message translates to:
+  /// **'Importazione distruttiva'**
+  String get csvImportConfirmDeleteTitle;
+
+  /// Body of the deleteAndImport confirmation dialog warning about irreversible data loss
+  ///
+  /// In it, this message translates to:
+  /// **'Questa azione eliminerà tutti i dati esistenti e li sostituirà con quelli del file importato. L\'operazione è irreversibile.'**
+  String get csvImportConfirmDeleteBody;
+
+  /// Confirm button label for the deleteAndImport destructive confirmation dialog
+  ///
+  /// In it, this message translates to:
+  /// **'Elimina e importa'**
+  String get csvImportConfirmDeleteAction;
 }
 
 class _AppLocalizationsDelegate

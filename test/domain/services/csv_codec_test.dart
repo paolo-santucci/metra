@@ -404,6 +404,144 @@ void main() {
     });
   });
 
+  // ── Decode — pain_intensity=0 fix (FR-04 / M2) ─────────────────────────────
+
+  group('decode — pain_intensity=0 fix', () {
+    // Header: date,flow_type,flow,pain_intensity,symptoms,notes,cycle_start
+    //         [0]  [1]       [2]  [3]            [4]      [5]   [6]
+    test(
+        'pain_intensity=0 produces DailyLogEntity with painEnabled=true and painIntensity=0',
+        () {
+      const csv = '$kHeader\r\n'
+          '2026-03-01,0,,0,,,0\r\n'; // pain_intensity at col 3 = 0
+      final result = codec.decode(csv);
+      expect(result.errors, isEmpty);
+      expect(result.rows, hasLength(1));
+      final log = result.rows.first.log;
+      expect(log.painEnabled, isTrue);
+      expect(log.painIntensity, 0);
+    });
+
+    test('pain_intensity=-1 is still rejected (below valid range)', () {
+      const csv = '$kHeader\r\n'
+          '2026-03-01,0,,-1,,,0\r\n'; // pain_intensity at col 3 = -1
+      final result = codec.decode(csv);
+      expect(result.rows, isEmpty);
+      expect(result.errors, hasLength(1));
+      expect(result.errors.first.column, 'pain_intensity');
+    });
+
+    test('pain_intensity=4 is still rejected (above valid range)', () {
+      const csv = '$kHeader\r\n'
+          '2026-03-01,0,,4,,,0\r\n'; // pain_intensity at col 3 = 4
+      final result = codec.decode(csv);
+      expect(result.rows, isEmpty);
+      expect(result.errors, hasLength(1));
+      expect(result.errors.first.column, 'pain_intensity');
+    });
+
+    test(
+        'no pain_intensity column → painEnabled=false, painIntensity=null (existing behaviour preserved)',
+        () {
+      const csv = '$kHeader\r\n'
+          '2026-03-01,0,,,,,0\r\n'; // pain_intensity at col 3 = empty
+      final result = codec.decode(csv);
+      expect(result.errors, isEmpty);
+      expect(result.rows, hasLength(1));
+      expect(result.rows.first.log.painEnabled, isFalse);
+      expect(result.rows.first.log.painIntensity, isNull);
+    });
+
+    test(
+        'encode→decode round-trip for (painEnabled=true, painIntensity=0) is lossless',
+        () {
+      final original = DailyLogRow(
+        log: DailyLogEntity(
+          date: DateTime.utc(2026, 4, 1),
+          flowType: FlowType.assente,
+          painEnabled: true,
+          painIntensity: 0,
+        ),
+        symptoms: const [],
+      );
+      final csv = codec.encode([original]);
+      final result = codec.decode(csv);
+      expect(result.errors, isEmpty);
+      expect(result.rows, hasLength(1));
+      final decoded = result.rows.first.log;
+      expect(decoded.painEnabled, isTrue);
+      expect(decoded.painIntensity, 0);
+    });
+
+    test(
+        'encode→decode round-trip for all (painEnabled, painIntensity) combinations',
+        () {
+      final cases = [
+        DailyLogRow(
+          log: DailyLogEntity(
+            date: DateTime.utc(2026, 4, 1),
+            flowType: FlowType.assente,
+            painEnabled: false,
+            painIntensity: null,
+          ),
+          symptoms: const [],
+        ),
+        DailyLogRow(
+          log: DailyLogEntity(
+            date: DateTime.utc(2026, 4, 2),
+            flowType: FlowType.assente,
+            painEnabled: true,
+            painIntensity: 0,
+          ),
+          symptoms: const [],
+        ),
+        DailyLogRow(
+          log: DailyLogEntity(
+            date: DateTime.utc(2026, 4, 3),
+            flowType: FlowType.assente,
+            painEnabled: true,
+            painIntensity: 1,
+          ),
+          symptoms: const [],
+        ),
+        DailyLogRow(
+          log: DailyLogEntity(
+            date: DateTime.utc(2026, 4, 4),
+            flowType: FlowType.assente,
+            painEnabled: true,
+            painIntensity: 2,
+          ),
+          symptoms: const [],
+        ),
+        DailyLogRow(
+          log: DailyLogEntity(
+            date: DateTime.utc(2026, 4, 5),
+            flowType: FlowType.assente,
+            painEnabled: true,
+            painIntensity: 3,
+          ),
+          symptoms: const [],
+        ),
+      ];
+      final csv = codec.encode(cases);
+      final result = codec.decode(csv);
+      expect(result.errors, isEmpty);
+      expect(result.rows, hasLength(5));
+      for (var i = 0; i < cases.length; i++) {
+        expect(
+          result.rows[i].log.painEnabled,
+          cases[i].log.painEnabled,
+          reason: 'row $i painEnabled mismatch',
+        );
+        expect(
+          result.rows[i].log.painIntensity,
+          cases[i].log.painIntensity,
+          reason: 'row $i painIntensity mismatch',
+        );
+      }
+    });
+  });
+
   // ── Decode — legacy CSV backward-compatibility ──────────────────────────────
 
   group('decode — legacy CSV backward-compatibility', () {

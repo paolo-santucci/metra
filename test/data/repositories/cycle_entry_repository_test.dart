@@ -128,4 +128,31 @@ void main() {
     final all = await repo.getRecent(10);
     expect(all, isEmpty);
   });
+
+  test('getByStartDate returns matching entity when it exists', () async {
+    final date = DateTime.utc(2025, 1, 15);
+    await repo.insert(makeEntry(startDate: date, cycleLength: 28));
+
+    final result = await repo.getByStartDate(date);
+
+    expect(result, isNotNull);
+    expect(result!.startDate, date);
+    expect(result.cycleLength, 28);
+  });
+
+  test('getByStartDate returns null when no entry exists for the date',
+      () async {
+    final result = await repo.getByStartDate(DateTime.utc(2025, 6, 1));
+
+    expect(result, isNull);
+  });
+
+  test('getByStartDate returns null when an entry exists for a different date',
+      () async {
+    await repo.insert(makeEntry(startDate: DateTime.utc(2025, 1, 15)));
+
+    final result = await repo.getByStartDate(DateTime.utc(2025, 2, 15));
+
+    expect(result, isNull);
+  });
 }

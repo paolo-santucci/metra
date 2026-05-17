@@ -28,6 +28,13 @@ abstract class CycleEntryRepository {
 
   Future<void> delete(int id);
 
+  /// Returns the [CycleEntryEntity] whose [startDate] matches [startDate],
+  /// or `null` if no such entry exists.
+  ///
+  /// Used by [CompleteOnboarding] as an idempotency guard before inserting
+  /// the anchor cycle entry.
+  Future<CycleEntryEntity?> getByStartDate(DateTime startDate);
+
   /// Replaces the entire cycle entry table with [entries] in a single
   /// transaction.  Used by [RecomputeCycleEntries].
   Future<void> replaceAll(List<CycleEntryEntity> entries);

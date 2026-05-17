@@ -768,4 +768,14 @@ class AppLocalizationsIt extends AppLocalizations {
   String calendar_day_detail_cycle_day(int day) {
     return 'Giorno $day del ciclo';
   }
+
+  @override
+  String get csvImportConfirmDeleteTitle => 'Importazione distruttiva';
+
+  @override
+  String get csvImportConfirmDeleteBody =>
+      'Questa azione eliminerà tutti i dati esistenti e li sostituirà con quelli del file importato. L\'operazione è irreversibile.';
+
+  @override
+  String get csvImportConfirmDeleteAction => 'Elimina e importa';
 }

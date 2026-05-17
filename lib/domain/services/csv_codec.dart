@@ -333,13 +333,13 @@ class CsvCodec {
       final painStr = cell(rawRow, 'pain_intensity');
       if (painStr.isNotEmpty) {
         final pv = int.tryParse(painStr);
-        if (pv == null || pv < 1 || pv > 3) {
+        if (pv == null || pv < 0 || pv > 3) {
           errors.add(
             CsvParseError(
               rowNumber: rowNum,
               column: 'pain_intensity',
               rawValue: painStr,
-              reason: 'Expected 1–3 or empty',
+              reason: 'Expected 0–3 or empty',
             ),
           );
           continue;

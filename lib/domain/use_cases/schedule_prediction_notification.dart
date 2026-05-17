@@ -58,7 +58,10 @@ class SchedulePredictionNotification {
 
     // ignore: unused_local_variable
     final result = await _notifService.schedulePredictionNotification(
-        notifyAt, title, body);
+      notifyAt,
+      title,
+      body,
+    );
     // M1: result is intentionally unused — M4 wires the revert-and-notify path here.
   }
 }

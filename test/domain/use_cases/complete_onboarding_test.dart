@@ -16,6 +16,7 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:metra/domain/entities/cycle_entry_entity.dart';
 import 'package:metra/domain/entities/flow_intensity.dart';
 import 'package:metra/domain/entities/flow_type.dart';
 import 'package:metra/domain/entities/daily_log_entity.dart';
@@ -150,4 +151,75 @@ void main() {
       expect(cycleRepo.entries.first.cycleLength, isNull);
     },
   );
+
+  // ── FR-05: Idempotency guard (M2) ────────────────────────────────────────
+
+  test('execute() twice with identical lastPeriodDate → exactly one anchor row',
+      () async {
+    await useCase.execute(
+      lastPeriodDate: lastPeriod,
+      cycleLength: 28,
+      periodLength: 3,
+    );
+    await useCase.execute(
+      lastPeriodDate: lastPeriod,
+      cycleLength: 28,
+      periodLength: 3,
+    );
+
+    expect(cycleRepo.entries, hasLength(1));
+  });
+
+  test(
+      'execute() with lastPeriodDate = DateTime.now() (today) → succeeds (boundary: today is not future)',
+      () async {
+    final today = DateTime.now();
+    await expectLater(
+      useCase.execute(
+        lastPeriodDate: today,
+        cycleLength: 28,
+        periodLength: 3,
+      ),
+      completes,
+    );
+  });
+
+  test(
+      'execute() with lastPeriodDate = tomorrow → throws ArgumentError (defensive future-date check)',
+      () async {
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    await expectLater(
+      useCase.execute(
+        lastPeriodDate: tomorrow,
+        cycleLength: 28,
+        periodLength: 3,
+      ),
+      throwsA(isA<ArgumentError>()),
+    );
+  });
+
+  test(
+      'execute() when getByStartDate returns non-null → returns normally, no second insert',
+      () async {
+    // Pre-populate the repo with an anchor entry for lastPeriod.
+    await cycleRepo.insert(
+      CycleEntryEntity(
+        id: 0,
+        startDate: lastPeriod,
+        endDate: null,
+        cycleLength: null,
+        periodLength: 3,
+      ),
+    );
+    final countBefore = cycleRepo.entries.length;
+
+    // Second execute — getByStartDate returns non-null → no insert.
+    await useCase.execute(
+      lastPeriodDate: lastPeriod,
+      cycleLength: 28,
+      periodLength: 3,
+    );
+
+    expect(cycleRepo.entries.length, countBefore);
+  });
 }

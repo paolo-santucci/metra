@@ -47,6 +47,10 @@ class CycleEntryDao extends DatabaseAccessor<AppDatabase>
 
   Future<void> deleteAllCycles() => delete(cycleEntries).go();
 
+  Future<CycleEntry?> getCycleEntryByStartDate(DateTime startDate) =>
+      (select(cycleEntries)..where((t) => t.startDate.equals(startDate)))
+          .getSingleOrNull();
+
   Future<void> replaceAll(List<CycleEntriesCompanion> companions) =>
       transaction(() async {
         await delete(cycleEntries).go();

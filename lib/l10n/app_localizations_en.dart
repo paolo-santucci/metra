@@ -766,4 +766,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String calendar_day_detail_cycle_day(int day) {
     return 'Cycle day $day';
   }
+
+  @override
+  String get csvImportConfirmDeleteTitle => 'Destructive import';
+
+  @override
+  String get csvImportConfirmDeleteBody =>
+      'This action will delete all existing data and replace it with the contents of the imported file. This cannot be undone.';
+
+  @override
+  String get csvImportConfirmDeleteAction => 'Delete and import';
 }

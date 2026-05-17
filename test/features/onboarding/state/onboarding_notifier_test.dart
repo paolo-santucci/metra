@@ -131,4 +131,77 @@ void main() {
     final state = container.read(onboardingNotifierProvider);
     expect(state.canSubmit, isTrue);
   });
+
+  // ── FR-06 / FR-07: isSubmitting + future-date guard (M2) ─────────────────
+
+  test('initial state: isSubmitting is false', () {
+    final container = makeContainer();
+    addTearDown(container.dispose);
+    final state = container.read(onboardingNotifierProvider);
+    expect(state.isSubmitting, isFalse);
+  });
+
+  test('setDate(futureDate) → state unchanged, canSubmit unchanged', () {
+    final container = makeContainer();
+    addTearDown(container.dispose);
+    // Set a valid date first so canSubmit is true.
+    final validDate = DateTime.utc(2026, 3, 15);
+    container.read(onboardingNotifierProvider.notifier).setDate(validDate);
+    final stateBefore = container.read(onboardingNotifierProvider);
+    expect(stateBefore.lastPeriodDate, validDate);
+
+    // Attempt to set a future date — must be ignored.
+    final futureDate = DateTime.now().add(const Duration(days: 1));
+    container.read(onboardingNotifierProvider.notifier).setDate(futureDate);
+    final stateAfter = container.read(onboardingNotifierProvider);
+    expect(
+      stateAfter.lastPeriodDate,
+      validDate,
+      reason: 'future date must be silently ignored',
+    );
+    expect(
+      stateAfter.canSubmit,
+      isTrue,
+      reason: 'canSubmit must remain unchanged after future-date rejection',
+    );
+  });
+
+  test(
+      'setDate(DateTime.now()) (today) → state updated (boundary: today is not future)',
+      () {
+    final container = makeContainer();
+    addTearDown(container.dispose);
+    // Use a UTC date at the start of today to avoid timezone drift in tests.
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    container.read(onboardingNotifierProvider.notifier).setDate(today);
+    final state = container.read(onboardingNotifierProvider);
+    expect(state.lastPeriodDate, today);
+  });
+
+  test('setDate(pastDate) → state updated normally', () {
+    final container = makeContainer();
+    addTearDown(container.dispose);
+    final pastDate = DateTime.utc(2020, 1, 1);
+    container.read(onboardingNotifierProvider.notifier).setDate(pastDate);
+    final state = container.read(onboardingNotifierProvider);
+    expect(state.lastPeriodDate, pastDate);
+  });
+
+  test('setSubmitting(true) sets isSubmitting to true', () {
+    final container = makeContainer();
+    addTearDown(container.dispose);
+    container.read(onboardingNotifierProvider.notifier).setSubmitting(true);
+    final state = container.read(onboardingNotifierProvider);
+    expect(state.isSubmitting, isTrue);
+  });
+
+  test('setSubmitting(false) clears isSubmitting', () {
+    final container = makeContainer();
+    addTearDown(container.dispose);
+    container.read(onboardingNotifierProvider.notifier).setSubmitting(true);
+    container.read(onboardingNotifierProvider.notifier).setSubmitting(false);
+    final state = container.read(onboardingNotifierProvider);
+    expect(state.isSubmitting, isFalse);
+  });
 }

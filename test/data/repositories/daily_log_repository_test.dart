@@ -290,8 +290,11 @@ void main() {
           final ts = (await realSettingsRepo.getOrCreate())
               .lastLogOrSymptomWriteAt
               ?.toUtc();
-          expect(ts, isNotNull,
-              reason: 'bump must set lastLogOrSymptomWriteAt');
+          expect(
+            ts,
+            isNotNull,
+            reason: 'bump must set lastLogOrSymptomWriteAt',
+          );
           if (lastTs != null) {
             expect(
               ts!.isAfter(lastTs) || ts == lastTs,

@@ -69,6 +69,10 @@ class FakeCycleEntryRepository implements CycleEntryRepository {
     }
   }
 
+  @override
+  Future<CycleEntryEntity?> getByStartDate(DateTime startDate) async =>
+      entries.where((e) => e.startDate == startDate).firstOrNull;
+
   bool deleteAllCalled = false;
 
   @override

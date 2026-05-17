@@ -1,37 +1,37 @@
 schema-version: 2
-last-updated: "2026-05-17T12:00:00+02:00"
-active-plan: null
-last-plan: null
+last-updated: "2026-05-17T14:25:00+02:00"
+active-plan: ".claude/docs/plans/sp-20260517-m2-settings-csv-onboarding-plan.md"
+last-plan: ".claude/docs/plans/archive/sp-20260517-m1-foundation-plan.md"
 
 # Owned by the short-plan skill. update-status preserves verbatim.
 short-plan:
-  feature: "M1 — Foundation: entity + schema + test fake + interface"
-  slug: "m1-foundation"
+  feature: "implement M2 on .claude/docs/plans/lp-20260517-implement-next-patch-plan.md (Settings/CSV/Onboarding — FR-05, FR-06, FR-07, FR-08, FR-09, FR-10, FR-11, FR-19)"
+  slug: "m2-settings-csv-onboarding"
   auto: true
-  request-type: feature
+  request-type: bug-fix
   workflow: canonical
   parent:
     spec: ".claude/docs/specs/lp-20260517-implement-next-patch-spec.md"
     plan: ".claude/docs/plans/lp-20260517-implement-next-patch-plan.md"
-    milestone: 1
-    frs: "FR-01, FR-02, FR-03, FR-04, FR-17"
+    milestone: 2
+    frs: "FR-05, FR-06, FR-07, FR-08, FR-09, FR-10, FR-11, FR-19"
   paths:
-    spec: ".claude/docs/specs/sp-20260517-m1-foundation-spec.md"
-    plan: ".claude/docs/plans/sp-20260517-m1-foundation-plan.md"
-    assess-dir: ".claude/docs/specs/sp-20260517-m1-foundation-assessment"
+    spec: ".claude/docs/specs/sp-20260517-m2-settings-csv-onboarding-spec.md"
+    plan: ".claude/docs/plans/sp-20260517-m2-settings-csv-onboarding-plan.md"
+    assess-dir: ".claude/docs/specs/sp-20260517-m2-settings-csv-onboarding-assessment"
   phases:
     assess: done
     triage: done
     spec: done
     plan: done
-    build: done
+    build: pending
   approvals:
     spec: approved
     plan: approved
   rejection-note: null
   build-progress:
-    current-wave: 4
-    waves-completed: [1, 2, 3, 4]
+    current-wave: 3
+    waves-completed: [1, 2]
 
 # Owned by the long-plan skill. update-status preserves verbatim.
 long-plan:
@@ -55,43 +55,35 @@ pending-consolidation: []
 
 recently-completed:
   - date: "2026-05-17"
-    summary: "feat(domain+data): TASK-11 — M1 foundation complete; 33 analyze errors fixed (const-constructor, Nullable<bool> call-sites, missing updateBackupSuspended stub); 1003 tests pass; dart format clean; commit d7abf71"
+    summary: "M2 plan written and approved (auto mode) — 4 waves, 7 tasks, active plan set"
   - date: "2026-05-17"
-    summary: "test: TASK-10 — FakeNotificationService throwOnNextSchedule knob (FR-14, EC-11); return type Future<NotificationScheduleResult>; 4 range-guard tests deleted; 2 new use-case tests; BUG-006 assertion inverted to NotificationScheduleFailure; const removed from AppSettingsData in 4 files (app_test, app_notification_wiring_test, schedule_prediction_notification_test, unchanged notification_service_test); 4 tests added to fake_notification_service_test"
+    summary: "M2 spec complete (review status) — triage canonical, spec phases 1a/1b/1c done, spec approved in auto mode"
   - date: "2026-05-17"
-    summary: "test(helpers): TASK-07 — FakeAppSettingsRepository: updateBackupSuspended impl, backupSuspended added to all 4 manual-copy blocks, 8 new tests (4 fragility guards), const removed from 5 occurrences in fake + 1 in test; navigation_test.dart stub added"
+    summary: "chore: update STATUS.yaml — M1 foundation build complete (Wave 4 done)"
   - date: "2026-05-17"
-    summary: "feat(data): TASK-06 — DriftAppSettingsRepository: _fromRow+backupSuspended, _toCompanion exclusion, updateBackupSuspended impl; 4 new tests pass"
+    summary: "feat(domain+data): M1 foundation — Nullable<T> copyWith, schema v10, NotificationScheduleResult, backupSuspended"
   - date: "2026-05-17"
-    summary: "feat(domain): TASK-04 — NotificationScheduleResult sealed class + schedulePredictionNotification return type changed to Future<NotificationScheduleResult>; Wave 2 transient break expected"
-  - date: "2026-05-17"
-    summary: "feat(domain): TASK-05 — add updateBackupSuspended abstract method to AppSettingsRepository"
-  - date: "2026-05-17"
-    summary: "test(data): update v9 schema test label to v10 — commit f35815d"
-  - date: "2026-05-17"
-    summary: "feat(data): schema v9→v10 — backup_suspended, UNIQUE(start_date), dedup migration — commit 2eae6b6"
-  - date: "2026-05-17"
-    summary: "style: dart format backup_notifier_test.dart — commit ccade80, pushed to origin/main"
-  - date: "2026-05-15"
-    summary: "test(backup): Wave 4 — cross-cutting integration tests + dart format; commit ad3435d"
-  - date: "2026-05-15"
-    summary: "feat(backup): Wave 3 — skip guard, backupSkipped log, restore alignment; commit 451f2ce"
-  - date: "2026-05-15"
-    summary: "feat(data): Wave 2 — settings repo writer, daily-log bumps, provider wiring; commit 5af85d2"
-  - date: "2026-05-14"
-    summary: "feat(domain): add lastLogOrSymptomWriteAt field and updateLastDataWriteAt interface; commit 38f84dd"
+    summary: "feat(data): schema v9→v10 — backup_suspended column, UNIQUE(start_date) on cycle_entries, dedup migration"
 
-in-progress: []
+in-progress:
+  - title: "M2 Settings/CSV/Onboarding — build phase (Wave 1)"
+    state: "Plan approved; starting Wave 1 — getByStartDate plumbing + L10n keys in parallel"
+    touched:
+      - ".claude/docs/plans/sp-20260517-m2-settings-csv-onboarding-plan.md"
+      - ".claude/docs/specs/sp-20260517-m2-settings-csv-onboarding-spec.md"
+    next-step: "Execute Wave 1: TASK-01 (getByStartDate) + TASK-02 (L10n keys) in parallel"
+    blocker: null
 
-next-steps: []
+next-steps:
+  - "After M2: start M3 Backup sprint (FR-12, FR-13, FR-14, FR-15)"
 
 known-issues:
   - severity: critical
-    description: "Theme → Sistema uses bare AppSettingsData constructor, silently resets notificationTimeMinutes/firstDayOfWeek (issue #13)"
+    description: "Theme → System uses bare AppSettingsData constructor, silently resets notificationTimeMinutes/firstDayOfWeek (issue #13); fix is in M2 Wave 3 (TASK-05)"
     impact: high
-    workaround: "Avoid switching to System theme until fixed"
+    workaround: "Avoid switching to System theme until M2 ships"
   - severity: critical
-    description: "CSV import rejects pain_intensity=0 despite being valid in-app — round-trip data loss (issue #20)"
+    description: "CSV import rejects pain_intensity=0 despite being valid in-app — round-trip data loss (issue #20); fix is in M2 Wave 2 (TASK-04)"
     impact: medium
     workaround: "Manually edit exported CSV to remove pain_intensity=0 rows before re-import"
   - severity: warning
