@@ -40,6 +40,8 @@ Mētra non invia notifiche di propria iniziativa. Se vuoi un promemoria, lo atti
 
 **Promemoria ciclo**: attiva o disattiva il promemoria locale. Quando è attivo, Mētra pianifica una notifica in anticipo rispetto all'inizio previsto del prossimo ciclo.
 
+Se Mētra non riesce a pianificare la notifica — ad esempio perché il permesso è stato revocato nelle Impostazioni di sistema oppure a causa di un errore del pianificatore del sistema operativo — il toggle torna automaticamente su Off. In quel caso compare un breve messaggio in-app: "Impossibile pianificare le notifiche. Riprova più tardi."
+
 Le due righe di configurazione sono attive solo quando il promemoria è abilitato.
 
 **Preavviso**: quanti giorni prima dell'inizio previsto vuoi ricevere la notifica. Tocca la riga per aprire un selettore a rotella; il valore si aggiorna automaticamente mentre ruoti. Il campo accetta valori da 1 a 7 giorni.

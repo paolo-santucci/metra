@@ -42,6 +42,8 @@ Mētra does not send notifications unless you turn them on. If you want a remind
 
 **Cycle reminder**: turns the local reminder on or off. When on, Mētra schedules a notification ahead of the next predicted cycle start.
 
+If Mētra cannot schedule the notification — for example because notification permission is denied in the system Settings app, or the OS scheduler returns an error — the toggle returns to Off automatically. A brief message appears: "Couldn't schedule notifications. Try again later."
+
 The two configuration rows are active only when the reminder is enabled.
 
 **Advance notice**: how many days before the predicted start you want to receive the notification. Tap the row to open a wheel picker; the value updates automatically as you scroll. Accepts values from 1 to 7 days.
