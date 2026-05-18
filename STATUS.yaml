@@ -1,33 +1,33 @@
 schema-version: 2
-last-updated: "2026-05-18T22:30:00+02:00"
-active-plan: ".claude/docs/plans/sp-20260518-backup-notification-ux-fixes-plan.md"
-last-plan: ".claude/docs/plans/archive/sp-20260517-m4-notifications-plan.md"
+last-updated: "2026-05-18T23:10:00+02:00"
+active-plan: null
+last-plan: ".claude/docs/plans/archive/sp-20260518-backup-notification-ux-fixes-plan.md"
 
 # Owned by the short-plan skill. update-status preserves verbatim.
 short-plan:
-  feature: "Backup UX fixes: design-bible text compliance in restore picker, reduce max backups 10→3, smart Dropbox space management with progressive deletion, always-allow manual backup, show auto-backup status. Notification: trigger permission request on toggle-on when permission denied."
-  slug: "backup-notification-ux-fixes"
+  feature: null
+  slug: null
   auto: false
-  request-type: feature
-  workflow: canonical
+  request-type: null
+  workflow: null
   parent: null
   paths:
-    spec: ".claude/docs/specs/sp-20260518-backup-notification-ux-fixes-spec.md"
-    plan: ".claude/docs/plans/sp-20260518-backup-notification-ux-fixes-plan.md"
-    assess-dir: ".claude/docs/specs/sp-20260518-backup-notification-ux-fixes-assessment"
+    spec: null
+    plan: null
+    assess-dir: null
   phases:
-    assess: done
-    triage: done
-    spec: done
-    plan: done
+    assess: pending
+    triage: pending
+    spec: pending
+    plan: pending
     build: pending
   approvals:
-    spec: approved
-    plan: approved
+    spec: null
+    plan: null
   rejection-note: null
   build-progress:
-    current-wave: 4
-    waves-completed: [1, 2, 3]
+    current-wave: null
+    waves-completed: []
 
 # Owned by the long-plan skill. update-status preserves verbatim.
 long-plan:
@@ -51,43 +51,30 @@ pending-consolidation: []
 
 recently-completed:
   - date: "2026-05-18"
+    summary: "feat(backup+notifications): storage-full handling, permission flow, auto-backup indicator"
+  - date: "2026-05-18"
+    summary: "feat(notifications): wire PermissionBlocked alert via permissionBlockedDialogProvider (TASK-08)"
+  - date: "2026-05-18"
     summary: "fix(ci): downgrade actions/checkout to v4, fix license headers and lint"
   - date: "2026-05-18"
     summary: "chore(release): bump iOS version to 1.0.2+3"
   - date: "2026-05-18"
     summary: "chore: update STATUS.yaml — M4 build complete (all 4 waves done)"
-  - date: "2026-05-18"
-    summary: "chore: untrack .trash/ and .claude_reminder, add to .gitignore"
-  - date: "2026-05-18"
-    summary: "style(m4): dart format + lint fixes (trailing commas, tearoff lambdas, pubspec dep)"
 
 in-progress:
-  - title: "short-plan: backup+notification UX fixes — Wave 3 complete, Wave 4 pending"
-    state: "Wave 3 all done: TASK-07 (RestorePickerDialog §19 compliance), TASK-08 (PermissionBlocked alert wiring), TASK-09 (HTML mockup + bible §18 delta). TASK-08 design deviations: (1) navigatorKey placed on GoRouter(navigatorKey:...) not MaterialApp.router (go_router routerConfig pattern constraint); (2) NavigatorKeyDialog accepts NotificationService directly (not Ref) for unit-testability without ProviderContainer. 28/28 tests pass in app_notification_wiring_test.dart. 5 pre-existing backup_screen_test.dart failures remain (TASK-12-owned, unrelated to TASK-08)."
-    touched:
-      - "lib/app.dart"
-      - "lib/router/app_router.dart"
-      - "lib/providers/permission_blocked_dialog_provider.dart"
-      - "test/helpers/fake_permission_blocked_dialog.dart"
-      - "test/app_notification_wiring_test.dart"
-      - "lib/features/backup/widgets/restore_picker_dialog.dart"
-      - "test/features/backup/widgets/backup_fr14_restore_picker_test.dart"
-      - ".claude/docs/plans/sp-20260518-backup-notification-ux-fixes-plan.md"
-      - "STATUS.yaml"
-    next-step: "Wave 4: TASK-10 — add auto-backup indicator row to _ConnectedBody per bible §18.11 (depends on TASK-09 complete)"
-    blocker: null
-  - title: "TestFlight 1.0.2 CI build"
-    state: "deploy_testflight job triggered on v1.0.2 tag; awaiting macOS runner completion"
+  - title: "TestFlight 1.0.2-rc1 CI build"
+    state: "v1.0.2-rc1 tag pushed; deploy_testflight CI job triggered; awaiting macOS runner"
     touched:
       - "pubspec.yaml"
       - ".github/workflows/ios.yml"
-    next-step: "Monitor CI; confirm TestFlight upload succeeds; manual FR-17 sign-off on physical iOS device"
+    next-step: "Monitor CI; confirm TestFlight build 1.0.2+4 upload; manual FR-17 sign-off on physical iOS device"
     blocker: null
 
 next-steps:
-  - "Run /short-plan --resume build to start backup+notification UX fixes (6 waves, 20 tasks ready)"
-  - "FR-17 manual sign-off on physical iOS device (cold-start permission denied + dialog on toggle-on)"
-  - "Proceed to long-plan M5 milestone once short-plan build is complete"
+  - "FR-17 manual sign-off on physical iOS device (cold-start notification permission denied + dialog on toggle-on)"
+  - "NFR-03 manual measurement: hasNotificationPermission() < 100ms p95 on cold-start iOS (OQ-QA-05)"
+  - "Proceed to long-plan M5 milestone (lp-20260517-implement-next-patch-plan.md)"
+  - "TASK-16/TASK-20 screenshot refresh (RestorePickerDialog IT+EN) deferred to next manual QA session with Android emulator"
 
 known-issues:
   - severity: warning
@@ -95,6 +82,10 @@ known-issues:
     impact: medium
     workaround: null
   - severity: warning
-    description: "TASK-27 and TASK-31 (screenshot refresh for RestorePickerDialog) deferred — require Android emulator with IT/EN locale"
+    description: "TASK-16 and TASK-20 (screenshot refresh for RestorePickerDialog IT+EN) deferred — require Android emulator with IT/EN locale to capture new §19-compliant picker"
     impact: low
-    workaround: "Old restore screenshot in docs/it/help/backup.md and docs/en/help/backup.md; update during next manual QA session"
+    workaround: "Old screenshots remain in docs/it/help/backup.md and docs/en/help/backup.md; text updated correctly; update screenshots during next manual QA session"
+  - severity: warning
+    description: "iOS PermissionDenied vs PermissionBlocked indistinguishable via flutter_local_notifications v17 — both return PermissionBlocked; on iOS any permission denial triggers the 'open settings' dialog"
+    impact: low
+    workaround: "Conservative UX: settings dialog always offered on iOS denial; no user-visible regression but slightly over-eager on first-time denials"
