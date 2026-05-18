@@ -72,6 +72,12 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 
+	<key>NSCameraUsageDescription</key>
+	<string>Métra does not use the camera. The system file picker, used for selecting backup and data files, may surface a camera option provided by iOS. Métra does not capture, access, or store any camera images.</string>
+
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Métra does not use your location. This access is not requested or used by the app. If a linked system framework references location APIs, Métra does not collect or store any location data.</string>
+
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Métra uses the system file picker to let you select backup and data files. The file picker includes the photo library as a source option. Métra does not access, read, or store your photos.</string>
 
