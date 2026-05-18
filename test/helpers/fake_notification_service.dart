@@ -22,7 +22,29 @@ class FakeNotificationService implements NotificationService {
   bool initialized = false;
   final List<({DateTime notifyAt, String title, String body})> scheduled = [];
   int cancelCount = 0;
-  bool permissionGranted;
+
+  /// The outcome returned by [requestPermission].
+  ///
+  /// Set this to [PermissionGranted], [PermissionDenied], or [PermissionBlocked]
+  /// to control the fake's behaviour in tests.  Defaults to [PermissionGranted].
+  ///
+  /// The [permissionGranted] field provides a backwards-compatible bool alias:
+  /// - getter: `permissionOutcome is PermissionGranted`
+  /// - setter: maps `true → PermissionGranted()`, `false → PermissionDenied()`
+  PermissionRequestOutcome permissionOutcome;
+
+  /// Back-compat alias for [permissionOutcome].
+  ///
+  /// Existing test lines that write `permissionGranted = true/false` continue
+  /// to compile and behave correctly after TASK-02 widened the interface to
+  /// [PermissionRequestOutcome].  Writing [permissionGranted] always maps to
+  /// [PermissionGranted] (true) or [PermissionDenied] (false) — it cannot
+  /// express [PermissionBlocked]; use [permissionOutcome] directly for that.
+  bool get permissionGranted => permissionOutcome is PermissionGranted;
+  set permissionGranted(bool value) {
+    permissionOutcome =
+        value ? const PermissionGranted() : const PermissionDenied();
+  }
 
   /// Configurable return value for [isIgnoringBatteryOptimizations].
   ///
@@ -48,6 +70,12 @@ class FakeNotificationService implements NotificationService {
   /// Used by TASK-07 widget tests to assert that tapping the Settings row
   /// invokes the method exactly once (FR-03).
   int openBatteryOptimizationSettingsCallCount = 0;
+
+  /// Number of times [openNotificationSettings] has been called.
+  ///
+  /// Used by TASK-11 / TASK-08 tests to verify that the settings-redirect
+  /// flow is triggered exactly once on [PermissionBlocked] (FR-23, FR-24).
+  int openNotificationSettingsCallCount = 0;
 
   /// Number of times [requestPermission] has been called.
   ///
@@ -109,12 +137,15 @@ class FakeNotificationService implements NotificationService {
   final List<({DateTime notifyAt, String title, String body})> shown = [];
 
   FakeNotificationService({
-    this.permissionGranted = true,
+    bool permissionGranted = true,
     this.isIgnoringBatteryOptimizationsValue = true,
     this.hasNotificationPermissionValue = true,
     @Deprecated('Use now: () => yourDateTime instead') DateTime? nowOverride,
     DateTime Function()? now,
-  })  : _nowOverride = nowOverride,
+  })  : permissionOutcome = permissionGranted
+            ? const PermissionGranted()
+            : const PermissionDenied(),
+        _nowOverride = nowOverride,
         _nowFn = now;
 
   DateTime _now() => _nowFn?.call() ?? _nowOverride ?? DateTime.now();
@@ -178,9 +209,14 @@ class FakeNotificationService implements NotificationService {
   }
 
   @override
-  Future<bool> requestPermission() async {
+  Future<PermissionRequestOutcome> requestPermission() async {
     requestPermissionCallCount++;
-    return permissionGranted;
+    return permissionOutcome;
+  }
+
+  @override
+  Future<void> openNotificationSettings() async {
+    openNotificationSettingsCallCount++;
   }
 
   @override

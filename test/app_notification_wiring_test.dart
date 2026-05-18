@@ -979,14 +979,12 @@ void main() {
         expect(
           fake.requestPermissionCallCount,
           equals(1),
-          reason:
-              'FR-24: requestPermission() called exactly once on toggle-on',
+          reason: 'FR-24: requestPermission() called exactly once on toggle-on',
         );
         expect(
           fake.scheduleCallCount,
           equals(0),
-          reason:
-              'FR-24: no schedule call made when permission is blocked',
+          reason: 'FR-24: no schedule call made when permission is blocked',
         );
       },
     );
@@ -1094,6 +1092,173 @@ void main() {
           returnsNormally,
           reason: 'EC-07: NavigatorKeyDialog.show() must be a no-op '
               'when navigatorKey.currentState is null (no throw)',
+        );
+      },
+    );
+  });
+
+  // ===========================================================================
+  // TASK-12: FR-25 / FR-26 — single routing path + dialog dismiss path
+  //
+  // FR-25: both Settings entry points (_MetraToggle.onChanged and
+  //        _SettingsRow.onTap) route through permissionBlockedDialogProvider
+  //        and produce zero inline showDialog calls in _MetraToggle/_SettingsRow.
+  // FR-26: when the PermissionBlocked alert is dismissed without the user
+  //        tapping the primary CTA, the toggle stays OFF and
+  //        openNotificationSettings() is never called.
+  //
+  // OQ-QA-05 note: NFR-03 (hasNotificationPermission() < 100ms p95 on cold-start)
+  // requires measurement on a physical iOS device. This cannot be automated in
+  // the Linux CI environment and is explicitly deferred to the manual E2E
+  // checklist (CLAUDE.md §6 item #11 — NFR-08 cold-start timing). No automated
+  // test is authored here.
+  // ===========================================================================
+
+  group('FR-25/FR-26: PermissionBlocked routing + dismiss path (TASK-12)', () {
+    AppSettingsData disabledSettingsFr25() => AppSettingsData(
+          languageCode: 'en',
+          painEnabled: true,
+          notesEnabled: true,
+          notificationDaysBefore: 2,
+          notificationsEnabled: false,
+          onboardingCompleted: true,
+        );
+
+    AppSettingsData enabledSettingsFr25() => AppSettingsData(
+          languageCode: 'en',
+          painEnabled: true,
+          notesEnabled: true,
+          notificationDaysBefore: 2,
+          notificationsEnabled: true,
+          onboardingCompleted: true,
+        );
+
+    test(
+      'FR-26: should_not_call_openNotificationSettings_when_blocked_dialog_dismissed',
+      () async {
+        // FR-26: the PermissionBlockedDialog resolves immediately (simulating
+        // the user tapping "Annulla" / dismissing without action).
+        // The FakePermissionBlockedDialog.show() is a no-op that returns right
+        // away — it does NOT invoke openNotificationSettings. The wiring must
+        // not invoke openNotificationSettings independently either.
+        final fake = FakeNotificationService()
+          ..permissionOutcome = const PermissionBlocked();
+        final fakeRepo = FakeAppSettingsRepository()
+          ..storedSettings = disabledSettingsFr25();
+        final fakeDialog = FakePermissionBlockedDialog();
+        final fakeReporter = FakeNotificationErrorReporter();
+        final container = _makeSettingsListenerContainer(
+          service: fake,
+          fakeRepo: fakeRepo,
+          reporter: fakeReporter,
+          permissionBlockedDialog: fakeDialog,
+        );
+        addTearDown(container.dispose);
+
+        await container.read(settingsNotifierProvider.future);
+
+        await _simulateSettingsListenerFire(
+          container: container,
+          prev: AsyncData(disabledSettingsFr25()),
+          next: AsyncData(enabledSettingsFr25()),
+          service: fake,
+        );
+
+        expect(
+          fakeRepo.storedSettings?.notificationsEnabled,
+          isFalse,
+          reason: 'FR-26: toggle must stay OFF after blocked dialog resolves '
+              'without user granting permission',
+        );
+        expect(
+          fake.openNotificationSettingsCallCount,
+          equals(0),
+          reason: 'FR-26: openNotificationSettings() must not be called when '
+              'the PermissionBlocked alert is dismissed without CTA action — '
+              'the wiring hands off to the dialog impl, which (in production) '
+              'only calls openNotificationSettings on the primary CTA tap; '
+              'the fake resolves immediately simulating a dismiss/cancel',
+        );
+        expect(
+          fakeDialog.showCount,
+          equals(1),
+          reason: 'FR-26 precondition: dialog was shown exactly once',
+        );
+        expect(
+          fake.scheduleCallCount,
+          equals(0),
+          reason: 'FR-26: no notification scheduled after blocked + dismiss',
+        );
+      },
+    );
+
+    test(
+      'FR-25: should_route_both_toggle_entry_points_through_single_provider_path',
+      () async {
+        // FR-25: both _MetraToggle.onChanged and _SettingsRow.onTap flow through
+        // SettingsNotifier.save → settingsNotifierProvider listener →
+        // permissionBlockedDialogProvider.show(). This test verifies the
+        // wiring at the listener level — two sequential toggle-on events with
+        // PermissionBlocked each produce exactly one dialog show, never inline.
+        //
+        // The production code uses zero showDialog calls in _MetraToggle and
+        // _SettingsRow (verified by grep in the acceptance criteria list).
+        final fake = FakeNotificationService()
+          ..permissionOutcome = const PermissionBlocked();
+        final fakeRepo = FakeAppSettingsRepository()
+          ..storedSettings = disabledSettingsFr25();
+        final fakeDialog = FakePermissionBlockedDialog();
+        final fakeReporter = FakeNotificationErrorReporter();
+        final container = _makeSettingsListenerContainer(
+          service: fake,
+          fakeRepo: fakeRepo,
+          reporter: fakeReporter,
+          permissionBlockedDialog: fakeDialog,
+        );
+        addTearDown(container.dispose);
+
+        await container.read(settingsNotifierProvider.future);
+
+        // First toggle-on (simulates _MetraToggle.onChanged).
+        await _simulateSettingsListenerFire(
+          container: container,
+          prev: AsyncData(disabledSettingsFr25()),
+          next: AsyncData(enabledSettingsFr25()),
+          service: fake,
+        );
+
+        expect(
+          fakeDialog.showCount,
+          equals(1),
+          reason: 'FR-25: first toggle-on must produce exactly one dialog show',
+        );
+
+        fakeDialog.reset();
+        // Re-seed repo to disabled (the revert happened; simulate user toggling
+        // on again — this time via the _SettingsRow.onTap code path, which in
+        // production flows through the same settingsNotifierProvider listener).
+        fakeRepo.storedSettings = disabledSettingsFr25();
+        fake.requestPermissionCallCount = 0;
+
+        // Second toggle-on (simulates _SettingsRow.onTap).
+        await _simulateSettingsListenerFire(
+          container: container,
+          prev: AsyncData(disabledSettingsFr25()),
+          next: AsyncData(enabledSettingsFr25()),
+          service: fake,
+        );
+
+        expect(
+          fakeDialog.showCount,
+          equals(1),
+          reason:
+              'FR-25: second toggle-on must also produce exactly one dialog '
+              'show (same routing path, not duplicate or zero)',
+        );
+        expect(
+          fakeRepo.storedSettings?.notificationsEnabled,
+          isFalse,
+          reason: 'FR-25: toggle reverts to OFF on both entry points',
         );
       },
     );

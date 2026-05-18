@@ -12,8 +12,13 @@ class BackupNotConnected extends BackupState {
 }
 
 class BackupConnected extends BackupState {
-  const BackupConnected({required this.email, this.lastBackupAt});
+  const BackupConnected({
+    required this.email,
+    required this.autoBackupActive,
+    this.lastBackupAt,
+  });
   final String email;
+  final bool autoBackupActive;
   final DateTime? lastBackupAt;
 }
 

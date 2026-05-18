@@ -106,11 +106,11 @@ void main() {
     );
 
     test(
-      'keeps all files when total count is within N=10 retention cap',
+      'keeps all files when total count is within N=3 retention cap',
       () async {
         storage.values[passphraseKey] = passphrase;
-        // Seed 2 old files; after uploading 1 new one, total = 3 — well under
-        // the N=10 cap, so no pruning occurs.
+        // Seed 2 old files; after uploading 1 new one, total = 3 — exactly at
+        // the N=3 cap, so no pruning occurs (skip(3) yields empty set).
         provider.files['metra_backup_20260427T000000Z_aaaaaa.enc'] =
             Uint8List.fromList([1]);
         provider.files['metra_backup_20260428T000000Z_aaaaab.enc'] =
@@ -126,7 +126,7 @@ void main() {
         );
         await orch.backup();
 
-        // 2 seeded + 1 new upload = 3 total, all within the cap.
+        // 2 seeded + 1 new upload = 3 total, exactly at the cap — no pruning.
         expect(provider.files, hasLength(3));
         expect(provider.deleteCalls, isEmpty);
         // The newly uploaded file is the only one with today's timestamp.
@@ -140,7 +140,7 @@ void main() {
     );
 
     test(
-      'FR-13 — backup() with 15 seeded files keeps newest 10 after upload',
+      'FR-13 — backup() with 15 seeded files keeps newest 3 after upload',
       () async {
         storage.values[passphraseKey] = passphrase;
         // Pre-populate 15 files with descending timestamps (oldest = day 1,
@@ -166,9 +166,9 @@ void main() {
         await orch.backup();
 
         // listFiles returns 16 (15 seeded + 1 new upload).
-        // N=10 retention: prune the 6 oldest → 10 remain.
-        expect(provider.deleteCalls.length, equals(6));
-        expect(provider.files, hasLength(10));
+        // N=3 retention: prune the 13 oldest → 3 remain.
+        expect(provider.deleteCalls.length, equals(13));
+        expect(provider.files, hasLength(3));
 
         // The just-uploaded file must NOT have been pruned.
         final uploadedName = provider.files.keys.firstWhere(
@@ -209,8 +209,8 @@ void main() {
         // Must not throw despite the per-file delete failure.
         await orch.backup();
 
-        // All 6 prune candidates were attempted.
-        expect(provider.deleteCalls.length, equals(6));
+        // All 13 prune candidates were attempted (16 total - 3 retention cap).
+        expect(provider.deleteCalls.length, equals(13));
 
         // Exactly 1 prune-failure log entry, plus 1 overall success log.
         final failureLogs = syncLogRepo.appended
@@ -286,6 +286,184 @@ void main() {
         expect(syncLogRepo.appended.first.success, isFalse);
       },
     );
+
+    group('Group C — 507 retry loop', () {
+      // Sentinels: null = upload success, InsufficientStorageException = 507.
+      const storageFullEx = InsufficientStorageException();
+
+      // Helper: seeds [count] backup files with descending timestamps.
+      // Returns names newest-first so [provider.files.keys.last] (after sort) is
+      // the oldest, matching [listFiles()] ordering.
+      void seedFiles(int count) {
+        for (var i = count; i >= 1; i--) {
+          final name = BackupFilename.filenameFor(
+            DateTime.utc(2026, 5, i, 12),
+            randomSuffix: 'seed${i.toString().padLeft(2, '0')}',
+          );
+          provider.files[name] = Uint8List.fromList([i]);
+        }
+      }
+
+      test('507 once, 2 prior files → 1 delete + retry upload succeeds',
+          () async {
+        storage.values[passphraseKey] = passphrase;
+        // 2 prior files; first upload → 507, second upload → success.
+        provider.uploadResponses = [storageFullEx, null];
+        seedFiles(2);
+
+        final orch = _make(
+          storage: storage,
+          provider: provider,
+          settingsRepo: settingsRepo,
+          syncLogRepo: syncLogRepo,
+          logRepo: logRepo,
+          now: () => DateTime.utc(2026, 6, 1, 10),
+        );
+        await orch.backup();
+
+        // Exactly 1 file deleted from the retry loop.
+        expect(provider.deleteCalls.length, equals(1));
+        // 2 upload attempts were made.
+        expect(provider.uploadCalls.length, equals(2));
+        // 1 progressive-prune informational log entry.
+        final pruneLogs = syncLogRepo.appended
+            .where(
+              (e) =>
+                  !e.success &&
+                  (e.errorMessage ?? '').startsWith('progressive-prune:'),
+            )
+            .toList();
+        expect(pruneLogs.length, equals(1));
+      });
+
+      test(
+          '507 with files.length == 1 → rethrows InsufficientStorageException, '
+          'zero deletes', () async {
+        storage.values[passphraseKey] = passphrase;
+        provider.uploadResponses = [storageFullEx];
+        seedFiles(1);
+
+        final orch = _make(
+          storage: storage,
+          provider: provider,
+          settingsRepo: settingsRepo,
+          syncLogRepo: syncLogRepo,
+          logRepo: logRepo,
+          now: () => DateTime.utc(2026, 6, 1, 10),
+        );
+        await expectLater(
+          orch.backup(),
+          throwsA(isA<InsufficientStorageException>()),
+        );
+        expect(provider.deleteCalls, isEmpty);
+      });
+
+      test(
+          'NFR-02 cap — 507 forever with 5 prior files: max 2 deletes then rethrow',
+          () async {
+        storage.values[passphraseKey] = passphrase;
+        provider.uploadResponses =
+            List.filled(99, storageFullEx, growable: true);
+        seedFiles(5);
+
+        final orch = _make(
+          storage: storage,
+          provider: provider,
+          settingsRepo: settingsRepo,
+          syncLogRepo: syncLogRepo,
+          logRepo: logRepo,
+          now: () => DateTime.utc(2026, 6, 1, 10),
+        );
+        await expectLater(
+          orch.backup(),
+          throwsA(isA<InsufficientStorageException>()),
+        );
+        expect(provider.deleteCalls.length, lessThanOrEqualTo(2));
+      });
+
+      test('EC-06 — deleteFile exception swallowed; backup completes on retry',
+          () async {
+        storage.values[passphraseKey] = passphrase;
+        // 2 prior files; first upload → 507, second upload → success.
+        provider.uploadResponses = [storageFullEx, null];
+        seedFiles(2);
+
+        // Make the oldest file's delete throw.
+        final sortedNames = provider.files.keys.toList()
+          ..sort((a, b) => b.compareTo(a));
+        final oldestName = sortedNames.last;
+        provider.deleteThrows = {
+          oldestName: const SyncException('Delete failed: 404'),
+        };
+
+        final orch = _make(
+          storage: storage,
+          provider: provider,
+          settingsRepo: settingsRepo,
+          syncLogRepo: syncLogRepo,
+          logRepo: logRepo,
+          now: () => DateTime.utc(2026, 6, 1, 10),
+        );
+        // Must complete despite the deleteFile exception.
+        await orch.backup();
+      });
+    });
+
+    group('Group D — FR-10 retention cap N=3', () {
+      test(
+          'FR-10 — kBackupRetentionMaxFiles == 3 and post-upload prune deletes 2 of 5',
+          () async {
+        storage.values[passphraseKey] = passphrase;
+        // Seed 4 files; upload adds 1 new → 5 total; retain 3 → prune 2 oldest.
+        for (var i = 1; i <= 4; i++) {
+          final name = BackupFilename.filenameFor(
+            DateTime.utc(2026, 5, i, 12),
+            randomSuffix: 'seed${i.toString().padLeft(2, '0')}',
+          );
+          provider.files[name] = Uint8List.fromList([i]);
+        }
+
+        final orch = _make(
+          storage: storage,
+          provider: provider,
+          settingsRepo: settingsRepo,
+          syncLogRepo: syncLogRepo,
+          logRepo: logRepo,
+          now: () => DateTime.utc(2026, 5, 20, 12, 0, 0),
+        );
+        await orch.backup();
+
+        // 4 seeded + 1 new = 5 total; skip(3) = 2 oldest deleted.
+        expect(provider.deleteCalls.length, equals(2));
+      });
+
+      test(
+          'EC-15 silent post-upgrade prune — 7 files → 4 deletes, no dialogs/notifications',
+          () async {
+        storage.values[passphraseKey] = passphrase;
+        // Seed 6 files; upload adds 1 new → 7 total; retain 3 → prune 4 oldest.
+        for (var i = 1; i <= 6; i++) {
+          final name = BackupFilename.filenameFor(
+            DateTime.utc(2026, 5, i, 12),
+            randomSuffix: 'seed${i.toString().padLeft(2, '0')}',
+          );
+          provider.files[name] = Uint8List.fromList([i]);
+        }
+
+        final orch = _make(
+          storage: storage,
+          provider: provider,
+          settingsRepo: settingsRepo,
+          syncLogRepo: syncLogRepo,
+          logRepo: logRepo,
+          now: () => DateTime.utc(2026, 5, 20, 12, 0, 0),
+        );
+        await orch.backup();
+
+        // 6 seeded + 1 new = 7 total; skip(3) = 4 oldest deleted.
+        expect(provider.deleteCalls.length, equals(4));
+      });
+    });
   });
 
   group('restore()', () {

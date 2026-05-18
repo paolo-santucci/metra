@@ -159,7 +159,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // (d) RestorePickerDialog appears with 3 rows.
-      expect(find.text('Scegli la versione'), findsOneWidget);
+      // IT: restorePickerTitle = "Scegli versione" (not "Scegli la versione")
+      expect(find.text('Scegli versione'), findsOneWidget);
       expect(find.byType(RadioListTile<String>), findsNWidgets(3));
 
       // Newest row must be first in the list (entries are already sorted
@@ -196,8 +197,10 @@ void main() {
       await tester.tap(find.textContaining('16 mag'));
       await tester.pumpAndSettle();
 
-      // (f) Tap "Ripristina questa versione".
-      await tester.tap(find.text('Ripristina questa versione'));
+      // (f) Tap "Ripristina" (IT: restorePickerRestoreThisVersion = "Ripristina").
+      //     The confirm dialog's "Ripristina" is already dismissed; only the
+      //     picker's "Ripristina" is on screen at this point.
+      await tester.tap(find.text('Ripristina'));
       await tester.pumpAndSettle();
 
       // (g) Passphrase dialog appears.
@@ -260,9 +263,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Picker shown — do NOT tap any row; tap "Ripristina questa versione" immediately.
-      expect(find.text('Scegli la versione'), findsOneWidget);
-      await tester.tap(find.text('Ripristina questa versione'));
+      // Picker shown — do NOT tap any row; tap "Ripristina" immediately.
+      // IT: restorePickerTitle = "Scegli versione", restorePickerRestoreThisVersion = "Ripristina"
+      expect(find.text('Scegli versione'), findsOneWidget);
+      await tester.tap(find.text('Ripristina'));
       await tester.pumpAndSettle();
 
       // Passphrase dialog.
@@ -305,9 +309,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Picker shown — tap "Usa il più recente".
-      expect(find.text('Scegli la versione'), findsOneWidget);
-      await tester.tap(find.text('Usa il più recente'));
+      // Picker shown — tap "Usa più recente" (IT: restorePickerUseNewest = "Usa più recente").
+      expect(find.text('Scegli versione'), findsOneWidget);
+      await tester.tap(find.text('Usa più recente'));
       await tester.pumpAndSettle();
 
       // Passphrase dialog.

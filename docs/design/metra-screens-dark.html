@@ -1276,6 +1276,87 @@ function ScreenImpostazioni() {
 
 }
 
+/* ─── BACKUP SCREEN ─── */
+/* FR-20 / FR-21: BackupConnected state — shows both auto-backup indicator states side-by-side via annotation.
+   autoBackupActive is a runtime projection (!settings.backupSuspended), never persisted to Drift. */
+function ScreenBackup() {
+  const { fontDisplay: font = "'DM Serif Display', serif" } = useT();
+  return (
+    <Phone>
+      <div style={{ height: '100%', background: C.sabbia, overflowY: 'auto', paddingBottom: 100 }}>
+
+        {/* Header */}
+        <div style={{ padding: '12px 24px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Icon name="arrow_back" size={20} color={C.inchiostro} />
+          <div style={{ fontFamily: font, fontSize: 26, color: C.inchiostro, lineHeight: 1.1 }}>Backup</div>
+        </div>
+
+        {/* ── Account connesso ── */}
+        <SettingsLabel first>Account connesso</SettingsLabel>
+        <SettingsCard>
+          <SettingsRow label="Account" value="nome@email.it" />
+          <SettingsDivider />
+          <SettingsRow label="Ultimo backup" value="Oggi, 09:41" />
+          <SettingsDivider />
+          <SettingsRow label="Disconnetti" destructive />
+        </SettingsCard>
+
+        {/* ── Stato backup automatico — autoBackupActive: true ── */}
+        {/* §18.11 — Auto-backup status indicator row (active state) */}
+        <SettingsLabel>Stato</SettingsLabel>
+        <SettingsCard>
+          {/* Indicator row: dot (8 px circle) + label. Height 40 px (sub-row, not tappable). */}
+          <div style={{
+            height: 40, paddingInline: 20,
+            display: 'flex', alignItems: 'center', gap: 8
+          }}>
+            {/* Active dot — token: C.terracotta (colorScheme.primary in Flutter) */}
+            <div style={{
+              width: 8, height: 8, borderRadius: '50%',
+              background: C.terracotta, flexShrink: 0
+            }} />
+            {/* Active label — token: C.inchiostro (colorScheme.onSurface) */}
+            <span style={{ fontFamily: 'Inter', fontSize: 14, color: C.inchiostro }}>
+              Backup automatico attivo
+            </span>
+          </div>
+        </SettingsCard>
+
+        {/* ── Stato backup automatico — autoBackupActive: false (sospeso) ── */}
+        {/* Shown below for design reference: suspended state uses muted tokens */}
+        <SettingsLabel>Stato (sospeso)</SettingsLabel>
+        <SettingsCard>
+          {/* Indicator row: suspended state. Height 40 px, non-tappable. */}
+          <div style={{
+            height: 40, paddingInline: 20,
+            display: 'flex', alignItems: 'center', gap: 8
+          }}>
+            {/* Suspended dot — token: rgba(C.inchiostro, 0.38) = colorScheme.onSurface.withOpacity(0.38) */}
+            <div style={{
+              width: 8, height: 8, borderRadius: '50%',
+              background: 'rgba(237,228,211,0.38)', flexShrink: 0
+            }} />
+            {/* Suspended label — same alpha stop: onSurface × 0.38 */}
+            <span style={{ fontFamily: 'Inter', fontSize: 14, color: 'rgba(237,228,211,0.38)' }}>
+              Backup automatico sospeso
+            </span>
+          </div>
+        </SettingsCard>
+
+        {/* ── Azioni ── */}
+        <SettingsLabel>Azioni</SettingsLabel>
+        <SettingsCard>
+          <SettingsRow label="Esegui backup ora" action />
+          <SettingsDivider />
+          <SettingsRow label="Ripristina da backup" action />
+        </SettingsCard>
+
+        <TabBar active="settings" />
+      </div>
+    </Phone>);
+
+}
+
 /* ─── SCREEN WRAP ─── */
 function Scr({ label, children }) {
   return (
@@ -1322,6 +1403,17 @@ function App() {
           <Scr label="Archivio (timeline + tabella)"><ScreenArchivio /></Scr>
           <Scr label="Statistiche"><ScreenStatistiche /></Scr>
           <Scr label="Impostazioni"><ScreenImpostazioni /></Scr>
+        </div>
+      </div>
+
+      {/* ROW 3: Schermate secondarie */}
+      <div>
+        <div className="row-header">
+          <div className="row-label">03 — Schermate secondarie</div>
+          <div className="row-title">Backup (stato connesso · indicatore attivo / sospeso)</div>
+        </div>
+        <div className="screens-row">
+          <Scr label="Backup — indicatore attivo"><ScreenBackup /></Scr>
         </div>
       </div>
 

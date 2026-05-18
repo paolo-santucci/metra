@@ -784,11 +784,11 @@ class AppLocalizationsIt extends AppLocalizations {
   String get csvImportConfirmDeleteAction => 'Elimina e importa';
 
   @override
-  String get restorePickerTitle => 'Scegli la versione';
+  String get restorePickerTitle => 'Scegli versione';
 
   @override
   String get restorePickerBody =>
-      'Seleziona il file di backup da ripristinare:';
+      'Seleziona il backup da ripristinare. L\'operazione sostituirà tutti i dati presenti.';
 
   @override
   String restorePickerRowTemplate(String date, String size) {
@@ -796,14 +796,50 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
-  String get restorePickerUseNewest => 'Usa il più recente';
+  String get restorePickerUseNewest => 'Usa più recente';
 
   @override
-  String get restorePickerRestoreThisVersion => 'Ripristina questa versione';
+  String get restorePickerRestoreThisVersion => 'Ripristina';
 
   @override
-  String get restorePickerEmpty => 'Nessun file di backup trovato.';
+  String get restorePickerEmpty => 'Nessun backup trovato sul provider.';
 
   @override
   String get restorePickerError => 'Impossibile caricare i file di backup.';
+
+  @override
+  String get restorePickerAnnulla => 'Annulla';
+
+  @override
+  String get restorePickerClose => 'Chiudi';
+
+  @override
+  String get restorePickerBadgeNewest => 'più recente';
+
+  @override
+  String get restorePickerSemanticLabel => 'Scelta versione backup';
+
+  @override
+  String get backup_error_storage_full =>
+      'Spazio insufficiente sul provider — non è stato possibile completare il backup.';
+
+  @override
+  String get backupAutoActiveLabel => 'Backup automatico attivo';
+
+  @override
+  String get backupAutoSuspendedLabel => 'Backup automatico sospeso';
+
+  @override
+  String get notificationPermissionBlockedTitle => 'Notifiche bloccate';
+
+  @override
+  String get notificationPermissionBlockedBody =>
+      'Le notifiche sono state bloccate nelle impostazioni di sistema. Aprile per riattivarle.';
+
+  @override
+  String get notificationPermissionOpenSettingsCta =>
+      'Apri impostazioni di sistema';
+
+  @override
+  String get notificationPermissionBlockedDismiss => 'Annulla';
 }

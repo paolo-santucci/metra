@@ -1324,4 +1324,232 @@ void main() {
       },
     );
   });
+
+  // -------------------------------------------------------------------------
+  // TASK-06 — Group E: backupNow() + autoBackupActive
+  // -------------------------------------------------------------------------
+
+  group('TASK-06 — backupNow + autoBackupActive', () {
+    // E-01: BackupRunning guard
+    test(
+      'E-01: backupNow is a no-op when already in BackupRunning',
+      () async {
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'a@b.com',
+          lastBackupAt: null,
+        );
+        storage.values['metra_backup_passphrase_v1'] = 'test-pass';
+
+        final releaser = Completer<void>();
+        final blockingRunner = _BlockingRunner(releaser);
+
+        final container = ProviderContainer(
+          overrides: [
+            appSettingsRepositoryProvider
+                .overrideWith((_) async => settingsRepo),
+            secureStorageProvider.overrideWithValue(storage),
+            backupDataProvider
+                .overrideWith((_) async => BackupData(blockingRunner)),
+            restoreDataProvider.overrideWith((_) async => RestoreData(runner)),
+            cloudBackupProvider.overrideWithValue(fakeDropbox),
+            syncLogRepositoryProvider
+                .overrideWith((_) async => fakeSyncLogRepo),
+          ],
+        );
+        addTearDown(container.dispose);
+        addTearDown(() {
+          if (!releaser.isCompleted) releaser.complete();
+        });
+
+        await container.read(backupNotifierProvider.future);
+
+        // First call blocks inside BackupRunning.
+        unawaited(
+          container.read(backupNotifierProvider.notifier).backupNow(),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(
+          container.read(backupNotifierProvider).valueOrNull,
+          isA<BackupRunning>(),
+        );
+        final callCountBefore = blockingRunner.backupCallCount;
+
+        // Second call must return immediately (guard).
+        await container
+            .read(backupNotifierProvider.notifier)
+            .backupNow()
+            .timeout(
+              const Duration(seconds: 3),
+              onTimeout: () => throw StateError(
+                'backupNow did not return within 3 s — '
+                'BackupRunning guard is missing',
+              ),
+            );
+
+        expect(blockingRunner.backupCallCount, equals(callCountBefore));
+        expect(
+          container.read(backupNotifierProvider).valueOrNull,
+          isA<BackupRunning>(),
+        );
+
+        releaser.complete();
+      },
+      timeout: const Timeout(Duration(seconds: 10)),
+    );
+
+    // E-02: BackupNotConnected guard
+    test(
+      'E-02: backupNow is a no-op when BackupNotConnected',
+      () async {
+        // No email → build() emits BackupNotConnected.
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        await container.read(backupNotifierProvider.notifier).backupNow();
+
+        expect(runner.backupCalled, isFalse);
+        expect(
+          container.read(backupNotifierProvider).valueOrNull,
+          isA<BackupNotConnected>(),
+        );
+      },
+    );
+
+    // E-03: backupSuspended guard logs a skip entry and returns
+    test(
+      'E-03: backupNow logs backupSkipped and returns when backupSuspended=true',
+      () async {
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'a@b.com',
+          lastBackupAt: null,
+        );
+        await settingsRepo.updateBackupSuspended(true);
+        storage.values['metra_backup_passphrase_v1'] = 'test-pass';
+
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        await container.read(backupNotifierProvider.notifier).backupNow();
+
+        expect(runner.backupCalled, isFalse);
+        expect(fakeSyncLogRepo.appended, hasLength(1));
+        expect(
+          fakeSyncLogRepo.appended.first.operation,
+          SyncOperation.backupSkipped,
+        );
+      },
+    );
+
+    // E-04: null passphrase guard — silent return, no backup
+    test(
+      'E-04: backupNow returns silently when passphrase is null',
+      () async {
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'a@b.com',
+          lastBackupAt: null,
+        );
+        // storage has NO passphrase key.
+
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        await container.read(backupNotifierProvider.notifier).backupNow();
+
+        expect(runner.backupCalled, isFalse);
+      },
+    );
+
+    // E-05: write-recency bypass — backupNow runs even when nothing is new
+    test(
+      'E-05: backupNow bypasses write-recency guard and calls runner',
+      () async {
+        final tb = DateTime.utc(2026, 5, 1);
+        // lastBackupAt > lastLogOrSymptomWriteAt → backupSilent would skip.
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'a@b.com',
+          lastBackupAt: tb.add(const Duration(hours: 1)),
+        );
+        // lastLogOrSymptomWriteAt is null (never written) — backupSilent skips.
+        storage.values['metra_backup_passphrase_v1'] = 'test-pass';
+
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        await container.read(backupNotifierProvider.notifier).backupNow();
+
+        // backupNow must call the runner despite no new writes.
+        expect(runner.backupCalled, isTrue);
+      },
+    );
+
+    // E-06: FR-19 — backupNow never writes to secure storage
+    test(
+      'E-06: backupNow does not write to secure storage (FR-19)',
+      () async {
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'a@b.com',
+          lastBackupAt: null,
+        );
+        storage.values['metra_backup_passphrase_v1'] = 'existing-pass';
+        storage.resetCallCounts();
+
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        await container.read(backupNotifierProvider.notifier).backupNow();
+
+        expect(
+          storage.writeCount,
+          isZero,
+          reason: 'backupNow must never write to secure storage (FR-19)',
+        );
+      },
+    );
+
+    // E-07: autoBackupActive projection
+    test(
+      'E-07: autoBackupActive is true when backupSuspended=false',
+      () async {
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'a@b.com',
+          lastBackupAt: null,
+        );
+        // backupSuspended defaults to false.
+
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        final s = await container.read(backupNotifierProvider.future);
+
+        expect(s, isA<BackupConnected>());
+        expect((s as BackupConnected).autoBackupActive, isTrue);
+      },
+    );
+
+    test(
+      'E-07b: autoBackupActive is false when backupSuspended=true',
+      () async {
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'a@b.com',
+          lastBackupAt: null,
+        );
+        await settingsRepo.updateBackupSuspended(true);
+
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        final s = await container.read(backupNotifierProvider.future);
+
+        expect(s, isA<BackupConnected>());
+        expect((s as BackupConnected).autoBackupActive, isFalse);
+      },
+    );
+
+    // E-08: _handleBackup routing — covered in backup_screen_test.dart (E-08)
+    // The notifier-layer portion is fully exercised by E-01 through E-06 above.
+  });
 }

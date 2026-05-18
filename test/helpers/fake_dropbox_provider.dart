@@ -33,6 +33,14 @@ class FakeDropboxProvider implements CloudBackupProvider {
   bool failNextUpload = false;
   bool failNextDownload = false;
 
+  /// When non-null, each [upload] call pops the first element. A non-null
+  /// element is thrown as-is; a null element succeeds. Falls back to
+  /// [failNextUpload] once the list is exhausted.
+  List<Exception?>? uploadResponses;
+
+  /// Records every filename argument passed to [upload] (success or failure).
+  final List<String> uploadCalls = [];
+
   /// Simulates the email returned by [currentEmail].
   /// Set to null to simulate an email fetch failure.
   String? currentEmailResult = 'user@example.com';
@@ -70,6 +78,13 @@ class FakeDropboxProvider implements CloudBackupProvider {
 
   @override
   Future<void> upload(Uint8List blob, String filename) async {
+    uploadCalls.add(filename);
+    if (uploadResponses != null && uploadResponses!.isNotEmpty) {
+      final response = uploadResponses!.removeAt(0);
+      if (response != null) throw response;
+      files[filename] = blob;
+      return;
+    }
     if (failNextUpload) {
       failNextUpload = false;
       throw const SyncException('upload failed');

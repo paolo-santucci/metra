@@ -35,6 +35,76 @@ void main() {
     storage = InMemorySecureStorage();
   });
 
+  // ---------------------------------------------------------------------------
+  // Group A — InsufficientStorageException type contract
+  // ---------------------------------------------------------------------------
+
+  group('InsufficientStorageException', () {
+    test('constructor sets statusCode == 507 and message == ARB key', () {
+      const e = InsufficientStorageException();
+      expect(e.statusCode, 507);
+      expect(e.message, 'backup_error_storage_full');
+    });
+
+    test('is SyncException == true; is MetraException == true', () {
+      const e = InsufficientStorageException();
+      // Use isA<> matcher to check type hierarchy without triggering the
+      // unnecessary_type_check lint (which fires on `e is T` when T is a
+      // supertype guaranteed by the class hierarchy at compile time).
+      expect(e, isA<SyncException>());
+      expect(e, isA<MetraException>());
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Group B — DropboxProvider.upload 507 discrimination
+  // ---------------------------------------------------------------------------
+
+  group('DropboxProvider.upload 507 discrimination', () {
+    late Uint8List blob;
+
+    setUp(() {
+      storage.values['metra_dropbox_access_token_v1'] = 'tok';
+      blob = Uint8List.fromList([1, 2, 3]);
+    });
+
+    test(
+        'status 507 → throws InsufficientStorageException, not generic SyncException',
+        () async {
+      final client = MockClient((_) async => http.Response('', 507));
+      final provider =
+          DropboxProvider(appKey: 'key', storage: storage, client: client);
+      await expectLater(
+        () => provider.upload(blob, 'metra-backup-2026.enc'),
+        throwsA(isA<InsufficientStorageException>()),
+      );
+    });
+
+    test(
+        'status 503 → throws SyncException but NOT InsufficientStorageException',
+        () async {
+      final client = MockClient((_) async => http.Response('', 503));
+      final provider =
+          DropboxProvider(appKey: 'key', storage: storage, client: client);
+      await expectLater(
+        () => provider.upload(blob, 'metra-backup-2026.enc'),
+        throwsA(
+          allOf(
+            isA<SyncException>(),
+            isNot(isA<InsufficientStorageException>()),
+          ),
+        ),
+      );
+    });
+
+    test('status 200 → completes without throwing', () async {
+      final client = MockClient((_) async => http.Response('{}', 200));
+      final provider =
+          DropboxProvider(appKey: 'key', storage: storage, client: client);
+      await provider.upload(blob, 'metra-backup-2026.enc');
+    });
+  });
+
   test('upload sends bearer token and correct Dropbox-API-Arg', () async {
     storage.values['metra_dropbox_access_token_v1'] = 'tok';
     final calls = <http.Request>[];

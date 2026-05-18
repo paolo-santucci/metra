@@ -31,6 +31,11 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
     private val kBatteryOptChannel = "metra/battery_optimization"
 
+    // Channel for opening the OS notification-settings panel for this app.
+    // Dispatches ACTION_APP_NOTIFICATION_SETTINGS with EXTRA_APP_PACKAGE so the
+    // user lands directly on the app's notification settings, not the global list.
+    private val kNotifSettingsChannel = "metra/notification_settings"
+
     // Registers the battery-optimisation MethodChannel so Flutter can query
     // PowerManager.isIgnoringBatteryOptimizations and fire the OS settings
     // intent without adding a new native library.
@@ -57,6 +62,24 @@ class MainActivity : FlutterActivity() {
                             startActivity(intent)
                         }
                         // Android < 23: no-op.
+                        result.success(null)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+
+        // Registers the notification-settings MethodChannel so Flutter can open
+        // the OS app-notification settings panel directly from the permission-
+        // blocked dialog (FR-23, FR-25). Uses ACTION_APP_NOTIFICATION_SETTINGS so
+        // the user lands on the app's channel list, not the global notification list.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, kNotifSettingsChannel)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "open" -> {
+                        val intent = Intent(
+                            Settings.ACTION_APP_NOTIFICATION_SETTINGS,
+                        ).putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                        startActivity(intent)
                         result.success(null)
                     }
                     else -> result.notImplemented()

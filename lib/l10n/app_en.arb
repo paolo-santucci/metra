@@ -718,9 +718,9 @@
     "description": "Title of the RestorePickerDialog — prompts user to choose which backup version to restore"
   },
 
-  "restorePickerBody": "Select the backup file to restore:",
+  "restorePickerBody": "Select the backup to restore. This will replace all existing data.",
   "@restorePickerBody": {
-    "description": "Intro sentence shown above the backup file list in RestorePickerDialog"
+    "description": "Intro sentence shown above the backup file list in RestorePickerDialog; warns that existing data will be replaced"
   },
 
   "restorePickerRowTemplate": "{date} · {size}",
@@ -741,12 +741,12 @@
     "description": "Shortcut button that pre-selects the most recent backup file in RestorePickerDialog"
   },
 
-  "restorePickerRestoreThisVersion": "Restore this version",
+  "restorePickerRestoreThisVersion": "Restore",
   "@restorePickerRestoreThisVersion": {
     "description": "Destructive CTA button in RestorePickerDialog that confirms the selected backup version for restore"
   },
 
-  "restorePickerEmpty": "No backup files found.",
+  "restorePickerEmpty": "No backup found on the provider.",
   "@restorePickerEmpty": {
     "description": "Empty-state body shown in RestorePickerDialog when no backup files are found in the cloud provider"
   },
@@ -754,5 +754,60 @@
   "restorePickerError": "Failed to load backup files.",
   "@restorePickerError": {
     "description": "Error-state body shown in RestorePickerDialog when the backup file list cannot be loaded"
+  },
+
+  "restorePickerAnnulla": "Cancel",
+  "@restorePickerAnnulla": {
+    "description": "Cancel button in RestorePickerDialog — dismisses the picker without restoring"
+  },
+
+  "restorePickerClose": "Close",
+  "@restorePickerClose": {
+    "description": "Close button in RestorePickerDialog — dismisses the picker after an empty-state or error-state"
+  },
+
+  "restorePickerBadgeNewest": "newest",
+  "@restorePickerBadgeNewest": {
+    "description": "Badge pill label on the most recent backup row in RestorePickerDialog; lowercase per badge-pill convention"
+  },
+
+  "restorePickerSemanticLabel": "Choose backup version",
+  "@restorePickerSemanticLabel": {
+    "description": "Accessibility semantic label for the RestorePickerDialog as a whole"
+  },
+
+  "backup_error_storage_full": "Not enough space on the provider — backup could not be completed.",
+  "@backup_error_storage_full": {
+    "description": "Error message shown when the cloud provider returns HTTP 507 or a quota-exceeded error during backup; snake_case key matches the backup_error_* family"
+  },
+
+  "backupAutoActiveLabel": "Automatic backup active",
+  "@backupAutoActiveLabel": {
+    "description": "Status label shown on the backup screen when automatic backup is enabled and running"
+  },
+
+  "backupAutoSuspendedLabel": "Automatic backup suspended",
+  "@backupAutoSuspendedLabel": {
+    "description": "Status label shown on the backup screen when automatic backup is suspended"
+  },
+
+  "notificationPermissionBlockedTitle": "Notifications blocked",
+  "@notificationPermissionBlockedTitle": {
+    "description": "Title of the in-app alert shown when notification permission has been denied in system settings"
+  },
+
+  "notificationPermissionBlockedBody": "Notifications have been blocked in system settings. Open them to re-enable.",
+  "@notificationPermissionBlockedBody": {
+    "description": "Body of the in-app alert shown when notification permission has been denied; explains how to re-enable via system settings"
+  },
+
+  "notificationPermissionOpenSettingsCta": "Open system settings",
+  "@notificationPermissionOpenSettingsCta": {
+    "description": "CTA button in the notification-permission-blocked alert; opens the OS app settings page"
+  },
+
+  "notificationPermissionBlockedDismiss": "Cancel",
+  "@notificationPermissionBlockedDismiss": {
+    "description": "Dismiss button in the notification-permission-blocked alert — closes without opening settings"
   }
 }

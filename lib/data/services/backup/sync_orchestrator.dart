@@ -24,8 +24,9 @@ import 'dropbox_provider.dart';
 typedef RecomputeFn = Future<dynamic> Function();
 
 /// Maximum number of backup files to retain in cloud storage.
-/// TASK-15 prune logic references this constant.
-const int kBackupRetentionMaxFiles = 10;
+/// TASK-04 reduced from 10 to 3; the 507 retry loop caps progressive-prune
+/// deletions at [kBackupRetentionMaxFiles] − 1 = 2.
+const int kBackupRetentionMaxFiles = 3;
 
 class SyncOrchestrator implements BackupRunner {
   SyncOrchestrator({
@@ -74,7 +75,46 @@ class SyncOrchestrator implements BackupRunner {
       final bytes = Uint8List.fromList(utf8.encode(snapshot.encode()));
       final blob = await _encryption.encrypt(bytes, passphrase);
       final filename = BackupFilename.filenameFor(ts);
-      await _provider.upload(blob, filename);
+      // 507 progressive-prune retry loop (FR-14, NFR-02).
+      // On InsufficientStorageException the oldest backup is deleted to free
+      // space, then upload is retried. Safety constraints:
+      //   - Never delete the last remaining file (FR-14 safety floor).
+      //   - At most kBackupRetentionMaxFiles − 1 deletions (NFR-02 cap = 2).
+      // Individual deleteFile failures are swallowed (EC-06).
+      var pruneDeletions = 0;
+      while (true) {
+        try {
+          await _provider.upload(blob, filename);
+          break; // upload succeeded
+        } on InsufficientStorageException {
+          final currentFiles = await _provider.listFiles();
+          if (currentFiles.length <= 1) {
+            // Safety floor: never delete the last backup — rethrow immediately.
+            rethrow;
+          }
+          if (pruneDeletions >= kBackupRetentionMaxFiles - 1) {
+            // NFR-02 cap reached — rethrow.
+            rethrow;
+          }
+          final oldest = currentFiles.last;
+          try {
+            await _provider.deleteFile(oldest.name);
+          } catch (_) {
+            // EC-06: swallow per-file delete failure; next listFiles() call
+            // in the following iteration will reflect the actual state.
+          }
+          await _syncLogRepo.append(
+            SyncLogEntity(
+              timestamp: _now(),
+              provider: SyncProvider.dropbox,
+              operation: SyncOperation.backup,
+              success: false,
+              errorMessage: 'progressive-prune: ${oldest.name}',
+            ),
+          );
+          pruneDeletions++;
+        }
+      }
       // Verify that the upload registered before pruning older files.
       final files = await _provider.listFiles();
       if (!files.any((e) => e.name == filename)) {

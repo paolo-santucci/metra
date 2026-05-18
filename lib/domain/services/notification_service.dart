@@ -15,6 +15,40 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
+/// The outcome of an OS-level notification-permission request.
+///
+/// Callers should switch on this sealed class to handle each case explicitly
+/// without a default branch — Dart's exhaustiveness checker guarantees no
+/// branch is silently forgotten.
+///
+/// See [NotificationService.requestPermission] for the detection rules on
+/// each platform.
+sealed class PermissionRequestOutcome {
+  const PermissionRequestOutcome();
+}
+
+/// The user granted notification permission, or permission was already granted.
+final class PermissionGranted extends PermissionRequestOutcome {
+  const PermissionGranted();
+}
+
+/// The user was shown the system dialog and explicitly denied permission.
+///
+/// The app may request again in a future session (OS policy permitting), but
+/// must not show a settings-redirect prompt yet.
+final class PermissionDenied extends PermissionRequestOutcome {
+  const PermissionDenied();
+}
+
+/// The OS suppressed the system dialog because the user previously selected
+/// "don't ask again" (Android) or because the app is permanently denied (iOS).
+///
+/// The only recovery path is navigating the user to the system settings panel.
+/// See [NotificationService.openNotificationSettings].
+final class PermissionBlocked extends PermissionRequestOutcome {
+  const PermissionBlocked();
+}
+
 /// The result of attempting to schedule a prediction notification.
 ///
 /// Callers should switch on this sealed class to handle each case explicitly.
@@ -69,24 +103,46 @@ abstract class NotificationService {
 
   /// Requests the OS-level notification permission.
   ///
-  /// **Fail-closed policy**: a [null] response from the OS plugin is treated
-  /// as [false] — an explicit request with an indeterminate response is not
-  /// silently granted.
+  /// Returns a [PermissionRequestOutcome] that callers must switch on
+  /// exhaustively:
+  /// - [PermissionGranted]: permission was granted or was already active.
+  /// - [PermissionDenied]: the user dismissed or denied the system dialog.
+  /// - [PermissionBlocked]: the OS suppressed the dialog because the user
+  ///   previously selected "don't ask again" (Android) or the app is
+  ///   permanently denied (iOS). Show a settings-redirect prompt; call
+  ///   [openNotificationSettings] to take the user directly there.
   ///
-  /// On Android 13+ (API 33+): calls the plugin's
-  /// `requestNotificationsPermission()`. Subsequent calls after denial return
-  /// [false] immediately without showing a dialog again; the user must go to
-  /// Android Settings to re-enable.
-  /// On Android < 13: returns [true] (no runtime permission required).
-  /// On iOS: calls `requestPermissions(sound: true, alert: true, badge: true)`
-  /// on the plugin's [IOSFlutterLocalNotificationsPlugin] resolved via
-  /// `resolvePlatformSpecificImplementation`. A [null] result is fail-closed:
-  /// returns [false].
+  /// On Android 13+ (API 33+): captures `areNotificationsEnabled` before and
+  /// after the plugin call to distinguish [PermissionDenied] from
+  /// [PermissionBlocked].
+  /// On Android < 13: no runtime permission required — always returns
+  /// [PermissionGranted].
+  /// On iOS: if already enabled (`checkPermissions().isEnabled == true`),
+  /// returns [PermissionGranted] without showing a dialog again. Otherwise
+  /// calls the notifications plugin `requestPermissions` and maps the result.
+  /// On any unresolvable plugin state: returns [PermissionDenied] as a safe
+  /// lower bound (never [PermissionBlocked] without confirming OS suppression).
   ///
   /// Only call this method when the user explicitly enables notifications
-  /// (e.g. the settings-toggle-on flow). For cold-start re-checks, use
-  /// [hasNotificationPermission] instead — it never shows a system dialog.
-  Future<bool> requestPermission();
+  /// (e.g. the settings-toggle-on flow). For cold-start re-checks use
+  /// [hasNotificationPermission] — it never shows a system dialog.
+  Future<PermissionRequestOutcome> requestPermission();
+
+  /// Opens the OS notification-settings panel for this app.
+  ///
+  /// On Android: dispatches the system settings intent for in-app notification
+  /// settings via a platform method channel handler in the Kotlin layer.
+  /// On iOS: opens the iOS settings URL via the notifications plugin or via
+  /// a sibling method channel handler in the Swift layer.
+  ///
+  /// Any platform-channel error is caught, logged via `debugPrint` prefixed
+  /// with `[NotificationService.openNotificationSettings]`, and swallowed —
+  /// this method never throws. The swallow policy mirrors
+  /// [openBatteryOptimizationSettings].
+  ///
+  /// Only call this after receiving [PermissionBlocked] from
+  /// [requestPermission], so the user is redirected with intent.
+  Future<void> openNotificationSettings();
 
   /// Read-only check: returns [true] if Métra currently has the OS-level
   /// notification permission, without re-prompting the user.

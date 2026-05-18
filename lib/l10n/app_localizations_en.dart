@@ -785,7 +785,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get restorePickerTitle => 'Choose version';
 
   @override
-  String get restorePickerBody => 'Select the backup file to restore:';
+  String get restorePickerBody =>
+      'Select the backup to restore. This will replace all existing data.';
 
   @override
   String restorePickerRowTemplate(String date, String size) {
@@ -796,11 +797,46 @@ class AppLocalizationsEn extends AppLocalizations {
   String get restorePickerUseNewest => 'Use newest';
 
   @override
-  String get restorePickerRestoreThisVersion => 'Restore this version';
+  String get restorePickerRestoreThisVersion => 'Restore';
 
   @override
-  String get restorePickerEmpty => 'No backup files found.';
+  String get restorePickerEmpty => 'No backup found on the provider.';
 
   @override
   String get restorePickerError => 'Failed to load backup files.';
+
+  @override
+  String get restorePickerAnnulla => 'Cancel';
+
+  @override
+  String get restorePickerClose => 'Close';
+
+  @override
+  String get restorePickerBadgeNewest => 'newest';
+
+  @override
+  String get restorePickerSemanticLabel => 'Choose backup version';
+
+  @override
+  String get backup_error_storage_full =>
+      'Not enough space on the provider — backup could not be completed.';
+
+  @override
+  String get backupAutoActiveLabel => 'Automatic backup active';
+
+  @override
+  String get backupAutoSuspendedLabel => 'Automatic backup suspended';
+
+  @override
+  String get notificationPermissionBlockedTitle => 'Notifications blocked';
+
+  @override
+  String get notificationPermissionBlockedBody =>
+      'Notifications have been blocked in system settings. Open them to re-enable.';
+
+  @override
+  String get notificationPermissionOpenSettingsCta => 'Open system settings';
+
+  @override
+  String get notificationPermissionBlockedDismiss => 'Cancel';
 }

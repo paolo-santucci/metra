@@ -721,7 +721,10 @@ void main() {
         await tester.pumpWidget(
           _wrap(
             [settingsNotifierProvider.overrideWith(() => stub)],
-            backupState: const BackupConnected(email: 'user@example.com'),
+            backupState: const BackupConnected(
+              email: 'user@example.com',
+              autoBackupActive: true,
+            ),
           ),
         );
         await tester.pumpAndSettle();

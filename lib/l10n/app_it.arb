@@ -1135,14 +1135,14 @@
     "description": "Confirm button label for the deleteAndImport destructive confirmation dialog"
   },
 
-  "restorePickerTitle": "Scegli la versione",
+  "restorePickerTitle": "Scegli versione",
   "@restorePickerTitle": {
     "description": "Title of the RestorePickerDialog — prompts user to choose which backup version to restore"
   },
 
-  "restorePickerBody": "Seleziona il file di backup da ripristinare:",
+  "restorePickerBody": "Seleziona il backup da ripristinare. L'operazione sostituirà tutti i dati presenti.",
   "@restorePickerBody": {
-    "description": "Intro sentence shown above the backup file list in RestorePickerDialog"
+    "description": "Intro sentence shown above the backup file list in RestorePickerDialog; warns that existing data will be replaced"
   },
 
   "restorePickerRowTemplate": "{date} · {size}",
@@ -1158,17 +1158,17 @@
     }
   },
 
-  "restorePickerUseNewest": "Usa il più recente",
+  "restorePickerUseNewest": "Usa più recente",
   "@restorePickerUseNewest": {
     "description": "Shortcut button that pre-selects the most recent backup file in RestorePickerDialog"
   },
 
-  "restorePickerRestoreThisVersion": "Ripristina questa versione",
+  "restorePickerRestoreThisVersion": "Ripristina",
   "@restorePickerRestoreThisVersion": {
     "description": "Destructive CTA button in RestorePickerDialog that confirms the selected backup version for restore"
   },
 
-  "restorePickerEmpty": "Nessun file di backup trovato.",
+  "restorePickerEmpty": "Nessun backup trovato sul provider.",
   "@restorePickerEmpty": {
     "description": "Empty-state body shown in RestorePickerDialog when no backup files are found in the cloud provider"
   },
@@ -1176,5 +1176,60 @@
   "restorePickerError": "Impossibile caricare i file di backup.",
   "@restorePickerError": {
     "description": "Error-state body shown in RestorePickerDialog when the backup file list cannot be loaded"
+  },
+
+  "restorePickerAnnulla": "Annulla",
+  "@restorePickerAnnulla": {
+    "description": "Cancel button in RestorePickerDialog — dismisses the picker without restoring"
+  },
+
+  "restorePickerClose": "Chiudi",
+  "@restorePickerClose": {
+    "description": "Close button in RestorePickerDialog — dismisses the picker after an empty-state or error-state"
+  },
+
+  "restorePickerBadgeNewest": "più recente",
+  "@restorePickerBadgeNewest": {
+    "description": "Badge pill label on the most recent backup row in RestorePickerDialog; lowercase per badge-pill convention"
+  },
+
+  "restorePickerSemanticLabel": "Scelta versione backup",
+  "@restorePickerSemanticLabel": {
+    "description": "Accessibility semantic label for the RestorePickerDialog as a whole"
+  },
+
+  "backup_error_storage_full": "Spazio insufficiente sul provider — non è stato possibile completare il backup.",
+  "@backup_error_storage_full": {
+    "description": "Error message shown when the cloud provider returns HTTP 507 or a quota-exceeded error during backup; snake_case key matches the backup_error_* family and the exception message string in InsufficientStorageException"
+  },
+
+  "backupAutoActiveLabel": "Backup automatico attivo",
+  "@backupAutoActiveLabel": {
+    "description": "Status label shown on the backup screen when automatic backup is enabled and running"
+  },
+
+  "backupAutoSuspendedLabel": "Backup automatico sospeso",
+  "@backupAutoSuspendedLabel": {
+    "description": "Status label shown on the backup screen when automatic backup is suspended (e.g. storage full or provider disconnected)"
+  },
+
+  "notificationPermissionBlockedTitle": "Notifiche bloccate",
+  "@notificationPermissionBlockedTitle": {
+    "description": "Title of the in-app alert shown when notification permission has been denied in system settings"
+  },
+
+  "notificationPermissionBlockedBody": "Le notifiche sono state bloccate nelle impostazioni di sistema. Aprile per riattivarle.",
+  "@notificationPermissionBlockedBody": {
+    "description": "Body of the in-app alert shown when notification permission has been denied; explains how to re-enable via system settings"
+  },
+
+  "notificationPermissionOpenSettingsCta": "Apri impostazioni di sistema",
+  "@notificationPermissionOpenSettingsCta": {
+    "description": "CTA button in the notification-permission-blocked alert; opens the OS app settings page"
+  },
+
+  "notificationPermissionBlockedDismiss": "Annulla",
+  "@notificationPermissionBlockedDismiss": {
+    "description": "Dismiss button in the notification-permission-blocked alert — closes without opening settings"
   }
 }

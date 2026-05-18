@@ -35,6 +35,7 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     return BackupConnected(
       email: settings.dropboxEmail!,
       lastBackupAt: settings.lastBackupAt,
+      autoBackupActive: !settings.backupSuspended,
     );
   }
 
@@ -199,6 +200,51 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     final pass =
         await ref.read(secureStorageProvider).read(key: _passphraseKey);
     if (pass == null) return;
+    await _runBackup();
+  }
+
+  /// Manual backup triggered from the UI (FR-16/FR-19/FR-20).
+  ///
+  /// Differences from [backupSilent]:
+  /// - Bypasses the write-recency guard — runs even when nothing is new.
+  /// - Never writes to secure storage (FR-19 invariant).
+  ///
+  /// Guard order:
+  ///   1. BackupRunning  → no-op (re-entrancy guard)
+  ///   2. BackupNotConnected → no-op (no account)
+  ///   3. backupSuspended → log skip entry, return
+  ///   4. null passphrase → silent return
+  ///   5. → _runBackup()
+  Future<void> backupNow() async {
+    // Guard 1: already running.
+    if (state.valueOrNull is BackupRunning) return;
+
+    // Guard 2: not connected.
+    if (state.valueOrNull is BackupNotConnected) return;
+
+    // Guard 3: backup suspended (e.g. post-wipe sentinel).
+    final settingsRepo = await ref.read(appSettingsRepositoryProvider.future);
+    final settings = await settingsRepo.getOrCreate();
+    if (settings.backupSuspended) {
+      final syncLogRepo = await ref.read(syncLogRepositoryProvider.future);
+      await syncLogRepo.append(
+        SyncLogEntity(
+          timestamp: DateTime.now().toUtc(),
+          provider: SyncProvider.dropbox,
+          operation: SyncOperation.backupSkipped,
+          success: true,
+          errorMessage: 'skipped: backupSuspended=true',
+        ),
+      );
+      return;
+    }
+
+    // Guard 4: no passphrase — nothing to encrypt with.
+    final pass =
+        await ref.read(secureStorageProvider).read(key: _passphraseKey);
+    if (pass == null) return;
+
+    // Guard 5 bypassed intentionally: write-recency check is NOT applied here.
     await _runBackup();
   }
 

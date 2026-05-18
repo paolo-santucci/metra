@@ -387,6 +387,62 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // Group J — PermissionRequestOutcome integration (TASK-11, spec §7.1)
+  //
+  // Verifies the new permissionOutcome field, the permissionGranted back-compat
+  // alias (both getter and setter), requestPermissionCallCount increment, and
+  // openNotificationSettings as a counted no-op.
+  // ---------------------------------------------------------------------------
+
+  group('Group J — FakeNotificationService permissionOutcome (TASK-11)', () {
+    test(
+      'setting permissionOutcome controls return value',
+      () async {
+        final f = FakeNotificationService();
+        f.permissionOutcome = const PermissionBlocked();
+        expect(await f.requestPermission(), isA<PermissionBlocked>());
+      },
+    );
+
+    test(
+      'permissionGranted=true maps to PermissionGranted',
+      () async {
+        final f = FakeNotificationService();
+        f.permissionGranted = true;
+        expect(await f.requestPermission(), isA<PermissionGranted>());
+      },
+    );
+
+    test(
+      'permissionGranted=false maps to PermissionDenied',
+      () async {
+        final f = FakeNotificationService();
+        f.permissionGranted = false;
+        expect(await f.requestPermission(), isA<PermissionDenied>());
+      },
+    );
+
+    test(
+      'requestPermissionCallCount increments',
+      () async {
+        final f = FakeNotificationService();
+        await f.requestPermission();
+        await f.requestPermission();
+        expect(f.requestPermissionCallCount, 2);
+      },
+    );
+
+    test(
+      'openNotificationSettings is a counted no-op',
+      () async {
+        final f = FakeNotificationService();
+        await f.openNotificationSettings();
+        expect(f.openNotificationSettingsCallCount, 1);
+      },
+    );
+  });
+
+  // ---------------------------------------------------------------------------
   // Group D' — FakeNotificationService cancel knob (FR-16 enabler, OQ-QA-01)
   // ---------------------------------------------------------------------------
 

@@ -48,10 +48,16 @@ class BackupScreen extends ConsumerWidget {
         BackupNotConnected() => _NotConnectedBody(l10n: l10n),
         BackupRunning(:final operation) =>
           _RunningBody(l10n: l10n, operation: operation),
-        BackupConnected(:final email, :final lastBackupAt) => _ConnectedBody(
+        BackupConnected(
+          :final email,
+          :final lastBackupAt,
+          :final autoBackupActive,
+        ) =>
+          _ConnectedBody(
             l10n: l10n,
             email: email,
             lastBackupAt: lastBackupAt,
+            autoBackupActive: autoBackupActive,
           ),
         BackupErrorState(:final message) =>
           _ErrorBody(l10n: l10n, message: message),
@@ -131,11 +137,13 @@ class _ConnectedBody extends ConsumerStatefulWidget {
     required this.l10n,
     required this.email,
     required this.lastBackupAt,
+    required this.autoBackupActive,
   });
 
   final AppLocalizations l10n;
   final String email;
   final DateTime? lastBackupAt;
+  final bool autoBackupActive;
 
   @override
   ConsumerState<_ConnectedBody> createState() => _ConnectedBodyState();
@@ -152,7 +160,7 @@ class _ConnectedBodyState extends ConsumerState<_ConnectedBody> {
 
     if (cached != null && cached.isNotEmpty) {
       // FR-12 Nth-time path: passphrase is cached — run silently, no dialog.
-      unawaited(ref.read(backupNotifierProvider.notifier).backupSilent());
+      unawaited(ref.read(backupNotifierProvider.notifier).backupNow());
     } else {
       // FR-13 first-time path: no cached passphrase — prompt with setNew dialog.
       await PassphraseDialog.show(
@@ -299,7 +307,17 @@ class _ConnectedBodyState extends ConsumerState<_ConnectedBody> {
             lastBackupText,
             style: TextStyle(color: textPrimary),
           ),
-          const SizedBox(height: 24),
+          // CANON GAP: §18.11.6 places this row inside a SettingsCard between
+          // SettingsDividers; _ConnectedBody is not yet refactored to the
+          // SettingsCard/SettingsRow pattern — indicator sits directly in the
+          // existing Column. The §18.11.2 20 px left-inset is also omitted here
+          // because the outer Padding(24) already provides horizontal inset that
+          // is flush with the sibling Text/Button widgets.
+          const SizedBox(height: 8),
+          _AutoBackupIndicatorRow(
+            autoBackupActive: widget.autoBackupActive,
+          ),
+          const SizedBox(height: 16),
           ElevatedButton(
             onPressed: _handleBackup,
             child: Text(l10n.backup_now),
@@ -315,6 +333,80 @@ class _ConnectedBodyState extends ConsumerState<_ConnectedBody> {
             child: Text(l10n.backup_disconnect),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// _AutoBackupIndicatorRow — §18.11
+// ---------------------------------------------------------------------------
+
+/// Read-only status row indicating whether automatic backup is active or
+/// suspended.  Anatomy per bible §18.11.2: 8 px filled dot + label text,
+/// 8 px gap, 40 px row height.  Non-interactive (no tap handler).
+///
+/// Tokens per §18.11.3:
+///   Active:    dot = colorScheme.primary, label = colorScheme.onSurface
+///   Suspended: dot = colorScheme.onSurface × 0.38, label = same
+class _AutoBackupIndicatorRow extends StatelessWidget {
+  const _AutoBackupIndicatorRow({required this.autoBackupActive});
+
+  final bool autoBackupActive;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    final String label = autoBackupActive
+        ? l10n.backupAutoActiveLabel
+        : l10n.backupAutoSuspendedLabel;
+
+    // §18.11.3 token map
+    final Color dotColor = autoBackupActive
+        ? colorScheme.primary
+        : colorScheme.onSurface.withValues(alpha: 0.38);
+    final Color labelColor = autoBackupActive
+        ? colorScheme.onSurface
+        : colorScheme.onSurface.withValues(alpha: 0.38);
+
+    return Semantics(
+      label: label,
+      // State communicated to screen readers via value ('active' / 'suspended').
+      value: autoBackupActive ? 'active' : 'suspended',
+      readOnly: true,
+      liveRegion: true,
+      child: SizedBox(
+        key: const Key('auto-backup-indicator-row'),
+        height: 40,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // 8 px filled circle dot — no icon glyph (§18.11.7 forbidden: icon glyphs)
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: dotColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: labelColor,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

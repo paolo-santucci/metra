@@ -32,6 +32,19 @@ final class SyncException extends MetraException {
   const SyncException(super.message);
 }
 
+/// Thrown when the cloud provider reports HTTP 507 (Insufficient Storage).
+///
+/// The [message] is the ARB key `backup_error_storage_full` so callers can
+/// resolve the localised string without string-parsing. [statusCode] is always
+/// 507 and is available as a typed field for exhaustive switch/catch dispatch.
+final class InsufficientStorageException extends SyncException {
+  const InsufficientStorageException()
+      : statusCode = 507,
+        super('backup_error_storage_full');
+
+  final int statusCode;
+}
+
 final class CryptoException extends MetraException {
   const CryptoException(super.message);
 }

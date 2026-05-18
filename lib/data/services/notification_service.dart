@@ -41,6 +41,14 @@ class FlutterNotificationService implements NotificationService {
   static const _kBatteryOptChannel =
       MethodChannel('metra/battery_optimization');
 
+  /// Platform channel for opening the OS notification-settings panel.
+  ///
+  /// Android handler dispatches `Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)`.
+  /// iOS handler opens `UIApplication.openSettingsURLString`.
+  /// Any [PlatformException] is caught, debugPrint-logged, and swallowed.
+  static const _kNotifSettingsChannel =
+      MethodChannel('metra/notification_settings');
+
   /// Stable ID for the single prediction-reminder notification.
   ///
   /// Must never change: changing it would orphan any already-scheduled
@@ -222,32 +230,95 @@ class FlutterNotificationService implements NotificationService {
   }
 
   @override
-  Future<bool> requestPermission() async {
-    // On Android 13+ (API 33+), POST_NOTIFICATIONS is a runtime permission.
-    // requestNotificationsPermission() shows the system dialog the first time;
-    // subsequent calls return the persisted result without a dialog.
+  Future<PermissionRequestOutcome> requestPermission() async {
+    // -----------------------------------------------------------------------
+    // Android branch (API 33+ runtime permission)
+    // -----------------------------------------------------------------------
+    // Detection algorithm (OQ-QA-03):
+    //  1. Capture areNotificationsEnabled() before the dialog.
+    //  2. Show the dialog via requestNotificationsPermission().
+    //  3. Capture areNotificationsEnabled() after.
+    //  4. Map to outcome:
+    //     - granted==true (or afterEnabled==true)  → PermissionGranted
+    //     - granted==false && before==false && after==false → PermissionBlocked
+    //       (OS suppressed the dialog — no observable state change)
+    //     - granted==false && state changed         → PermissionDenied
+    //  Pre-API-33: requestNotificationsPermission returns null (no runtime
+    //  permission required) — treat as granted (EC-14).
     final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
     if (androidPlugin != null) {
-      return await androidPlugin.requestNotificationsPermission() ?? true;
+      final beforeEnabled =
+          await androidPlugin.areNotificationsEnabled() ?? false;
+      final granted =
+          await androidPlugin.requestNotificationsPermission() ?? true;
+      if (granted) return const PermissionGranted();
+
+      final afterEnabled =
+          await androidPlugin.areNotificationsEnabled() ?? false;
+      if (afterEnabled) return const PermissionGranted();
+      if (!beforeEnabled && !afterEnabled) return const PermissionBlocked();
+      return const PermissionDenied();
     }
 
-    // On iOS, request the permission through the iOS-specific plugin.
-    // A null return is treated as false (fail-closed for an explicit request —
-    // if we cannot confirm the user granted, do not assume they did).
-    // EC-10: if neither Android nor iOS resolver is available, return false.
+    // -----------------------------------------------------------------------
+    // iOS branch
+    // -----------------------------------------------------------------------
+    // Detection algorithm (spec §5.1.5):
+    //  1. checkPermissions() pre-check.
+    //  2. If already enabled → PermissionGranted (EC-12, no re-prompt).
+    //  3. Else call requestPermissions(); if granted → PermissionGranted.
+    //  4. checkPermissions() post-check.
+    //  5. If pre.isEnabled==false AND post.isEnabled==false → PermissionBlocked
+    //     (OS suppressed the dialog — same observable state as step 1).
+    //  6. Else → PermissionDenied.
+    //
+    // SPEC NOTE: flutter_local_notifications v17 NotificationsEnabledOptions
+    // does not expose UNAuthorizationStatus.notDetermined. The "denied-after-
+    // dialog" and "suppressed" cases both produce pre.isEnabled==false AND
+    // post.isEnabled==false, so both map to PermissionBlocked. Reported to
+    // orchestrator; spec may be relaxed once iOS adds .notDetermined exposure.
     final iosPlugin = _plugin.resolvePlatformSpecificImplementation<
         IOSFlutterLocalNotificationsPlugin>();
     if (iosPlugin != null) {
-      return await iosPlugin.requestPermissions(
-            sound: true,
+      final pre = await iosPlugin.checkPermissions();
+      if (pre?.isEnabled == true) return const PermissionGranted();
+
+      final granted = await iosPlugin.requestPermissions(
             alert: true,
             badge: true,
+            sound: true,
           ) ??
           false;
+      if (granted) return const PermissionGranted();
+
+      final post = await iosPlugin.checkPermissions();
+      if (pre?.isEnabled == false && post?.isEnabled == false) {
+        return const PermissionBlocked();
+      }
+      return const PermissionDenied();
     }
 
-    return false;
+    // -----------------------------------------------------------------------
+    // EC-11: neither Android nor iOS plugin resolves.
+    // Safe lower bound: PermissionDenied (not PermissionBlocked — we have no
+    // evidence the OS actually suppressed the dialog).
+    // -----------------------------------------------------------------------
+    return const PermissionDenied();
+  }
+
+  @override
+  Future<void> openNotificationSettings() async {
+    // Dispatch the OS notification-settings panel for this app.
+    // Uses a dedicated MethodChannel so Android and iOS native handlers can
+    // each dispatch the appropriate platform API.
+    // Any PlatformException is caught, logged, and swallowed — mirrors the
+    // policy of openBatteryOptimizationSettings.
+    try {
+      await _kNotifSettingsChannel.invokeMethod<void>('open');
+    } on PlatformException catch (e) {
+      debugPrint('[NotificationService.openNotificationSettings] $e');
+    }
   }
 
   @override

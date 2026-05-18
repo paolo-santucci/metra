@@ -186,6 +186,7 @@ class DropboxProvider implements CloudBackupProvider {
         }),
       },
     );
+    if (res.statusCode == 507) throw const InsufficientStorageException();
     if (res.statusCode != 200) {
       throw SyncException('Upload failed: ${res.statusCode}');
     }

@@ -41,7 +41,8 @@ class _StubNotificationService extends NotificationService {
   Future<void> cancelPredictionNotifications() async {}
 
   @override
-  Future<bool> requestPermission() async => true;
+  Future<PermissionRequestOutcome> requestPermission() async =>
+      const PermissionGranted();
 
   @override
   Future<bool> hasNotificationPermission() async => true;
@@ -51,6 +52,9 @@ class _StubNotificationService extends NotificationService {
 
   @override
   Future<void> openBatteryOptimizationSettings() async {}
+
+  @override
+  Future<void> openNotificationSettings() async {}
 }
 
 void main() {
@@ -111,6 +115,57 @@ void main() {
         );
         expect(result, isA<NotificationScheduleResult>());
         expect(result, isA<NotificationScheduleSuccess>());
+      },
+    );
+  });
+
+  // Group H — PermissionRequestOutcome type (FR-22, FR-23, NFR-07)
+  group('PermissionRequestOutcome sealed class — FR-22, FR-23, NFR-07', () {
+    test(
+      'given_PermissionGranted_when_exhaustive_switch_then_label_is_granted',
+      () {
+        const PermissionRequestOutcome o = PermissionGranted();
+        final label = switch (o) {
+          PermissionGranted() => 'granted',
+          PermissionDenied() => 'denied',
+          PermissionBlocked() => 'blocked',
+        };
+        expect(label, 'granted');
+      },
+    );
+
+    test(
+      'given_all_three_subtypes_when_constructed_as_const_then_const_canonicalisation_holds',
+      () {
+        const a = PermissionGranted();
+        const b = PermissionDenied();
+        const c = PermissionBlocked();
+        expect(identical(const PermissionGranted(), a), isTrue);
+        expect(identical(const PermissionDenied(), b), isTrue);
+        expect(identical(const PermissionBlocked(), c), isTrue);
+      },
+    );
+
+    test(
+      'given_each_subtype_when_checked_then_is_PermissionRequestOutcome',
+      () {
+        expect(const PermissionGranted(), isA<PermissionRequestOutcome>());
+        expect(const PermissionDenied(), isA<PermissionRequestOutcome>());
+        expect(const PermissionBlocked(), isA<PermissionRequestOutcome>());
+      },
+    );
+
+    test(
+      'given_notification_service_dart_when_source_inspected_then_no_package_flutter_import',
+      () {
+        final content = File(
+          'lib/domain/services/notification_service.dart',
+        ).readAsStringSync();
+        expect(
+          content.contains('package:flutter'),
+          isFalse,
+          reason: 'NFR-07: domain file must have zero Flutter imports',
+        );
       },
     );
   });

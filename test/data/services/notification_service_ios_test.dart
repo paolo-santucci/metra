@@ -36,6 +36,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_local_notifications_platform_interface/flutter_local_notifications_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/data/services/notification_service.dart';
+import 'package:metra/domain/services/notification_service.dart'
+    show PermissionDenied, PermissionGranted;
 
 void main() {
   // ---------------------------------------------------------------------------
@@ -112,23 +114,32 @@ void main() {
 
   group('Group B — requestPermission iOS branch', () {
     test(
-      'iOS plugin requestPermissions returns true → result is true; '
-      'called exactly once with (sound:true, alert:true, badge:true); '
-      'checkPermissions never called',
+      'iOS plugin requestPermissions returns true → result is PermissionGranted; '
+      'checkPermissions called once (pre-check), requestPermissions called once',
       () async {
-        final iosStub = _FakeIOSPlugin(requestResult: true);
+        // TASK-02: the detection algorithm (spec §5.1.5) calls checkPermissions()
+        // as a pre-check before requestPermissions(). When pre.isEnabled==false
+        // and requestPermissions() returns true → PermissionGranted.
+        // checkPermissions call count is now 1 (the pre-check); requestPermissions
+        // is called once if the pre-check is not already enabled.
+        final iosStub = _FakeIOSPlugin(
+          checkResult: _enabledOptions(false), // pre: not yet enabled
+          requestResult: true,
+        );
         final plugin = _FakePlugin(iosPlugin: iosStub);
         final service = FlutterNotificationService(pluginOverride: plugin);
 
         final result = await service.requestPermission();
 
-        expect(result, isTrue);
+        // TASK-02: true path maps to PermissionGranted.
+        expect(result, isA<PermissionGranted>());
         expect(iosStub.requestPermissionsCallCount, equals(1));
         expect(
           iosStub.lastRequestArgs,
           equals({'sound': true, 'alert': true, 'badge': true}),
         );
-        expect(iosStub.checkPermissionsCallCount, equals(0));
+        // Pre-check always runs (one call); post-check skipped when granted.
+        expect(iosStub.checkPermissionsCallCount, equals(1));
       },
     );
 
@@ -141,7 +152,8 @@ void main() {
 
         final result = await service.requestPermission();
 
-        expect(result, isFalse);
+        // TASK-02: false maps to PermissionDenied (not the bare bool false).
+        expect(result, isA<PermissionDenied>());
         expect(iosStub.requestPermissionsCallCount, equals(1));
       },
     );
@@ -156,7 +168,8 @@ void main() {
 
         final result = await service.requestPermission();
 
-        expect(result, isFalse);
+        // TASK-02: null/false maps to PermissionDenied (fail-closed).
+        expect(result, isA<PermissionDenied>());
         expect(iosStub.requestPermissionsCallCount, equals(1));
       },
     );
@@ -173,7 +186,8 @@ void main() {
           returnsNormally,
         );
         final result = await service.requestPermission();
-        expect(result, isFalse);
+        // TASK-02: neither plugin resolves → PermissionDenied (EC-11 safe lower bound).
+        expect(result, isA<PermissionDenied>());
       },
     );
   });
@@ -220,7 +234,8 @@ void main() {
 
         final result = await service.requestPermission();
 
-        expect(result, isTrue);
+        // TASK-02: Android true path maps to PermissionGranted.
+        expect(result, isA<PermissionGranted>());
         expect(androidStub.requestNotificationsPermissionCallCount, equals(1));
         expect(iosStub.requestPermissionsCallCount, equals(0));
         expect(iosStub.checkPermissionsCallCount, equals(0));

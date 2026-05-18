@@ -34,6 +34,7 @@ class _StubBackupNotifier extends BackupNotifier {
   String? capturedBackupPassphrase;
   int backupSilentCallCount = 0;
   int backupWithPassphraseCallCount = 0;
+  int backupNowCallCount = 0;
 
   /// When non-null, [restoreWithPassphrase] transitions state to
   /// [BackupErrorState] with this message instead of completing silently.
@@ -65,6 +66,11 @@ class _StubBackupNotifier extends BackupNotifier {
   @override
   Future<void> backupSilent() async {
     backupSilentCallCount++;
+  }
+
+  @override
+  Future<void> backupNow() async {
+    backupNowCallCount++;
   }
 }
 
@@ -177,7 +183,12 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(
-        _wrap(const BackupConnected(email: 'user@example.com')),
+        _wrap(
+          const BackupConnected(
+            email: 'user@example.com',
+            autoBackupActive: true,
+          ),
+        ),
       );
       await tester.pumpAndSettle();
 
@@ -191,7 +202,7 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(
-        _wrap(const BackupConnected(email: 'a@b.com')),
+        _wrap(const BackupConnected(email: 'a@b.com', autoBackupActive: true)),
       );
       await tester.pumpAndSettle();
 
@@ -206,7 +217,7 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(
-        _wrap(const BackupConnected(email: 'a@b.com')),
+        _wrap(const BackupConnected(email: 'a@b.com', autoBackupActive: true)),
       );
       await tester.pumpAndSettle();
 
@@ -250,7 +261,7 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(
-        _wrap(const BackupConnected(email: 'a@b.com')),
+        _wrap(const BackupConnected(email: 'a@b.com', autoBackupActive: true)),
       );
       await tester.pumpAndSettle();
 
@@ -275,7 +286,7 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(
-        _wrap(const BackupConnected(email: 'a@b.com')),
+        _wrap(const BackupConnected(email: 'a@b.com', autoBackupActive: true)),
       );
       await tester.pumpAndSettle();
 
@@ -300,7 +311,7 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(
-        _wrap(const BackupConnected(email: 'a@b.com')),
+        _wrap(const BackupConnected(email: 'a@b.com', autoBackupActive: true)),
       );
       await tester.pumpAndSettle();
 
@@ -327,9 +338,14 @@ void main() {
       tester.view.physicalSize = const Size(800, 4000);
       addTearDown(() => tester.view.resetPhysicalSize());
 
-      final stub = _StubBackupNotifier(const BackupConnected(email: 'a@b.com'));
+      final stub = _StubBackupNotifier(
+        const BackupConnected(email: 'a@b.com', autoBackupActive: true),
+      );
       await tester.pumpWidget(
-        _wrap(const BackupConnected(email: 'a@b.com'), stub: stub),
+        _wrap(
+          const BackupConnected(email: 'a@b.com', autoBackupActive: true),
+          stub: stub,
+        ),
       );
       await tester.pumpAndSettle();
 
@@ -379,7 +395,7 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(
-        _wrap(const BackupConnected(email: 'a@b.com')),
+        _wrap(const BackupConnected(email: 'a@b.com', autoBackupActive: true)),
       );
       await tester.pumpAndSettle();
 
@@ -416,7 +432,7 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(
-        _wrap(const BackupConnected(email: 'a@b.com')),
+        _wrap(const BackupConnected(email: 'a@b.com', autoBackupActive: true)),
       );
       await tester.pumpAndSettle();
 
@@ -441,9 +457,14 @@ void main() {
       tester.view.physicalSize = const Size(800, 4000);
       addTearDown(() => tester.view.resetPhysicalSize());
 
-      final stub = _StubBackupNotifier(const BackupConnected(email: 'a@b.com'));
+      final stub = _StubBackupNotifier(
+        const BackupConnected(email: 'a@b.com', autoBackupActive: true),
+      );
       await tester.pumpWidget(
-        _wrap(const BackupConnected(email: 'a@b.com'), stub: stub),
+        _wrap(
+          const BackupConnected(email: 'a@b.com', autoBackupActive: true),
+          stub: stub,
+        ),
       );
       await tester.pumpAndSettle();
 
@@ -463,9 +484,14 @@ void main() {
       tester.view.physicalSize = const Size(800, 4000);
       addTearDown(() => tester.view.resetPhysicalSize());
 
-      final stub = _StubBackupNotifier(const BackupConnected(email: 'a@b.com'));
+      final stub = _StubBackupNotifier(
+        const BackupConnected(email: 'a@b.com', autoBackupActive: true),
+      );
       await tester.pumpWidget(
-        _wrap(const BackupConnected(email: 'a@b.com'), stub: stub),
+        _wrap(
+          const BackupConnected(email: 'a@b.com', autoBackupActive: true),
+          stub: stub,
+        ),
       );
       await tester.pumpAndSettle();
 
@@ -502,12 +528,18 @@ void main() {
       final storage = InMemorySecureStorage()
         ..values['metra_backup_passphrase_v1'] = 'cached-pass-123';
       final stub = _StubBackupNotifier(
-        const BackupConnected(email: 'user@example.com'),
+        const BackupConnected(
+          email: 'user@example.com',
+          autoBackupActive: true,
+        ),
       );
 
       await tester.pumpWidget(
         _wrapWithStorage(
-          const BackupConnected(email: 'user@example.com'),
+          const BackupConnected(
+            email: 'user@example.com',
+            autoBackupActive: true,
+          ),
           storage: storage,
           stub: stub,
         ),
@@ -520,8 +552,9 @@ void main() {
       // Dialog must NOT appear (FR-12: cached passphrase path skips dialog).
       expect(find.text('Set passphrase'), findsNothing);
 
-      // backupSilent called once; backupWithPassphrase never called.
-      expect(stub.backupSilentCallCount, 1);
+      // backupNow called once; backupSilent and backupWithPassphrase never called.
+      expect(stub.backupNowCallCount, 1);
+      expect(stub.backupSilentCallCount, 0);
       expect(stub.backupWithPassphraseCallCount, 0);
 
       // Cached passphrase must NOT be rewritten (FR-12 read-once invariant).
@@ -538,12 +571,18 @@ void main() {
 
       final storage = InMemorySecureStorage(); // empty — no cached passphrase
       final stub = _StubBackupNotifier(
-        const BackupConnected(email: 'user@example.com'),
+        const BackupConnected(
+          email: 'user@example.com',
+          autoBackupActive: true,
+        ),
       );
 
       await tester.pumpWidget(
         _wrapWithStorage(
-          const BackupConnected(email: 'user@example.com'),
+          const BackupConnected(
+            email: 'user@example.com',
+            autoBackupActive: true,
+          ),
           storage: storage,
           stub: stub,
         ),
@@ -592,12 +631,18 @@ void main() {
 
       final storage = InMemorySecureStorage(); // empty
       final stub = _StubBackupNotifier(
-        const BackupConnected(email: 'user@example.com'),
+        const BackupConnected(
+          email: 'user@example.com',
+          autoBackupActive: true,
+        ),
       );
 
       await tester.pumpWidget(
         _wrapWithStorage(
-          const BackupConnected(email: 'user@example.com'),
+          const BackupConnected(
+            email: 'user@example.com',
+            autoBackupActive: true,
+          ),
           storage: storage,
           stub: stub,
         ),
@@ -698,11 +743,12 @@ void main() {
       expect(radioGroup.groupValue, equals('newest.enc'));
 
       // Both CTAs are enabled (onPressed != null).
+      // EN: restorePickerUseNewest = "Use newest", restorePickerRestoreThisVersion = "Restore"
       final useNewest = tester.widget<TextButton>(
         find.widgetWithText(TextButton, 'Use newest'),
       );
       final restoreThis = tester.widget<TextButton>(
-        find.widgetWithText(TextButton, 'Restore this version'),
+        find.widgetWithText(TextButton, 'Restore'),
       );
       expect(useNewest.onPressed, isNotNull);
       expect(restoreThis.onPressed, isNotNull);
@@ -770,7 +816,8 @@ void main() {
       await tester.tap(find.byType(RadioListTile<String>).at(1));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.widgetWithText(TextButton, 'Restore this version'));
+      // EN: restorePickerRestoreThisVersion = "Restore"
+      await tester.tap(find.widgetWithText(TextButton, 'Restore'));
       await tester.pumpAndSettle();
 
       expect(captured, isA<RestorePickFilename>());
@@ -806,8 +853,9 @@ void main() {
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
 
+      // EN: restorePickerRestoreThisVersion = "Restore"
       final button = tester.widget<TextButton>(
-        find.widgetWithText(TextButton, 'Restore this version'),
+        find.widgetWithText(TextButton, 'Restore'),
       );
       final colorScheme = MetraTheme.light().colorScheme;
       final resolved = button.style!.foregroundColor!.resolve(<WidgetState>{});
@@ -837,15 +885,16 @@ void main() {
       // No list rows in the empty-state branch.
       expect(find.byType(RadioListTile<String>), findsNothing);
 
-      // Both CTAs have null onPressed (disabled).
-      final useNewest = tester.widget<TextButton>(
-        find.widgetWithText(TextButton, 'Use newest'),
+      // Empty-state renders a cloud icon and a single 'Close' (Chiudi / Close) CTA.
+      // 'Use newest' and 'Restore' buttons are absent in the empty-state branch.
+      // EN: restorePickerClose = "Close"
+      expect(find.widgetWithText(TextButton, 'Use newest'), findsNothing);
+      expect(find.widgetWithText(TextButton, 'Restore'), findsNothing);
+      expect(find.byIcon(Icons.cloud_outlined), findsOneWidget);
+      final closeButton = tester.widget<TextButton>(
+        find.widgetWithText(TextButton, 'Close'),
       );
-      final restoreThis = tester.widget<TextButton>(
-        find.widgetWithText(TextButton, 'Restore this version'),
-      );
-      expect(useNewest.onPressed, isNull);
-      expect(restoreThis.onPressed, isNull);
+      expect(closeButton.onPressed, isNotNull);
     });
 
     testWidgets('NFR-06 — empty body wrapped in Semantics(liveRegion: true)',
@@ -947,11 +996,11 @@ void main() {
       });
 
       final stub = _StubBackupNotifier(
-        const BackupConnected(email: 'e2e@test.com'),
+        const BackupConnected(email: 'e2e@test.com', autoBackupActive: true),
       );
       await tester.pumpWidget(
         _wrap(
-          const BackupConnected(email: 'e2e@test.com'),
+          const BackupConnected(email: 'e2e@test.com', autoBackupActive: true),
           stub: stub,
           fakeProvider: FakeDropboxProvider(seedEntries: twoEntries),
         ),
@@ -966,11 +1015,13 @@ void main() {
       await tester.tap(find.widgetWithText(TextButton, 'Restore'));
       await tester.pumpAndSettle();
 
-      // 3. Picker opens — tap the second row, then "Restore this version".
+      // 3. Picker opens — tap the second row, then "Restore" (EN: restorePickerRestoreThisVersion).
+      //    The confirm dialog from step 2 is fully dismissed by pumpAndSettle above,
+      //    so only the picker's "Restore" button is present at this point.
       await tester.tap(find.byType(RadioListTile<String>).at(1));
       await tester.pumpAndSettle();
       await tester.tap(
-        find.widgetWithText(TextButton, 'Restore this version'),
+        find.widgetWithText(TextButton, 'Restore'),
       );
       await tester.pumpAndSettle();
 
@@ -1000,7 +1051,7 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(
-        _wrap(const BackupConnected(email: 'a@b.com')),
+        _wrap(const BackupConnected(email: 'a@b.com', autoBackupActive: true)),
       );
       await tester.pumpAndSettle();
 
@@ -1025,7 +1076,7 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(
-        _wrap(const BackupConnected(email: 'a@b.com')),
+        _wrap(const BackupConnected(email: 'a@b.com', autoBackupActive: true)),
       );
       await tester.pumpAndSettle();
 
@@ -1055,12 +1106,15 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       final stub = _StubBackupNotifier(
-        const BackupConnected(email: 'fr14e@test.com'),
+        const BackupConnected(email: 'fr14e@test.com', autoBackupActive: true),
       )..restoreFailMessage = 'test-failure';
 
       await tester.pumpWidget(
         _wrap(
-          const BackupConnected(email: 'fr14e@test.com'),
+          const BackupConnected(
+            email: 'fr14e@test.com',
+            autoBackupActive: true,
+          ),
           stub: stub,
           fakeProvider: FakeDropboxProvider(seedEntries: twoEntries),
         ),
@@ -1100,6 +1154,144 @@ void main() {
       ).readAsString();
       expect(src.contains('metra_backup_'), isFalse);
       expect(src.contains('BackupFilename'), isFalse);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // TASK-10 — Auto-backup status indicator row (FR-20, FR-21, NFR-08)
+  // ---------------------------------------------------------------------------
+
+  group('Auto-backup indicator — TASK-10', () {
+    testWidgets('FR-20 — indicator row present in active state', (t) async {
+      t.view.physicalSize = const Size(800, 4000);
+      addTearDown(() => t.view.resetPhysicalSize());
+
+      await t.pumpWidget(
+        _wrap(
+          const BackupConnected(
+            email: 'x@x.com',
+            lastBackupAt: null,
+            autoBackupActive: true,
+          ),
+        ),
+      );
+      await t.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('auto-backup-indicator-row')),
+        findsOneWidget,
+      );
+      expect(find.text('Automatic backup active'), findsOneWidget);
+    });
+
+    testWidgets('FR-21 — indicator transitions to suspended state', (t) async {
+      t.view.physicalSize = const Size(800, 4000);
+      addTearDown(() => t.view.resetPhysicalSize());
+
+      await t.pumpWidget(
+        _wrap(
+          const BackupConnected(
+            email: 'x@x.com',
+            lastBackupAt: null,
+            autoBackupActive: false,
+          ),
+        ),
+      );
+      await t.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('auto-backup-indicator-row')),
+        findsOneWidget,
+      );
+      expect(find.text('Automatic backup suspended'), findsOneWidget);
+    });
+
+    testWidgets('FR-20 contrast — indicator always rendered (never unmounted)',
+        (t) async {
+      t.view.physicalSize = const Size(800, 4000);
+      addTearDown(() => t.view.resetPhysicalSize());
+
+      // Mount in active state.
+      final stub = _StubBackupNotifier(
+        const BackupConnected(
+          email: 'x@x.com',
+          lastBackupAt: null,
+          autoBackupActive: true,
+        ),
+      );
+      await t.pumpWidget(
+        _wrap(
+          const BackupConnected(
+            email: 'x@x.com',
+            lastBackupAt: null,
+            autoBackupActive: true,
+          ),
+          stub: stub,
+        ),
+      );
+      await t.pumpAndSettle();
+      expect(
+        find.byKey(const Key('auto-backup-indicator-row')),
+        findsOneWidget,
+      );
+
+      // Transition to suspended state.
+      stub.state = const AsyncData(
+        BackupConnected(
+          email: 'x@x.com',
+          lastBackupAt: null,
+          autoBackupActive: false,
+        ),
+      );
+      await t.pump();
+      expect(
+        find.byKey(const Key('auto-backup-indicator-row')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('accessibility — Semantics liveRegion=true on indicator row',
+        (t) async {
+      t.view.physicalSize = const Size(800, 4000);
+      addTearDown(() => t.view.resetPhysicalSize());
+
+      await t.pumpWidget(
+        _wrap(
+          const BackupConnected(
+            email: 'x@x.com',
+            lastBackupAt: null,
+            autoBackupActive: true,
+          ),
+        ),
+      );
+      await t.pumpAndSettle();
+
+      final liveRegionWithLabel = t
+          .widgetList<Semantics>(find.byType(Semantics))
+          .where(
+            (s) =>
+                s.properties.liveRegion == true &&
+                (s.properties.label?.contains('automatico') == true ||
+                    s.properties.label?.contains('automatic') == true ||
+                    s.properties.label?.contains('Automatic') == true ||
+                    s.properties.label?.contains('Backup') == true),
+          )
+          .toList();
+      expect(liveRegionWithLabel.length, greaterThanOrEqualTo(1));
+    });
+
+    test('NFR-08 — autoBackupActive is never persisted to Drift', () {
+      final dbFiles = Directory('lib/data/database')
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((f) => f.path.endsWith('.dart'));
+      for (final f in dbFiles) {
+        expect(
+          f.readAsStringSync().contains('autoBackupActive'),
+          isFalse,
+          reason: '${f.path} must not reference autoBackupActive',
+        );
+      }
     });
   });
 }
