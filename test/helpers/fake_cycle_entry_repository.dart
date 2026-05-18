@@ -81,8 +81,9 @@ class FakeCycleEntryRepository implements CycleEntryRepository {
 
   @override
   Future<void> deleteAll() async {
-    if (throwOnDeleteAll != null)
+    if (throwOnDeleteAll != null) {
       throw throwOnDeleteAll!; // safe: null-checked above
+    }
     deleteAllCalled = true;
     callLog.add('deleteAll');
     entries.clear();
