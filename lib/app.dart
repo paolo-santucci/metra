@@ -29,6 +29,7 @@ import 'features/settings/state/settings_notifier.dart';
 import 'l10n/app_localizations.dart';
 import 'providers/encryption_provider.dart';
 import 'providers/notification_error_reporter_provider.dart';
+import 'providers/permission_blocked_dialog_provider.dart';
 import 'providers/use_case_providers.dart';
 import 'router/app_router.dart';
 
@@ -45,6 +46,19 @@ import 'router/app_router.dart';
 /// the original [BuildContext] may no longer be valid. One key instance for
 /// the lifetime of the app; no rebuild cost.
 final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
+/// Top-level [GlobalKey] for the root [Navigator] mounted by [MetraApp].
+///
+/// Exposed at file scope so async [ref.listen] callbacks in [_MetraInnerState]
+/// can dispatch dialogs without a [BuildContext] (FR-24, TASK-08). The key is
+/// passed to [MaterialApp.router] via [navigatorKey:] and consumed by
+/// [permissionBlockedDialogProvider].
+///
+/// **GlobalKey justification**: a single app-wide [NavigatorState] is needed
+/// so that the settings-listener can show the [PermissionBlocked] alert after
+/// async gaps — i.e. when the original [BuildContext] may no longer be valid.
+/// One key instance for the lifetime of the app; no rebuild cost.
+final navigatorKey = GlobalKey<NavigatorState>();
 
 /// Root widget — owns [ProviderScope] and accepts overrides for tests.
 class MetraApp extends StatelessWidget {
@@ -239,15 +253,30 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
         if (prev is AsyncData<AppSettingsData>) {
           final wasEnabled = prev.value.notificationsEnabled;
           if (currentSettings.notificationsEnabled && !wasEnabled) {
-            final granted =
+            final outcome =
                 await ref.read(notificationServiceProvider).requestPermission();
-            if (!granted) {
-              // User denied the OS dialog — revert the toggle so the displayed
-              // state matches reality (no notification will fire while denied).
-              await ref.read(settingsNotifierProvider.notifier).save(
-                    currentSettings.copyWith(notificationsEnabled: false),
-                  );
-              return;
+            switch (outcome) {
+              case PermissionGranted():
+                // Proceed to schedule (fall through to the rest of the listener).
+                break;
+              case PermissionDenied():
+                // FR-13 / EC-06: user denied the OS dialog — revert the toggle
+                // so the displayed state matches reality. No snackbar: denial is
+                // a normal "user said no" case, not an error (EC-06 asymmetry).
+                await ref.read(settingsNotifierProvider.notifier).save(
+                      currentSettings.copyWith(notificationsEnabled: false),
+                    );
+                return;
+              case PermissionBlocked():
+                // FR-24: OS suppressed the dialog because the user previously
+                // selected "don't ask again" (Android) or the app is permanently
+                // denied (iOS). Revert the toggle AND show the settings-redirect
+                // alert so the user knows how to re-enable notifications.
+                await ref.read(settingsNotifierProvider.notifier).save(
+                      currentSettings.copyWith(notificationsEnabled: false),
+                    );
+                await ref.read(permissionBlockedDialogProvider).show();
+                return;
             }
           }
         }

@@ -34,12 +34,14 @@ import 'package:metra/domain/services/notification_service.dart';
 import 'package:metra/features/settings/state/settings_notifier.dart';
 import 'package:metra/l10n/app_localizations.dart';
 import 'package:metra/providers/notification_error_reporter_provider.dart';
+import 'package:metra/providers/permission_blocked_dialog_provider.dart';
 import 'package:metra/providers/repository_providers.dart';
 import 'package:metra/providers/use_case_providers.dart';
 
 import 'helpers/fake_app_settings_repository.dart';
 import 'helpers/fake_notification_error_reporter.dart';
 import 'helpers/fake_notification_service.dart';
+import 'helpers/fake_permission_blocked_dialog.dart';
 
 // ---------------------------------------------------------------------------
 // Simulates the _MetraInnerState settings listener guard logic.
@@ -151,13 +153,25 @@ Future<void> _simulateSettingsListenerFire({
   if (prev is AsyncData<AppSettingsData>) {
     final wasEnabled = prev.value.notificationsEnabled;
     if (currentSettings.notificationsEnabled && !wasEnabled) {
-      final granted = await service.requestPermission();
-      if (!granted) {
-        // FR-13 / EC-06: iOS denial — revert toggle, NO snackbar.
-        await container.read(settingsNotifierProvider.notifier).save(
-              currentSettings.copyWith(notificationsEnabled: false),
-            );
-        return;
+      final outcome = await service.requestPermission();
+      switch (outcome) {
+        case PermissionGranted():
+          // Proceed to schedule (fall through).
+          break;
+        case PermissionDenied():
+          // FR-13 / EC-06: user denied the OS dialog — revert toggle, NO snackbar.
+          await container.read(settingsNotifierProvider.notifier).save(
+                currentSettings.copyWith(notificationsEnabled: false),
+              );
+          return;
+        case PermissionBlocked():
+          // FR-24: OS suppressed the dialog (previously "don't ask again") —
+          // revert toggle AND show the settings-redirect alert.
+          await container.read(settingsNotifierProvider.notifier).save(
+                currentSettings.copyWith(notificationsEnabled: false),
+              );
+          await container.read(permissionBlockedDialogProvider).show();
+          return;
       }
     }
   }
@@ -210,17 +224,22 @@ Future<void> _simulateSettingsListenerFire({
 //   - notificationServiceProvider → caller-supplied FakeNotificationService
 //   - appSettingsRepositoryProvider → caller-supplied FakeAppSettingsRepository
 //   - notificationErrorReporterProvider → caller-supplied reporter
+//   - permissionBlockedDialogProvider → caller-supplied dialog (optional,
+//     defaults to a fresh FakePermissionBlockedDialog if not supplied)
 // ---------------------------------------------------------------------------
 ProviderContainer _makeSettingsListenerContainer({
   required FakeNotificationService service,
   required FakeAppSettingsRepository fakeRepo,
   required NotificationErrorReporter reporter,
+  PermissionBlockedDialog? permissionBlockedDialog,
 }) {
+  final dialog = permissionBlockedDialog ?? FakePermissionBlockedDialog();
   return ProviderContainer(
     overrides: [
       notificationServiceProvider.overrideWithValue(service),
       appSettingsRepositoryProvider.overrideWith((_) async => fakeRepo),
       notificationErrorReporterProvider.overrideWithValue(reporter),
+      permissionBlockedDialogProvider.overrideWithValue(dialog),
     ],
   );
 }
@@ -870,6 +889,211 @@ void main() {
           fakeReporter.messages,
           isEmpty,
           reason: 'FR-13 contrast: no snackbar on successful toggle-on',
+        );
+      },
+    );
+  });
+
+  // ===========================================================================
+  // TASK-08: FR-24 — PermissionBlocked → toggle revert + dialog exactly once
+  //
+  // When the user enables Notifications and the OS permission is blocked
+  // (e.g. "don't ask again" on Android, permanently denied on iOS), the
+  // toggle is reverted to false AND the PermissionBlockedDialog is shown
+  // exactly once. The snackbar reporter is never invoked.
+  //
+  // Sub-tests:
+  //   FR-24: blocked path — dialog shown + toggle reverted.
+  //   FR-24 contrast vs FR-13: denied path — dialog NOT shown, toggle reverted.
+  //   BUG-002: cold-start (AsyncLoading→AsyncData) — neither dialog shown
+  //            nor requestPermission() called.
+  //   EC-07: navigatorKey.currentState==null no-op — NavigatorKeyDialog.show
+  //          returns without throwing (unit test via NavigatorKeyDialog directly).
+  //
+  // Coverage: FR-24, FR-13 (contrast), BUG-002 (regression guard), EC-07.
+  // ===========================================================================
+
+  group('FR-24: PermissionBlocked → toggle revert + dialog (TASK-08)', () {
+    AppSettingsData disabledSettings() => AppSettingsData(
+          languageCode: 'en',
+          painEnabled: true,
+          notesEnabled: true,
+          notificationDaysBefore: 2,
+          notificationsEnabled: false,
+          onboardingCompleted: true,
+        );
+
+    AppSettingsData enabledSettings() => AppSettingsData(
+          languageCode: 'en',
+          painEnabled: true,
+          notesEnabled: true,
+          notificationDaysBefore: 2,
+          notificationsEnabled: true,
+          onboardingCompleted: true,
+        );
+
+    test(
+      'should_revert_toggle_and_show_dialog_once_when_permission_blocked',
+      () async {
+        final fake = FakeNotificationService()
+          ..permissionOutcome = const PermissionBlocked();
+        final fakeRepo = FakeAppSettingsRepository()
+          ..storedSettings = disabledSettings();
+        final fakeReporter = FakeNotificationErrorReporter();
+        final fakeDialog = FakePermissionBlockedDialog();
+        final container = _makeSettingsListenerContainer(
+          service: fake,
+          fakeRepo: fakeRepo,
+          reporter: fakeReporter,
+          permissionBlockedDialog: fakeDialog,
+        );
+        addTearDown(container.dispose);
+
+        await container.read(settingsNotifierProvider.future);
+
+        await _simulateSettingsListenerFire(
+          container: container,
+          prev: AsyncData(disabledSettings()),
+          next: AsyncData(enabledSettings()),
+          service: fake,
+        );
+
+        expect(
+          fakeRepo.storedSettings?.notificationsEnabled,
+          isFalse,
+          reason:
+              'FR-24: toggle must revert to false when OS permission is blocked',
+        );
+        expect(
+          fakeDialog.showCount,
+          equals(1),
+          reason: 'FR-24: PermissionBlockedDialog.show() must be called '
+              'exactly once on PermissionBlocked',
+        );
+        expect(
+          fakeReporter.messages,
+          isEmpty,
+          reason:
+              'FR-24: no snackbar shown on PermissionBlocked (dialog handles it)',
+        );
+        expect(
+          fake.requestPermissionCallCount,
+          equals(1),
+          reason:
+              'FR-24: requestPermission() called exactly once on toggle-on',
+        );
+        expect(
+          fake.scheduleCallCount,
+          equals(0),
+          reason:
+              'FR-24: no schedule call made when permission is blocked',
+        );
+      },
+    );
+
+    test(
+      'FR-24 contrast vs FR-13: should_NOT_show_dialog_when_permission_denied',
+      () async {
+        // Denied (user explicitly dismissed the OS dialog) must NOT show the
+        // settings-redirect dialog — only blocked (OS suppressed) does.
+        final fake = FakeNotificationService()
+          ..permissionOutcome = const PermissionDenied();
+        final fakeRepo = FakeAppSettingsRepository()
+          ..storedSettings = disabledSettings();
+        final fakeReporter = FakeNotificationErrorReporter();
+        final fakeDialog = FakePermissionBlockedDialog();
+        final container = _makeSettingsListenerContainer(
+          service: fake,
+          fakeRepo: fakeRepo,
+          reporter: fakeReporter,
+          permissionBlockedDialog: fakeDialog,
+        );
+        addTearDown(container.dispose);
+
+        await container.read(settingsNotifierProvider.future);
+
+        await _simulateSettingsListenerFire(
+          container: container,
+          prev: AsyncData(disabledSettings()),
+          next: AsyncData(enabledSettings()),
+          service: fake,
+        );
+
+        expect(
+          fakeDialog.showCount,
+          equals(0),
+          reason: 'FR-24 contrast: PermissionBlockedDialog must NOT be shown '
+              'on PermissionDenied (user said no; OS will allow re-ask)',
+        );
+        expect(
+          fakeRepo.storedSettings?.notificationsEnabled,
+          isFalse,
+          reason: 'FR-13: toggle must still revert on denial',
+        );
+      },
+    );
+
+    test(
+      'BUG-002 preserved: cold-start AsyncLoading→AsyncData does NOT show dialog',
+      () async {
+        final fake = FakeNotificationService()
+          ..permissionOutcome = const PermissionBlocked();
+        final fakeRepo = FakeAppSettingsRepository()
+          ..storedSettings = disabledSettings();
+        final fakeReporter = FakeNotificationErrorReporter();
+        final fakeDialog = FakePermissionBlockedDialog();
+        final container = _makeSettingsListenerContainer(
+          service: fake,
+          fakeRepo: fakeRepo,
+          reporter: fakeReporter,
+          permissionBlockedDialog: fakeDialog,
+        );
+        addTearDown(container.dispose);
+
+        await container.read(settingsNotifierProvider.future);
+
+        // Cold-start: prev is AsyncLoading — the BUG-002 guard must skip
+        // requestPermission() entirely, so the blocked path never fires.
+        await _simulateSettingsListenerFire(
+          container: container,
+          prev: const AsyncLoading<AppSettingsData>(),
+          next: AsyncData(enabledSettings()),
+          service: fake,
+        );
+
+        expect(
+          fake.requestPermissionCallCount,
+          equals(0),
+          reason: 'BUG-002: requestPermission() must NOT be called during '
+              'AsyncLoading → AsyncData cold-start transition',
+        );
+        expect(
+          fakeDialog.showCount,
+          equals(0),
+          reason: 'BUG-002: PermissionBlockedDialog must NOT be shown on '
+              'cold-start transition (guard fires before permission check)',
+        );
+      },
+    );
+
+    test(
+      'EC-07: NavigatorKeyDialog.show is no-op when navigatorKey.currentState is null',
+      () async {
+        // A freshly-created GlobalKey<NavigatorState> has null currentState.
+        // NavigatorKeyDialog.show() must return without throwing (EC-07).
+        // The _notificationService argument is never accessed in this path
+        // (the null guard fires at line 72 before showDialog is reached).
+        final orphanKey = GlobalKey<NavigatorState>();
+        final fakeService = FakeNotificationService();
+
+        // Construct the production dialog with an orphan key (null currentState).
+        final dialog = NavigatorKeyDialog(orphanKey, fakeService);
+
+        await expectLater(
+          dialog.show,
+          returnsNormally,
+          reason: 'EC-07: NavigatorKeyDialog.show() must be a no-op '
+              'when navigatorKey.currentState is null (no throw)',
         );
       },
     );

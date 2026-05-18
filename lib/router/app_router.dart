@@ -18,6 +18,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../app.dart' show navigatorKey;
 import '../core/widgets/metra_tab_bar.dart';
 import '../features/backup/backup_screen.dart';
 import '../features/calendar/calendar_screen.dart';
@@ -36,6 +37,11 @@ const int _tabSettings = 3;
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
+    // FR-24 / TASK-08: navigatorKey is the app-wide GlobalKey<NavigatorState>
+    // declared in app.dart. GoRouter registers it as the root navigator so
+    // NavigatorKeyDialog can resolve currentState and dispatch the
+    // PermissionBlocked AlertDialog without a BuildContext.
+    navigatorKey: navigatorKey,
     initialLocation: '/calendar',
     redirect: (context, state) async {
       if (state.uri.path == '/onboarding') return null;

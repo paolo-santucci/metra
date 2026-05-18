@@ -1,37 +1,33 @@
 schema-version: 2
-last-updated: "2026-05-18T13:10:00+02:00"
-active-plan: null
-last-plan: ".claude/docs/plans/sp-20260517-m4-notifications-plan.md"
+last-updated: "2026-05-18T22:30:00+02:00"
+active-plan: ".claude/docs/plans/sp-20260518-backup-notification-ux-fixes-plan.md"
+last-plan: ".claude/docs/plans/archive/sp-20260517-m4-notifications-plan.md"
 
 # Owned by the short-plan skill. update-status preserves verbatim.
 short-plan:
-  feature: "implement M4 Notifications + TestFlight (FR-16, FR-17, FR-18, FR-19)"
-  slug: "m4-notifications"
-  auto: true
-  request-type: bug-fix
+  feature: "Backup UX fixes: design-bible text compliance in restore picker, reduce max backups 10→3, smart Dropbox space management with progressive deletion, always-allow manual backup, show auto-backup status. Notification: trigger permission request on toggle-on when permission denied."
+  slug: "backup-notification-ux-fixes"
+  auto: false
+  request-type: feature
   workflow: canonical
-  parent:
-    spec: ".claude/docs/specs/lp-20260517-implement-next-patch-spec.md"
-    plan: ".claude/docs/plans/lp-20260517-implement-next-patch-plan.md"
-    milestone: 4
-    frs: "FR-16, FR-17, FR-18, FR-19"
+  parent: null
   paths:
-    spec: ".claude/docs/specs/sp-20260517-m4-notifications-spec.md"
-    plan: ".claude/docs/plans/sp-20260517-m4-notifications-plan.md"
-    assess-dir: ".claude/docs/specs/sp-20260517-m4-notifications-assessment"
+    spec: ".claude/docs/specs/sp-20260518-backup-notification-ux-fixes-spec.md"
+    plan: ".claude/docs/plans/sp-20260518-backup-notification-ux-fixes-plan.md"
+    assess-dir: ".claude/docs/specs/sp-20260518-backup-notification-ux-fixes-assessment"
   phases:
     assess: done
     triage: done
     spec: done
     plan: done
-    build: done
+    build: pending
   approvals:
     spec: approved
     plan: approved
   rejection-note: null
   build-progress:
-    current-wave: null
-    waves-completed: [1, 2, 3, 4]
+    current-wave: 4
+    waves-completed: [1, 2, 3]
 
 # Owned by the long-plan skill. update-status preserves verbatim.
 long-plan:
@@ -55,21 +51,43 @@ pending-consolidation: []
 
 recently-completed:
   - date: "2026-05-18"
+    summary: "fix(ci): downgrade actions/checkout to v4, fix license headers and lint"
+  - date: "2026-05-18"
+    summary: "chore(release): bump iOS version to 1.0.2+3"
+  - date: "2026-05-18"
+    summary: "chore: update STATUS.yaml — M4 build complete (all 4 waves done)"
+  - date: "2026-05-18"
     summary: "chore: untrack .trash/ and .claude_reminder, add to .gitignore"
   - date: "2026-05-18"
     summary: "style(m4): dart format + lint fixes (trailing commas, tearoff lambdas, pubspec dep)"
-  - date: "2026-05-18"
-    summary: "docs(m4-wave4): document notification revert-on-failure in help pages (IT + EN)"
-  - date: "2026-05-18"
-    summary: "test(m4-wave3): integration tests for FR-13/14/15/16 failure paths"
-  - date: "2026-05-18"
-    summary: "feat(m4-wave2): app.dart dual-branch listener rewrite + stale use-case test fix"
 
-in-progress: []
+in-progress:
+  - title: "short-plan: backup+notification UX fixes — Wave 3 complete, Wave 4 pending"
+    state: "Wave 3 all done: TASK-07 (RestorePickerDialog §19 compliance), TASK-08 (PermissionBlocked alert wiring), TASK-09 (HTML mockup + bible §18 delta). TASK-08 design deviations: (1) navigatorKey placed on GoRouter(navigatorKey:...) not MaterialApp.router (go_router routerConfig pattern constraint); (2) NavigatorKeyDialog accepts NotificationService directly (not Ref) for unit-testability without ProviderContainer. 28/28 tests pass in app_notification_wiring_test.dart. 5 pre-existing backup_screen_test.dart failures remain (TASK-12-owned, unrelated to TASK-08)."
+    touched:
+      - "lib/app.dart"
+      - "lib/router/app_router.dart"
+      - "lib/providers/permission_blocked_dialog_provider.dart"
+      - "test/helpers/fake_permission_blocked_dialog.dart"
+      - "test/app_notification_wiring_test.dart"
+      - "lib/features/backup/widgets/restore_picker_dialog.dart"
+      - "test/features/backup/widgets/backup_fr14_restore_picker_test.dart"
+      - ".claude/docs/plans/sp-20260518-backup-notification-ux-fixes-plan.md"
+      - "STATUS.yaml"
+    next-step: "Wave 4: TASK-10 — add auto-backup indicator row to _ConnectedBody per bible §18.11 (depends on TASK-09 complete)"
+    blocker: null
+  - title: "TestFlight 1.0.2 CI build"
+    state: "deploy_testflight job triggered on v1.0.2 tag; awaiting macOS runner completion"
+    touched:
+      - "pubspec.yaml"
+      - ".github/workflows/ios.yml"
+    next-step: "Monitor CI; confirm TestFlight upload succeeds; manual FR-17 sign-off on physical iOS device"
+    blocker: null
 
 next-steps:
-  - "TestFlight sign-off for FR-17 (iOS permission check + dialog) — manual test on physical iOS device"
-  - "short-plan-close: archive M4 plan and push pending-consolidation entry"
+  - "Run /short-plan --resume build to start backup+notification UX fixes (6 waves, 20 tasks ready)"
+  - "FR-17 manual sign-off on physical iOS device (cold-start permission denied + dialog on toggle-on)"
+  - "Proceed to long-plan M5 milestone once short-plan build is complete"
 
 known-issues:
   - severity: warning
