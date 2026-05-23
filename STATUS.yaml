@@ -1,5 +1,5 @@
 schema-version: 2
-last-updated: "2026-05-23T21:15:00+02:00"
+last-updated: "2026-05-23T21:30:00+02:00"
 active-plan: null
 last-plan: ".claude/docs/plans/archive/sp-20260521-backup-screen-restructure-plan.md"
 
@@ -55,6 +55,8 @@ pending-consolidation: []
 
 recently-completed:
   - date: "2026-05-23"
+    summary: "docs(adr): D-011..D-014 — sp-20260521 ui-design decisions; drain pending-consolidation"
+  - date: "2026-05-23"
     summary: "feat(backup): TASK-01..38 — backup screen restructure complete (sp-20260521); 56 files, 1425 tests pass, 0 analyzer issues; BackupPickerSheet, MetraConfirmDialog, StatusIndicator, settings atoms extracted, help docs updated"
   - date: "2026-05-23"
     summary: "feat(test): TASK-22 — delete RestorePickerDialog and clean up stale references"
@@ -62,13 +64,12 @@ recently-completed:
     summary: "feat(ui): TASK-20 — RestoreProgressScreen with back-lock and live-region heading"
   - date: "2026-05-18"
     summary: "fix(ios): add NSCameraUsageDescription and NSLocationWhenInUseUsageDescription to Info.plist"
-  - date: "2026-05-18"
-    summary: "feat(backup+notifications): storage-full handling, permission flow, auto-backup indicator"
 
 in-progress: []
 
 next-steps:
-  - "Proceed to long-plan M5 milestone (lp-20260517-implement-next-patch-plan.md)"
+  - "LP lp-20260517-implement-next-patch confirmed COMPLETE — all M1..M4 milestones delivered; STATUS.yaml corrected (stale M5 reference removed)"
+  - "Define next initiative: new long-plan or standalone short-plan"
   - "FR-17 manual sign-off on physical iOS device (cold-start notification permission denied + dialog on toggle-on)"
   - "NFR-03 manual measurement: hasNotificationPermission() < 100ms p95 on cold-start iOS"
   - "Screenshot refresh for backup-connected IT+EN (TASK-39/40 deferred to next manual QA session with Android emulator)"
