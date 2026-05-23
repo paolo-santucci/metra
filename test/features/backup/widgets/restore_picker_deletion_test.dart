@@ -36,8 +36,7 @@ void main() {
         File('lib/features/backup/widgets/restore_picker_dialog.dart')
             .existsSync(),
         isFalse,
-        reason:
-            'restore_picker_dialog.dart must be deleted as part of TASK-22',
+        reason: 'restore_picker_dialog.dart must be deleted as part of TASK-22',
       );
     });
 

@@ -1,5 +1,5 @@
 schema-version: 2
-last-updated: "2026-05-23T18:00:00+02:00"
+last-updated: "2026-05-23T19:30:00+02:00"
 active-plan: ".claude/docs/plans/sp-20260521-backup-screen-restructure-plan.md"
 last-plan: ".claude/docs/plans/archive/sp-20260518-backup-notification-ux-fixes-plan.md"
 
@@ -30,8 +30,8 @@ short-plan:
     plan: approved
   rejection-note: null
   build-progress:
-    current-wave: 8
-    waves-completed: [1, 2, 3, 4, 5, 6, 7]
+    current-wave: 9
+    waves-completed: [1, 2, 3, 4, 5, 6, 7, 8]
     task-status:
       TASK-01: done
       TASK-02: done
@@ -55,6 +55,20 @@ short-plan:
       TASK-20: done
       TASK-21: done
       TASK-22: done
+      TASK-23: done
+      TASK-24: done
+      TASK-25: done
+      TASK-26: done
+      TASK-27: done
+      TASK-28: done
+      TASK-29: done
+      TASK-30: done
+      TASK-31: done
+      TASK-32: done
+      TASK-33: done
+      TASK-34: done
+      TASK-35: done
+      TASK-36: done
 
 # Owned by the long-plan skill. update-status preserves verbatim.
 long-plan:
@@ -78,6 +92,18 @@ pending-consolidation: []
 
 recently-completed:
   - date: "2026-05-23"
+    summary: "fix(test): Wave 8 grep-gate self-match bug — backup_picker_sheet_test.dart line 994/1004/1020 used RestorePicker* symbol names as literal strings in grep pattern; split via Dart adjacent-string concatenation so restore_picker_deletion_test.dart's broader gate no longer false-positives; +28/+28 pass"
+  - date: "2026-05-23"
+    summary: "feat(test): Wave 8 Batch 3 (TASK-29/30/31/35/36) — 53 tests pass; RestoreProgressScreen Group G, BackupScreen dispatcher Group H, views Group I, integration I-A..I-G + I-H..I-P; Wave 8 complete"
+  - date: "2026-05-23"
+    summary: "feat(test): Wave 8 Batch 2 (TASK-24/26/27/28) — 93/93 pass; Settings atoms +8 tests, StatusIndicator full coverage, MetraConfirmDialog +1 semantics test, BackupPickerSheet +1 picker-item semantics test"
+  - date: "2026-05-23"
+    summary: "fix(a11y): TASK-33 discovered 3 tap-target bugs — cupertino_picker_scaffold.dart toolbar buttons 8dp→14dp vertical padding + Semantics on confirm button; backup_picker_sheet_internals.dart EmptySheet same fix; 67/67 TASK-33 tests pass after fixes"
+  - date: "2026-05-23"
+    summary: "feat(test): Wave 8 Batch 1 (TASK-23/25/32/33/34) — 114 pass + 2 intentional skips; token-discipline greps, settings migration, mounted-guard, l10n+a11y, latent-bug regression; discovered+fixed 3 tap-target/Semantics bugs in CupertinoPickerScaffold"
+  - date: "2026-05-23"
+    summary: "feat(test): TASK-32 — Group J mounted-guard mid-flow unmount tests (J1-J4, 4 widget tests) + extend handle_restore_grep_test.dart with full-file await→context scan group (1 new test, fixed paren-depth algorithm); 7/7 pass"
+  - date: "2026-05-23"
     summary: "feat(test): TASK-22 — delete RestorePickerDialog (restore_picker_dialog.dart + backup_fr14_restore_picker_test.dart + integration test); remove 10 dead restorePicker* ARB keys; add deletion-guard test (5/5 pass); +1235 ~1 -22 (22 pre-existing in backup_screen_test.dart owned by TASK-30); 0 analyzer warnings"
   - date: "2026-05-23"
     summary: "feat(ui): TASK-21 — BackupScreen exhaustive dispatcher (asyncState.when + switch over BackupState, no default:)"
@@ -93,20 +119,21 @@ recently-completed:
     summary: "fix(ci): downgrade actions/checkout to v4, fix license headers and lint"
 
 in-progress:
-  - title: "Backup screen restructure — Wave 8 (test wave)"
-    state: "Wave 7 complete: TASK-22 done (RestorePickerDialog deleted, ARBs cleaned). Wave 8 next."
+  - title: "Backup screen restructure — Wave 9 (help docs)"
+    state: "Wave 8 fully complete (TASK-01..36 done, all tests green). Wave 9 next: TASK-37/38 help docs text update."
     touched:
       - "lib/features/backup/"
+      - "lib/core/widgets/settings/"
       - "test/features/backup/"
-    next-step: "Wave 8: TASK-28 BackupPickerSheet Group-F widget tests + TASK-30 backup_screen_test.dart full rewrite"
+      - "test/integration/"
+      - "test/static/"
+      - "test/core/"
+    next-step: "Launch Wave 9: TASK-37 (docs/it/help/backup.md restore section), TASK-38 (docs/en/help/backup.md restore section) — technical-writer agent"
     blocker: null
 
 next-steps:
-  - "Wave 8: TASK-28 BackupPickerSheet Group-F widget tests"
-  - "Wave 8: TASK-30 full rewrite of backup_screen_test.dart (owns the 22 pre-existing failures)"
-  - "Wave 9: TASK-35 integration scenarios I-A..I-G"
-  - "Wave 9: help docs update"
-  - "Commit Wave 5+6 uncommitted work (TASK-17/18/19/21) before or with Wave 7"
+  - "Wave 9: TASK-37/38 help docs text update (TASK-39/40 screenshots deferred to manual QA) — technical-writer agent"
+  - "git commit all Wave 8 work"
   - "FR-17 manual sign-off on physical iOS device (cold-start notification permission denied + dialog on toggle-on)"
   - "NFR-03 manual measurement: hasNotificationPermission() < 100ms p95 on cold-start iOS"
   - "Proceed to long-plan M5 milestone (lp-20260517-implement-next-patch-plan.md) after backup restructure complete"

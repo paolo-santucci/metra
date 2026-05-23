@@ -1156,7 +1156,7 @@ function SettingsDivider() {
   return <div style={{ height: 1, background: 'rgba(237,228,211,0.07)' }} />;
 }
 
-function SettingsRow({ label, value, toggle, action = false, destructive = false }) {
+function SettingsRow({ label, value, toggle, action = false, destructive = false, static: isStatic = false }) {
   const labelColor = destructive ? C.tc_scura : C.inchiostro;
   const bg = destructive ? `${C.terracotta}0D` : 'transparent';
   const showRight = !action && !destructive;
@@ -1164,7 +1164,7 @@ function SettingsRow({ label, value, toggle, action = false, destructive = false
     <div style={{
       height: 56, paddingInline: 20,
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      background: bg, cursor: 'pointer'
+      background: bg, cursor: isStatic ? 'default' : 'pointer'
     }}>
       <span style={{
         fontFamily: 'Inter', fontSize: 15, fontWeight: 500, color: labelColor
@@ -1175,7 +1175,7 @@ function SettingsRow({ label, value, toggle, action = false, destructive = false
           {value && <span style={{
             fontFamily: 'Inter', fontSize: 14, color: 'rgba(237,228,211,0.68)'
           }}>{value}</span>}
-          <Icon name="chevron_right" size={16} color="rgba(237,228,211,0.4)" />
+          {!isStatic && <Icon name="chevron_right" size={16} color="rgba(237,228,211,0.4)" />}
         </div>
       )}
     </div>);
@@ -1276,74 +1276,57 @@ function ScreenImpostazioni() {
 
 }
 
-/* ─── BACKUP SCREEN ─── */
-/* FR-20 / FR-21: BackupConnected state — shows both auto-backup indicator states side-by-side via annotation.
-   autoBackupActive is a runtime projection (!settings.backupSuspended), never persisted to Drift. */
-function ScreenBackup() {
+/* ── StatusIndicator atom ── §18.11 — non-tappable dot+label row, height 44 px (MetraSpacing.sp44).
+   active=true: dot=terracotta, label=inchiostro
+   active=false: dot+label=rgba(237,228,211,0.38) */
+function StatusIndicator({ active = true }) {
+  const dotColor = active ? C.terracotta : 'rgba(237,228,211,0.38)';
+  const labelColor = active ? C.inchiostro : 'rgba(237,228,211,0.38)';
+  return (
+    <div style={{ height: 44, paddingInline: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+      {/* 8 px filled circle. No border, no shadow. §18.11.2 */}
+      <div style={{ width: 8, height: 8, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
+      {/* Inter 14 / w400 label. §18.11.2 */}
+      <span style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 400, color: labelColor }}>
+        {active ? 'Backup automatico attivo' : 'Backup automatico sospeso'}
+      </span>
+    </div>
+  );
+}
+
+/* ── FR-22 / FR-23 BackupConnectedView ── BackupConnected state.
+   active prop drives the StatusIndicator state (OQ-01c: one Stato card, not two).
+   Three sections: Account connesso / Stato / Azioni. TabBar present. */
+function ScreenBackupConnected({ active = true }) {
   const { fontDisplay: font = "'DM Serif Display', serif" } = useT();
   return (
     <Phone>
       <div style={{ height: '100%', background: C.sabbia, overflowY: 'auto', paddingBottom: 100 }}>
 
-        {/* Header */}
+        {/* Header — back chevron + title */}
         <div style={{ padding: '12px 24px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Icon name="arrow_back" size={20} color={C.inchiostro} />
+          <Icon name="chevron_left" size={20} color={C.inchiostro} />
           <div style={{ fontFamily: font, fontSize: 26, color: C.inchiostro, lineHeight: 1.1 }}>Backup</div>
         </div>
 
-        {/* ── Account connesso ── */}
+        {/* ── Account connesso ── FR-22: staticInfo rows + destructive Disconnetti */}
         <SettingsLabel first>Account connesso</SettingsLabel>
         <SettingsCard>
-          <SettingsRow label="Account" value="nome@email.it" />
+          <SettingsRow label="Account" value="nome@email.it" static />
           <SettingsDivider />
-          <SettingsRow label="Ultimo backup" value="Oggi, 09:41" />
+          <SettingsRow label="Ultimo backup" value="Oggi, 09:41" static />
           <SettingsDivider />
           <SettingsRow label="Disconnetti" destructive />
         </SettingsCard>
 
-        {/* ── Stato backup automatico — autoBackupActive: true ── */}
-        {/* §18.11 — Auto-backup status indicator row (active state) */}
+        {/* ── Stato ── OQ-01c: single Stato card with one StatusIndicator (not two cards).
+            §18.11.6: non-tappable 44 dp row, parametrised by active prop. */}
         <SettingsLabel>Stato</SettingsLabel>
         <SettingsCard>
-          {/* Indicator row: dot (8 px circle) + label. Height 40 px (sub-row, not tappable). */}
-          <div style={{
-            height: 40, paddingInline: 20,
-            display: 'flex', alignItems: 'center', gap: 8
-          }}>
-            {/* Active dot — token: C.terracotta (colorScheme.primary in Flutter) */}
-            <div style={{
-              width: 8, height: 8, borderRadius: '50%',
-              background: C.terracotta, flexShrink: 0
-            }} />
-            {/* Active label — token: C.inchiostro (colorScheme.onSurface) */}
-            <span style={{ fontFamily: 'Inter', fontSize: 14, color: C.inchiostro }}>
-              Backup automatico attivo
-            </span>
-          </div>
+          <StatusIndicator active={active} />
         </SettingsCard>
 
-        {/* ── Stato backup automatico — autoBackupActive: false (sospeso) ── */}
-        {/* Shown below for design reference: suspended state uses muted tokens */}
-        <SettingsLabel>Stato (sospeso)</SettingsLabel>
-        <SettingsCard>
-          {/* Indicator row: suspended state. Height 40 px, non-tappable. */}
-          <div style={{
-            height: 40, paddingInline: 20,
-            display: 'flex', alignItems: 'center', gap: 8
-          }}>
-            {/* Suspended dot — token: rgba(C.inchiostro, 0.38) = colorScheme.onSurface.withOpacity(0.38) */}
-            <div style={{
-              width: 8, height: 8, borderRadius: '50%',
-              background: 'rgba(237,228,211,0.38)', flexShrink: 0
-            }} />
-            {/* Suspended label — same alpha stop: onSurface × 0.38 */}
-            <span style={{ fontFamily: 'Inter', fontSize: 14, color: 'rgba(237,228,211,0.38)' }}>
-              Backup automatico sospeso
-            </span>
-          </div>
-        </SettingsCard>
-
-        {/* ── Azioni ── */}
+        {/* ── Azioni ── FR-22: action rows for backup + restore */}
         <SettingsLabel>Azioni</SettingsLabel>
         <SettingsCard>
           <SettingsRow label="Esegui backup ora" action />
@@ -1352,6 +1335,325 @@ function ScreenBackup() {
         </SettingsCard>
 
         <TabBar active="settings" />
+      </div>
+    </Phone>);
+}
+
+/* ─── BACKUP EMPTY VIEW ─── */
+/* FR-21: BackupNotConnected state. Centred empty-state with cloud icon container,
+   DM Serif 22 heading, Inter 14 body (max-width 240), terracotta PillButton anchored
+   24 dp from bottom safe-area. No TabBar — this is a secondary route. */
+function ScreenBackupEmpty() {
+  const { fontDisplay: font = "'DM Serif Display', serif" } = useT();
+  return (
+    <Phone>
+      <div style={{ height: '100%', background: C.sabbia, position: 'relative' }}>
+
+        {/* Header — back chevron present (empty state navigated from Settings) */}
+        <div style={{ padding: '12px 24px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Icon name="chevron_left" size={20} color={C.inchiostro} />
+          <div style={{ fontFamily: font, fontSize: 26, color: C.inchiostro, lineHeight: 1.1 }}>Backup</div>
+        </div>
+
+        {/* Centred empty-state column */}
+        <div style={{
+          position: 'absolute', top: '50%', left: 0, right: 0,
+          transform: 'translateY(-60%)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          gap: 16, paddingInline: 32
+        }}>
+          {/* 64×64 cloud icon container — ink-at-5% bg */}
+          <div style={{
+            width: 64, height: 64, borderRadius: 20,
+            background: 'rgba(237,228,211,0.05)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}>
+            <Icon name="cloud" size={32} color={'rgba(237,228,211,0.38)'} />
+          </div>
+          {/* DM Serif 22 heading */}
+          <div style={{ fontFamily: font, fontSize: 22, color: C.inchiostro, textAlign: 'center', lineHeight: 1.2 }}>
+            Nessun backup configurato
+          </div>
+          {/* Inter 14 / ink-at-50% body — max-width 240 */}
+          <div style={{
+            fontFamily: 'Inter', fontSize: 14, color: 'rgba(237,228,211,0.5)',
+            textAlign: 'center', lineHeight: 1.5, maxWidth: 240
+          }}>
+            Collega un account per salvare i tuoi dati in modo sicuro e cifrato.
+          </div>
+        </div>
+
+        {/* Terracotta PillButton — anchored 24 dp from bottom safe-area */}
+        <div style={{
+          position: 'absolute', bottom: 40, left: 24, right: 24
+        }}>
+          <div style={{
+            height: 56, background: C.terracotta, borderRadius: 16,
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}>
+            <span style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 500, color: C.sabbia }}>
+              Collega Dropbox
+            </span>
+          </div>
+        </div>
+
+      </div>
+    </Phone>);
+
+}
+
+/* ─── BACKUP ERROR VIEW ─── */
+/* FR-20: BackupErrorState — error message with retry CTA. */
+function ScreenBackupError() {
+  const { fontDisplay: font = "'DM Serif Display', serif" } = useT();
+  return (
+    <Phone>
+      <div style={{ height: '100%', background: C.sabbia, position: 'relative' }}>
+
+        {/* Header */}
+        <div style={{ padding: '12px 24px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Icon name="chevron_left" size={20} color={C.inchiostro} />
+          <div style={{ fontFamily: font, fontSize: 26, color: C.inchiostro, lineHeight: 1.1 }}>Backup</div>
+        </div>
+
+        {/* Centred error content */}
+        <div style={{
+          position: 'absolute', top: '50%', left: 0, right: 0,
+          transform: 'translateY(-60%)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          gap: 16, paddingInline: 32
+        }}>
+          {/* Error icon container */}
+          <div style={{
+            width: 64, height: 64, borderRadius: 20,
+            background: `${C.terracotta}14`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}>
+            <Icon name="info" size={32} color={C.terracotta} />
+          </div>
+          {/* DM Serif 22 heading */}
+          {/* CANON GAP: error-view heading copy is placeholder; canonical string owned by TASK-11 (ARB keys, app_it.arb) */}
+          <div style={{ fontFamily: font, fontSize: 22, color: C.inchiostro, textAlign: 'center', lineHeight: 1.2 }}>
+            Errore di backup
+          </div>
+          {/* Error message — Inter 14 / ink-at-68% */}
+          {/* CANON GAP: error-view body copy is placeholder; canonical string owned by TASK-11 (ARB keys, app_it.arb) */}
+          <div style={{
+            fontFamily: 'Inter', fontSize: 14, color: 'rgba(237,228,211,0.68)',
+            textAlign: 'center', lineHeight: 1.5, maxWidth: 260
+          }}>
+            Non è stato possibile completare l'operazione. Controlla la connessione e riprova.
+          </div>
+        </div>
+
+        {/* Retry CTA — anchored 24 dp from bottom safe-area */}
+        <div style={{ position: 'absolute', bottom: 40, left: 24, right: 24 }}>
+          <div style={{
+            height: 56, background: C.terracotta, borderRadius: 16,
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}>
+            <span style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 500, color: C.sabbia }}>
+              Riprova
+            </span>
+          </div>
+        </div>
+
+      </div>
+    </Phone>);
+
+}
+
+/* ─── RESTORE PROGRESS SCREEN ─── */
+/* FR-18: BackupRunning(BackupOperation.restoring) — AppBar has NO back chevron.
+   Terracotta spinner, DM Serif 22 heading, Inter 14 / ink-at-68% body. */
+function ScreenRestoreProgress() {
+  const { fontDisplay: font = "'DM Serif Display', serif" } = useT();
+  return (
+    <Phone>
+      <div style={{ height: '100%', background: C.sabbia, position: 'relative' }}>
+
+        {/* Header — NO back chevron (FR-18: back-navigation suppressed during restore) */}
+        <div style={{ padding: '12px 24px 16px' }}>
+          <div style={{ fontFamily: font, fontSize: 26, color: C.inchiostro, lineHeight: 1.1 }}>Backup</div>
+        </div>
+
+        {/* Centred progress content */}
+        <div style={{
+          position: 'absolute', top: '50%', left: 0, right: 0,
+          transform: 'translateY(-50%)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          gap: 20, paddingInline: 32
+        }}>
+          {/* Terracotta circular progress indicator — represented as ring */}
+          <div style={{
+            width: 56, height: 56,
+            border: `3px solid rgba(237,228,211,0.1)`,
+            borderTopColor: C.terracotta,
+            borderRadius: '50%'
+          }} />
+          {/* DM Serif Display 22 heading */}
+          <div style={{ fontFamily: font, fontSize: 22, color: C.inchiostro, textAlign: 'center', lineHeight: 1.2 }}>
+            Ripristino in corso
+          </div>
+          {/* Inter 14 / ink-at-68% body */}
+          {/* CANON GAP: restore-progress body copy is placeholder; canonical string owned by TASK-11 (ARB keys, app_it.arb) */}
+          <div style={{
+            fontFamily: 'Inter', fontSize: 14, color: 'rgba(237,228,211,0.68)',
+            textAlign: 'center', lineHeight: 1.5, maxWidth: 260
+          }}>
+            I dati vengono ripristinati dal backup. Non chiudere l'app.
+          </div>
+        </div>
+
+      </div>
+    </Phone>);
+
+}
+
+/* ─── BACKUP PICKER SHEET ─── */
+/* FR-15: Modal bottom sheet hosting CupertinoPicker. Top-only 16 dp corner radius,
+   sabbia background. Toolbar: Annulla left / Ripristina right (Inter 16 / w500 / terracotta).
+   1 dp ink-at-7% divider below toolbar. Wheel items vary by distance from selection. */
+function ScreenBackupPickerSheet() {
+  const entries = [
+    '2026-05-21 09:41',
+    '2026-05-14 11:03',
+    '2026-05-07 08:22',
+    '2026-04-30 09:55',
+  ];
+  const selected = 0;
+  return (
+    <Phone>
+      {/* Dimmed backdrop — inchiostro-at-10% (dark mode scrim is lighter) */}
+      <div style={{
+        height: '100%', background: C.sabbia, position: 'relative',
+        display: 'flex', flexDirection: 'column', justifyContent: 'flex-end'
+      }}>
+
+        {/* Dimmed backdrop layer */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'rgba(237,228,211,0.08)'
+        }} />
+
+        {/* Bottom sheet — top-only 16 dp radius, sabbia bg */}
+        <div style={{
+          position: 'relative', zIndex: 1,
+          background: C.sabbia,
+          borderRadius: '16px 16px 0 0',
+          paddingBottom: 34
+        }}>
+
+          {/* Toolbar */}
+          <div style={{
+            height: 52, paddingInline: 20,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+          }}>
+            <span style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 500, color: C.terracotta }}>
+              Annulla
+            </span>
+            <span style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 500, color: C.terracotta }}>
+              Ripristina
+            </span>
+          </div>
+          {/* 1 dp ink-at-7% divider */}
+          <div style={{ height: 1, background: 'rgba(237,228,211,0.07)' }} />
+
+          {/* CupertinoPicker wheel — itemExtent 44 (= MetraSpacing.sp44) */}
+          <div style={{ position: 'relative', height: 220, overflow: 'hidden' }}>
+
+            {/* Selection overlay — ink-at-6%, 10 dp radius, 16 dp inset, 44 dp height */}
+            <div style={{
+              position: 'absolute',
+              top: '50%', transform: 'translateY(-50%)',
+              left: 16, right: 16,
+              height: 44, borderRadius: 10,
+              background: 'rgba(237,228,211,0.06)',
+              pointerEvents: 'none', zIndex: 2
+            }} />
+
+            {/* Wheel items */}
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              justifyContent: 'center', height: '100%', gap: 0
+            }}>
+              {entries.map((entry, i) => {
+                const dist = Math.abs(i - selected);
+                const fontSize = dist === 0 ? 16 : 15;
+                const fontWeight = dist === 0 ? 500 : 400;
+                const opacity = dist === 0 ? 1.0 : dist === 1 ? 0.35 : 0.18;
+                return (
+                  <div key={i} style={{
+                    height: 44, display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', width: '100%'
+                  }}>
+                    <span style={{
+                      fontFamily: 'Inter', fontSize, fontWeight,
+                      color: C.inchiostro, opacity
+                    }}>{entry}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </Phone>);
+
+}
+
+/* ─── METRA CONFIRM DIALOG ─── */
+/* FR-13/14: Centred custom Dialog. Max-width 310 dp, 24 dp radius, surface bg.
+   28/24/24/24 dp internal padding. DM Serif Display 20 / w400 title.
+   Inter 15 / w400 / ink-at-68% body. Right-aligned actions:
+   cancelLabel Inter 16/w500/terracotta, confirmLabel Inter 16/w500/tc_scura (destructive in dark). */
+function ScreenMetraConfirmDialog() {
+  const { fontDisplay: font = "'DM Serif Display', serif" } = useT();
+  return (
+    <Phone>
+      <div style={{
+        height: '100%', background: C.sabbia, position: 'relative',
+        display: 'flex', alignItems: 'center', justifyContent: 'center'
+      }}>
+
+        {/* Dimmed scrim — inchiostro-at-8% (dark mode) */}
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(237,228,211,0.08)' }} />
+
+        {/* Dialog — centred, max-width 310, 24 dp radius, surface bg */}
+        <div style={{
+          position: 'relative', zIndex: 1,
+          width: '100%', maxWidth: 310,
+          marginInline: 12,
+          background: C.surface,
+          borderRadius: 24,
+          padding: '28px 24px 24px 24px'
+        }}>
+
+          {/* DM Serif Display 20 / w400 title */}
+          <div style={{ fontFamily: font, fontSize: 20, color: C.inchiostro, lineHeight: 1.25, marginBottom: 12 }}>
+            Ripristinare il backup?
+          </div>
+
+          {/* Inter 15 / w400 / ink-at-68% body */}
+          <div style={{ fontFamily: 'Inter', fontSize: 15, color: 'rgba(237,228,211,0.68)', lineHeight: 1.5, marginBottom: 28 }}>
+            Tutti i dati attuali verranno sostituiti. Questa operazione non può essere annullata.
+          </div>
+
+          {/* Right-aligned action row — 28 dp gap between buttons */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 28 }}>
+            {/* cancelLabel — Inter 16/w500/terracotta */}
+            <span style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 500, color: C.terracotta, cursor: 'pointer' }}>
+              Annulla
+            </span>
+            {/* confirmLabel — Inter 16/w500/tc_scura (in dark palette: #D88868 = lighter terracotta = destructive) */}
+            <span style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 500, color: C.tc_scura, cursor: 'pointer' }}>
+              Ripristina
+            </span>
+          </div>
+
+        </div>
       </div>
     </Phone>);
 
@@ -1406,14 +1708,20 @@ function App() {
         </div>
       </div>
 
-      {/* ROW 3: Schermate secondarie */}
+      {/* ROW 3: Schermate secondarie — Backup (tutti gli stati e overlay) */}
       <div>
         <div className="row-header">
           <div className="row-label">03 — Schermate secondarie</div>
-          <div className="row-title">Backup (stato connesso · indicatore attivo / sospeso)</div>
+          <div className="row-title">Backup — quattro stati + overlay Picker + Dialog</div>
         </div>
         <div className="screens-row">
-          <Scr label="Backup — indicatore attivo"><ScreenBackup /></Scr>
+          <Scr label="Backup — connesso (attivo)"><ScreenBackupConnected active={true} /></Scr>
+          <Scr label="Backup — connesso (sospeso)"><ScreenBackupConnected active={false} /></Scr>
+          <Scr label="Backup — stato vuoto (non connesso)"><ScreenBackupEmpty /></Scr>
+          <Scr label="Backup — errore"><ScreenBackupError /></Scr>
+          <Scr label="Backup — ripristino in corso"><ScreenRestoreProgress /></Scr>
+          <Scr label="Backup — picker versione (sheet)"><ScreenBackupPickerSheet /></Scr>
+          <Scr label="Backup — conferma ripristino (dialog)"><ScreenMetraConfirmDialog /></Scr>
         </div>
       </div>
 

@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -40,6 +39,12 @@ import '../../domain/use_cases/import_daily_logs.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/app_info_provider.dart';
 import '../../providers/use_case_providers.dart';
+import '../../core/widgets/settings/cupertino_picker_scaffold.dart';
+import '../../core/widgets/settings/metra_toggle.dart';
+import '../../core/widgets/settings/settings_card.dart';
+import '../../core/widgets/settings/settings_divider.dart';
+import '../../core/widgets/settings/settings_label.dart';
+import '../../core/widgets/settings/settings_row.dart';
 import '../backup/state/backup_notifier.dart';
 import '../backup/state/backup_state.dart';
 import 'state/settings_notifier.dart';
@@ -88,10 +93,10 @@ class SettingsScreen extends ConsumerWidget {
             ),
 
             // ── Preferenze ────────────────────────────────────────────
-            _SectionHeader(l10n.settings_section_preferences, first: true),
-            _GroupCard(
+            SettingsLabel(l10n.settings_section_preferences, first: true),
+            SettingsCard(
               children: [
-                _SettingsRow(
+                SettingsRow.nav(
                   label: l10n.settings_language_label,
                   semanticsLabel:
                       '${l10n.settings_language_label}: ${_languageName(l10n, settings.languageCode)}',
@@ -99,16 +104,16 @@ class SettingsScreen extends ConsumerWidget {
                   onTap: () =>
                       _showLanguagePicker(context, ref, settings, l10n),
                 ),
-                const _SettingsDivider(),
-                _SettingsRow(
+                const SettingsDivider(),
+                SettingsRow.nav(
                   label: l10n.settings_theme_label,
                   semanticsLabel:
                       '${l10n.settings_theme_label}: ${_themeName(l10n, settings.darkMode)}',
                   valueText: _themeName(l10n, settings.darkMode),
                   onTap: () => _showThemePicker(context, ref, settings, l10n),
                 ),
-                const _SettingsDivider(),
-                _SettingsRow(
+                const SettingsDivider(),
+                SettingsRow.nav(
                   label: l10n.settings_first_day_of_week_label,
                   semanticsLabel:
                       '${l10n.settings_first_day_of_week_label}: ${_firstDayName(l10n, settings.firstDayOfWeek)}',
@@ -120,37 +125,41 @@ class SettingsScreen extends ConsumerWidget {
             ),
 
             // ── Notifiche ─────────────────────────────────────────────
-            _SectionHeader(l10n.settings_section_notifications),
-            _GroupCard(
+            SettingsLabel(l10n.settings_section_notifications),
+            SettingsCard(
               children: [
-                _SettingsRow(
+                SettingsRow.toggle(
                   label: l10n.settings_notifications_label,
                   semanticsLabel:
                       '${l10n.settings_notifications_label}: ${settings.notificationsEnabled ? l10n.settings_notifications_on : l10n.settings_notifications_off}',
-                  toggle: _MetraToggle(
+                  toggle: MetraToggle(
                     value: settings.notificationsEnabled,
                     onChanged: (v) =>
                         _save(ref, settings.copyWith(notificationsEnabled: v)),
                   ),
-                  onTap: () => _save(
-                    ref,
-                    settings.copyWith(
-                      notificationsEnabled: !settings.notificationsEnabled,
+                ),
+                const SettingsDivider(),
+                Opacity(
+                  opacity: settings.notificationsEnabled ? 1.0 : 0.38,
+                  child: IgnorePointer(
+                    ignoring: !settings.notificationsEnabled,
+                    child: SettingsRow.nav(
+                      label: l10n.settings_advance_label,
+                      semanticsLabel:
+                          '${l10n.settings_advance_label}: ${l10n.settings_advance_value(settings.notificationDaysBefore)}',
+                      valueText: l10n.settings_advance_value(
+                        settings.notificationDaysBefore,
+                      ),
+                      onTap: () => _showCupertinoDaysPicker(
+                        context,
+                        ref,
+                        settings,
+                        l10n,
+                      ),
                     ),
                   ),
                 ),
-                const _SettingsDivider(),
-                _SettingsRow(
-                  label: l10n.settings_advance_label,
-                  semanticsLabel:
-                      '${l10n.settings_advance_label}: ${l10n.settings_advance_value(settings.notificationDaysBefore)}',
-                  valueText: l10n
-                      .settings_advance_value(settings.notificationDaysBefore),
-                  enabled: settings.notificationsEnabled,
-                  onTap: () =>
-                      _showCupertinoDaysPicker(context, ref, settings, l10n),
-                ),
-                const _SettingsDivider(),
+                const SettingsDivider(),
                 Builder(
                   builder: (rowCtx) {
                     final timeValue =
@@ -161,13 +170,18 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                     );
                     final label = l10n.settings_notification_time_label;
-                    return _SettingsRow(
-                      label: label,
-                      semanticsLabel: '$label: $timeValue',
-                      valueText: timeValue,
-                      enabled: settings.notificationsEnabled,
-                      onTap: () =>
-                          _showCupertinoTimePicker(rowCtx, ref, settings),
+                    return Opacity(
+                      opacity: settings.notificationsEnabled ? 1.0 : 0.38,
+                      child: IgnorePointer(
+                        ignoring: !settings.notificationsEnabled,
+                        child: SettingsRow.nav(
+                          label: label,
+                          semanticsLabel: '$label: $timeValue',
+                          valueText: timeValue,
+                          onTap: () =>
+                              _showCupertinoTimePicker(rowCtx, ref, settings),
+                        ),
+                      ),
                     );
                   },
                 ),
@@ -180,55 +194,47 @@ class SettingsScreen extends ConsumerWidget {
             ),
 
             // ── Registro ──────────────────────────────────────────────
-            _SectionHeader(l10n.settings_section_log),
-            _GroupCard(
+            SettingsLabel(l10n.settings_section_log),
+            SettingsCard(
               children: [
-                _SettingsRow(
+                SettingsRow.toggle(
                   label: l10n.settings_pain_label,
-                  toggle: _MetraToggle(
+                  toggle: MetraToggle(
                     value: settings.painEnabled,
                     onChanged: (v) =>
                         _save(ref, settings.copyWith(painEnabled: v)),
                   ),
-                  onTap: () => _save(
-                    ref,
-                    settings.copyWith(painEnabled: !settings.painEnabled),
-                  ),
                 ),
-                const _SettingsDivider(),
-                _SettingsRow(
+                const SettingsDivider(),
+                SettingsRow.toggle(
                   label: l10n.settings_notes_label,
-                  toggle: _MetraToggle(
+                  toggle: MetraToggle(
                     value: settings.notesEnabled,
                     onChanged: (v) =>
                         _save(ref, settings.copyWith(notesEnabled: v)),
-                  ),
-                  onTap: () => _save(
-                    ref,
-                    settings.copyWith(notesEnabled: !settings.notesEnabled),
                   ),
                 ),
               ],
             ),
 
             // ── Dati ──────────────────────────────────────────────────
-            _SectionHeader(l10n.settings_section_privacy),
-            _GroupCard(
+            SettingsLabel(l10n.settings_section_privacy),
+            SettingsCard(
               children: [
-                _SettingsRow(
+                SettingsRow.nav(
                   label: l10n.settings_backup_label,
                   semanticsLabel:
                       '${l10n.settings_backup_label}: $backupValueText',
                   valueText: backupValueText,
                   onTap: () => context.push('/backup'),
                 ),
-                const _SettingsDivider(),
-                _SettingsRow(
+                const SettingsDivider(),
+                SettingsRow.action(
                   label: l10n.settings_export_csv,
                   onTap: () => _handleExport(context, ref, l10n),
                 ),
-                const _SettingsDivider(),
-                _SettingsRow(
+                const SettingsDivider(),
+                SettingsRow.action(
                   label: l10n.settings_import_csv,
                   onTap: () => _handleImport(context, ref, l10n),
                 ),
@@ -236,31 +242,28 @@ class SettingsScreen extends ConsumerWidget {
             ),
 
             // ── Informazioni ──────────────────────────────────────────
-            _SectionHeader(l10n.settings_section_about),
-            _GroupCard(
+            SettingsLabel(l10n.settings_section_about),
+            SettingsCard(
               children: [
-                _SettingsRow(
+                SettingsRow.nav(
                   label: l10n.settings_help_label,
-                  showChevron: true,
                   onTap: () => launchUrl(
                     Uri.parse(AppConstants.kUrlHelp),
                     mode: LaunchMode.externalApplication,
                   ),
                 ),
-                const _SettingsDivider(),
-                _SettingsRow(
+                const SettingsDivider(),
+                SettingsRow.nav(
                   label: l10n.settings_github_label,
                   semanticsLabel: '${l10n.settings_github_label} — GPL-3.0',
-                  showChevron: true,
                   onTap: () => launchUrl(
                     Uri.parse(AppConstants.kUrlGitHub),
                     mode: LaunchMode.externalApplication,
                   ),
                 ),
-                const _SettingsDivider(),
-                _SettingsRow(
+                const SettingsDivider(),
+                SettingsRow.nav(
                   label: l10n.settings_privacy_policy,
-                  showChevron: true,
                   onTap: () => launchUrl(
                     Uri.parse(AppConstants.kUrlPrivacy),
                     mode: LaunchMode.externalApplication,
@@ -270,14 +273,13 @@ class SettingsScreen extends ConsumerWidget {
             ),
 
             // ── Azioni irreversibili ──────────────────────────────────
-            _SectionHeader(l10n.settings_section_danger),
-            _GroupCard(
+            SettingsLabel(l10n.settings_section_danger),
+            SettingsCard(
               children: [
-                _SettingsRow(
+                SettingsRow.destructive(
                   label: l10n.settings_delete_all,
                   semanticsLabel:
                       '${l10n.settings_delete_all} — ${l10n.settings_delete_all_confirm_body}',
-                  isDestructive: true,
                   onTap: () => _showDeleteConfirmation(context, ref, l10n),
                 ),
               ],
@@ -549,7 +551,7 @@ class SettingsScreen extends ConsumerWidget {
 
     await showCupertinoModalPopup<void>(
       context: context,
-      builder: (ctx) => _CupertinoPickerScaffold(
+      builder: (ctx) => WheelPickerScaffold(
         wheelBuilder: (resetKey, scheduleAutoSave) => CupertinoDatePicker(
           key: resetKey,
           mode: CupertinoDatePickerMode.time,
@@ -600,7 +602,7 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) {
         final colors = MetraColors.of(ctx);
-        return _CupertinoPickerScaffold(
+        return WheelPickerScaffold(
           wheelBuilder: (resetKey, scheduleAutoSave) => CupertinoTheme(
             data: CupertinoThemeData(
               brightness: Theme.of(ctx).brightness,
@@ -936,371 +938,6 @@ class SettingsScreen extends ConsumerWidget {
 // ---------------------------------------------------------------------------
 // Private sub-widgets
 // ---------------------------------------------------------------------------
-
-/// Wheel-stop debounce window. After the wheel emits its last
-/// [CupertinoDatePicker.onDateTimeChanged] / [CupertinoPicker.onSelectedItemChanged],
-/// the autosave fires this far in the future. Cancelled on close (OK / barrier
-/// dismiss), on Ripristina (then resave original synchronously), and on tap-OK
-/// when a timer is still pending (then synchronous save before pop).
-const Duration _kPickerAutoSaveDebounce = Duration(milliseconds: 250);
-
-/// Shared chrome for the two iOS Cupertino pickers.
-///
-/// Owns the 310 px container, CupertinoTheme wrap, 44 px toolbar Row with
-/// rc13 styling, and an [Expanded] slot for the wheel widget.
-///
-/// [wheelBuilder] receives a [resetKey] (bumped on Ripristina in T-03 so the
-/// wheel re-seeds) and a [scheduleAutoSave] callback (wired in T-03 to drive
-/// the 250 ms debounce Timer). In T-01 [scheduleAutoSave] is `() {}`.
-///
-/// Toolbar: left = Ripristina (cancel pending debounce, resave seed, wheel
-/// rebuilds, modal stays open), right = OK (flush pending debounce if active,
-/// then close modal).
-class _CupertinoPickerScaffold extends StatefulWidget {
-  const _CupertinoPickerScaffold({
-    required this.wheelBuilder,
-    required this.onAutoSave,
-    required this.onRestore,
-  });
-
-  /// Builds the wheel widget. Receives [resetKey] and [scheduleAutoSave].
-  final Widget Function(
-    Key resetKey,
-    void Function() scheduleAutoSave,
-  ) wheelBuilder;
-
-  /// Called synchronously by the OK button to persist the current selection.
-  final VoidCallback onAutoSave;
-
-  /// Called when the user requests a reset (T-03). Unused in T-01.
-  final VoidCallback onRestore;
-
-  @override
-  State<_CupertinoPickerScaffold> createState() =>
-      _CupertinoPickerScaffoldState();
-}
-
-class _CupertinoPickerScaffoldState extends State<_CupertinoPickerScaffold> {
-  /// Bumped on every Ripristina tap to force the wheel widget to rebuild and
-  /// re-seed from the closure-captured initial value. Non-final by design.
-  Key _resetKey = UniqueKey();
-
-  /// Pending autosave timer. Scheduled after each wheel move, cancelled on
-  /// close, on Ripristina (then synchronous resave), and on tap-OK when still
-  /// active (then synchronous flush before pop).
-  Timer? _debounce;
-
-  /// Schedules (or reschedules) the autosave debounce.
-  ///
-  /// Called from [wheelBuilder]'s [scheduleAutoSave] callback on every
-  /// [onSelectedItemChanged] / [onDateTimeChanged] event.
-  void _scheduleAutoSave() {
-    _debounce?.cancel();
-    _debounce = Timer(_kPickerAutoSaveDebounce, () {
-      _debounce = null;
-      widget.onAutoSave();
-    });
-  }
-
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final colors = MetraColors.of(context);
-
-    return CupertinoTheme(
-      data: CupertinoThemeData(
-        brightness: Theme.of(context).brightness,
-        primaryColor: colors.accentFlow,
-      ),
-      child: Container(
-        height: 310,
-        color: colors.bgSurface,
-        child: Column(
-          children: [
-            SizedBox(
-              height: 44,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Left button: Ripristina — resets wheel to seed, resaves
-                  // original synchronously, and keeps the modal open.
-                  Semantics(
-                    label: l10n.common_restore,
-                    button: true,
-                    child: CupertinoButton(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      onPressed: () {
-                        // Cancel any pending debounce before restoring.
-                        _debounce?.cancel();
-                        _debounce = null;
-                        // Resave the seed value synchronously.
-                        widget.onRestore();
-                        // Bump the key so the wheel rebuilds to the seed.
-                        setState(() => _resetKey = UniqueKey());
-                        // Modal stays open — do NOT pop.
-                      },
-                      child: Text(
-                        l10n.common_restore,
-                        style: TextStyle(
-                          color: colors.accentFlow,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 17,
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Right button: OK — pure close. Flushes pending debounce
-                  // synchronously if one is still active.
-                  CupertinoButton(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    onPressed: () {
-                      if (_debounce?.isActive == true) {
-                        _debounce!.cancel();
-                        _debounce = null;
-                        widget.onAutoSave();
-                      }
-                      Navigator.of(context).pop();
-                    },
-                    child: Text(
-                      l10n.common_ok,
-                      style: TextStyle(
-                        color: colors.accentFlow,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 17,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: widget.wheelBuilder(_resetKey, _scheduleAutoSave),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MetraToggle extends StatelessWidget {
-  const _MetraToggle({required this.value, required this.onChanged});
-
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = MetraColors.of(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final onColor = colors.accentFlow;
-    // Off track: terracotta@8% in light, sunken bg in dark.
-    // These are asymmetric tokens — light uses ink@0x14, dark uses bgSunken
-    // (ivory@0x0D). Keeping the ternary because bgSunken alpha differs per mode.
-    final offColor = isDark ? colors.bgSunken : colors.ink.withAlpha(0x14);
-    final dotColor = colors.bgSurface;
-    final reduceMotion = MediaQuery.of(context).disableAnimations;
-    final dur = Duration(
-      milliseconds: reduceMotion ? MetraMotion.instant : MetraMotion.fast,
-    );
-
-    return Semantics(
-      toggled: value,
-      excludeSemantics: true,
-      child: GestureDetector(
-        onTap: () => onChanged(!value),
-        child: AnimatedContainer(
-          duration: dur,
-          width: 48,
-          height: 28,
-          decoration: BoxDecoration(
-            color: value ? onColor : offColor,
-            borderRadius: BorderRadius.circular(MetraRadius.mmd), // 14
-          ),
-          child: Stack(
-            children: [
-              AnimatedPositioned(
-                duration: dur,
-                top: 3,
-                left: value ? 23.0 : 3.0,
-                child: Container(
-                  width: 22,
-                  height: 22,
-                  decoration: BoxDecoration(
-                    color: dotColor,
-                    borderRadius: BorderRadius.circular(11),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader(this.text, {this.first = false});
-
-  final String text;
-  final bool first;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = MetraColors.of(context).textSecondary;
-
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        MetraSpacing.s6,
-        first ? 8.0 : MetraSpacing.s6,
-        MetraSpacing.s6,
-        12.0,
-      ),
-      child: Semantics(
-        header: true,
-        child: Text(
-          text.toUpperCase(),
-          style: MetraTypography.sectionLabel.copyWith(color: color),
-        ),
-      ),
-    );
-  }
-}
-
-class _GroupCard extends StatelessWidget {
-  const _GroupCard({required this.children});
-
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = MetraColors.of(context);
-    final bg = colors.bgSurface;
-    final border = colors.borderSubtle;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: MetraSpacing.s6),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(MetraRadius.lg), // 16
-        border: Border.all(color: border, width: 1),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(children: children),
-    );
-  }
-}
-
-class _SettingsDivider extends StatelessWidget {
-  const _SettingsDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(height: 1, color: MetraColors.of(context).borderSubtle);
-  }
-}
-
-class _SettingsRow extends StatelessWidget {
-  const _SettingsRow({
-    required this.label,
-    this.semanticsLabel,
-    this.valueText,
-    this.toggle,
-    this.showChevron = false,
-    this.isDestructive = false,
-    this.enabled = true,
-    required this.onTap,
-  });
-
-  final String label;
-  final String? semanticsLabel;
-
-  /// Value rows: shows text + chevron on the right.
-  final String? valueText;
-
-  /// Toggle rows: shows a _MetraToggle on the right.
-  final Widget? toggle;
-
-  /// Link rows: shows a bare chevron with no value text.
-  final bool showChevron;
-
-  /// Destructive rows: terracotta-tinted background and accentFlowStrong label.
-  final bool isDestructive;
-
-  /// When false, the row is greyed out and taps are ignored.
-  final bool enabled;
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = MetraColors.of(context);
-
-    // Disabled rows are greyed out — neither destructive nor full primary.
-    final labelColor = !enabled
-        ? colors.textSecondary
-        : isDestructive
-            ? colors.accentFlowStrong
-            : colors.textPrimary;
-    final bg =
-        isDestructive ? colors.accentFlow.withAlpha(0x0D) : Colors.transparent;
-    final secondaryColor =
-        enabled ? colors.textSecondary : colors.textSecondary.withAlpha(0x80);
-    final chevronColor = secondaryColor;
-
-    Widget? trailing;
-    if (toggle != null) {
-      trailing = toggle;
-    } else if (valueText != null || showChevron) {
-      trailing = Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (valueText != null) ...[
-            Text(
-              valueText!,
-              style: MetraTypography.listDate.copyWith(color: secondaryColor),
-            ),
-            const SizedBox(width: MetraSpacing.s2),
-          ],
-          Icon(Icons.chevron_right, size: 16, color: chevronColor),
-        ],
-      );
-    }
-
-    return Semantics(
-      label: semanticsLabel ?? label,
-      button: true,
-      enabled: enabled,
-      child: InkWell(
-        // Suppress tap entirely when disabled.
-        onTap: enabled ? onTap : null,
-        child: Container(
-          height: 56,
-          padding: const EdgeInsets.symmetric(horizontal: MetraSpacing.s5),
-          color: bg,
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  label,
-                  style: MetraTypography.listTitle.copyWith(color: labelColor),
-                ),
-              ),
-              if (trailing != null) trailing,
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _KoFiPill extends StatelessWidget {
   const _KoFiPill({required this.label, required this.onTap});

@@ -25,6 +25,8 @@ import 'package:metra/core/theme/metra_theme.dart';
 import 'package:metra/domain/entities/app_settings_data.dart';
 import 'package:metra/domain/entities/first_day_of_week_setting.dart';
 import 'package:metra/domain/use_cases/delete_all_data.dart';
+import 'package:metra/core/widgets/settings/metra_toggle.dart';
+import 'package:metra/core/widgets/settings/settings_row.dart';
 import 'package:metra/features/backup/state/backup_notifier.dart';
 import 'package:metra/features/backup/state/backup_state.dart';
 import 'package:metra/features/settings/settings_screen.dart';
@@ -143,6 +145,12 @@ void main() {
     });
 
     testWidgets('renders pain and notes toggles', (tester) async {
+      // Tall viewport — SettingsRow(toggle) is ~72 dp; without extra height the
+      // REGISTRO section items are outside the default 800×600 lazy-list window.
+      tester.view.physicalSize = const Size(800, 4000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
       final stub = _StubSettingsNotifier(defaults);
       await tester.pumpWidget(
         _wrap([settingsNotifierProvider.overrideWith(() => stub)]),
@@ -183,6 +191,11 @@ void main() {
   group('SettingsScreen — toggles', () {
     testWidgets('toggling pain switch calls save with flipped painEnabled',
         (tester) async {
+      // Tall viewport — REGISTRO section would be off-screen at 800×600.
+      tester.view.physicalSize = const Size(800, 4000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
       final stub =
           _StubSettingsNotifier(defaults); // defaults: painEnabled=true
       await tester.pumpWidget(
@@ -190,8 +203,17 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Tap the pain row label — the row's InkWell flips painEnabled.
-      await tester.tap(find.text('Dolore'));
+      // SettingsRow.toggle deliberately does NOT fire onChanged on row tap.
+      // Tap the MetraToggle widget directly (pain row precedes notes row in DOM).
+      await tester.tap(
+        find.descendant(
+          of: find.ancestor(
+            of: find.text('Dolore'),
+            matching: find.byType(SettingsRow),
+          ),
+          matching: find.byType(MetraToggle),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(stub.savedSettings?.painEnabled, isFalse);

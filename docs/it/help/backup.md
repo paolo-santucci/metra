@@ -65,15 +65,15 @@ Il backup contiene il contenuto completo del database cifrato:
 
 ## Ripristinare da un backup
 
-![Flusso di ripristino: selezione versione nella finestra "Scegli la versione", poi inserimento passphrase, poi avanzamento e conferma completamento.](/metra/assets/backup-restore-it.png)
+![Flusso di ripristino: pannello di selezione versione, poi inserimento passphrase, poi avanzamento e conferma completamento.](/metra/assets/backup-restore-it.png)
 
 1. Installa Mētra sul nuovo dispositivo (o dopo un ripristino di fabbrica).
 2. Completa il flusso di benvenuto, i numeri inseriti non contano, verranno sovrascritti dal ripristino.
 3. Vai in **Impostazioni → Backup cloud**.
 4. Collega il tuo account Dropbox. Se sono presenti backup ti verrà indicato e sarà riportata la data dell'ultimo.
-5. Tocca **Ripristina dal backup** e conferma nella finestra di avviso che i dati attuali verranno sostituiti.
-6. Nella finestra **Scegli versione** vedrai fino a 3 backup disponibili (il più recente è già selezionato), ciascuno con data, ora e dimensione.
-7. Tocca **Usa più recente** per ripristinare direttamente l'ultimo backup, oppure seleziona una riga e tocca **Ripristina** per scegliere una versione specifica.
+5. Tocca **Ripristina da backup** e conferma nella finestra di avviso che i dati attuali verranno sostituiti.
+6. Apparirà un pannello con una rotella di selezione: scorri per scegliere la versione da ripristinare. Ogni voce mostra data, ora e dimensione del file (fino a 3 backup disponibili, il più recente è quello più in alto).
+7. Tocca **Ripristina** per confermare, oppure **Annulla** per tornare indietro.
 8. Inserisci la tua passphrase. Mētra scarica il backup scelto, lo decifra e sostituisce il database locale.
 
 > ⚠️ **Attenzione:** il ripristino sovrascrive tutti i dati attualmente sul dispositivo. Questa operazione non può essere annullata.

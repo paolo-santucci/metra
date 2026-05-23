@@ -64,6 +64,7 @@ abstract final class MetraRadius {
   static const double lg = 16;
   static const double lgg = 18;
   static const double xl = 20; // year-label pill (calendar)
+  static const double xxl = 24; // dialog border radius (MetraConfirmDialog)
   static const double phone = 44; // phone-corner large elements
 }
 

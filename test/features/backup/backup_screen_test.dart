@@ -2,6 +2,35 @@
 //
 // This file is part of Métra.
 // SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Métra is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published
+// by the Free Software Foundation, either version 3 of the License,
+// or (at your option) any later version.
+//
+// Métra is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Métra. If not, see <https://www.gnu.org/licenses/>.
+
+// TASK-30 — Group H: BackupScreen dispatcher widget tests (full rewrite)
+//
+// Tests in this file exercise the BackupScreen dispatcher (TASK-21 / FR-20).
+// Each test verifies a single user-visible routing behaviour.
+//
+// Tests removed from this file during the TASK-30 rewrite and their new homes:
+//   - Auto-backup indicator (FR-20/FR-21 StatusIndicator)  → TASK-31 Group I
+//   - PassphraseDialog (setNew / unlock validation)         → passphrase_dialog_token_test.dart
+//   - _handleBackup FR-12/FR-13/FR-14 passphrase cache      → TASK-31 Group I
+//   - FR-14d confirm-CTA colour                             → TASK-27 Group E
+//   - FR-14e failure snackbar                               → TASK-35 integration scenarios
+//   - Restore flow picker+passphrase (FR-14 E2E)            → TASK-35 integration scenarios
+//   - HC-5 no filename-parsing                              → TASK-34 Group M
+//
+// Platform matrix: Linux CI, headless (no device-farm dependency).
 
 import 'dart:io';
 
@@ -81,7 +110,7 @@ class _StubBackupNotifier extends BackupNotifier {
 // Test helper
 // ---------------------------------------------------------------------------
 
-/// Default seed used by [_wrap] / [_wrapWithStorage] to stub
+/// Default seed used by [_wrap] to stub
 /// [backupFileListProvider].  One entry is enough to allow the picker to
 /// open and "Use newest" to be tapped; tests that need specific entries
 /// should pass a custom [fakeProvider].
@@ -119,900 +148,20 @@ Widget _wrap(
   );
 }
 
-/// Helper that also overrides [secureStorageProvider] with [storage].
-Widget _wrapWithStorage(
-  BackupState state, {
-  required InMemorySecureStorage storage,
-  _StubBackupNotifier? stub,
-  FakeDropboxProvider? fakeProvider,
-}) {
-  final notifierStub = stub ?? _StubBackupNotifier(state);
-  return ProviderScope(
-    overrides: [
-      backupNotifierProvider.overrideWith(() => notifierStub),
-      secureStorageProvider.overrideWithValue(storage),
-      cloudBackupProvider.overrideWithValue(
-        fakeProvider ?? FakeDropboxProvider(seedEntries: [_defaultSeedEntry]),
-      ),
-    ],
-    child: MaterialApp(
-      theme: MetraTheme.light(),
-      locale: const Locale('en'),
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: const BackupScreen(),
-    ),
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
 void main() {
-  group('BackupScreen — not connected', () {
-    testWidgets('shows connect button when not connected', (tester) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => tester.view.resetPhysicalSize());
+  // =========================================================================
+  // Group H — BackupScreen dispatcher (FR-20)
+  // Spec ref: §7.1 Group H
+  // =========================================================================
 
-      await tester.pumpWidget(_wrap(const BackupNotConnected()));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Connect Dropbox'), findsOneWidget);
-      expect(find.text('Back up now'), findsNothing);
-    });
-  });
-
-  group('BackupScreen — connected', () {
-    testWidgets('shows email and backup button when connected', (tester) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      await tester.pumpWidget(
-        _wrap(
-          const BackupConnected(
-            email: 'user@example.com',
-            autoBackupActive: true,
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.textContaining('user@example.com'), findsOneWidget);
-      expect(find.text('Back up now'), findsOneWidget);
-      expect(find.text('Restore from backup'), findsOneWidget);
-    });
-
-    testWidgets('restore shows confirm dialog', (tester) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      await tester.pumpWidget(
-        _wrap(const BackupConnected(email: 'a@b.com', autoBackupActive: true)),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Restore from backup'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Restore backup?'), findsOneWidget);
-    });
-
-    testWidgets('disconnect shows confirm dialog', (tester) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      await tester.pumpWidget(
-        _wrap(const BackupConnected(email: 'a@b.com', autoBackupActive: true)),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Disconnect'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Disconnect Dropbox?'), findsOneWidget);
-    });
-  });
-
-  group('BackupScreen — running', () {
-    testWidgets('shows loading indicator when backing up', (tester) async {
-      await tester.pumpWidget(
-        _wrap(const BackupRunning(BackupOperation.backingUp)),
-      );
-      await tester.pump();
-
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    });
-  });
-
-  group('BackupScreen — error', () {
-    testWidgets('error state shows live region Semantics', (tester) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      await tester.pumpWidget(_wrap(const BackupErrorState('Upload failed')));
-      await tester.pumpAndSettle();
-
-      final semantics = tester.getSemantics(find.text('Upload failed'));
-      expect(
-        semantics.flagsCollection.isLiveRegion,
-        isTrue,
-      );
-    });
-  });
-
-  group('PassphraseDialog', () {
-    testWidgets('shows mismatch error when fields differ', (tester) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      await tester.pumpWidget(
-        _wrap(const BackupConnected(email: 'a@b.com', autoBackupActive: true)),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Back up now'));
-      await tester.pumpAndSettle();
-
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Passphrase').first,
-        'password1',
-      );
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Confirm passphrase').first,
-        'password2',
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Passphrases do not match.'), findsOneWidget);
-    });
-
-    testWidgets('disables submit when passphrase < 8 chars', (tester) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      await tester.pumpWidget(
-        _wrap(const BackupConnected(email: 'a@b.com', autoBackupActive: true)),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Back up now'));
-      await tester.pumpAndSettle();
-
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Passphrase').first,
-        'short',
-      );
-      await tester.pumpAndSettle();
-
-      final button = tester.widget<TextButton>(
-        find.widgetWithText(TextButton, 'I understand — save and back up'),
-      );
-      expect(button.onPressed, isNull);
-    });
-
-    testWidgets('shows too-short error when passphrase < 8 chars',
-        (tester) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      await tester.pumpWidget(
-        _wrap(const BackupConnected(email: 'a@b.com', autoBackupActive: true)),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Back up now'));
-      await tester.pumpAndSettle();
-
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Passphrase').first,
-        'short',
-      );
-      await tester.pumpAndSettle();
-
-      expect(
-        find.text('Passphrase must be at least 8 characters.'),
-        findsOneWidget,
-      );
-    });
-  });
-
-  group('Restore flow — passphrase unlock', () {
+  group('Group H — BackupScreen dispatcher (FR-20)', () {
+    // H-1: BackupNotConnected → BackupEmptyView
     testWidgets(
-        'restore confirm -> unlock dialog -> calls restoreWithPassphrase',
-        (tester) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      final stub = _StubBackupNotifier(
-        const BackupConnected(email: 'a@b.com', autoBackupActive: true),
-      );
-      await tester.pumpWidget(
-        _wrap(
-          const BackupConnected(email: 'a@b.com', autoBackupActive: true),
-          stub: stub,
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      // 1. Tap "Restore from backup".
-      await tester.tap(find.text('Restore from backup'));
-      await tester.pumpAndSettle();
-
-      // 2. Confirm the destructive dialog.
-      expect(find.text('Restore backup?'), findsOneWidget);
-      await tester.tap(find.widgetWithText(TextButton, 'Restore'));
-      await tester.pumpAndSettle();
-
-      // 3. Picker dialog appears — tap "Use newest" shortcut.
-      expect(find.text('Choose version'), findsOneWidget);
-      await tester.tap(find.widgetWithText(TextButton, 'Use newest'));
-      await tester.pumpAndSettle();
-
-      // 4. Passphrase unlock dialog appears.
-      expect(find.text('Enter passphrase'), findsOneWidget);
-      // Only one passphrase field — no Confirm field in unlock mode.
-      expect(
-        find.widgetWithText(TextField, 'Confirm passphrase'),
-        findsNothing,
-      );
-
-      // 5. Enter a passphrase (any non-empty value passes unlock validation).
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Passphrase').first,
-        'my-secret',
-      );
-      await tester.pumpAndSettle();
-
-      // 6. Tap the unlock-and-restore button.
-      await tester.tap(
-        find.widgetWithText(TextButton, 'Unlock and restore'),
-      );
-      await tester.pumpAndSettle();
-
-      // 7. Verify the notifier received the entered passphrase.
-      expect(stub.capturedRestorePassphrase, 'my-secret');
-    });
-
-    testWidgets(
-        'unlock mode: short passphrase still enables submit '
-        '(no min-length)', (tester) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      await tester.pumpWidget(
-        _wrap(const BackupConnected(email: 'a@b.com', autoBackupActive: true)),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Restore from backup'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(TextButton, 'Restore'));
-      await tester.pumpAndSettle();
-
-      // Picker dialog — use "Use newest" shortcut.
-      await tester.tap(find.widgetWithText(TextButton, 'Use newest'));
-      await tester.pumpAndSettle();
-
-      // 4-char passphrase — would fail in setNew mode but is fine in unlock.
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Passphrase').first,
-        'abcd',
-      );
-      await tester.pumpAndSettle();
-
-      final button = tester.widget<TextButton>(
-        find.widgetWithText(TextButton, 'Unlock and restore'),
-      );
-      expect(button.onPressed, isNotNull);
-      // Min-length error message must NOT appear in unlock mode.
-      expect(
-        find.text('Passphrase must be at least 8 characters.'),
-        findsNothing,
-      );
-    });
-
-    testWidgets('unlock mode: empty passphrase keeps submit disabled',
-        (tester) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      await tester.pumpWidget(
-        _wrap(const BackupConnected(email: 'a@b.com', autoBackupActive: true)),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Restore from backup'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(TextButton, 'Restore'));
-      await tester.pumpAndSettle();
-
-      // Picker dialog — use "Use newest" shortcut.
-      await tester.tap(find.widgetWithText(TextButton, 'Use newest'));
-      await tester.pumpAndSettle();
-
-      // No text entered — button must be disabled.
-      final button = tester.widget<TextButton>(
-        find.widgetWithText(TextButton, 'Unlock and restore'),
-      );
-      expect(button.onPressed, isNull);
-    });
-
-    testWidgets('cancel on confirm dialog skips passphrase prompt',
-        (tester) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      final stub = _StubBackupNotifier(
-        const BackupConnected(email: 'a@b.com', autoBackupActive: true),
-      );
-      await tester.pumpWidget(
-        _wrap(
-          const BackupConnected(email: 'a@b.com', autoBackupActive: true),
-          stub: stub,
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Restore from backup'));
-      await tester.pumpAndSettle();
-
-      // Cancel the destructive confirmation.
-      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
-      await tester.pumpAndSettle();
-
-      // No passphrase dialog must open and no passphrase captured.
-      expect(find.text('Enter passphrase'), findsNothing);
-      expect(stub.capturedRestorePassphrase, isNull);
-    });
-
-    testWidgets('cancel on passphrase dialog aborts cleanly', (tester) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      final stub = _StubBackupNotifier(
-        const BackupConnected(email: 'a@b.com', autoBackupActive: true),
-      );
-      await tester.pumpWidget(
-        _wrap(
-          const BackupConnected(email: 'a@b.com', autoBackupActive: true),
-          stub: stub,
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Restore from backup'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(TextButton, 'Restore'));
-      await tester.pumpAndSettle();
-
-      // Picker dialog — use "Use newest" shortcut to reach passphrase.
-      await tester.tap(find.widgetWithText(TextButton, 'Use newest'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Enter passphrase'), findsOneWidget);
-
-      // Cancel the passphrase dialog.
-      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
-      await tester.pumpAndSettle();
-
-      expect(stub.capturedRestorePassphrase, isNull);
-    });
-  });
-
-  // ---------------------------------------------------------------------------
-  // FR-12 / FR-13 / FR-14 — _handleBackup passphrase caching + button disable
-  // ---------------------------------------------------------------------------
-
-  group('_handleBackup — FR-12: Nth-time (cached passphrase)', () {
-    testWidgets(
-        'cached passphrase → no dialog → backupSilent called once '
-        '(FR-12 / BUG-D01)', (tester) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      final storage = InMemorySecureStorage()
-        ..values['metra_backup_passphrase_v1'] = 'cached-pass-123';
-      final stub = _StubBackupNotifier(
-        const BackupConnected(
-          email: 'user@example.com',
-          autoBackupActive: true,
-        ),
-      );
-
-      await tester.pumpWidget(
-        _wrapWithStorage(
-          const BackupConnected(
-            email: 'user@example.com',
-            autoBackupActive: true,
-          ),
-          storage: storage,
-          stub: stub,
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Back up now'));
-      await tester.pumpAndSettle();
-
-      // Dialog must NOT appear (FR-12: cached passphrase path skips dialog).
-      expect(find.text('Set passphrase'), findsNothing);
-
-      // backupNow called once; backupSilent and backupWithPassphrase never called.
-      expect(stub.backupNowCallCount, 1);
-      expect(stub.backupSilentCallCount, 0);
-      expect(stub.backupWithPassphraseCallCount, 0);
-
-      // Cached passphrase must NOT be rewritten (FR-12 read-once invariant).
-      expect(storage.values['metra_backup_passphrase_v1'], 'cached-pass-123');
-    });
-  });
-
-  group('_handleBackup — FR-13: first-time (no cached passphrase)', () {
-    testWidgets(
-        'no passphrase in storage → dialog shown → confirm → '
-        'backupWithPassphrase called (FR-13 / EC-01)', (tester) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      final storage = InMemorySecureStorage(); // empty — no cached passphrase
-      final stub = _StubBackupNotifier(
-        const BackupConnected(
-          email: 'user@example.com',
-          autoBackupActive: true,
-        ),
-      );
-
-      await tester.pumpWidget(
-        _wrapWithStorage(
-          const BackupConnected(
-            email: 'user@example.com',
-            autoBackupActive: true,
-          ),
-          storage: storage,
-          stub: stub,
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Back up now'));
-      await tester.pumpAndSettle();
-
-      // PassphraseDialog must appear in setNew mode.
-      expect(find.text('Set a backup passphrase'), findsOneWidget);
-      expect(
-        find.widgetWithText(TextField, 'Confirm passphrase'),
-        findsOneWidget,
-      );
-
-      // Enter a valid passphrase (≥ 8 chars, matching confirm).
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Passphrase').first,
-        'my-secret-pass',
-      );
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Confirm passphrase').first,
-        'my-secret-pass',
-      );
-      await tester.pumpAndSettle();
-
-      // Tap confirm.
-      await tester.tap(
-        find.widgetWithText(TextButton, 'I understand — save and back up'),
-      );
-      await tester.pumpAndSettle();
-
-      // backupWithPassphrase called with the entered value.
-      expect(stub.capturedBackupPassphrase, 'my-secret-pass');
-      expect(stub.backupWithPassphraseCallCount, 1);
-      // backupSilent must NOT be called.
-      expect(stub.backupSilentCallCount, 0);
-    });
-
-    testWidgets(
-        'cancel on setNew dialog → no write, no notifier call, '
-        'button re-enables (FR-13 cancel path)', (tester) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      final storage = InMemorySecureStorage(); // empty
-      final stub = _StubBackupNotifier(
-        const BackupConnected(
-          email: 'user@example.com',
-          autoBackupActive: true,
-        ),
-      );
-
-      await tester.pumpWidget(
-        _wrapWithStorage(
-          const BackupConnected(
-            email: 'user@example.com',
-            autoBackupActive: true,
-          ),
-          storage: storage,
-          stub: stub,
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Back up now'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Set a backup passphrase'), findsOneWidget);
-
-      // Cancel without confirming.
-      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
-      await tester.pumpAndSettle();
-
-      // No write to secure storage.
-      expect(storage.values.containsKey('metra_backup_passphrase_v1'), isFalse);
-      // No notifier calls.
-      expect(stub.backupWithPassphraseCallCount, 0);
-      expect(stub.backupSilentCallCount, 0);
-      // Button is re-enabled (not stuck disabled).
-      final button = tester.widget<ElevatedButton>(
-        find.widgetWithText(ElevatedButton, 'Back up now'),
-      );
-      expect(button.onPressed, isNotNull);
-    });
-  });
-
-  group('_handleBackup — FR-14: button state', () {
-    testWidgets(
-        'Salva ora button is not present when state is BackupRunning '
-        '(FR-14 / EC-02)', (tester) async {
-      // When state is BackupRunning, the screen switches to _RunningBody which
-      // has no "Back up now" button. Absence = unreachable = disabled per FR-14.
-      await tester.pumpWidget(
-        _wrap(const BackupRunning(BackupOperation.backingUp)),
-      );
-      await tester.pump();
-
-      expect(
-        find.widgetWithText(ElevatedButton, 'Back up now'),
-        findsNothing,
-      );
-    });
-  });
-
-  // restore-picker-dialog group removed in TASK-22.
-  // Equivalent coverage will be written by TASK-28 (Group F) and TASK-35.
-  // TASK-30 will rewrite the full backup_screen_test.dart suite.
-
-// ---------------------------------------------------------------------------
-// TASK-20 — BackupScreen._handleRestore rewire + FR-14d + FR-14e
-// ---------------------------------------------------------------------------
-
-  group('BackupScreen — TASK-20 restore rewire', () {
-    final twoEntries = [
-      BackupFileEntry(
-        name: 'newest-t20.enc',
-        timestampUtc: DateTime.utc(2026, 5, 17, 12),
-        sizeBytes: 2048,
-      ),
-      BackupFileEntry(
-        name: 'older-t20.enc',
-        timestampUtc: DateTime.utc(2026, 5, 16, 12),
-        sizeBytes: 2048,
-      ),
-    ];
-
-    testWidgets(
-        'FR-14 E2E: confirm → picker → select second row → passphrase → '
-        'notifier called with correct filename', (tester) async {
-      tester.view.physicalSize = const Size(2400, 6000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
-
-      final stub = _StubBackupNotifier(
-        const BackupConnected(email: 'e2e@test.com', autoBackupActive: true),
-      );
-      await tester.pumpWidget(
-        _wrap(
-          const BackupConnected(email: 'e2e@test.com', autoBackupActive: true),
-          stub: stub,
-          fakeProvider: FakeDropboxProvider(seedEntries: twoEntries),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      // 1. Tap "Restore from backup".
-      await tester.tap(find.text('Restore from backup'));
-      await tester.pumpAndSettle();
-
-      // 2. Confirm the destructive dialog.
-      await tester.tap(find.widgetWithText(TextButton, 'Restore'));
-      await tester.pumpAndSettle();
-
-      // 3. Picker opens — tap the second row, then "Restore" (EN: restorePickerRestoreThisVersion).
-      //    The confirm dialog from step 2 is fully dismissed by pumpAndSettle above,
-      //    so only the picker's "Restore" button is present at this point.
-      await tester.tap(find.byType(RadioListTile<String>).at(1));
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.widgetWithText(TextButton, 'Restore'),
-      );
-      await tester.pumpAndSettle();
-
-      // 4. Enter passphrase and confirm.
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Passphrase').first,
-        'test-pass',
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.widgetWithText(TextButton, 'Unlock and restore'),
-      );
-      await tester.pumpAndSettle();
-
-      // 5. Notifier must have received the selected filename.
-      expect(
-        stub.capturedRestoreFilename,
-        equals('older-t20.enc'),
-      );
-      expect(stub.capturedRestorePassphrase, equals('test-pass'));
-    });
-
-    testWidgets(
-        'FR-14d — restore confirm CTA uses foregroundColor: colorScheme.error',
-        (tester) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      await tester.pumpWidget(
-        _wrap(const BackupConnected(email: 'a@b.com', autoBackupActive: true)),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Restore from backup'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Restore backup?'), findsOneWidget);
-
-      final restoreButton = tester.widget<TextButton>(
-        find.widgetWithText(TextButton, 'Restore'),
-      );
-      final colorScheme = MetraTheme.light().colorScheme;
-      final resolved =
-          restoreButton.style!.foregroundColor!.resolve(<WidgetState>{});
-      expect(resolved, equals(colorScheme.error));
-    });
-
-    testWidgets(
-        'FR-14d — disconnect confirm CTA uses foregroundColor: colorScheme.error',
-        (tester) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      await tester.pumpWidget(
-        _wrap(const BackupConnected(email: 'a@b.com', autoBackupActive: true)),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Disconnect'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Disconnect Dropbox?'), findsOneWidget);
-
-      // The dialog's CTA is identified by being a descendant of the AlertDialog,
-      // not the screen-level "Disconnect" button that opened it.
-      final disconnectButton = tester.widget<TextButton>(
-        find.descendant(
-          of: find.byType(AlertDialog),
-          matching: find.widgetWithText(TextButton, 'Disconnect'),
-        ),
-      );
-      final colorScheme = MetraTheme.light().colorScheme;
-      final resolved =
-          disconnectButton.style!.foregroundColor!.resolve(<WidgetState>{});
-      expect(resolved, equals(colorScheme.error));
-    });
-
-    testWidgets(
-        'FR-14e — failure result drives failure snackbar; '
-        'no success snackbar shown on failure', (tester) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      final stub = _StubBackupNotifier(
-        const BackupConnected(email: 'fr14e@test.com', autoBackupActive: true),
-      )..restoreFailMessage = 'test-failure';
-
-      await tester.pumpWidget(
-        _wrap(
-          const BackupConnected(
-            email: 'fr14e@test.com',
-            autoBackupActive: true,
-          ),
-          stub: stub,
-          fakeProvider: FakeDropboxProvider(seedEntries: twoEntries),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Restore from backup'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(TextButton, 'Restore'));
-      await tester.pumpAndSettle();
-
-      // Picker — use "Use newest".
-      await tester.tap(find.widgetWithText(TextButton, 'Use newest'));
-      await tester.pumpAndSettle();
-
-      // Passphrase dialog.
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Passphrase').first,
-        'pass-for-fail',
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.widgetWithText(TextButton, 'Unlock and restore'),
-      );
-      await tester.pumpAndSettle();
-
-      // Failure snackbar must appear with the error message.
-      // The text appears in both the SnackBar and the BackupErrorState body —
-      // both are correct; assert at least one occurrence.
-      expect(find.textContaining('test-failure'), findsAtLeastNWidgets(1));
-    });
-
-    test('HC-5 — backup_screen.dart has zero filename-parsing references',
-        () async {
-      final src = await File(
-        'lib/features/backup/backup_screen.dart',
-      ).readAsString();
-      expect(src.contains('metra_backup_'), isFalse);
-      expect(src.contains('BackupFilename'), isFalse);
-    });
-  });
-
-  // ---------------------------------------------------------------------------
-  // TASK-10 — Auto-backup status indicator row (FR-20, FR-21, NFR-08)
-  // ---------------------------------------------------------------------------
-
-  group('Auto-backup indicator — TASK-10', () {
-    testWidgets('FR-20 — indicator row present in active state', (t) async {
-      t.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => t.view.resetPhysicalSize());
-
-      await t.pumpWidget(
-        _wrap(
-          const BackupConnected(
-            email: 'x@x.com',
-            lastBackupAt: null,
-            autoBackupActive: true,
-          ),
-        ),
-      );
-      await t.pumpAndSettle();
-
-      expect(
-        find.byKey(const Key('auto-backup-indicator-row')),
-        findsOneWidget,
-      );
-      expect(find.text('Automatic backup active'), findsOneWidget);
-    });
-
-    testWidgets('FR-21 — indicator transitions to suspended state', (t) async {
-      t.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => t.view.resetPhysicalSize());
-
-      await t.pumpWidget(
-        _wrap(
-          const BackupConnected(
-            email: 'x@x.com',
-            lastBackupAt: null,
-            autoBackupActive: false,
-          ),
-        ),
-      );
-      await t.pumpAndSettle();
-
-      expect(
-        find.byKey(const Key('auto-backup-indicator-row')),
-        findsOneWidget,
-      );
-      expect(find.text('Automatic backup suspended'), findsOneWidget);
-    });
-
-    testWidgets('FR-20 contrast — indicator always rendered (never unmounted)',
-        (t) async {
-      t.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => t.view.resetPhysicalSize());
-
-      // Mount in active state.
-      final stub = _StubBackupNotifier(
-        const BackupConnected(
-          email: 'x@x.com',
-          lastBackupAt: null,
-          autoBackupActive: true,
-        ),
-      );
-      await t.pumpWidget(
-        _wrap(
-          const BackupConnected(
-            email: 'x@x.com',
-            lastBackupAt: null,
-            autoBackupActive: true,
-          ),
-          stub: stub,
-        ),
-      );
-      await t.pumpAndSettle();
-      expect(
-        find.byKey(const Key('auto-backup-indicator-row')),
-        findsOneWidget,
-      );
-
-      // Transition to suspended state.
-      stub.state = const AsyncData(
-        BackupConnected(
-          email: 'x@x.com',
-          lastBackupAt: null,
-          autoBackupActive: false,
-        ),
-      );
-      await t.pump();
-      expect(
-        find.byKey(const Key('auto-backup-indicator-row')),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('accessibility — Semantics liveRegion=true on indicator row',
-        (t) async {
-      t.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => t.view.resetPhysicalSize());
-
-      await t.pumpWidget(
-        _wrap(
-          const BackupConnected(
-            email: 'x@x.com',
-            lastBackupAt: null,
-            autoBackupActive: true,
-          ),
-        ),
-      );
-      await t.pumpAndSettle();
-
-      final liveRegionWithLabel = t
-          .widgetList<Semantics>(find.byType(Semantics))
-          .where(
-            (s) =>
-                s.properties.liveRegion == true &&
-                (s.properties.label?.contains('automatico') == true ||
-                    s.properties.label?.contains('automatic') == true ||
-                    s.properties.label?.contains('Automatic') == true ||
-                    s.properties.label?.contains('Backup') == true),
-          )
-          .toList();
-      expect(liveRegionWithLabel.length, greaterThanOrEqualTo(1));
-    });
-
-    test('NFR-08 — autoBackupActive is never persisted to Drift', () {
-      final dbFiles = Directory('lib/data/database')
-          .listSync(recursive: true)
-          .whereType<File>()
-          .where((f) => f.path.endsWith('.dart'));
-      for (final f in dbFiles) {
-        expect(
-          f.readAsStringSync().contains('autoBackupActive'),
-          isFalse,
-          reason: '${f.path} must not reference autoBackupActive',
-        );
-      }
-    });
-  });
-
-  // ---------------------------------------------------------------------------
-  // TASK-21 — Dispatcher smoke tests (TDD-first)
-  // ---------------------------------------------------------------------------
-
-  group('TASK-21 — Dispatcher smoke tests', () {
-    testWidgets('Dispatcher: BackupNotConnected → BackupEmptyView root',
+        'should_render_BackupEmptyView_when_state_is_BackupNotConnected',
         (tester) async {
       tester.view.physicalSize = const Size(800, 4000);
       addTearDown(() => tester.view.resetPhysicalSize());
@@ -1023,7 +172,9 @@ void main() {
       expect(find.byType(BackupEmptyView), findsOneWidget);
     });
 
-    testWidgets('Dispatcher: BackupConnected → BackupConnectedView root',
+    // H-2: BackupConnected → BackupConnectedView
+    testWidgets(
+        'should_render_BackupConnectedView_when_state_is_BackupConnected',
         (tester) async {
       tester.view.physicalSize = const Size(2400, 6000);
       tester.view.devicePixelRatio = 1.0;
@@ -1035,8 +186,9 @@ void main() {
       await tester.pumpWidget(
         _wrap(
           const BackupConnected(
-            email: 'dispatcher@test.com',
+            email: 'a@b.it',
             autoBackupActive: true,
+            lastBackupAt: null,
           ),
         ),
       );
@@ -1045,8 +197,9 @@ void main() {
       expect(find.byType(BackupConnectedView), findsOneWidget);
     });
 
+    // H-3: BackupRunning(restoring) → RestoreProgressScreen
     testWidgets(
-        'Dispatcher: BackupRunning(restoring) → RestoreProgressScreen root',
+        'should_render_RestoreProgressScreen_when_state_is_BackupRunning_restoring',
         (tester) async {
       await tester.pumpWidget(
         _wrap(const BackupRunning(BackupOperation.restoring)),
@@ -1056,9 +209,10 @@ void main() {
       expect(find.byType(RestoreProgressScreen), findsOneWidget);
     });
 
+    // H-4: BackupRunning(non-restoring) → _RunningBody, NOT RestoreProgressScreen
     testWidgets(
-        'Dispatcher: BackupRunning(backingUp) → CircularProgressIndicator '
-        'visible and NOT RestoreProgressScreen', (tester) async {
+        'should_render_running_overlay_and_NOT_RestoreProgressScreen_when_state_is_BackupRunning_backingUp',
+        (tester) async {
       await tester.pumpWidget(
         _wrap(const BackupRunning(BackupOperation.backingUp)),
       );
@@ -1068,17 +222,19 @@ void main() {
       expect(find.byType(RestoreProgressScreen), findsNothing);
     });
 
-    testWidgets('Dispatcher: BackupErrorState → BackupErrorView root',
+    // H-5: BackupErrorState → BackupErrorView
+    testWidgets('should_render_BackupErrorView_when_state_is_BackupErrorState',
         (tester) async {
       tester.view.physicalSize = const Size(800, 4000);
       addTearDown(() => tester.view.resetPhysicalSize());
 
-      await tester.pumpWidget(_wrap(const BackupErrorState('dispatch-err')));
+      await tester.pumpWidget(_wrap(const BackupErrorState('Network error')));
       await tester.pumpAndSettle();
 
       expect(find.byType(BackupErrorView), findsOneWidget);
     });
 
+    // H-6: Exhaustive switch — no default branch, no analyzer warning
     test('backup_screen.dart switch has no default branch', () async {
       final src = await File(
         'lib/features/backup/backup_screen.dart',
@@ -1087,13 +243,20 @@ void main() {
       expect(
         RegExp(r'^\s*default\s*:', multiLine: true).hasMatch(src),
         isFalse,
+        reason: 'backup_screen.dart must not contain a default: branch — '
+            'the switch must be exhaustive so adding a new BackupState '
+            'subtype fails the analyzer (FR-20 neg)',
       );
     });
 
     test('flutter analyze backup_screen.dart reports zero issues', () async {
       final result = await Process.run(
         'flutter',
-        ['analyze', 'lib/features/backup/backup_screen.dart', '--no-fatal-infos'],
+        [
+          'analyze',
+          'lib/features/backup/backup_screen.dart',
+          '--no-fatal-infos',
+        ],
         workingDirectory: '.',
       );
       expect(
@@ -1101,6 +264,239 @@ void main() {
         0,
         reason: 'flutter analyze output:\n${result.stdout}\n${result.stderr}',
       );
+    });
+
+    // H-7: Scaffold ownership — each view owns its own AppBar;
+    //       dispatcher does NOT wrap in second Scaffold.
+    group('Scaffold ownership — each view owns its own AppBar', () {
+      testWidgets('BackupEmptyView mounted standalone has exactly one AppBar',
+          (tester) async {
+        tester.view.physicalSize = const Size(800, 4000);
+        addTearDown(() => tester.view.resetPhysicalSize());
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              backupNotifierProvider.overrideWith(
+                () => _StubBackupNotifier(const BackupNotConnected()),
+              ),
+              secureStorageProvider.overrideWithValue(InMemorySecureStorage()),
+              cloudBackupProvider.overrideWithValue(
+                FakeDropboxProvider(seedEntries: [_defaultSeedEntry]),
+              ),
+            ],
+            child: MaterialApp(
+              theme: MetraTheme.light(),
+              locale: const Locale('en'),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: const BackupEmptyView(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AppBar), findsOneWidget);
+      });
+
+      testWidgets(
+          'BackupConnectedView mounted standalone has exactly one AppBar',
+          (tester) async {
+        tester.view.physicalSize = const Size(2400, 6000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        const connectedState = BackupConnected(
+          email: 'scaffold@test.com',
+          autoBackupActive: true,
+          lastBackupAt: null,
+        );
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              backupNotifierProvider.overrideWith(
+                () => _StubBackupNotifier(connectedState),
+              ),
+              secureStorageProvider.overrideWithValue(InMemorySecureStorage()),
+              cloudBackupProvider.overrideWithValue(
+                FakeDropboxProvider(seedEntries: [_defaultSeedEntry]),
+              ),
+            ],
+            child: MaterialApp(
+              theme: MetraTheme.light(),
+              locale: const Locale('en'),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: const BackupConnectedView(state: connectedState),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AppBar), findsOneWidget);
+      });
+
+      testWidgets(
+          'RestoreProgressScreen mounted standalone has exactly one AppBar',
+          (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              backupNotifierProvider.overrideWith(
+                () => _StubBackupNotifier(
+                  const BackupRunning(BackupOperation.restoring),
+                ),
+              ),
+              secureStorageProvider.overrideWithValue(InMemorySecureStorage()),
+              cloudBackupProvider.overrideWithValue(
+                FakeDropboxProvider(seedEntries: [_defaultSeedEntry]),
+              ),
+            ],
+            child: MaterialApp(
+              theme: MetraTheme.light(),
+              locale: const Locale('en'),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: const RestoreProgressScreen(),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(find.byType(AppBar), findsOneWidget);
+      });
+
+      testWidgets(
+          'BackupScreen dispatcher wrapping BackupEmptyView has exactly one AppBar (no double-Scaffold)',
+          (tester) async {
+        tester.view.physicalSize = const Size(800, 4000);
+        addTearDown(() => tester.view.resetPhysicalSize());
+
+        await tester.pumpWidget(_wrap(const BackupNotConnected()));
+        await tester.pumpAndSettle();
+
+        // If the dispatcher wrapped in a second Scaffold + AppBar this would
+        // find 2. The dispatcher must produce exactly 1 AppBar (owned by
+        // BackupEmptyView).
+        expect(find.byType(AppBar), findsOneWidget);
+      });
+
+      testWidgets('BackupErrorView mounted standalone has exactly one AppBar',
+          (tester) async {
+        tester.view.physicalSize = const Size(800, 4000);
+        addTearDown(() => tester.view.resetPhysicalSize());
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              backupNotifierProvider.overrideWith(
+                () => _StubBackupNotifier(const BackupNotConnected()),
+              ),
+              secureStorageProvider.overrideWithValue(InMemorySecureStorage()),
+              cloudBackupProvider.overrideWithValue(
+                FakeDropboxProvider(seedEntries: [_defaultSeedEntry]),
+              ),
+            ],
+            child: MaterialApp(
+              theme: MetraTheme.light(),
+              locale: const Locale('en'),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: const BackupErrorView(message: 'standalone error'),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AppBar), findsOneWidget);
+      });
+
+      testWidgets(
+          'BackupScreen dispatcher wrapping BackupConnectedView has exactly one AppBar (no double-Scaffold)',
+          (tester) async {
+        tester.view.physicalSize = const Size(2400, 6000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        await tester.pumpWidget(
+          _wrap(
+            const BackupConnected(
+              email: 'scaffold@test.com',
+              autoBackupActive: false,
+              lastBackupAt: null,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AppBar), findsOneWidget);
+      });
+
+      testWidgets(
+          'BackupScreen dispatcher wrapping RestoreProgressScreen has exactly one AppBar (no double-Scaffold)',
+          (tester) async {
+        await tester.pumpWidget(
+          _wrap(const BackupRunning(BackupOperation.restoring)),
+        );
+        await tester.pump();
+
+        expect(find.byType(AppBar), findsOneWidget);
+      });
+
+      testWidgets(
+          'BackupScreen dispatcher wrapping BackupErrorView has exactly one AppBar (no double-Scaffold)',
+          (tester) async {
+        tester.view.physicalSize = const Size(800, 4000);
+        addTearDown(() => tester.view.resetPhysicalSize());
+
+        await tester.pumpWidget(_wrap(const BackupErrorState('wrap error')));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AppBar), findsOneWidget);
+      });
+    });
+  });
+
+  // =========================================================================
+  // Dispatcher async-state envelope (FR-20 — AsyncValue.when branches)
+  // =========================================================================
+
+  group('Dispatcher async-state envelope (FR-20)', () {
+    // AsyncLoading → loading scaffold with CircularProgressIndicator
+    testWidgets(
+        'should_show_CircularProgressIndicator_when_asyncState_is_AsyncLoading',
+        (tester) async {
+      final stub = _StubBackupNotifier(const BackupNotConnected());
+
+      await tester.pumpWidget(_wrap(const BackupNotConnected(), stub: stub));
+      // Overwrite the resolved AsyncData with AsyncLoading before rebuild.
+      stub.state = const AsyncLoading();
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
+
+    // AsyncError → BackupErrorView with the error message
+    testWidgets('should_render_BackupErrorView_when_asyncState_is_AsyncError',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final stub = _StubBackupNotifier(const BackupNotConnected());
+
+      await tester.pumpWidget(_wrap(const BackupNotConnected(), stub: stub));
+      await tester.pumpAndSettle();
+
+      stub.state = AsyncError(Exception('async-error-test'), StackTrace.empty);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(BackupErrorView), findsOneWidget);
     });
   });
 }

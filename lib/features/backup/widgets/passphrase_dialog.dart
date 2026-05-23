@@ -5,6 +5,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/metra_colors.dart';
 import '../../../l10n/app_localizations.dart';
 
 /// Two purposes of [PassphraseDialog]:
@@ -130,7 +131,9 @@ class _PassphraseDialogState extends State<PassphraseDialog> {
               liveRegion: true,
               child: Text(
                 _error!,
-                style: const TextStyle(color: Colors.red),
+                style: TextStyle(
+                  color: MetraColors.of(context).accentFlowStrong,
+                ),
               ),
             ),
           ],

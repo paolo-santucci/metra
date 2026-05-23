@@ -50,9 +50,8 @@ class RestoreProgressScreen extends ConsumerWidget {
 
     // NFR-12: use MetraMotion tokens; honour reduce-motion preference.
     final spinDuration = Duration(
-      milliseconds: disableAnimations
-          ? MetraMotion.slowReduced
-          : MetraMotion.base,
+      milliseconds:
+          disableAnimations ? MetraMotion.slowReduced : MetraMotion.base,
     );
 
     return PopScope(
@@ -94,7 +93,11 @@ class RestoreProgressScreen extends ConsumerWidget {
                     strokeWidth: disableAnimations ? 3.0 : 4.0,
                   ),
                 ),
-                SizedBox(height: spinDuration.inMilliseconds > 0 ? MetraSpacing.s4 : MetraSpacing.s2),
+                SizedBox(
+                  height: spinDuration.inMilliseconds > 0
+                      ? MetraSpacing.s4
+                      : MetraSpacing.s2,
+                ),
                 // Heading: DM Serif Display 22, liveRegion for a11y (FR-32).
                 Semantics(
                   liveRegion: true,
