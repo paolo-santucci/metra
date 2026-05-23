@@ -1,33 +1,58 @@
 schema-version: 2
-last-updated: "2026-05-18T23:10:00+02:00"
-active-plan: null
+last-updated: "2026-05-23T12:00:00+02:00"
+active-plan: ".claude/docs/plans/sp-20260521-backup-screen-restructure-plan.md"
 last-plan: ".claude/docs/plans/archive/sp-20260518-backup-notification-ux-fixes-plan.md"
 
 # Owned by the short-plan skill. update-status preserves verbatim.
 short-plan:
-  feature: null
-  slug: null
+  feature: "ristrutturare completamente la schermata di backup"
+  slug: "backup-screen-restructure"
   auto: false
-  request-type: null
-  workflow: null
-  parent: null
-  paths:
+  request-type: feature
+  workflow: canonical
+  parent:
     spec: null
     plan: null
-    assess-dir: null
+    milestone: null
+    frs: null
+  paths:
+    spec: ".claude/docs/specs/sp-20260521-backup-screen-restructure-spec.md"
+    plan: ".claude/docs/plans/sp-20260521-backup-screen-restructure-plan.md"
+    assess-dir: ".claude/docs/specs/sp-20260521-backup-screen-restructure-assessment"
   phases:
-    assess: pending
-    triage: pending
-    spec: pending
-    plan: pending
+    assess: done
+    triage: done
+    spec: done
+    plan: done
     build: pending
   approvals:
-    spec: null
-    plan: null
+    spec: approved
+    plan: approved
   rejection-note: null
   build-progress:
-    current-wave: null
-    waves-completed: []
+    current-wave: 5
+    waves-completed: [1, 2, 3, 4]
+    task-status:
+      TASK-01: done
+      TASK-02: done
+      TASK-03: done
+      TASK-04: done
+      TASK-05: done
+      TASK-06: done
+      TASK-07: done
+      TASK-08: done
+      TASK-09: done
+      TASK-10: done
+      TASK-11: done
+      TASK-13: done
+      TASK-14: done
+      TASK-12: done
+      TASK-15: done
+      TASK-16: done
+      TASK-17: done
+      TASK-18: done
+      TASK-19: done
+      TASK-20: done
 
 # Owned by the long-plan skill. update-status preserves verbatim.
 long-plan:
@@ -50,31 +75,40 @@ long-plan:
 pending-consolidation: []
 
 recently-completed:
+  - date: "2026-05-23"
+    summary: "feat(ui): TASK-20 — RestoreProgressScreen ConsumerWidget; PopScope(canPop:false) EC-09, no-leading AppBar FR-18, terracotta CircularProgressIndicator, DM Serif 22 liveRegion heading FR-32, Inter 14 body at 68% alpha, MetraMotion NFR-12; TDD 3/3 green; 1272+3 tests pass, 0 analyzer warnings"
+  - date: "2026-05-23"
+    summary: "feat(ui): TASK-18 — BackupConnectedView ConsumerStatefulWidget; three-card layout (Account/Stato/Azioni), _handleRestore with new step order (fetch→picker→confirm→passphrase) and 4 mounted guards, BackupConnectedHandlers mixin split, HC-2 IgnorePointer gate, DateFormat.yMMMd locale, em-dash for null; TDD 3/3 green; 1275 tests pass, 0 analyzer warnings"
+  - date: "2026-05-23"
+    summary: "feat(ui): TASK-17 — BackupEmptyView ConsumerWidget; 64×64 cloud icon, DM Serif 22 heading, Inter 14 body 240dp cap, full-width terracotta CTA, HC-2 gate; TDD 3/3 green; 1272 tests, 0 analyzer warnings"
+  - date: "2026-05-23"
+    summary: "feat(ui): TASK-12 — migrate settings_screen.dart: remove 6 private widget classes; add WheelPickerScaffold to cupertino_picker_scaffold.dart (debounce+resetKey stateful API); replace all callsites with public atoms; Opacity+IgnorePointer for disabled rows; migration cleanliness test; 1262 tests pass, 0 analyzer warnings"
+  - date: "2026-05-22"
+    summary: "feat(ui): TASK-13 — StatusIndicator atom; TASK-14 — MetraConfirmDialog atom + static show(); TASK-15 — BackupPickerSheet modal sheet; all TDD green; 1262 total tests"
+  - date: "2026-05-21"
+    summary: "feat(ui): TASK-08 SettingsRow, TASK-09 MetraToggle, TASK-10 CupertinoPickerScaffold, TASK-06 SettingsCard, TASK-07 SettingsDivider — all extracted to lib/core/widgets/settings/"
+  - date: "2026-05-21"
+    summary: "feat(l10n): TASK-11 — 23 ARB keys; feat(theme): TASK-04 MetraRadius.xxl; fix: TASK-16 accentFlowStrong token; docs: TASK-03 canon deltas; docs: TASK-01+02 HTML mockups"
   - date: "2026-05-18"
-    summary: "feat(backup+notifications): storage-full handling, permission flow, auto-backup indicator"
-  - date: "2026-05-18"
-    summary: "feat(notifications): wire PermissionBlocked alert via permissionBlockedDialogProvider (TASK-08)"
-  - date: "2026-05-18"
-    summary: "fix(ci): downgrade actions/checkout to v4, fix license headers and lint"
-  - date: "2026-05-18"
-    summary: "chore(release): bump iOS version to 1.0.2+3"
-  - date: "2026-05-18"
-    summary: "chore: update STATUS.yaml — M4 build complete (all 4 waves done)"
+    summary: "fix(ios): NSCameraUsageDescription + NSLocationWhenInUseUsageDescription; bump 1.0.2+5 TestFlight rc2; feat: storage-full handling, permission flow, auto-backup indicator"
 
 in-progress:
-  - title: "TestFlight 1.0.2-rc1 CI build"
-    state: "v1.0.2-rc1 tag pushed; deploy_testflight CI job triggered; awaiting macOS runner"
+  - title: "Backup screen restructure — Wave 5 complete, Wave 6 pending"
+    state: "Wave 5 complete: TASK-17..20 all done. Ready for Wave 6 TASK-21 dispatcher rewrite."
     touched:
-      - "pubspec.yaml"
-      - ".github/workflows/ios.yml"
-    next-step: "Monitor CI; confirm TestFlight build 1.0.2+4 upload; manual FR-17 sign-off on physical iOS device"
+      - "lib/features/backup/"
+      - "test/features/backup/"
+    next-step: "Wave 6 TASK-21: BackupScreen dispatcher rewrite (exhaustive switch over BackupState)"
     blocker: null
 
 next-steps:
+  - "Wave 6: TASK-21 BackupScreen dispatcher rewrite (exhaustive switch over BackupState)"
+  - "Wave 7: TASK-22 delete restore_picker_dialog.dart and migrate tests to BackupPickerSheet"
+  - "Waves 8-9: test wave + help docs update"
   - "FR-17 manual sign-off on physical iOS device (cold-start notification permission denied + dialog on toggle-on)"
-  - "NFR-03 manual measurement: hasNotificationPermission() < 100ms p95 on cold-start iOS (OQ-QA-05)"
-  - "Proceed to long-plan M5 milestone (lp-20260517-implement-next-patch-plan.md)"
-  - "TASK-16/TASK-20 screenshot refresh (RestorePickerDialog IT+EN) deferred to next manual QA session with Android emulator"
+  - "NFR-03 manual measurement: hasNotificationPermission() < 100ms p95 on cold-start iOS"
+  - "Proceed to long-plan M5 milestone (lp-20260517-implement-next-patch-plan.md) after backup restructure complete"
+  - "Screenshot refresh for RestorePickerDialog IT+EN deferred to next manual QA session with Android emulator"
 
 known-issues:
   - severity: warning
@@ -82,10 +116,10 @@ known-issues:
     impact: medium
     workaround: null
   - severity: warning
-    description: "TASK-16 and TASK-20 (screenshot refresh for RestorePickerDialog IT+EN) deferred — require Android emulator with IT/EN locale to capture new §19-compliant picker"
+    description: "Screenshot refresh for RestorePickerDialog IT+EN deferred — require Android emulator with IT/EN locale"
     impact: low
-    workaround: "Old screenshots remain in docs/it/help/backup.md and docs/en/help/backup.md; text updated correctly; update screenshots during next manual QA session"
+    workaround: "Old screenshots remain in help docs; text updated correctly; refresh during next manual QA session"
   - severity: warning
-    description: "iOS PermissionDenied vs PermissionBlocked indistinguishable via flutter_local_notifications v17 — both return PermissionBlocked; on iOS any permission denial triggers the 'open settings' dialog"
+    description: "iOS PermissionDenied vs PermissionBlocked indistinguishable via flutter_local_notifications v17 — both return PermissionBlocked"
     impact: low
-    workaround: "Conservative UX: settings dialog always offered on iOS denial; no user-visible regression but slightly over-eager on first-time denials"
+    workaround: "Conservative UX: settings dialog always offered on iOS denial; slightly over-eager on first-time denials"
