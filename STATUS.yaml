@@ -1,5 +1,5 @@
 schema-version: 2
-last-updated: "2026-05-23T12:00:00+02:00"
+last-updated: "2026-05-23T18:00:00+02:00"
 active-plan: ".claude/docs/plans/sp-20260521-backup-screen-restructure-plan.md"
 last-plan: ".claude/docs/plans/archive/sp-20260518-backup-notification-ux-fixes-plan.md"
 
@@ -30,8 +30,8 @@ short-plan:
     plan: approved
   rejection-note: null
   build-progress:
-    current-wave: 5
-    waves-completed: [1, 2, 3, 4]
+    current-wave: 8
+    waves-completed: [1, 2, 3, 4, 5, 6, 7]
     task-status:
       TASK-01: done
       TASK-02: done
@@ -44,15 +44,17 @@ short-plan:
       TASK-09: done
       TASK-10: done
       TASK-11: done
+      TASK-12: done
       TASK-13: done
       TASK-14: done
-      TASK-12: done
       TASK-15: done
       TASK-16: done
       TASK-17: done
       TASK-18: done
       TASK-19: done
       TASK-20: done
+      TASK-21: done
+      TASK-22: done
 
 # Owned by the long-plan skill. update-status preserves verbatim.
 long-plan:
@@ -76,39 +78,39 @@ pending-consolidation: []
 
 recently-completed:
   - date: "2026-05-23"
-    summary: "feat(ui): TASK-20 — RestoreProgressScreen ConsumerWidget; PopScope(canPop:false) EC-09, no-leading AppBar FR-18, terracotta CircularProgressIndicator, DM Serif 22 liveRegion heading FR-32, Inter 14 body at 68% alpha, MetraMotion NFR-12; TDD 3/3 green; 1272+3 tests pass, 0 analyzer warnings"
+    summary: "feat(test): TASK-22 — delete RestorePickerDialog (restore_picker_dialog.dart + backup_fr14_restore_picker_test.dart + integration test); remove 10 dead restorePicker* ARB keys; add deletion-guard test (5/5 pass); +1235 ~1 -22 (22 pre-existing in backup_screen_test.dart owned by TASK-30); 0 analyzer warnings"
   - date: "2026-05-23"
-    summary: "feat(ui): TASK-18 — BackupConnectedView ConsumerStatefulWidget; three-card layout (Account/Stato/Azioni), _handleRestore with new step order (fetch→picker→confirm→passphrase) and 4 mounted guards, BackupConnectedHandlers mixin split, HC-2 IgnorePointer gate, DateFormat.yMMMd locale, em-dash for null; TDD 3/3 green; 1275 tests pass, 0 analyzer warnings"
+    summary: "feat(ui): TASK-21 — BackupScreen exhaustive dispatcher (asyncState.when + switch over BackupState, no default:)"
   - date: "2026-05-23"
-    summary: "feat(ui): TASK-17 — BackupEmptyView ConsumerWidget; 64×64 cloud icon, DM Serif 22 heading, Inter 14 body 240dp cap, full-width terracotta CTA, HC-2 gate; TDD 3/3 green; 1272 tests, 0 analyzer warnings"
-  - date: "2026-05-23"
-    summary: "feat(ui): TASK-12 — migrate settings_screen.dart: remove 6 private widget classes; add WheelPickerScaffold to cupertino_picker_scaffold.dart (debounce+resetKey stateful API); replace all callsites with public atoms; Opacity+IgnorePointer for disabled rows; migration cleanliness test; 1262 tests pass, 0 analyzer warnings"
-  - date: "2026-05-22"
-    summary: "feat(ui): TASK-13 — StatusIndicator atom; TASK-14 — MetraConfirmDialog atom + static show(); TASK-15 — BackupPickerSheet modal sheet; all TDD green; 1262 total tests"
-  - date: "2026-05-21"
-    summary: "feat(ui): TASK-08 SettingsRow, TASK-09 MetraToggle, TASK-10 CupertinoPickerScaffold, TASK-06 SettingsCard, TASK-07 SettingsDivider — all extracted to lib/core/widgets/settings/"
-  - date: "2026-05-21"
-    summary: "feat(l10n): TASK-11 — 23 ARB keys; feat(theme): TASK-04 MetraRadius.xxl; fix: TASK-16 accentFlowStrong token; docs: TASK-03 canon deltas; docs: TASK-01+02 HTML mockups"
+    summary: "feat(ui): TASK-20 — RestoreProgressScreen with back-lock (PopScope canPop:false) and live-region heading"
   - date: "2026-05-18"
-    summary: "fix(ios): NSCameraUsageDescription + NSLocationWhenInUseUsageDescription; bump 1.0.2+5 TestFlight rc2; feat: storage-full handling, permission flow, auto-backup indicator"
+    summary: "fix(ios): add NSCameraUsageDescription and NSLocationWhenInUseUsageDescription to Info.plist"
+  - date: "2026-05-18"
+    summary: "feat(backup+notifications): storage-full handling, permission flow, auto-backup indicator"
+  - date: "2026-05-18"
+    summary: "feat(notifications): wire PermissionBlocked alert via permissionBlockedDialogProvider"
+  - date: "2026-05-18"
+    summary: "fix(ci): downgrade actions/checkout to v4, fix license headers and lint"
 
 in-progress:
-  - title: "Backup screen restructure — Wave 5 complete, Wave 6 pending"
-    state: "Wave 5 complete: TASK-17..20 all done. Ready for Wave 6 TASK-21 dispatcher rewrite."
+  - title: "Backup screen restructure — Wave 8 (test wave)"
+    state: "Wave 7 complete: TASK-22 done (RestorePickerDialog deleted, ARBs cleaned). Wave 8 next."
     touched:
       - "lib/features/backup/"
       - "test/features/backup/"
-    next-step: "Wave 6 TASK-21: BackupScreen dispatcher rewrite (exhaustive switch over BackupState)"
+    next-step: "Wave 8: TASK-28 BackupPickerSheet Group-F widget tests + TASK-30 backup_screen_test.dart full rewrite"
     blocker: null
 
 next-steps:
-  - "Wave 6: TASK-21 BackupScreen dispatcher rewrite (exhaustive switch over BackupState)"
-  - "Wave 7: TASK-22 delete restore_picker_dialog.dart and migrate tests to BackupPickerSheet"
-  - "Waves 8-9: test wave + help docs update"
+  - "Wave 8: TASK-28 BackupPickerSheet Group-F widget tests"
+  - "Wave 8: TASK-30 full rewrite of backup_screen_test.dart (owns the 22 pre-existing failures)"
+  - "Wave 9: TASK-35 integration scenarios I-A..I-G"
+  - "Wave 9: help docs update"
+  - "Commit Wave 5+6 uncommitted work (TASK-17/18/19/21) before or with Wave 7"
   - "FR-17 manual sign-off on physical iOS device (cold-start notification permission denied + dialog on toggle-on)"
   - "NFR-03 manual measurement: hasNotificationPermission() < 100ms p95 on cold-start iOS"
   - "Proceed to long-plan M5 milestone (lp-20260517-implement-next-patch-plan.md) after backup restructure complete"
-  - "Screenshot refresh for RestorePickerDialog IT+EN deferred to next manual QA session with Android emulator"
+  - "Screenshot refresh for backup-connected IT+EN deferred to next manual QA session with Android emulator"
 
 known-issues:
   - severity: warning
@@ -116,7 +118,7 @@ known-issues:
     impact: medium
     workaround: null
   - severity: warning
-    description: "Screenshot refresh for RestorePickerDialog IT+EN deferred — require Android emulator with IT/EN locale"
+    description: "Screenshot refresh for backup-connected IT+EN deferred — requires Android emulator with IT/EN locale"
     impact: low
     workaround: "Old screenshots remain in help docs; text updated correctly; refresh during next manual QA session"
   - severity: warning

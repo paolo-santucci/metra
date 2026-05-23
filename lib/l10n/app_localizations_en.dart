@@ -782,40 +782,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get csvImportConfirmDeleteAction => 'Delete and import';
 
   @override
-  String get restorePickerTitle => 'Choose version';
-
-  @override
-  String get restorePickerBody =>
-      'Select the backup to restore. This will replace all existing data.';
-
-  @override
-  String restorePickerRowTemplate(String date, String size) {
-    return '$date · $size';
-  }
-
-  @override
-  String get restorePickerUseNewest => 'Use newest';
-
-  @override
-  String get restorePickerRestoreThisVersion => 'Restore';
-
-  @override
-  String get restorePickerEmpty => 'No backup found on the provider.';
-
-  @override
   String get restorePickerError => 'Failed to load backup files.';
-
-  @override
-  String get restorePickerAnnulla => 'Cancel';
-
-  @override
-  String get restorePickerClose => 'Close';
-
-  @override
-  String get restorePickerBadgeNewest => 'newest';
-
-  @override
-  String get restorePickerSemanticLabel => 'Choose backup version';
 
   @override
   String get backup_error_storage_full =>
@@ -826,6 +793,78 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backupAutoSuspendedLabel => 'Automatic backup suspended';
+
+  @override
+  String get backupEmptyHeading => 'No backup configured';
+
+  @override
+  String get backupEmptyBody =>
+      'Connect an account to keep a secure, encrypted copy of your data in the cloud.';
+
+  @override
+  String get backupConnectDropbox => 'Connect Dropbox';
+
+  @override
+  String get backupAccountConnesso => 'Connected account';
+
+  @override
+  String get backupStato => 'Status';
+
+  @override
+  String get backupAzioni => 'Actions';
+
+  @override
+  String get backupAccountLabel => 'Account';
+
+  @override
+  String get backupLastBackupLabel => 'Last backup';
+
+  @override
+  String get backupDisconnectLabel => 'Disconnect';
+
+  @override
+  String get backupNowAction => 'Back up now';
+
+  @override
+  String get backupRestoreAction => 'Restore from backup';
+
+  @override
+  String get backupRestoreConfirmTitle => 'Restore backup?';
+
+  @override
+  String get backupRestoreConfirmBody =>
+      'Current data will be replaced with data from the selected backup.';
+
+  @override
+  String get backupRestoreConfirmRestore => 'Restore';
+
+  @override
+  String get backupDisconnectConfirmTitle => 'Disconnect account?';
+
+  @override
+  String get backupDisconnectConfirmBody =>
+      'Previous backups will remain on the provider. You can reconnect at any time.';
+
+  @override
+  String get backupDisconnectConfirmDisconnect => 'Disconnect';
+
+  @override
+  String get commonCancel => 'Cancel';
+
+  @override
+  String get backupPickerConfirm => 'Restore';
+
+  @override
+  String get backupPickerEmpty => 'No backups found on the provider.';
+
+  @override
+  String get restoreProgressTitle => 'Backup';
+
+  @override
+  String get restoreProgressHeading => 'Restore in progress';
+
+  @override
+  String get restoreProgressBody => 'Do not close the app during restore.';
 
   @override
   String get notificationPermissionBlockedTitle => 'Notifications blocked';

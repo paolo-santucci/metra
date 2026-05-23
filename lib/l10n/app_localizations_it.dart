@@ -784,40 +784,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get csvImportConfirmDeleteAction => 'Elimina e importa';
 
   @override
-  String get restorePickerTitle => 'Scegli versione';
-
-  @override
-  String get restorePickerBody =>
-      'Seleziona il backup da ripristinare. L\'operazione sostituirà tutti i dati presenti.';
-
-  @override
-  String restorePickerRowTemplate(String date, String size) {
-    return '$date · $size';
-  }
-
-  @override
-  String get restorePickerUseNewest => 'Usa più recente';
-
-  @override
-  String get restorePickerRestoreThisVersion => 'Ripristina';
-
-  @override
-  String get restorePickerEmpty => 'Nessun backup trovato sul provider.';
-
-  @override
   String get restorePickerError => 'Impossibile caricare i file di backup.';
-
-  @override
-  String get restorePickerAnnulla => 'Annulla';
-
-  @override
-  String get restorePickerClose => 'Chiudi';
-
-  @override
-  String get restorePickerBadgeNewest => 'più recente';
-
-  @override
-  String get restorePickerSemanticLabel => 'Scelta versione backup';
 
   @override
   String get backup_error_storage_full =>
@@ -828,6 +795,79 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get backupAutoSuspendedLabel => 'Backup automatico sospeso';
+
+  @override
+  String get backupEmptyHeading => 'Nessun backup configurato';
+
+  @override
+  String get backupEmptyBody =>
+      'Collega un account per salvare i tuoi dati in modo sicuro e cifrato.';
+
+  @override
+  String get backupConnectDropbox => 'Collega Dropbox';
+
+  @override
+  String get backupAccountConnesso => 'Account connesso';
+
+  @override
+  String get backupStato => 'Stato';
+
+  @override
+  String get backupAzioni => 'Azioni';
+
+  @override
+  String get backupAccountLabel => 'Account';
+
+  @override
+  String get backupLastBackupLabel => 'Ultimo backup';
+
+  @override
+  String get backupDisconnectLabel => 'Disconnetti';
+
+  @override
+  String get backupNowAction => 'Esegui backup ora';
+
+  @override
+  String get backupRestoreAction => 'Ripristina da backup';
+
+  @override
+  String get backupRestoreConfirmTitle => 'Ripristina backup?';
+
+  @override
+  String get backupRestoreConfirmBody =>
+      'I dati attuali verranno sostituiti con quelli del backup selezionato.';
+
+  @override
+  String get backupRestoreConfirmRestore => 'Ripristina';
+
+  @override
+  String get backupDisconnectConfirmTitle => 'Disconnetti account?';
+
+  @override
+  String get backupDisconnectConfirmBody =>
+      'I backup precedenti resteranno nel provider. Puoi ricollegarti in qualsiasi momento.';
+
+  @override
+  String get backupDisconnectConfirmDisconnect => 'Disconnetti';
+
+  @override
+  String get commonCancel => 'Annulla';
+
+  @override
+  String get backupPickerConfirm => 'Ripristina';
+
+  @override
+  String get backupPickerEmpty => 'Nessun backup trovato sul provider.';
+
+  @override
+  String get restoreProgressTitle => 'Backup';
+
+  @override
+  String get restoreProgressHeading => 'Ripristino in corso';
+
+  @override
+  String get restoreProgressBody =>
+      'Non uscire dall\'app durante il ripristino.';
 
   @override
   String get notificationPermissionBlockedTitle => 'Notifiche bloccate';

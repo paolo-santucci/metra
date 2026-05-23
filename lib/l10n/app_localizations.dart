@@ -1472,71 +1472,11 @@ abstract class AppLocalizations {
   /// **'Elimina e importa'**
   String get csvImportConfirmDeleteAction;
 
-  /// Title of the RestorePickerDialog — prompts user to choose which backup version to restore
-  ///
-  /// In it, this message translates to:
-  /// **'Scegli versione'**
-  String get restorePickerTitle;
-
-  /// Intro sentence shown above the backup file list in RestorePickerDialog; warns that existing data will be replaced
-  ///
-  /// In it, this message translates to:
-  /// **'Seleziona il backup da ripristinare. L\'operazione sostituirà tutti i dati presenti.'**
-  String get restorePickerBody;
-
-  /// Row label in the backup file list showing date and file size, e.g. '12 mag 2026 · 48 KB'
-  ///
-  /// In it, this message translates to:
-  /// **'{date} · {size}'**
-  String restorePickerRowTemplate(String date, String size);
-
-  /// Shortcut button that pre-selects the most recent backup file in RestorePickerDialog
-  ///
-  /// In it, this message translates to:
-  /// **'Usa più recente'**
-  String get restorePickerUseNewest;
-
-  /// Destructive CTA button in RestorePickerDialog that confirms the selected backup version for restore
-  ///
-  /// In it, this message translates to:
-  /// **'Ripristina'**
-  String get restorePickerRestoreThisVersion;
-
-  /// Empty-state body shown in RestorePickerDialog when no backup files are found in the cloud provider
-  ///
-  /// In it, this message translates to:
-  /// **'Nessun backup trovato sul provider.'**
-  String get restorePickerEmpty;
-
-  /// Error-state body shown in RestorePickerDialog when the backup file list cannot be loaded
+  /// Snackbar error shown in BackupConnectedView when the backup file list cannot be loaded from the provider
   ///
   /// In it, this message translates to:
   /// **'Impossibile caricare i file di backup.'**
   String get restorePickerError;
-
-  /// Cancel button in RestorePickerDialog — dismisses the picker without restoring
-  ///
-  /// In it, this message translates to:
-  /// **'Annulla'**
-  String get restorePickerAnnulla;
-
-  /// Close button in RestorePickerDialog — dismisses the picker after an empty-state or error-state
-  ///
-  /// In it, this message translates to:
-  /// **'Chiudi'**
-  String get restorePickerClose;
-
-  /// Badge pill label on the most recent backup row in RestorePickerDialog; lowercase per badge-pill convention
-  ///
-  /// In it, this message translates to:
-  /// **'più recente'**
-  String get restorePickerBadgeNewest;
-
-  /// Accessibility semantic label for the RestorePickerDialog as a whole
-  ///
-  /// In it, this message translates to:
-  /// **'Scelta versione backup'**
-  String get restorePickerSemanticLabel;
 
   /// Error message shown when the cloud provider returns HTTP 507 or a quota-exceeded error during backup; snake_case key matches the backup_error_* family and the exception message string in InsufficientStorageException
   ///
@@ -1555,6 +1495,144 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Backup automatico sospeso'**
   String get backupAutoSuspendedLabel;
+
+  /// Heading of the empty-state view on the Backup screen when no cloud provider is connected
+  ///
+  /// In it, this message translates to:
+  /// **'Nessun backup configurato'**
+  String get backupEmptyHeading;
+
+  /// Body text of the empty-state view on the Backup screen; encourages the user to connect a cloud account
+  ///
+  /// In it, this message translates to:
+  /// **'Collega un account per salvare i tuoi dati in modo sicuro e cifrato.'**
+  String get backupEmptyBody;
+
+  /// CTA button label on the Backup empty-state view; initiates Dropbox OAuth connection
+  ///
+  /// In it, this message translates to:
+  /// **'Collega Dropbox'**
+  String get backupConnectDropbox;
+
+  /// Section heading on the connected-state Backup screen showing the authenticated provider account
+  ///
+  /// In it, this message translates to:
+  /// **'Account connesso'**
+  String get backupAccountConnesso;
+
+  /// Section heading on the connected-state Backup screen showing backup status information
+  ///
+  /// In it, this message translates to:
+  /// **'Stato'**
+  String get backupStato;
+
+  /// Section heading on the connected-state Backup screen listing available backup actions
+  ///
+  /// In it, this message translates to:
+  /// **'Azioni'**
+  String get backupAzioni;
+
+  /// Row label on the Backup screen next to the connected provider account name
+  ///
+  /// In it, this message translates to:
+  /// **'Account'**
+  String get backupAccountLabel;
+
+  /// Row label on the Backup screen next to the timestamp of the most recent successful backup
+  ///
+  /// In it, this message translates to:
+  /// **'Ultimo backup'**
+  String get backupLastBackupLabel;
+
+  /// Row label / action on the Backup screen for disconnecting the current cloud provider
+  ///
+  /// In it, this message translates to:
+  /// **'Disconnetti'**
+  String get backupDisconnectLabel;
+
+  /// Action row label on the connected-state Backup screen; triggers an immediate manual backup
+  ///
+  /// In it, this message translates to:
+  /// **'Esegui backup ora'**
+  String get backupNowAction;
+
+  /// Action row label on the connected-state Backup screen; opens the backup picker to start a restore
+  ///
+  /// In it, this message translates to:
+  /// **'Ripristina da backup'**
+  String get backupRestoreAction;
+
+  /// Title of the confirmation dialog shown before restoring from a backup; warns the user that current data will be overwritten
+  ///
+  /// In it, this message translates to:
+  /// **'Ripristina backup?'**
+  String get backupRestoreConfirmTitle;
+
+  /// Body text of the restore-confirmation dialog; describes the destructive nature of the restore operation
+  ///
+  /// In it, this message translates to:
+  /// **'I dati attuali verranno sostituiti con quelli del backup selezionato.'**
+  String get backupRestoreConfirmBody;
+
+  /// Confirm button label on the restore-confirmation dialog; proceeds with the restore operation
+  ///
+  /// In it, this message translates to:
+  /// **'Ripristina'**
+  String get backupRestoreConfirmRestore;
+
+  /// Title of the confirmation dialog shown before disconnecting the cloud provider account
+  ///
+  /// In it, this message translates to:
+  /// **'Disconnetti account?'**
+  String get backupDisconnectConfirmTitle;
+
+  /// Body text of the disconnect-confirmation dialog; reassures the user that existing backups are not deleted
+  ///
+  /// In it, this message translates to:
+  /// **'I backup precedenti resteranno nel provider. Puoi ricollegarti in qualsiasi momento.'**
+  String get backupDisconnectConfirmBody;
+
+  /// Confirm button label on the disconnect-confirmation dialog; proceeds with disconnecting the provider
+  ///
+  /// In it, this message translates to:
+  /// **'Disconnetti'**
+  String get backupDisconnectConfirmDisconnect;
+
+  /// Generic cancel button label used across multiple dialogs and sheets
+  ///
+  /// In it, this message translates to:
+  /// **'Annulla'**
+  String get commonCancel;
+
+  /// Confirm button label on the BackupPickerSheet; confirms the selected backup file for restore
+  ///
+  /// In it, this message translates to:
+  /// **'Ripristina'**
+  String get backupPickerConfirm;
+
+  /// Empty-state message shown inside the BackupPickerSheet when no backup files are found on the cloud provider
+  ///
+  /// In it, this message translates to:
+  /// **'Nessun backup trovato sul provider.'**
+  String get backupPickerEmpty;
+
+  /// AppBar / page title for the RestoreProgressScreen shown while a restore operation is in progress
+  ///
+  /// In it, this message translates to:
+  /// **'Backup'**
+  String get restoreProgressTitle;
+
+  /// Large heading on the RestoreProgressScreen; indicates that a restore operation is actively running
+  ///
+  /// In it, this message translates to:
+  /// **'Ripristino in corso'**
+  String get restoreProgressHeading;
+
+  /// Body text on the RestoreProgressScreen; warns the user not to close the app while restore is in progress
+  ///
+  /// In it, this message translates to:
+  /// **'Non uscire dall\'app durante il ripristino.'**
+  String get restoreProgressBody;
 
   /// Title of the in-app alert shown when notification permission has been denied in system settings
   ///

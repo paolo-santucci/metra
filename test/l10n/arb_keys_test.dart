@@ -20,16 +20,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('every spec key exists in BOTH app_it.arb and app_en.arb', () {
+    // restorePicker* keys removed in TASK-22 (restore-picker-dialog deleted;
+    // BackupPickerSheet uses backupPicker* keys verified by arb_parity_test.dart).
     final keys = [
-      'restorePickerTitle',
-      'restorePickerBody',
-      'restorePickerUseNewest',
-      'restorePickerAnnulla',
-      'restorePickerRestoreThisVersion',
-      'restorePickerEmpty',
-      'restorePickerClose',
-      'restorePickerBadgeNewest',
-      'restorePickerSemanticLabel',
+      'restorePickerError',
       'backup_error_storage_full',
       'backupAutoActiveLabel',
       'backupAutoSuspendedLabel',

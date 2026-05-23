@@ -11,9 +11,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/theme/metra_theme.dart';
 import 'package:metra/data/services/backup/backup_file_entry.dart';
 import 'package:metra/features/backup/backup_screen.dart';
+import 'package:metra/features/backup/restore_progress_screen.dart';
 import 'package:metra/features/backup/state/backup_notifier.dart';
 import 'package:metra/features/backup/state/backup_state.dart';
-import 'package:metra/features/backup/widgets/restore_picker_dialog.dart';
+import 'package:metra/features/backup/views/backup_connected_view.dart';
+import 'package:metra/features/backup/views/backup_empty_view.dart';
+import 'package:metra/features/backup/views/backup_error_view.dart';
 import 'package:metra/l10n/app_localizations.dart';
 import 'package:metra/providers/backup_providers.dart';
 import 'package:metra/providers/encryption_provider.dart';
@@ -139,23 +142,6 @@ Widget _wrapWithStorage(
       supportedLocales: AppLocalizations.supportedLocales,
       home: const BackupScreen(),
     ),
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Picker dialog harness (standalone — does NOT use BackupScreen)
-// ---------------------------------------------------------------------------
-
-/// Minimal harness that wraps [child] in the theme + l10n environment required
-/// by [RestorePickerDialog].  The [child] is responsible for opening the
-/// dialog via [RestorePickerDialog.show].
-Widget _pickerHarness(Widget child) {
-  return MaterialApp(
-    theme: MetraTheme.light(),
-    locale: const Locale('en'),
-    localizationsDelegates: AppLocalizations.localizationsDelegates,
-    supportedLocales: AppLocalizations.supportedLocales,
-    home: Scaffold(body: Center(child: child)),
   );
 }
 
@@ -689,283 +675,9 @@ void main() {
     });
   });
 
-  // ---------------------------------------------------------------------------
-  // RestorePickerDialog tests (TASK-18)
-  // ---------------------------------------------------------------------------
-
-  group('RestorePickerDialog', () {
-    final threeEntries = [
-      BackupFileEntry(
-        name: 'newest.enc',
-        timestampUtc: DateTime.utc(2026, 5, 17, 12),
-        sizeBytes: 4096,
-      ),
-      BackupFileEntry(
-        name: 'mid.enc',
-        timestampUtc: DateTime.utc(2026, 5, 16, 12),
-        sizeBytes: 4096,
-      ),
-      BackupFileEntry(
-        name: 'oldest.enc',
-        timestampUtc: DateTime.utc(2026, 5, 15, 12),
-        sizeBytes: 4096,
-      ),
-    ];
-
-    testWidgets(
-        'FR-14 render — 3 entries: 3 RadioListTile rows, '
-        'newest pre-selected, both CTAs enabled', (tester) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      await tester.pumpWidget(
-        _pickerHarness(
-          Builder(
-            builder: (ctx) => ElevatedButton(
-              onPressed: () =>
-                  RestorePickerDialog.show(ctx, entries: threeEntries),
-              child: const Text('open'),
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('open'));
-      await tester.pumpAndSettle();
-
-      // Three rows rendered.
-      expect(find.byType(RadioListTile<String>), findsNWidgets(3));
-
-      // RadioGroup.groupValue == entries.first.name (newest pre-selected).
-      final radioGroup = tester.widget<RadioGroup<String>>(
-        find.byType(RadioGroup<String>),
-      );
-      expect(radioGroup.groupValue, equals('newest.enc'));
-
-      // Both CTAs are enabled (onPressed != null).
-      // EN: restorePickerUseNewest = "Use newest", restorePickerRestoreThisVersion = "Restore"
-      final useNewest = tester.widget<TextButton>(
-        find.widgetWithText(TextButton, 'Use newest'),
-      );
-      final restoreThis = tester.widget<TextButton>(
-        find.widgetWithText(TextButton, 'Restore'),
-      );
-      expect(useNewest.onPressed, isNotNull);
-      expect(restoreThis.onPressed, isNotNull);
-    });
-
-    testWidgets('FR-14 shortcut — "Use newest" returns RestorePickNewest',
-        (tester) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      RestorePickerOutcome? captured;
-
-      await tester.pumpWidget(
-        _pickerHarness(
-          Builder(
-            builder: (ctx) => ElevatedButton(
-              onPressed: () =>
-                  RestorePickerDialog.show(ctx, entries: threeEntries)
-                      .then((v) => captured = v),
-              child: const Text('open'),
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('open'));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.widgetWithText(TextButton, 'Use newest'));
-      await tester.pumpAndSettle();
-
-      expect(captured, isA<RestorePickNewest>());
-    });
-
-    testWidgets(
-        'FR-14 select — tap second row + "Restore this version" '
-        'returns RestorePickFilename for mid.enc', (tester) async {
-      // Use a larger physical canvas so all rows are on screen.
-      tester.view.physicalSize = const Size(2400, 6000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
-
-      RestorePickerOutcome? captured;
-
-      await tester.pumpWidget(
-        _pickerHarness(
-          Builder(
-            builder: (ctx) => ElevatedButton(
-              onPressed: () =>
-                  RestorePickerDialog.show(ctx, entries: threeEntries)
-                      .then((v) => captured = v),
-              child: const Text('open'),
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('open'));
-      await tester.pumpAndSettle();
-
-      // Tap the second RadioListTile row.
-      await tester.tap(find.byType(RadioListTile<String>).at(1));
-      await tester.pumpAndSettle();
-
-      // EN: restorePickerRestoreThisVersion = "Restore"
-      await tester.tap(find.widgetWithText(TextButton, 'Restore'));
-      await tester.pumpAndSettle();
-
-      expect(captured, isA<RestorePickFilename>());
-      expect((captured! as RestorePickFilename).filename, equals('mid.enc'));
-    });
-
-    testWidgets(
-        'FR-14d — "Restore this version" foregroundColor is colorScheme.error',
-        (tester) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      await tester.pumpWidget(
-        _pickerHarness(
-          Builder(
-            builder: (ctx) => ElevatedButton(
-              onPressed: () => RestorePickerDialog.show(
-                ctx,
-                entries: [
-                  BackupFileEntry(
-                    name: 'only.enc',
-                    timestampUtc: DateTime.utc(2026, 5, 17, 12),
-                    sizeBytes: 1024,
-                  ),
-                ],
-              ),
-              child: const Text('open'),
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('open'));
-      await tester.pumpAndSettle();
-
-      // EN: restorePickerRestoreThisVersion = "Restore"
-      final button = tester.widget<TextButton>(
-        find.widgetWithText(TextButton, 'Restore'),
-      );
-      final colorScheme = MetraTheme.light().colorScheme;
-      final resolved = button.style!.foregroundColor!.resolve(<WidgetState>{});
-      expect(resolved, equals(colorScheme.error));
-    });
-
-    testWidgets(
-        'EC-01 — empty entries: no RadioListTile rows, both CTAs disabled',
-        (tester) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      await tester.pumpWidget(
-        _pickerHarness(
-          Builder(
-            builder: (ctx) => ElevatedButton(
-              onPressed: () => RestorePickerDialog.show(ctx, entries: const []),
-              child: const Text('open'),
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('open'));
-      await tester.pumpAndSettle();
-
-      // No list rows in the empty-state branch.
-      expect(find.byType(RadioListTile<String>), findsNothing);
-
-      // Empty-state renders a cloud icon and a single 'Close' (Chiudi / Close) CTA.
-      // 'Use newest' and 'Restore' buttons are absent in the empty-state branch.
-      // EN: restorePickerClose = "Close"
-      expect(find.widgetWithText(TextButton, 'Use newest'), findsNothing);
-      expect(find.widgetWithText(TextButton, 'Restore'), findsNothing);
-      expect(find.byIcon(Icons.cloud_outlined), findsOneWidget);
-      final closeButton = tester.widget<TextButton>(
-        find.widgetWithText(TextButton, 'Close'),
-      );
-      expect(closeButton.onPressed, isNotNull);
-    });
-
-    testWidgets('NFR-06 — empty body wrapped in Semantics(liveRegion: true)',
-        (tester) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      await tester.pumpWidget(
-        _pickerHarness(
-          Builder(
-            builder: (ctx) => ElevatedButton(
-              onPressed: () => RestorePickerDialog.show(ctx, entries: const []),
-              child: const Text('open'),
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('open'));
-      await tester.pumpAndSettle();
-
-      // A Semantics node with liveRegion: true must exist in the dialog tree.
-      final liveRegionNode = find.byWidgetPredicate(
-        (w) => w is Semantics && w.properties.liveRegion == true,
-      );
-      expect(liveRegionNode, findsAtLeastNWidgets(1));
-    });
-
-    test(
-        'HC-5 — widget source does NOT reference metra_backup_ or BackupFilename',
-        () async {
-      final src = await File(
-        'lib/features/backup/widgets/restore_picker_dialog.dart',
-      ).readAsString();
-      expect(src.contains('metra_backup_'), isFalse);
-      expect(src.contains('BackupFilename'), isFalse);
-    });
-
-    testWidgets('EC-12 — rows display localized date strings (DateFormat used)',
-        (tester) async {
-      tester.view.physicalSize = const Size(800, 4000);
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      await tester.pumpWidget(
-        _pickerHarness(
-          Builder(
-            builder: (ctx) => ElevatedButton(
-              onPressed: () => RestorePickerDialog.show(
-                ctx,
-                entries: [
-                  BackupFileEntry(
-                    name: 'only.enc',
-                    timestampUtc: DateTime.utc(2026, 5, 17, 12),
-                    sizeBytes: 1024,
-                  ),
-                ],
-              ),
-              child: const Text('open'),
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('open'));
-      await tester.pumpAndSettle();
-
-      // The row must display the year 2026, proving DateFormat was applied
-      // (raw filename 'only.enc' does not contain '2026').
-      expect(find.textContaining('2026'), findsAtLeastNWidgets(1));
-    });
-  });
+  // restore-picker-dialog group removed in TASK-22.
+  // Equivalent coverage will be written by TASK-28 (Group F) and TASK-35.
+  // TASK-30 will rewrite the full backup_screen_test.dart suite.
 
 // ---------------------------------------------------------------------------
 // TASK-20 — BackupScreen._handleRestore rewire + FR-14d + FR-14e
@@ -1292,6 +1004,103 @@ void main() {
           reason: '${f.path} must not reference autoBackupActive',
         );
       }
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // TASK-21 — Dispatcher smoke tests (TDD-first)
+  // ---------------------------------------------------------------------------
+
+  group('TASK-21 — Dispatcher smoke tests', () {
+    testWidgets('Dispatcher: BackupNotConnected → BackupEmptyView root',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(_wrap(const BackupNotConnected()));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(BackupEmptyView), findsOneWidget);
+    });
+
+    testWidgets('Dispatcher: BackupConnected → BackupConnectedView root',
+        (tester) async {
+      tester.view.physicalSize = const Size(2400, 6000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(
+        _wrap(
+          const BackupConnected(
+            email: 'dispatcher@test.com',
+            autoBackupActive: true,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(BackupConnectedView), findsOneWidget);
+    });
+
+    testWidgets(
+        'Dispatcher: BackupRunning(restoring) → RestoreProgressScreen root',
+        (tester) async {
+      await tester.pumpWidget(
+        _wrap(const BackupRunning(BackupOperation.restoring)),
+      );
+      await tester.pump();
+
+      expect(find.byType(RestoreProgressScreen), findsOneWidget);
+    });
+
+    testWidgets(
+        'Dispatcher: BackupRunning(backingUp) → CircularProgressIndicator '
+        'visible and NOT RestoreProgressScreen', (tester) async {
+      await tester.pumpWidget(
+        _wrap(const BackupRunning(BackupOperation.backingUp)),
+      );
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(RestoreProgressScreen), findsNothing);
+    });
+
+    testWidgets('Dispatcher: BackupErrorState → BackupErrorView root',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(_wrap(const BackupErrorState('dispatch-err')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(BackupErrorView), findsOneWidget);
+    });
+
+    test('backup_screen.dart switch has no default branch', () async {
+      final src = await File(
+        'lib/features/backup/backup_screen.dart',
+      ).readAsString();
+      // No bare 'default:' label in the switch (outside comments).
+      expect(
+        RegExp(r'^\s*default\s*:', multiLine: true).hasMatch(src),
+        isFalse,
+      );
+    });
+
+    test('flutter analyze backup_screen.dart reports zero issues', () async {
+      final result = await Process.run(
+        'flutter',
+        ['analyze', 'lib/features/backup/backup_screen.dart', '--no-fatal-infos'],
+        workingDirectory: '.',
+      );
+      expect(
+        result.exitCode,
+        0,
+        reason: 'flutter analyze output:\n${result.stdout}\n${result.stderr}',
+      );
     });
   });
 }
