@@ -78,10 +78,10 @@ class _StubBackupNotifier extends BackupNotifier {
   Future<void> backupWithPassphrase(String passphrase) async {}
 
   @override
-  Future<void> restoreWithPassphrase(
+  Future<int?> restoreWithPassphrase(
     String passphrase, {
     String? filename,
-  }) async {}
+  }) async => null;
 
   @override
   Future<void> disconnect() async {}

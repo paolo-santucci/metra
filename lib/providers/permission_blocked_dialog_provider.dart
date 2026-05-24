@@ -109,9 +109,16 @@ class NavigatorKeyDialog implements PermissionBlockedDialog {
                 tapTargetSize: MaterialTapTargetSize.padded,
               ),
               onPressed: () async {
-                await _notificationService.openNotificationSettings();
-                // ignore: use_build_context_synchronously
-                Navigator.pop(dialogCtx);
+                try {
+                  await _notificationService.openNotificationSettings();
+                } catch (_) {
+                  // openNotificationSettings() has its own catch (C-02 contract).
+                  // This is defence-in-depth: any exception that escapes is
+                  // swallowed here so the finally can close the dialog cleanly.
+                } finally {
+                  // ignore: use_build_context_synchronously
+                  Navigator.pop(dialogCtx);
+                }
               },
               child: Text(l10n.notificationPermissionOpenSettingsCta),
             ),

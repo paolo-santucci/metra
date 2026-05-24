@@ -70,10 +70,10 @@ class _FakeNotifier extends BackupNotifier {
   Future<BackupState> build() async => _initial;
 
   @override
-  Future<void> restoreWithPassphrase(
+  Future<int?> restoreWithPassphrase(
     String passphrase, {
     String? filename,
-  }) async {}
+  }) async => null;
 
   @override
   Future<void> backupNow() async {}

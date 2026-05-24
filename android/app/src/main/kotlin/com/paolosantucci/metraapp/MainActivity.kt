@@ -79,7 +79,11 @@ class MainActivity : FlutterActivity() {
                         val intent = Intent(
                             Settings.ACTION_APP_NOTIFICATION_SETTINGS,
                         ).putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
-                        startActivity(intent)
+                        try {
+                            startActivity(intent)
+                        } catch (e: Exception) {
+                            // Swallow — atypical OEM with no settings activity.
+                        }
                         result.success(null)
                     }
                     else -> result.notImplemented()

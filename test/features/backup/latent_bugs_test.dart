@@ -18,6 +18,7 @@
 
 // TASK-34 — Group M: latent-bug regression tests (I-1 … I-5)
 // sp-20260524 — Group N: BUG-01 + BUG-R1 regression tests (N-1 … N-4)
+// sp-20260524 — Group O: BUG-RT01 BackupNotifier count propagation (O-1 … O-3)
 //
 // I-1  Restore flow step order: BackupPickerSheet → MetraConfirmDialog → PassphraseDialog.
 // I-2  Dispatcher no-crash on all 5 BackupState subtypes.
@@ -33,6 +34,10 @@
 // N-3  BUG-01: autoBackupActive false when backupSuspended=true even if passphrase present.
 // N-4  BUG-R1: restore() Ok-branch invalidates currentCycleDayProvider + cycleDayForDateProvider.
 //
+// O-1  BUG-RT01: restore() returns the int count from the Ok branch.
+// O-2  BUG-RT01: restore() returns null on the Err branch + sets BackupErrorState.
+// O-3  BUG-RT01: restoreWithPassphrase() propagates the count from restore().
+//
 // Platform matrix: all (Linux CI — no device required).
 
 import 'dart:io';
@@ -40,6 +45,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:metra/core/errors/metra_exception.dart';
 import 'package:metra/core/theme/metra_theme.dart';
 import 'package:metra/core/util/nullable.dart';
 import 'package:metra/data/services/backup/backup_file_entry.dart';
@@ -59,6 +65,7 @@ import 'package:metra/providers/repository_providers.dart';
 import 'package:metra/providers/use_case_providers.dart';
 
 import '../../helpers/fake_app_settings_repository.dart';
+import '../../helpers/fake_backup_runner.dart';
 import '../../helpers/fake_dropbox_provider.dart';
 import '../../helpers/fake_sync_log_repository.dart';
 import '../../helpers/in_memory_secure_storage.dart';
@@ -73,7 +80,7 @@ class _OkRunner implements BackupRunner {
   Future<void> backup() async {}
 
   @override
-  Future<void> restore({String? filename}) async {}
+  Future<int> restore({String? filename}) async => 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -92,12 +99,13 @@ class _StubBackupNotifier extends BackupNotifier {
   Future<BackupState> build() async => _initial;
 
   @override
-  Future<void> restoreWithPassphrase(
+  Future<int?> restoreWithPassphrase(
     String passphrase, {
     String? filename,
   }) async {
     capturedRestorePassphrase = passphrase;
     capturedRestoreFilename = filename;
+    return null;
   }
 
   @override
@@ -612,6 +620,111 @@ void main() {
                 'autoBackupActive must be false when backupSuspended = true, '
                 'even though passphrase is set',
           );
+        },
+      );
+    },
+  );
+
+  // =========================================================================
+  // O — sp-20260524: BUG-RT01 BackupNotifier count propagation
+  // =========================================================================
+
+  group(
+    'O-1..3 — BUG-RT01: BackupNotifier.restore/restoreWithPassphrase count propagation',
+    () {
+      FakeAppSettingsRepository settingsRepo() =>
+          FakeAppSettingsRepository()
+            ..storedSettings = AppSettingsData.defaults().copyWith(
+              dropboxEmail: const Nullable('a@b.test'),
+            );
+
+      ProviderContainer makeContainer({
+        required FakeBackupRunner fakeRunner,
+        InMemorySecureStorage? storage,
+      }) =>
+          ProviderContainer(
+            overrides: [
+              appSettingsRepositoryProvider.overrideWith(
+                (_) async => settingsRepo(),
+              ),
+              secureStorageProvider.overrideWithValue(
+                storage ?? (InMemorySecureStorage()
+                  ..values[BackupNotifier.kPassphraseKey] = 'pw'),
+              ),
+              restoreDataProvider.overrideWith(
+                (_) async => RestoreData(fakeRunner),
+              ),
+              backupDataProvider.overrideWith(
+                (_) async => BackupData(fakeRunner),
+              ),
+              cloudBackupProvider.overrideWithValue(FakeDropboxProvider()),
+              syncLogRepositoryProvider.overrideWith(
+                (_) async => FakeSyncLogRepository(),
+              ),
+            ],
+          );
+
+      // O-1: restore() returns the int count from the Ok branch.
+      test(
+        'backupNotifier_restore_returns_count_from_okBranch',
+        () async {
+          final fakeRunner = FakeBackupRunner()..restoreReturnValue = 5;
+          final container = makeContainer(fakeRunner: fakeRunner);
+          addTearDown(container.dispose);
+
+          await container.read(backupNotifierProvider.future);
+
+          final count = await container
+              .read(backupNotifierProvider.notifier)
+              .restore(filename: 'metra_backup_test.enc');
+
+          expect(count, equals(5));
+        },
+      );
+
+      // O-2: restore() returns null on the Err branch + sets BackupErrorState.
+      test(
+        'backupNotifier_restore_returns_null_on_errBranch',
+        () async {
+          final fakeRunner = FakeBackupRunner()
+            ..restoreError = const SyncException('boom');
+          final container = makeContainer(fakeRunner: fakeRunner);
+          addTearDown(container.dispose);
+
+          await container.read(backupNotifierProvider.future);
+          final notifier =
+              container.read(backupNotifierProvider.notifier);
+
+          final count = await notifier.restore();
+
+          expect(count, isNull);
+          expect(
+            container.read(backupNotifierProvider).valueOrNull,
+            isA<BackupErrorState>(),
+          );
+        },
+      );
+
+      // O-3: restoreWithPassphrase() propagates the count from restore().
+      test(
+        'backupNotifier_restoreWithPassphrase_returns_count_from_okBranch',
+        () async {
+          final fakeRunner = FakeBackupRunner()..restoreReturnValue = 12;
+          final storage = InMemorySecureStorage()
+            ..values[BackupNotifier.kPassphraseKey] = 'old-pw';
+          final container = makeContainer(
+            fakeRunner: fakeRunner,
+            storage: storage,
+          );
+          addTearDown(container.dispose);
+
+          await container.read(backupNotifierProvider.future);
+
+          final count = await container
+              .read(backupNotifierProvider.notifier)
+              .restoreWithPassphrase('pw', filename: 'f.enc');
+
+          expect(count, equals(12));
         },
       );
     },

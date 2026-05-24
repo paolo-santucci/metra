@@ -89,7 +89,7 @@ class _StubBackupNotifier extends BackupNotifier {
   Future<BackupState> build() async => _initial;
 
   @override
-  Future<void> restoreWithPassphrase(
+  Future<int?> restoreWithPassphrase(
     String passphrase, {
     String? filename,
   }) async {
@@ -97,6 +97,7 @@ class _StubBackupNotifier extends BackupNotifier {
     capturedRestoreFilename = filename;
     if (restoreFailMessage != null) {
       state = AsyncData(BackupErrorState(restoreFailMessage!));
+      return null;
     } else if (restoreTransitionsToConnected) {
       // Simulate a successful restore: re-emit BackupConnected so the
       // dispatcher shows BackupConnectedView (what ref.invalidateSelf() would
@@ -111,6 +112,7 @@ class _StubBackupNotifier extends BackupNotifier {
       );
     }
     // Otherwise: capture only, leave state unchanged (stays at _initial).
+    return null;
   }
 
   @override

@@ -33,6 +33,12 @@ class FakeBackupRunner implements BackupRunner {
   int backupCallCount = 0;
   int restoreCallCount = 0;
 
+  /// Configurable count returned by [restore] on the happy path.
+  ///
+  /// Defaults to 0; set to a positive value to test callers that propagate
+  /// the restored-log count (e.g. [RestoreData], [BackupNotifier.restore]).
+  int restoreReturnValue = 0;
+
   /// The `filename` argument last received by [restore]. Stays `null` when
   /// [restore] has not been called, or when it was called with `filename: null`
   /// (legacy newest-path).
@@ -46,9 +52,10 @@ class FakeBackupRunner implements BackupRunner {
   }
 
   @override
-  Future<void> restore({String? filename}) async {
+  Future<int> restore({String? filename}) async {
     restoreCallCount++;
     lastFilename = filename;
     if (restoreError != null) throw restoreError!;
+    return restoreReturnValue;
   }
 }

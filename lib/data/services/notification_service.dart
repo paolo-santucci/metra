@@ -316,7 +316,7 @@ class FlutterNotificationService implements NotificationService {
     // policy of openBatteryOptimizationSettings.
     try {
       await _kNotifSettingsChannel.invokeMethod<void>('open');
-    } on PlatformException catch (e) {
+    } catch (e) {
       debugPrint('[NotificationService.openNotificationSettings] $e');
     }
   }

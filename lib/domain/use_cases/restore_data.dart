@@ -26,10 +26,13 @@ class RestoreData {
   /// Executes a restore from the backup identified by [filename].
   ///
   /// When [filename] is `null`, the runner uses the legacy "newest file" path.
-  Future<Result<void>> call({String? filename}) async {
+  ///
+  /// Returns [Ok] with the number of daily-log rows restored on success,
+  /// or [Err] with the encountered [MetraException] on failure.
+  Future<Result<int>> call({String? filename}) async {
     try {
-      await _runner.restore(filename: filename);
-      return const Ok(null);
+      final count = await _runner.restore(filename: filename);
+      return Ok(count);
     } on MetraException catch (e) {
       return Err(e);
     } catch (e) {

@@ -17,12 +17,16 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 // TASK-32 — Group J static grep: _handleRestore mounted-guard coverage
+// sp-20260524 T-04 — guard count updated to 5 (C-05: new guard 5 after
+//   restoreWithPassphrase await, before messenger.showSnackBar dispatch).
 //
 // Spec ref: §7.1 Group J (FR-28, EC-08)
 //
 // Verifies that in backup_connected_view_handlers.dart:
-//   (a) handleRestore() contains exactly 4 `if (!mounted) return` guards —
-//       one after each of the four async boundaries in the restore flow.
+//   (a) handleRestore() contains exactly 5 `if (!mounted) return` guards —
+//       one after each of the five async boundaries in the restore flow:
+//       1. provider fetch, 2. sheet pop, 3. confirm dialog pop,
+//       4. passphrase callback, 5. restoreWithPassphrase (new — C-05).
 //   (b) Every `await` expression inside handleRestore() that is followed by
 //       a `BuildContext`-consuming symbol (context, Navigator, ScaffoldMessenger,
 //       dialog `.show(`) has a preceding `if (!mounted) return` guard within
@@ -80,7 +84,7 @@ void main() {
   // ---------------------------------------------------------------------------
 
   test(
-    'handleRestore_has_exactly_4_mounted_guards_one_per_async_boundary',
+    'handleRestore_has_exactly_5_mounted_guards_one_per_async_boundary',
     () {
       final src = File(handlersPath).readAsStringSync();
       final body = extractHandleRestoreBody(src);
@@ -91,11 +95,12 @@ void main() {
 
       expect(
         guards,
-        4,
+        5,
         reason:
-            'handleRestore() must contain exactly 4 `if (!mounted) return;` '
-            'guards — one after each of the four async boundaries (provider '
-            'fetch, sheet pop, confirm dialog pop, passphrase callback). '
+            'handleRestore() must contain exactly 5 `if (!mounted) return;` '
+            'guards — one after each of the five async boundaries: (1) provider '
+            'fetch, (2) sheet pop, (3) confirm dialog pop, (4) passphrase '
+            'callback, (5) restoreWithPassphrase (C-05, T-04). '
             'Found: $guards',
       );
     },

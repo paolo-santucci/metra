@@ -167,7 +167,7 @@ class SyncOrchestrator implements BackupRunner {
   }
 
   @override
-  Future<void> restore({String? filename}) async {
+  Future<int> restore({String? filename}) async {
     final ts = _now();
     try {
       final passphrase =
@@ -206,6 +206,7 @@ class SyncOrchestrator implements BackupRunner {
           success: true,
         ),
       );
+      return logs.length;
     } catch (e) {
       await _syncLogRepo.append(
         SyncLogEntity(

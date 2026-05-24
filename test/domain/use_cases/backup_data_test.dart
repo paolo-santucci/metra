@@ -19,7 +19,7 @@ class _FakeRunner implements BackupRunner {
   }
 
   @override
-  Future<void> restore({String? filename}) async {}
+  Future<int> restore({String? filename}) async => 0;
 }
 
 void main() {

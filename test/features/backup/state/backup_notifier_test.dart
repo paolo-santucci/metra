@@ -46,12 +46,13 @@ class _FakeRunner implements BackupRunner {
   }
 
   @override
-  Future<void> restore({String? filename}) async {
+  Future<int> restore({String? filename}) async {
     restoreCalled = true;
     restoreCallCount++;
     lastFilename = filename;
     final r = restoreResult;
     if (r is Err<void>) throw r.error;
+    return 0;
   }
 }
 
@@ -70,7 +71,7 @@ class _BlockingRunner implements BackupRunner {
   }
 
   @override
-  Future<void> restore({String? filename}) async {}
+  Future<int> restore({String? filename}) async => 0;
 }
 
 /// A runner whose [restore] simulates [SyncOrchestrator.restore] alignment:
@@ -90,9 +91,10 @@ class _AligningRestoreRunner implements BackupRunner {
   Future<void> backup() async {}
 
   @override
-  Future<void> restore({String? filename}) async {
+  Future<int> restore({String? filename}) async {
     restoreCalled = true;
     await _settingsRepo.updateLastDataWriteAt(_tb);
+    return 0;
   }
 }
 

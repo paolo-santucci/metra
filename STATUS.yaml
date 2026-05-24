@@ -1,15 +1,15 @@
 schema-version: 2
-last-updated: "2026-05-24T20:00:00+02:00"
+last-updated: "2026-05-24T23:30:00+02:00"
 active-plan: null
-last-plan: ".claude/docs/plans/archive/qp-20260524-backup-state-label-prediction-bugs.md"
+last-plan: ".claude/docs/plans/qp-20260524-notification-link-restore-toast.md"
 
 # Owned by the short-plan skill. update-status preserves verbatim.
 short-plan:
-  feature: null
-  slug: null
+  feature: "1. notification settings link in blocked-permission popup doesn't work; 2. no toast after backup restore showing record count"
+  slug: "notification-link-restore-toast"
   auto: false
-  request-type: null
-  workflow: null
+  request-type: bug-fix
+  workflow: quick
   parent:
     spec: null
     plan: null
@@ -17,21 +17,24 @@ short-plan:
     frs: null
   paths:
     spec: null
-    plan: null
-    assess-dir: null
+    plan: ".claude/docs/plans/qp-20260524-notification-link-restore-toast.md"
+    assess-dir: ".claude/docs/specs/sp-20260524-notification-link-restore-toast-assessment"
   phases:
-    assess: pending
-    triage: pending
-    spec: pending
-    plan: pending
-    build: pending
+    assess: done
+    triage: done
+    spec: skipped
+    plan: done
+    build: done
   approvals:
     spec: null
     plan: null
   rejection-note: null
   build-progress:
-    current-wave: null
-    waves-completed: []
+    current-wave: 3
+    waves-completed:
+      - 1
+      - 2
+      - 3
 
 # Owned by the long-plan skill. update-status preserves verbatim.
 long-plan:
@@ -55,6 +58,10 @@ pending-consolidation: []
 
 recently-completed:
   - date: "2026-05-24"
+    summary: "fix(notification+backup): qp-20260524 T-05 integration test — 1471 tests pass (wave 3 complete)"
+  - date: "2026-05-24"
+    summary: "chore(release): bump version to 1.0.2+7 for TestFlight rc5"
+  - date: "2026-05-24"
     summary: "fix(backup+prediction): T-A..T-F qp-20260524 — 7 bug fixes, 1454 tests pass"
   - date: "2026-05-24"
     summary: "chore(status): log quality CI fix — 9 consecutive failures resolved"
@@ -62,13 +69,11 @@ recently-completed:
     summary: "fix(ci): pin Flutter to 3.41.9 and enforce pubspec.lock in quality workflow"
   - date: "2026-05-24"
     summary: "chore(release): bump version to 1.0.2+6 for TestFlight rc2"
-  - date: "2026-05-24"
-    summary: "feat(backup): T-A..T-D qp-20260524 — 4 bug fixes, 1435 tests pass"
 
 in-progress: []
 
 next-steps:
-  - "FR-17 manual sign-off on physical iOS device (cold-start notification permission denied + dialog on toggle-on)"
+  - "qp-20260524 complete (T-01..T-05 all done, 1471 tests pass) — MANDATORY before declaring QP closed: §6 step 6 manual E2E on physical iOS device (cold-start notification permission denied + dialog on toggle-on) per T-01 done-when checklist"
   - "NFR-03 manual measurement: hasNotificationPermission() < 100ms p95 on cold-start iOS"
   - "Screenshot refresh for backup-connected IT+EN (TASK-39/40 deferred to next manual QA session with Android emulator)"
 
@@ -85,3 +90,7 @@ known-issues:
     description: "iOS PermissionDenied vs PermissionBlocked indistinguishable via flutter_local_notifications v17 — both return PermissionBlocked"
     impact: low
     workaround: "Conservative UX: settings dialog always offered on iOS denial; slightly over-eager on first-time denials"
+  - severity: info
+    description: "iOS: metra/notification_settings channel fix landed (T-01) — moved registration to didInitializeImplicitFlutterEngine; pending manual E2E on physical device (§6 step 6)"
+    impact: low
+    workaround: "Build via next TestFlight cut and verify on physical device"

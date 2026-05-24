@@ -885,4 +885,9 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get notificationPermissionBlockedDismiss => 'Annulla';
+
+  @override
+  String restoreSuccessToast(int count) {
+    return 'Ripristinati $count record';
+  }
 }

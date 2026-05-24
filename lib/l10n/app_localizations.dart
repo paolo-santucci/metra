@@ -1663,6 +1663,12 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Annulla'**
   String get notificationPermissionBlockedDismiss;
+
+  /// Snackbar mostrato dopo un ripristino riuscito; indica il numero di log giornalieri ripristinati dal backup
+  ///
+  /// In it, this message translates to:
+  /// **'Ripristinati {count} record'**
+  String restoreSuccessToast(int count);
 }
 
 class _AppLocalizationsDelegate

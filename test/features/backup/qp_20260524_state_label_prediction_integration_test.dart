@@ -69,7 +69,7 @@ class _LastBackupAtUpdatingRunner implements BackupRunner {
   }
 
   @override
-  Future<void> restore({String? filename}) async {}
+  Future<int> restore({String? filename}) async => 0;
 }
 
 // ---------------------------------------------------------------------------

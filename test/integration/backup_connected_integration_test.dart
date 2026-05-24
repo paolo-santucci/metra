@@ -83,7 +83,7 @@ class _StubBackupNotifier extends BackupNotifier {
   Future<BackupState> build() async => _initial;
 
   @override
-  Future<void> restoreWithPassphrase(
+  Future<int?> restoreWithPassphrase(
     String passphrase, {
     String? filename,
   }) async {
@@ -91,7 +91,9 @@ class _StubBackupNotifier extends BackupNotifier {
     capturedRestoreFilename = filename;
     if (restoreFailMessage != null) {
       state = AsyncData(BackupErrorState(restoreFailMessage!));
+      return null;
     }
+    return null;
   }
 
   @override

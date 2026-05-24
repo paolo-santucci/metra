@@ -13,6 +13,7 @@ import 'package:metra/data/services/backup/backup_filename.dart';
 import 'package:metra/data/services/backup/backup_service.dart';
 import 'package:metra/data/services/backup/sync_orchestrator.dart';
 import 'package:metra/data/services/encryption_service.dart';
+import 'package:metra/domain/entities/daily_log_entity.dart';
 import 'package:metra/domain/entities/sync_log_entity.dart';
 
 import '../../../helpers/fake_app_settings_repository.dart';
@@ -713,5 +714,49 @@ void main() {
         },
       );
     });
+
+    test(
+      'restore_returns_logs_length_on_happy_path',
+      () async {
+        // Seed exactly 5 daily-log rows and 3 symptom maps into logRepo,
+        // then back up — the snapshot will encode 5 logs + 3 symptoms.
+        // C-07 invariant: restore() returns logs.length (5), NOT logs+symptoms.
+        storage.values[passphraseKey] = passphrase;
+        final dates = [
+          DateTime.utc(2026, 1, 1),
+          DateTime.utc(2026, 1, 2),
+          DateTime.utc(2026, 1, 3),
+          DateTime.utc(2026, 1, 4),
+          DateTime.utc(2026, 1, 5),
+        ];
+        for (final d in dates) {
+          await logRepo.saveDailyLog(DailyLogEntity(date: d));
+        }
+        // Add pain symptoms to the first 3 dates (3 symptom maps).
+        for (final d in dates.take(3)) {
+          logRepo.symptoms[d] = [];
+        }
+        // Back up the 5-log snapshot.
+        await _make(
+          storage: storage,
+          provider: provider,
+          settingsRepo: settingsRepo,
+          syncLogRepo: syncLogRepo,
+          logRepo: logRepo,
+        ).backup();
+        syncLogRepo.appended.clear();
+
+        final orch = _make(
+          storage: storage,
+          provider: provider,
+          settingsRepo: settingsRepo,
+          syncLogRepo: syncLogRepo,
+          logRepo: logRepo,
+        );
+        final count = await orch.restore();
+        // Must return log count only (5), not log+symptom count (8).
+        expect(count, equals(5));
+      },
+    );
   });
 }

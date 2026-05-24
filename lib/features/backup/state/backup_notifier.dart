@@ -279,13 +279,16 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     }
   }
 
-  Future<void> restore({String? filename}) async {
+  /// Returns the number of daily-log rows restored, or null on failure.
+  /// On null, the notifier has already set [BackupErrorState] — the caller
+  /// uses null as the "do not show success snackbar" signal.
+  Future<int?> restore({String? filename}) async {
     state = const AsyncData(BackupRunning(BackupOperation.restoring));
     try {
       final uc = await ref.read(restoreDataProvider.future);
       final result = await uc(filename: filename);
       switch (result) {
-        case Ok():
+        case Ok(:final value):
           ref.invalidateSelf();
           // BUG-R1: invalidate cached cycle-day providers so the UI reflects
           // the restored data. Do NOT invalidate cyclePredictionProvider —
@@ -293,8 +296,10 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
           // invalidation would reset the badge to AsyncLoading (C-04).
           ref.invalidate(currentCycleDayProvider);
           ref.invalidate(cycleDayForDateProvider);
+          return value; // propagate count to caller
         case Err(:final error):
           state = AsyncData(BackupErrorState(error.message));
+          return null;
       }
     } catch (e) {
       state = AsyncData(
@@ -304,10 +309,12 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
               : 'Something went wrong. Please try again.',
         ),
       );
+      return null;
     }
   }
 
-  Future<void> restoreWithPassphrase(
+  /// Returns the count from [restore] (null on failure or rollback path).
+  Future<int?> restoreWithPassphrase(
     String passphrase, {
     String? filename,
   }) async {
@@ -320,7 +327,7 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     // Write the new passphrase so the orchestrator picks it up during restore.
     await storage.write(key: _passphraseKey, value: passphrase);
 
-    await restore(filename: filename);
+    final count = await restore(filename: filename);
 
     // If the restore failed, restore() sets an error state but does not throw.
     // Detect failure via state and roll back the secure-storage value.
@@ -332,6 +339,7 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
         await storage.delete(key: _passphraseKey);
       }
     }
+    return count;
   }
 }
 

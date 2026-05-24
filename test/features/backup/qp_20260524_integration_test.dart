@@ -83,7 +83,7 @@ class _LastBackupWritingRunner implements BackupRunner {
   }
 
   @override
-  Future<void> restore({String? filename}) async {}
+  Future<int> restore({String? filename}) async => 0;
 }
 
 /// A [BackupRunner] that succeeds immediately without side-effects.
@@ -95,7 +95,7 @@ class _OkRunner implements BackupRunner {
   Future<void> backup() async {}
 
   @override
-  Future<void> restore({String? filename}) async {}
+  Future<int> restore({String? filename}) async => 0;
 }
 
 // ---------------------------------------------------------------------------

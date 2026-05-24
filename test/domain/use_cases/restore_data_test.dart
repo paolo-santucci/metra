@@ -24,10 +24,10 @@ import '../../helpers/fake_backup_runner.dart';
 
 void main() {
   group('RestoreData — existing behaviour', () {
-    test('returns Ok(null) on success', () async {
+    test('returns Ok(0) on success (default restoreReturnValue)', () async {
       final runner = FakeBackupRunner();
       final result = await RestoreData(runner)();
-      expect(result, isA<Ok<void>>());
+      expect(result, isA<Ok<int>>());
       expect(runner.restoreCallCount, equals(1));
     });
 
@@ -35,24 +35,24 @@ void main() {
       final runner = FakeBackupRunner()
         ..restoreError = const SyncException('x');
       final result = await RestoreData(runner)();
-      expect(result, isA<Err<void>>());
-      expect((result as Err<void>).error, isA<SyncException>());
+      expect(result, isA<Err<int>>());
+      expect((result as Err<int>).error, isA<SyncException>());
     });
 
     test('wraps unknown error in SyncException Err', () async {
       final runner = FakeBackupRunner()
         ..restoreError = StateError('unexpected');
       final result = await RestoreData(runner)();
-      expect(result, isA<Err<void>>());
-      expect((result as Err<void>).error, isA<SyncException>());
+      expect(result, isA<Err<int>>());
+      expect((result as Err<int>).error, isA<SyncException>());
     });
 
     test('EncryptionException flows through as Err', () async {
       final runner = FakeBackupRunner()
         ..restoreError = const EncryptionException('wrong passphrase');
       final result = await RestoreData(runner)();
-      expect(result, isA<Err<void>>());
-      expect((result as Err<void>).error, isA<EncryptionException>());
+      expect(result, isA<Err<int>>());
+      expect((result as Err<int>).error, isA<EncryptionException>());
     });
   });
 
@@ -82,5 +82,24 @@ void main() {
         expect(runner.restoreCallCount, equals(1));
       },
     );
+  });
+
+  group('RestoreData — Future<int> return (BUG-RT02)', () {
+    test('call_returns_Ok_int_when_runner_succeeds', () async {
+      final runner = FakeBackupRunner()..restoreReturnValue = 7;
+      final useCase = RestoreData(runner);
+      final result = await useCase(filename: 'metra_backup_test');
+      expect(result, isA<Ok<int>>());
+      expect((result as Ok<int>).value, equals(7));
+    });
+
+    test('call_returns_Err_when_runner_throws', () async {
+      final runner = FakeBackupRunner()
+        ..restoreError = const SyncException('boom');
+      final useCase = RestoreData(runner);
+      final result = await useCase();
+      expect(result, isA<Err<int>>());
+      expect((result as Err<int>).error.message, contains('boom'));
+    });
   });
 }

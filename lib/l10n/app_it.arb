@@ -1293,5 +1293,15 @@
   "notificationPermissionBlockedDismiss": "Annulla",
   "@notificationPermissionBlockedDismiss": {
     "description": "Dismiss button in the notification-permission-blocked alert — closes without opening settings"
+  },
+
+  "restoreSuccessToast": "Ripristinati {count} record",
+  "@restoreSuccessToast": {
+    "description": "Snackbar mostrato dopo un ripristino riuscito; indica il numero di log giornalieri ripristinati dal backup",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

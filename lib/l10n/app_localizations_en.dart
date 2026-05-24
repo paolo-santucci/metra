@@ -881,4 +881,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notificationPermissionBlockedDismiss => 'Cancel';
+
+  @override
+  String restoreSuccessToast(int count) {
+    return '$count records restored';
+  }
 }

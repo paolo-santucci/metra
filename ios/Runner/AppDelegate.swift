@@ -7,17 +7,17 @@ import UIKit
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    let result = super.application(application, didFinishLaunchingWithOptions: launchOptions)
-    // Register the notification-settings channel here, where the FlutterViewController
-    // and its engine are already attached to the window by super.application.
-    if let controller = window?.rootViewController as? FlutterViewController {
-      registerNotificationSettingsChannel(messenger: controller.binaryMessenger)
-    }
-    return result
+    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    // Register the notification-settings channel via the implicit engine's binary
+    // messenger. Under iOS-13+ UIApplicationSceneManifest (scene lifecycle),
+    // window is nil at didFinishLaunchingWithOptions time — this callback fires
+    // when the FlutterViewController for the first scene is initialised, at which
+    // point engineBridge.binaryMessenger is valid (FR-23, FR-25).
+    registerNotificationSettingsChannel(messenger: engineBridge.binaryMessenger)
   }
 
   // Registers the notification-settings MethodChannel so Flutter can open the

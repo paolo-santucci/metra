@@ -563,10 +563,81 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
-  // Group I — BUG-006: Android schedule mode + PlatformException visibility
+  // Group I — T-02 (BUG-02): openNotificationSettings swallows all exceptions
+  // ---------------------------------------------------------------------------
+
+  group('T-02: openNotificationSettings — never-throws contract (BUG-02)', () {
+    const kNotifSettingsChannel = 'metra/notification_settings';
+
+    test(
+      'openNotificationSettings_swallows_MissingPluginException',
+      () async {
+        // No mock handler registered → Flutter test binding raises
+        // MissingPluginException for an unhandled channel invokeMethod call.
+        // The bare catch(e) must swallow it; the Future must complete normally.
+        final captured = <String>[];
+        final originalDebugPrint = debugPrint;
+        debugPrint = (String? msg, {int? wrapWidth}) => captured.add(msg ?? '');
+        addTearDown(() => debugPrint = originalDebugPrint);
+
+        final service = FlutterNotificationService();
+        await expectLater(service.openNotificationSettings(), completes);
+
+        expect(
+          captured.any((m) => m.contains('MissingPluginException')),
+          isTrue,
+          reason:
+              'MissingPluginException must be surfaced via debugPrint with '
+              'the correct prefix',
+        );
+      },
+    );
+
+    test(
+      'openNotificationSettings_swallows_PlatformException',
+      () async {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(
+          const MethodChannel(kNotifSettingsChannel),
+          (call) async {
+            throw PlatformException(
+              code: 'settings_not_available',
+              message: 'OEM blocked',
+            );
+          },
+        );
+        addTearDown(() {
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+              .setMockMethodCallHandler(
+            const MethodChannel(kNotifSettingsChannel),
+            null,
+          );
+        });
+
+        final captured = <String>[];
+        final originalDebugPrint = debugPrint;
+        debugPrint = (String? msg, {int? wrapWidth}) => captured.add(msg ?? '');
+        addTearDown(() => debugPrint = originalDebugPrint);
+
+        final service = FlutterNotificationService();
+        await expectLater(service.openNotificationSettings(), completes);
+
+        expect(
+          captured.any(
+            (m) => m.contains('[NotificationService.openNotificationSettings]'),
+          ),
+          isTrue,
+          reason: 'PlatformException must be surfaced via debugPrint',
+        );
+      },
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // Group J — BUG-006: Android schedule mode + PlatformException visibility
   // ---------------------------------------------------------------------------
   //
-  // Group J — TASK-05: battery-optimisation channel (FR-03 platform side)
+  // Group K — TASK-05: battery-optimisation channel (FR-03 platform side)
   // ---------------------------------------------------------------------------
 
   group(

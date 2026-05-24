@@ -32,6 +32,7 @@
 //
 // Platform matrix: Linux CI, headless (no device-farm dependency).
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -69,8 +70,18 @@ class _StubBackupNotifier extends BackupNotifier {
   int backupNowCallCount = 0;
 
   /// When non-null, [restoreWithPassphrase] transitions state to
-  /// [BackupErrorState] with this message instead of completing silently.
+  /// [BackupErrorState] with this message instead of completing silently,
+  /// and returns null.
   String? restoreFailMessage;
+
+  /// Returned by [restoreWithPassphrase] on the happy path.
+  /// Null means "do not show success snackbar" (failure signal).
+  int? restoreReturnValue;
+
+  /// When non-null, [restoreWithPassphrase] suspends until this completer
+  /// resolves.  Used by the unmount test to cause !mounted before the await
+  /// in handleRestore() returns.
+  Completer<int?>? restoreCompleter;
 
   @override
   Future<BackupState> build() async => _initial;
@@ -78,15 +89,20 @@ class _StubBackupNotifier extends BackupNotifier {
   // Override to capture the passphrase without touching real providers
   // (restoreDataProvider / secureStorageProvider are unseeded in widget tests).
   @override
-  Future<void> restoreWithPassphrase(
+  Future<int?> restoreWithPassphrase(
     String passphrase, {
     String? filename,
   }) async {
     capturedRestorePassphrase = passphrase;
     capturedRestoreFilename = filename;
+    if (restoreCompleter != null) {
+      return restoreCompleter!.future;
+    }
     if (restoreFailMessage != null) {
       state = AsyncData(BackupErrorState(restoreFailMessage!));
+      return null;
     }
+    return restoreReturnValue;
   }
 
   @override
@@ -594,5 +610,169 @@ void main() {
 
       expect(find.byType(BackupErrorView), findsOneWidget);
     });
+  });
+
+  // =========================================================================
+  // Group K — sp-20260524 BUG-RT01: restore success toast (C-05 snackbar)
+  // =========================================================================
+
+  group('Group K — BUG-RT01: restore success snackbar with count', () {
+    // Helper: drives the full restore flow through to the passphrase submit.
+    // Returns without error when the flow completes.
+    Future<void> driveRestoreFlow(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(2400, 6000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpAndSettle();
+
+      // Step 1: tap the Restore action row.
+      await tester.tap(find.byKey(const Key('backup_restore_action_row')));
+      await tester.pumpAndSettle();
+
+      // Step 2: confirm in the picker.
+      await tester.tap(find.text('Restore').first);
+      await tester.pumpAndSettle();
+
+      // Step 3: confirm the destructive dialog.
+      await tester.tap(find.text('Restore').last);
+      await tester.pumpAndSettle();
+
+      // Step 4: enter passphrase and submit.
+      await tester.enterText(find.byType(TextField).first, 'test-pw');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Unlock and restore'));
+      await tester.pumpAndSettle();
+    }
+
+    // K-1: shows the restoreSuccessToast snackbar with the correct count.
+    testWidgets(
+      'handleRestore_shows_restoreSuccessToast_snackbar_with_count',
+      (tester) async {
+        final stub = _StubBackupNotifier(
+          const BackupConnected(
+            email: 'k@test.app',
+            autoBackupActive: true,
+            passphraseSet: true,
+          ),
+        )..restoreReturnValue = 7;
+
+        await tester.pumpWidget(
+          _wrap(
+            const BackupConnected(
+              email: 'k@test.app',
+              autoBackupActive: true,
+              passphraseSet: true,
+            ),
+            stub: stub,
+          ),
+        );
+
+        await driveRestoreFlow(tester);
+
+        expect(
+          find.text('7 records restored'),
+          findsOneWidget,
+          reason: 'restoreSuccessToast must show the count from '
+              'restoreWithPassphrase (locale: en)',
+        );
+      },
+    );
+
+    // K-2: no snackbar when count is null (error path).
+    testWidgets(
+      'handleRestore_does_not_show_snackbar_when_count_is_null',
+      (tester) async {
+        final stub = _StubBackupNotifier(
+          const BackupConnected(
+            email: 'k@test.app',
+            autoBackupActive: true,
+            passphraseSet: true,
+          ),
+        )
+          ..restoreReturnValue = null
+          ..restoreFailMessage = 'restore-failed';
+
+        await tester.pumpWidget(
+          _wrap(
+            const BackupConnected(
+              email: 'k@test.app',
+              autoBackupActive: true,
+              passphraseSet: true,
+            ),
+            stub: stub,
+          ),
+        );
+
+        await driveRestoreFlow(tester);
+
+        expect(
+          find.byType(SnackBar),
+          findsNothing,
+          reason: 'No snackbar must be shown when restoreWithPassphrase '
+              'returns null (error path)',
+        );
+      },
+    );
+
+    // K-3: no exception when widget is unmounted before guard-5 fires.
+    testWidgets(
+      'handleRestore_does_not_show_snackbar_after_unmount',
+      (tester) async {
+        tester.view.physicalSize = const Size(2400, 6000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        final completer = Completer<int?>();
+        final stub = _StubBackupNotifier(
+          const BackupConnected(
+            email: 'k@test.app',
+            autoBackupActive: true,
+            passphraseSet: true,
+          ),
+        )..restoreCompleter = completer;
+
+        await tester.pumpWidget(
+          _wrap(
+            const BackupConnected(
+              email: 'k@test.app',
+              autoBackupActive: true,
+              passphraseSet: true,
+            ),
+            stub: stub,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Drive through steps 1-4 to reach the restoreWithPassphrase await.
+        await tester.tap(find.byKey(const Key('backup_restore_action_row')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Restore').first);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Restore').last);
+        await tester.pumpAndSettle();
+        await tester.enterText(find.byType(TextField).first, 'test-pw');
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Unlock and restore'));
+        // Do NOT settle — the stub is suspended on the completer.
+        await tester.pump();
+
+        // Unmount the widget tree: this causes mounted == false.
+        await tester.pumpWidget(const SizedBox());
+
+        // Now resolve the completer — guard 5 must fire and swallow the call.
+        completer.complete(7);
+        await tester.pumpAndSettle();
+
+        // No exception must have been thrown.
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 }

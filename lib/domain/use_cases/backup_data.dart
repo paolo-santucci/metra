@@ -13,10 +13,13 @@ abstract class BackupRunner {
 
   /// Restores data from the backup identified by [filename].
   ///
-  /// When [filename] is `null`, the runner falls back to the legacy
-  /// "newest file" path — preserving pre-FR-14 behaviour for callers that
-  /// do not (yet) supply an explicit file selection.
-  Future<void> restore({String? filename});
+  /// Returns the number of daily-log rows restored from the snapshot
+  /// (NOT including symptom rows — a date can carry both, and counting
+  /// them separately would double-count user-facing days).
+  ///
+  /// When [filename] is null, the runner falls back to the newest-file
+  /// legacy path — unchanged from FR-14.
+  Future<int> restore({String? filename});
 }
 
 class BackupData {

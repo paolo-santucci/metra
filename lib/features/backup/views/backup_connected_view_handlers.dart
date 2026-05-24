@@ -142,10 +142,16 @@ mixin BackupConnectedHandlers on ConsumerState<BackupConnectedView> {
       if (!mounted) return; // guard 4
 
       // ── Step 5: execute restore ───────────────────────────────────────────
-      await notifier.restoreWithPassphrase(
+      final count = await notifier.restoreWithPassphrase(
         enteredPassphrase!, // safe: null-checked on line above
         filename: entries[pickedIndex].name,
       );
+      if (!mounted) return; // guard 5 — C-05
+      if (count != null) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.restoreSuccessToast(count))),
+        );
+      }
     } finally {
       sub.close();
     }

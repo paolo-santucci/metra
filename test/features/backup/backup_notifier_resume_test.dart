@@ -64,8 +64,9 @@ class _FakeRunner implements BackupRunner {
   Future<void> backup() async => backupCallCount++;
 
   @override
-  Future<void> restore({String? filename}) async {
+  Future<int> restore({String? filename}) async {
     restoreCalled = true;
+    return 0;
   }
 }
 
@@ -460,13 +461,13 @@ class _FakeBackupNotifierForWidget extends BackupNotifier {
   Future<void> disconnect() async {}
 
   @override
-  Future<void> restore({String? filename}) async {}
+  Future<int?> restore({String? filename}) async => null;
 
   @override
-  Future<void> restoreWithPassphrase(
+  Future<int?> restoreWithPassphrase(
     String passphrase, {
     String? filename,
-  }) async {}
+  }) async => null;
 
   @override
   dynamic noSuchMethod(Invocation i) => super.noSuchMethod(i);
