@@ -293,6 +293,94 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // Group: CyclePredictionService.predict — BUG-P1 fallback (no while-loop)
+  // ---------------------------------------------------------------------------
+
+  group('CyclePredictionService.predict — BUG-P1 fallback (no while-loop)', () {
+    const service = CyclePredictionService();
+
+    // Anchor today in UTC exactly as the service does, to avoid DST/timezone
+    // boundary failures (STATUS.yaml known-issue: midnight UTC timezone).
+    final now = DateTime.now();
+    final todayUtc = DateTime.utc(now.year, now.month, now.day);
+
+    test(
+      'fallback_returns_past_expectedStart_when_user_is_overdue',
+      () {
+        // startDate = today - 33; expectedStart = today - 33 + 28 = today - 5.
+        // gapDays = 5, threshold = 3 * 28 = 84 → 5 < 84 → non-null.
+        // The old while-loop would have advanced to today + 23.
+        final startDate = todayUtc.subtract(const Duration(days: 33));
+        final cycles = [
+          CycleEntryEntity(id: 1, startDate: startDate),
+        ];
+        final result = service.predict(cycles, declaredCycleLength: 28);
+
+        expect(result, isNotNull);
+        final expectedStart = todayUtc.subtract(const Duration(days: 5));
+        expect(result!.expectedStart, equals(expectedStart));
+        expect(
+          result.windowStart,
+          equals(expectedStart.subtract(const Duration(days: 2))),
+        );
+        expect(
+          result.windowEnd,
+          equals(expectedStart.add(const Duration(days: 2))),
+        );
+        expect(result.cyclesUsed, equals(0));
+      },
+    );
+
+    test(
+      'fallback_returns_null_when_anchor_older_than_3x_cycle_length',
+      () {
+        // startDate = today - 200; expectedStart = today - 172.
+        // gapDays = 172; threshold = 3 * 28 = 84 → 172 > 84 → null (stale anchor).
+        final startDate = todayUtc.subtract(const Duration(days: 200));
+        final cycles = [
+          CycleEntryEntity(id: 1, startDate: startDate),
+        ];
+        final result = service.predict(cycles, declaredCycleLength: 28);
+
+        expect(result, isNull);
+      },
+    );
+
+    test(
+      'fallback_at_exact_3x_boundary_is_NOT_stale',
+      () {
+        // startDate = today - 112; expectedStart = today - 84.
+        // gapDays = 84; threshold = 3 * 28 = 84 → 84 > 84 is false → non-null.
+        // Strict > comparison: exactly at 3× is NOT considered stale.
+        final startDate = todayUtc.subtract(const Duration(days: 112));
+        final cycles = [
+          CycleEntryEntity(id: 1, startDate: startDate),
+        ];
+        final result = service.predict(cycles, declaredCycleLength: 28);
+
+        expect(result, isNotNull);
+      },
+    );
+
+    test(
+      'fallback_recent_anchor_returns_future_expectedStart',
+      () {
+        // startDate = today; expectedStart = today + 28.
+        // gapDays = -28 (negative) < 84 → non-null. No while-loop needed.
+        final startDate = todayUtc;
+        final cycles = [
+          CycleEntryEntity(id: 1, startDate: startDate),
+        ];
+        final result = service.predict(cycles, declaredCycleLength: 28);
+
+        expect(result, isNotNull);
+        final expectedStart = todayUtc.add(const Duration(days: 28));
+        expect(result!.expectedStart, equals(expectedStart));
+      },
+    );
+  });
+
+  // ---------------------------------------------------------------------------
   // Group: CyclePredictionService.predict — core algorithm
   // ---------------------------------------------------------------------------
 

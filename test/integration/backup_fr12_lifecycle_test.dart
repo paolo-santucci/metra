@@ -101,7 +101,7 @@ void main() {
       await container.read(backupNotifierProvider.future);
 
       // (b) Wipe: DeleteAllData.execute() sets backupSuspended = true.
-      final deleteUc = DeleteAllData(logRepo, cycleRepo, settingsRepo);
+      final deleteUc = DeleteAllData(logRepo, cycleRepo, settingsRepo, storage);
       await deleteUc.execute();
 
       expect(
@@ -109,6 +109,13 @@ void main() {
         isTrue,
         reason: 'step (b): backupSuspended must be true after wipe',
       );
+      // BUG-B03 fix: execute() also wipes the passphrase from secure storage.
+      // Re-seed it here to simulate the user re-entering their passphrase via
+      // the manual backup flow (backupWithPassphrase) — without a passphrase,
+      // backupSilent() correctly returns early (Guard 4). The FR-12 test intent
+      // is to verify the suspend-then-clear-on-write cycle; the passphrase
+      // re-entry is a prerequisite of step (e), not the subject under test.
+      storage.values[BackupNotifier.kPassphraseKey] = 'test-pass';
 
       // (c) backupSilent with suspended sentinel: must skip, append
       //     backupSkipped log, zero uploads.

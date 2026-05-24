@@ -31,6 +31,7 @@ import '../domain/use_cases/recompute_cycle_entries.dart';
 import '../domain/use_cases/save_daily_log.dart';
 import '../domain/use_cases/schedule_prediction_notification.dart';
 import '../domain/use_cases/watch_cycle_prediction.dart';
+import 'encryption_provider.dart';
 import 'repository_providers.dart';
 
 final saveDailyLogProvider = FutureProvider<SaveDailyLog>((ref) async {
@@ -96,7 +97,8 @@ final deleteAllDataProvider = FutureProvider<DeleteAllData>((ref) async {
   final logRepo = await ref.watch(dailyLogRepositoryProvider.future);
   final cycleRepo = await ref.watch(cycleEntryRepositoryProvider.future);
   final settingsRepo = await ref.watch(appSettingsRepositoryProvider.future);
-  return DeleteAllData(logRepo, cycleRepo, settingsRepo);
+  final secureStorage = ref.watch(secureStorageProvider); // BUG-B03
+  return DeleteAllData(logRepo, cycleRepo, settingsRepo, secureStorage);
 });
 
 // ── P-5a CSV export / import ──

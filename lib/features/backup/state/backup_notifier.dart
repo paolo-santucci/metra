@@ -28,7 +28,15 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
 
   @override
   Future<BackupState> build() async {
-    final settingsRepo = await ref.watch(appSettingsRepositoryProvider.future);
+    // BUG-B01: watch the reactive Drift stream so build() re-triggers on every
+    // stream emission (e.g. after backupSuspended is written by DeleteAllData).
+    // Awaiting .future ensures build() blocks until the first emission — this
+    // preserves compatibility with fake StreamProviders backed by Stream.value().
+    // We deliberately ignore the emitted value and re-read fresh data via
+    // getOrCreate(), which always returns the current DB/in-memory state and
+    // is not subject to stream-lag between the emission and the read.
+    await ref.watch(appSettingsStreamProvider.future);
+    final settingsRepo = await ref.read(appSettingsRepositoryProvider.future);
     final settings = await settingsRepo.getOrCreate();
     if (settings.dropboxEmail == null) {
       return const BackupNotConnected();
@@ -67,6 +75,11 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
         dropboxEmail: email,
         lastBackupAt: discoveredLastBackupAt,
       );
+      // BUG-B04: clear the post-wipe suspended sentinel before invalidating.
+      // Without this, a delete-all → reconnect sequence leaves backupSuspended=true,
+      // which would make the Stato label show "non attivo" after reconnect even
+      // when the user enters a passphrase.
+      await settingsRepo.clearBackupSuspended();
       ref.invalidateSelf();
     } catch (e) {
       debugPrint('[BackupNotifier.connect] ${e.runtimeType}: $e');
@@ -112,17 +125,12 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
         await ref.read(appSettingsRepositoryProvider.future);
     final sentinelSettings = await settingsForSentinel.getOrCreate();
     if (sentinelSettings.backupSuspended) {
-      final syncLogRepo = await ref.read(syncLogRepositoryProvider.future);
-      await syncLogRepo.append(
-        SyncLogEntity(
-          timestamp: DateTime.now().toUtc(),
-          provider: SyncProvider.dropbox,
-          operation: SyncOperation.backupSkipped,
-          success: true,
-          errorMessage: 'skipped: backupSuspended=true',
-        ),
-      );
-      return;
+      // BUG-B02: manual backup IS the resume path. Clear sentinel BEFORE
+      // any secure-storage interaction (HC-2 ordering).
+      await settingsForSentinel.clearBackupSuspended();
+      // No SyncLog skip entry — the user-driven tap is succeeding, not skipping.
+      // backupSilent() retains the skip-log path (different semantics:
+      // silent cold-start vs. user-driven tap).
     }
     final storage = ref.read(secureStorageProvider);
     // Read the old passphrase so it can be restored if the upload fails.
@@ -229,20 +237,15 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     if (state.valueOrNull is BackupNotConnected) return;
 
     // Guard 3: backup suspended (e.g. post-wipe sentinel).
+    // BUG-B02: manual tap IS the resume path — clear the sentinel and proceed.
+    // HC-2 ordering: clearBackupSuspended() runs BEFORE any secureStorage read.
     final settingsRepo = await ref.read(appSettingsRepositoryProvider.future);
     final settings = await settingsRepo.getOrCreate();
     if (settings.backupSuspended) {
-      final syncLogRepo = await ref.read(syncLogRepositoryProvider.future);
-      await syncLogRepo.append(
-        SyncLogEntity(
-          timestamp: DateTime.now().toUtc(),
-          provider: SyncProvider.dropbox,
-          operation: SyncOperation.backupSkipped,
-          success: true,
-          errorMessage: 'skipped: backupSuspended=true',
-        ),
-      );
-      return;
+      await settingsRepo.clearBackupSuspended();
+      // No SyncLog skip entry — the user-driven tap is succeeding, not skipping.
+      // backupSilent() retains the skip-log path (different semantics:
+      // silent cold-start vs. user-driven tap).
     }
 
     // Guard 4: no passphrase — nothing to encrypt with.

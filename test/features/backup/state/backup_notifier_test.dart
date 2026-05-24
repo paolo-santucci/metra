@@ -6,11 +6,14 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/errors/metra_exception.dart';
 import 'package:metra/core/utils/result.dart';
+import 'package:metra/data/database/app_database.dart';
+import 'package:metra/data/repositories/drift_app_settings_repository.dart';
 import 'package:metra/data/services/backup/backup_file_entry.dart';
 import 'package:metra/data/services/backup/dropbox_provider.dart';
 import 'package:metra/domain/entities/sync_log_entity.dart';
@@ -1046,8 +1049,8 @@ void main() {
     });
 
     test(
-        'HC-2 / R-M3-A — backupWithPassphrase: sentinel-read precedes secure-storage write',
-        () async {
+        'HC-2 / R-M3-A — backupWithPassphrase: clears suspended sentinel then '
+        'writes passphrase (BUG-B02: manual tap is the resume path)', () async {
       await settingsRepo.updateBackupSuspended(true);
       await settingsRepo.updateBackupState(
         dropboxEmail: 'a@b.com',
@@ -1058,24 +1061,35 @@ void main() {
       addTearDown(container.dispose);
       await container.read(backupNotifierProvider.future);
 
-      // Reset counters after build() completes (build reads settings but not storage).
+      // Reset counters after build() completes.
       storage.resetCallCounts();
+      settingsRepo.callLog.clear();
 
       await container
           .read(backupNotifierProvider.notifier)
           .backupWithPassphrase('new-pass');
 
-      // HC-2: zero writes to secure storage when backupSuspended = true.
-      expect(storage.writeCount, equals(0));
+      // BUG-B02: manual tap IS the resume path.
+      // clearBackupSuspended() must be called (HC-2: before any storage write).
       expect(
-        fakeSyncLogRepo.appended.last.operation,
-        equals(SyncOperation.backupSkipped),
+        settingsRepo.callLog,
+        contains('clearBackupSuspended'),
+        reason:
+            'clearBackupSuspended must be called before any secure-storage op',
+      );
+      // Passphrase must be written after clearing the sentinel.
+      expect(storage.writeCount, greaterThan(0));
+      // No backupSkipped entry — the user-driven tap is succeeding.
+      expect(
+        fakeSyncLogRepo.appended
+            .where((e) => e.operation == SyncOperation.backupSkipped),
+        isEmpty,
       );
     });
 
     test(
-        'EC-02 — existing old passphrase preserved bit-for-bit under suspended',
-        () async {
+        'EC-02 (revised BUG-B02) — backupWithPassphrase when suspended clears '
+        'sentinel and overwrites passphrase (resume path)', () async {
       await settingsRepo.updateBackupSuspended(true);
       await settingsRepo.updateBackupState(
         dropboxEmail: 'a@b.com',
@@ -1091,15 +1105,22 @@ void main() {
           .read(backupNotifierProvider.notifier)
           .backupWithPassphrase('new-pass');
 
+      // BUG-B02: manual tap resumes — the new passphrase must be written,
+      // not the old one preserved. The sentinel is cleared first (HC-2).
       expect(
         storage.values['metra_backup_passphrase_v1'],
-        equals('old-pass'),
+        equals('new-pass'),
+        reason: 'After clearing the suspended sentinel, backupWithPassphrase '
+            'must write the new passphrase (not preserve the old one)',
       );
+      // Sentinel cleared.
+      final s = await settingsRepo.getOrCreate();
+      expect(s.backupSuspended, isFalse);
     });
 
     test(
-        'EC-10 — passphrase rollback block NOT reached under suspended '
-        '(zero reads and writes to secure storage)', () async {
+        'EC-10 (revised BUG-B02) — backupWithPassphrase when suspended: '
+        'backup runner is invoked and sentinel is cleared', () async {
       await settingsRepo.updateBackupSuspended(true);
       await settingsRepo.updateBackupState(
         dropboxEmail: 'a@b.com',
@@ -1114,14 +1135,30 @@ void main() {
       // Reset counters AFTER build() completes so we only count calls inside
       // backupWithPassphrase() itself.
       storage.resetCallCounts();
+      settingsRepo.callLog.clear();
 
       await container
           .read(backupNotifierProvider.notifier)
           .backupWithPassphrase('new-pass');
 
-      // The rollback block reads old passphrase first — if it ran, readCount > 0.
-      expect(storage.writeCount, equals(0));
-      expect(storage.readCount, equals(0));
+      // BUG-B02: manual tap is the resume path. Sentinel cleared before storage.
+      expect(
+        settingsRepo.callLog,
+        contains('clearBackupSuspended'),
+        reason: 'clearBackupSuspended must be called (HC-2 ordering)',
+      );
+      // Passphrase written (backup runner invoked).
+      expect(
+        storage.writeCount,
+        greaterThan(0),
+        reason: 'Passphrase write must proceed after clearing sentinel',
+      );
+      expect(
+        runner.backupCalled,
+        isTrue,
+        reason:
+            'Backup runner must be called when suspended sentinel is cleared',
+      );
     });
 
     test('Regression: existing write-recency skip-guard still works', () async {
@@ -1417,9 +1454,10 @@ void main() {
       },
     );
 
-    // E-03: backupSuspended guard logs a skip entry and returns
+    // E-03: backupSuspended guard — BUG-B02: manual tap is the resume path.
+    // clearBackupSuspended() is called, then backup proceeds.
     test(
-      'E-03: backupNow logs backupSkipped and returns when backupSuspended=true',
+      'E-03 (BUG-B02): backupNow clears suspended sentinel and runs backup',
       () async {
         await settingsRepo.updateBackupState(
           dropboxEmail: 'a@b.com',
@@ -1427,18 +1465,35 @@ void main() {
         );
         await settingsRepo.updateBackupSuspended(true);
         storage.values['metra_backup_passphrase_v1'] = 'test-pass';
+        settingsRepo.callLog.clear();
 
         final container = makeContainer();
         addTearDown(container.dispose);
         await container.read(backupNotifierProvider.future);
 
+        settingsRepo.callLog.clear(); // clear build() artifacts
+
         await container.read(backupNotifierProvider.notifier).backupNow();
 
-        expect(runner.backupCalled, isFalse);
-        expect(fakeSyncLogRepo.appended, hasLength(1));
+        // Sentinel cleared (HC-2: before any secureStorage read).
         expect(
-          fakeSyncLogRepo.appended.first.operation,
-          SyncOperation.backupSkipped,
+          settingsRepo.callLog,
+          contains('clearBackupSuspended'),
+          reason: 'clearBackupSuspended must be called by backupNow()',
+        );
+        // Backup runs.
+        expect(
+          runner.backupCalled,
+          isTrue,
+          reason:
+              'backupNow() must call the backup runner after clearing sentinel',
+        );
+        // No skip log entry.
+        expect(
+          fakeSyncLogRepo.appended
+              .where((e) => e.operation == SyncOperation.backupSkipped),
+          isEmpty,
+          reason: 'backupNow() must not log a skip entry (user tap succeeds)',
         );
       },
     );
@@ -1555,5 +1610,193 @@ void main() {
 
     // E-08: _handleBackup routing — covered in backup_screen_test.dart (E-08)
     // The notifier-layer portion is fully exercised by E-01 through E-06 above.
+  });
+
+  // -----------------------------------------------------------------------
+  // BUG-B01 — build() is reactive to Drift stream
+  // Verifies that BackupNotifier.build() watches the Drift stream via
+  // appSettingsStreamProvider so that a backupSuspended write is reflected
+  // without a cold restart.
+  // -----------------------------------------------------------------------
+  group('BUG-B01 — build() reflects backupSuspended write reactively', () {
+    test(
+      'build_reflects_backupSuspended_after_drift_stream_emit',
+      () async {
+        // Setup: real DriftAppSettingsRepository over an in-memory Drift DB.
+        // The real repo's watchSettings() emits whenever backupSuspended changes.
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        final realRepo = DriftAppSettingsRepository(db.appSettingsDao);
+
+        // Pre-seed: create the settings row first, then set email.
+        // updateBackupState uses a raw UPDATE that requires the row to exist.
+        await realRepo.getOrCreate();
+        await realRepo.updateBackupState(
+          dropboxEmail: 'a@b.test',
+          lastBackupAt: null,
+        );
+        // backupSuspended defaults to false.
+
+        final storage = InMemorySecureStorage();
+        storage.values[BackupNotifier.kPassphraseKey] = 'pw';
+
+        // Wire the container: appSettingsRepositoryProvider uses the real repo
+        // (which the real appSettingsStreamProvider will pull from automatically).
+        // Do NOT override appSettingsStreamProvider with a fake — the whole point
+        // of this test is to verify the real stream propagates writes.
+        final fakeDropbox = FakeDropboxProvider();
+        final fakeSyncLogRepo = FakeSyncLogRepository();
+        final fakeRunner = _FakeRunner();
+
+        final container = ProviderContainer(
+          overrides: [
+            appSettingsRepositoryProvider.overrideWith((_) async => realRepo),
+            secureStorageProvider.overrideWithValue(storage),
+            backupDataProvider
+                .overrideWith((_) async => BackupData(fakeRunner)),
+            restoreDataProvider
+                .overrideWith((_) async => RestoreData(fakeRunner)),
+            cloudBackupProvider.overrideWithValue(fakeDropbox),
+            syncLogRepositoryProvider
+                .overrideWith((_) async => fakeSyncLogRepo),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        // Act 1: initial build.
+        final s1 = await container.read(backupNotifierProvider.future);
+        expect(s1, isA<BackupConnected>());
+        expect(
+          (s1 as BackupConnected).autoBackupActive,
+          isTrue,
+          reason:
+              'precondition: email set, suspended=false, passphrase present '
+              '→ autoBackupActive must be true',
+        );
+
+        // Act 2: write backupSuspended=true directly on the real repo.
+        // This fires the Drift stream which triggers appSettingsStreamProvider
+        // to re-emit, which triggers build() to re-run.
+        await realRepo.updateBackupSuspended(true);
+
+        // Pump to let the Drift stream emit and the StreamProvider propagate.
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+
+        // Assert 2: notifier re-built; autoBackupActive is now false.
+        final s2 = await container.read(backupNotifierProvider.future);
+        expect(s2, isA<BackupConnected>());
+        expect(
+          (s2 as BackupConnected).autoBackupActive,
+          isFalse,
+          reason:
+              'BUG-B01: after backupSuspended=true written to the real Drift '
+              'repo, the Drift stream should re-trigger build(), flipping '
+              'autoBackupActive to false without a cold restart',
+        );
+        expect(
+          s2.passphraseSet,
+          isTrue,
+          reason: 'passphraseSet must remain true — passphrase unchanged',
+        );
+      },
+    );
+  });
+
+  // -----------------------------------------------------------------------
+  // BUG-B04 — connect() clears backupSuspended before invalidateSelf()
+  // Verifies that after a wipe (backupSuspended=true), reconnecting via
+  // connect() clears the sentinel so the user is not permanently suspended.
+  //
+  // Uses a real DriftAppSettingsRepository over an in-memory DB so that
+  // the reactive appSettingsStreamProvider emits updated values after
+  // connect() mutates the repo — same pattern as BUG-B01 test.
+  // -----------------------------------------------------------------------
+  group('BUG-B04 — connect() clears backupSuspended before invalidate', () {
+    test(
+      'connect_clears_backupSuspended_before_invalidate',
+      () async {
+        // Setup: real DriftAppSettingsRepository over an in-memory Drift DB.
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        final realRepo = DriftAppSettingsRepository(db.appSettingsDao);
+
+        // Repo pre-state: suspended post-wipe. No email (not yet connected).
+        await realRepo.getOrCreate();
+        await realRepo.updateBackupSuspended(true);
+        // email defaults to null — BackupNotConnected.
+
+        final storage = InMemorySecureStorage();
+        // No passphrase stored — freshly wiped state.
+
+        final fakeDrpbx = FakeDropboxProvider();
+        fakeDrpbx.currentEmailResult = 'a@b.test';
+        // fakeDrpbx.files is empty → listFiles() returns [].
+
+        final fakeSyncLog = FakeSyncLogRepository();
+        final fakeRunner = _FakeRunner();
+
+        final container = ProviderContainer(
+          overrides: [
+            appSettingsRepositoryProvider.overrideWith((_) async => realRepo),
+            secureStorageProvider.overrideWithValue(storage),
+            backupDataProvider
+                .overrideWith((_) async => BackupData(fakeRunner)),
+            restoreDataProvider
+                .overrideWith((_) async => RestoreData(fakeRunner)),
+            cloudBackupProvider.overrideWithValue(fakeDrpbx),
+            syncLogRepositoryProvider.overrideWith((_) async => fakeSyncLog),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        // Initial build: email=null → BackupNotConnected.
+        final initialState =
+            await container.read(backupNotifierProvider.future);
+        expect(
+          initialState,
+          isA<BackupNotConnected>(),
+          reason: 'precondition: no email → BackupNotConnected',
+        );
+
+        // Act: connect().
+        await container.read(backupNotifierProvider.notifier).connect();
+
+        // Let the Drift stream propagate the email + suspended=false writes.
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+
+        // Assert 1: suspended sentinel cleared (via real repo read).
+        final settings = await realRepo.getOrCreate();
+        expect(
+          settings.backupSuspended,
+          isFalse,
+          reason: 'BUG-B04: connect() must call clearBackupSuspended() so the '
+              'user is not stuck in suspended state after reconnecting',
+        );
+
+        // Assert 2: final state is BackupConnected(autoBackupActive: false,
+        // passphraseSet: false) — false because no passphrase stored, NOT
+        // because still suspended.
+        final s = await container.read(backupNotifierProvider.future);
+        expect(s, isA<BackupConnected>());
+        final connected = s as BackupConnected;
+        expect(
+          connected.email,
+          equals('a@b.test'),
+          reason: 'email should be set from connect()',
+        );
+        expect(
+          connected.autoBackupActive,
+          isFalse,
+          reason: 'no passphrase → autoBackupActive must be false',
+        );
+        expect(
+          connected.passphraseSet,
+          isFalse,
+          reason: 'no passphrase stored → passphraseSet must be false',
+        );
+      },
+    );
   });
 }

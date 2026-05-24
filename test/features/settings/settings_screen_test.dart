@@ -36,6 +36,7 @@ import 'package:metra/providers/use_case_providers.dart';
 
 import '../../helpers/fake_app_settings_repository.dart';
 import '../../helpers/fake_cycle_entry_repository.dart';
+import '../../helpers/in_memory_secure_storage.dart';
 import '../../helpers/fake_daily_log_repository.dart';
 
 // ---------------------------------------------------------------------------
@@ -282,6 +283,7 @@ void main() {
         fakeLogRepo,
         fakeCycleRepo,
         FakeAppSettingsRepository(),
+        InMemorySecureStorage(),
       );
 
       await tester.pumpWidget(

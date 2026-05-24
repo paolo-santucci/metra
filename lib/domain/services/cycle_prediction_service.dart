@@ -48,19 +48,20 @@ class CyclePredictionService {
       final anchor = cycles.reduce(
         (a, b) => b.startDate.isBefore(a.startDate) ? a : b,
       );
-      // Advance by whole cycle increments until the prediction is in the future.
-      // Required when the anchor date is older than one cycle length (e.g. the
-      // user opens the app weeks after onboarding).
       final today = DateTime.utc(
         DateTime.now().year,
         DateTime.now().month,
         DateTime.now().day,
       );
-      var expectedStart =
+      final expectedStart =
           anchor.startDate.add(Duration(days: declaredCycleLength));
-      while (expectedStart.isBefore(today)) {
-        expectedStart = expectedStart.add(Duration(days: declaredCycleLength));
-      }
+      // BUG-P1: removed the while-loop that advanced to the future. Instead,
+      // when the anchor is older than 3× the declared cycle length we declare
+      // the data stale and return null (Today/Detail will show the empty-state).
+      // Otherwise surface the past expectedStart as-is so the UI can render
+      // 'X days late'.
+      final gapDays = today.difference(expectedStart).inDays;
+      if (gapDays > 3 * declaredCycleLength) return null;
       return CyclePrediction(
         windowStart: expectedStart.subtract(const Duration(days: 2)),
         windowEnd: expectedStart.add(const Duration(days: 2)),

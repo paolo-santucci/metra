@@ -418,8 +418,11 @@ class _CalendarGrid extends StatelessWidget {
         final isFlow = log?.flowType == FlowType.mestruazioni;
         final isSpotting = log?.spotting ?? false;
         final hasNote = log?.notes != null && log!.notes!.isNotEmpty;
-        final hasPrediction = !date.isBefore(todayUtc) &&
-            (prediction?.containsDate(date) ?? false);
+        // BUG-P4: removed !date.isBefore(todayUtc) guard. Past prediction window
+        // dates now render the prediction dot so overdue users can see their
+        // lateness. CalendarDay already renders the dot independently when
+        // isFlow && hasPrediction (CL-01 fix in widgets/calendar_day.dart).
+        final hasPrediction = prediction?.containsDate(date) ?? false;
         final hasPain = log?.painEnabled ?? false;
         final hasSymptom = daysWithSymptoms.contains(date);
 

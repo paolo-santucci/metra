@@ -15,6 +15,7 @@ import '../../../domain/repositories/app_settings_repository.dart';
 import '../../../domain/repositories/daily_log_repository.dart';
 import '../../../domain/repositories/sync_log_repository.dart';
 import '../../../domain/use_cases/backup_data.dart';
+import '../../../features/backup/state/backup_notifier.dart';
 import '../encryption_service.dart';
 import 'backup_file_entry.dart';
 import 'backup_filename.dart';
@@ -49,8 +50,6 @@ class SyncOrchestrator implements BackupRunner {
         _secureStorage = secureStorage,
         _now = now ?? _defaultNow;
 
-  static const _passphraseKey = 'metra_backup_passphrase_v1';
-
   static DateTime _defaultNow() => DateTime.now().toUtc();
 
   final BackupService _backupService;
@@ -67,7 +66,8 @@ class SyncOrchestrator implements BackupRunner {
   Future<void> backup() async {
     final ts = _now();
     try {
-      final passphrase = await _secureStorage.read(key: _passphraseKey);
+      final passphrase =
+          await _secureStorage.read(key: BackupNotifier.kPassphraseKey);
       if (passphrase == null) {
         throw const SyncException('No passphrase configured');
       }
@@ -170,7 +170,8 @@ class SyncOrchestrator implements BackupRunner {
   Future<void> restore({String? filename}) async {
     final ts = _now();
     try {
-      final passphrase = await _secureStorage.read(key: _passphraseKey);
+      final passphrase =
+          await _secureStorage.read(key: BackupNotifier.kPassphraseKey);
       if (passphrase == null) {
         throw const SyncException('No passphrase configured');
       }

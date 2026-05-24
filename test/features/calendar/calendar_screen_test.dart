@@ -660,21 +660,21 @@ void main() {
     });
 
     testWidgets(
-        'elapsed prediction window does not paint prediction outline on past cells',
+        'elapsed prediction window DOES paint prediction outline on past cells (BUG-P4)',
         (tester) async {
-      // Regression test: stale data scenario where the prediction window
-      // has already passed (windowEnd < today). No past cell should show
-      // the prediction outline, regardless of containsDate returning true.
+      // BUG-P4 fix: the !date.isBefore(todayUtc) guard was removed from
+      // hasPrediction. Past cells inside the prediction window now render the
+      // prediction dot so overdue users see why the Today card shows 'X days late'.
+      // This test was updated from the pre-fix assertion (hasPrediction=false for
+      // all past cells) to the correct post-fix assertion (hasPrediction=true for
+      // cells inside the window).
       final now = DateTime.now();
       final pastBase = DateTime.utc(now.year, now.month, now.day)
           .subtract(const Duration(days: 60));
-      final pastWindowStart =
-          DateTime.utc(pastBase.year, pastBase.month, pastBase.day - 2);
-      final pastExpectedStart =
-          DateTime.utc(pastBase.year, pastBase.month, pastBase.day);
-      final pastWindowEnd =
-          DateTime.utc(pastBase.year, pastBase.month, pastBase.day + 2);
-      final stalePrediction = CyclePrediction(
+      final pastWindowStart = pastBase.subtract(const Duration(days: 2));
+      final pastExpectedStart = pastBase;
+      final pastWindowEnd = pastBase.add(const Duration(days: 2));
+      final pastPrediction = CyclePrediction(
         windowStart: pastWindowStart,
         windowEnd: pastWindowEnd,
         expectedStart: pastExpectedStart,
@@ -691,7 +691,7 @@ void main() {
               ),
             ),
           ],
-          prediction: stalePrediction,
+          prediction: pastPrediction,
         ),
       );
       await tester.pumpAndSettle();
@@ -699,21 +699,32 @@ void main() {
       final days =
           tester.widgetList<CalendarDay>(find.byType(CalendarDay)).toList();
 
-      // Every cell in the past month must have hasPrediction false — the
-      // elapsed window must not paint a prediction outline on past cells.
+      // Cells inside the past window must have hasPrediction=true (post-fix
+      // behaviour). Cells outside must have hasPrediction=false.
       for (final day in days) {
-        expect(
-          day.hasPrediction,
-          isFalse,
-          reason:
-              'day ${day.date} is in an elapsed prediction window and must not show prediction outline',
-        );
+        final inWindow = !day.date.isBefore(pastWindowStart) &&
+            !day.date.isAfter(pastWindowEnd);
+        if (inWindow) {
+          expect(
+            day.hasPrediction,
+            isTrue,
+            reason:
+                'day ${day.date} is inside the elapsed prediction window and must have hasPrediction=true (BUG-P4)',
+          );
+        } else {
+          expect(
+            day.hasPrediction,
+            isFalse,
+            reason:
+                'day ${day.date} is outside the prediction window and must have hasPrediction=false',
+          );
+        }
       }
 
-      // No "Ciclo previsto" semantics label should appear for the past window.
+      // "Ciclo previsto" semantics labels must appear for cells in the past window.
       expect(
         find.bySemanticsLabel(RegExp(r'^Ciclo previsto,')),
-        findsNothing,
+        findsWidgets,
       );
     });
   });
