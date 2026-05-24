@@ -15,10 +15,12 @@ class BackupConnected extends BackupState {
   const BackupConnected({
     required this.email,
     required this.autoBackupActive,
+    required this.passphraseSet,
     this.lastBackupAt,
   });
   final String email;
-  final bool autoBackupActive;
+  final bool autoBackupActive; // true ⇔ !backupSuspended && passphraseSet
+  final bool passphraseSet; // derived from secure-storage read in build()
   final DateTime? lastBackupAt;
 }
 

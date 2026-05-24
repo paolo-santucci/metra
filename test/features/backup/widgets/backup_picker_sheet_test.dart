@@ -49,6 +49,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:metra/core/theme/metra_colors.dart';
 import 'package:metra/core/theme/metra_spacing.dart';
 import 'package:metra/core/theme/metra_theme.dart';
@@ -79,10 +80,14 @@ final _entries = [
   ),
 ];
 
-Widget _harness({Widget Function(BuildContext)? builder}) => MaterialApp(
+Widget _harness({
+  Widget Function(BuildContext)? builder,
+  String locale = 'it',
+}) =>
+    MaterialApp(
       theme: MetraTheme.light(),
       darkTheme: MetraTheme.dark(),
-      locale: const Locale('it'),
+      locale: Locale(locale),
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -359,11 +364,17 @@ void main() {
             ),
           ),
         );
+
+        // Compute expected formatted text after locale data is initialised.
+        final expectedText = DateFormat.yMMMd('it')
+            .add_jm()
+            .format(_entries[0].timestampUtc.toLocal());
+
         await tester.tap(find.text('open'));
         await tester.pumpAndSettle();
 
         // Find the first entry text (distance 0 from selected index 0).
-        final itemTextFinder = find.text('metra_2026-01-01.enc');
+        final itemTextFinder = find.text(expectedText);
         expect(itemTextFinder, findsOneWidget);
 
         // The text is wrapped in Opacity(opacity: 1.0).
@@ -422,11 +433,17 @@ void main() {
             ),
           ),
         );
+
+        // Compute expected formatted text after locale data is initialised.
+        // Item 0 is at distance 1 from index 1.
+        final expectedText = DateFormat.yMMMd('it')
+            .add_jm()
+            .format(_entries[0].timestampUtc.toLocal());
+
         await tester.tap(find.text('open'));
         await tester.pumpAndSettle();
 
-        // Item 0 is at distance 1 from index 1.
-        final itemTextFinder = find.text('metra_2026-01-01.enc');
+        final itemTextFinder = find.text(expectedText);
         expect(itemTextFinder, findsOneWidget);
 
         final opacity = tester.widget<Opacity>(
@@ -483,11 +500,17 @@ void main() {
             ),
           ),
         );
+
+        // Compute expected formatted text after locale data is initialised.
+        // Item 2 is at distance 2 from index 0.
+        final expectedText = DateFormat.yMMMd('it')
+            .add_jm()
+            .format(_entries[2].timestampUtc.toLocal());
+
         await tester.tap(find.text('open'));
         await tester.pumpAndSettle();
 
-        // Item 2 is at distance 2 from index 0.
-        final itemTextFinder = find.text('metra_2026-03-01.enc');
+        final itemTextFinder = find.text(expectedText);
         expect(itemTextFinder, findsOneWidget);
 
         final opacity = tester.widget<Opacity>(
@@ -954,15 +977,21 @@ void main() {
             ),
           ),
         );
+
+        // Compute expected formatted text after locale data is initialised.
+        final expectedText = DateFormat.yMMMd('it')
+            .add_jm()
+            .format(_entries[0].timestampUtc.toLocal());
+
         await tester.tap(find.text('open'));
         await tester.pumpAndSettle();
 
-        // Each entry name should be findable and carry its text as a semantic
-        // label (the label may be the name itself or contain it).
-        final s = tester.getSemantics(find.text('metra_2026-01-01.enc').first);
+        // Each entry text should be findable and carry its text as a semantic
+        // label (the label may be the formatted date/time itself or contain it).
+        final s = tester.getSemantics(find.text(expectedText).first);
         expect(
           s.label,
-          contains('metra_2026-01-01.enc'),
+          contains(expectedText),
           reason:
               'Picker item text must contribute its string as a semantic label',
         );
@@ -1029,6 +1058,69 @@ void main() {
         reason: 'No deleted RestorePicker* symbols '
             'must exist in backup_picker_sheet implementation files',
       );
+    },
+  );
+
+  // ── BUG-R01: picker renders localised date/time, not raw filename ──────────
+
+  testWidgets(
+    'picker_renders_localised_date_time_not_raw_filename',
+    (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      try {
+        final entry = BackupFileEntry(
+          name: 'metra_backup_20260524T143022Z_abc.enc',
+          timestampUtc: DateTime.utc(2026, 5, 24, 14, 30, 22),
+          sizeBytes: 1024,
+        );
+
+        await tester.pumpWidget(
+          _harness(
+            locale: 'en',
+            builder: (ctx) => Scaffold(
+              body: Builder(
+                builder: (innerCtx) => ElevatedButton(
+                  onPressed: () => BackupPickerSheet.show(
+                    innerCtx,
+                    entries: [entry],
+                  ),
+                  child: const Text('open'),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        // Compute expected text after locale data is initialised by the pump.
+        final expectedText = DateFormat.yMMMd('en')
+            .add_jm()
+            .format(entry.timestampUtc.toLocal());
+
+        await tester.tap(find.text('open'));
+        await tester.pumpAndSettle();
+
+        // Rendered text must be the localised date/time, not the raw filename.
+        expect(
+          find.textContaining('May 24, 2026'),
+          findsOneWidget,
+          reason:
+              'Picker item must display the localised date, not the raw filename',
+        );
+        expect(
+          find.text('metra_backup_20260524T143022Z_abc.enc'),
+          findsNothing,
+          reason: 'Raw filename must not appear in the picker item',
+        );
+
+        // Double-check: the full computed string is present.
+        expect(
+          find.text(expectedText),
+          findsOneWidget,
+          reason: 'Full formatted date/time string must be present',
+        );
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
     },
   );
 

@@ -17,6 +17,7 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 // TASK-34 — Group M: latent-bug regression tests (I-1 … I-5)
+// sp-20260524 — Group N: BUG-01 + BUG-R1 regression tests (N-1 … N-4)
 //
 // I-1  Restore flow step order: BackupPickerSheet → MetraConfirmDialog → PassphraseDialog.
 // I-2  Dispatcher no-crash on all 5 BackupState subtypes.
@@ -27,6 +28,11 @@
 // I-4  Cross-reference: keepAlive covered in backup_picker_sheet_integration_test.dart I-F.
 // I-5  Cross-reference: Colors.red covered in passphrase_dialog_token_test.dart.
 //
+// N-1  BUG-01: BackupConnected.passphraseSet false when no passphrase in storage.
+// N-2  BUG-01: BackupConnected.passphraseSet true + autoBackupActive true when passphrase present.
+// N-3  BUG-01: autoBackupActive false when backupSuspended=true even if passphrase present.
+// N-4  BUG-R1: restore() Ok-branch invalidates currentCycleDayProvider + cycleDayForDateProvider.
+//
 // Platform matrix: all (Linux CI — no device required).
 
 import 'dart:io';
@@ -35,7 +41,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/theme/metra_theme.dart';
+import 'package:metra/core/util/nullable.dart';
 import 'package:metra/data/services/backup/backup_file_entry.dart';
+import 'package:metra/domain/entities/app_settings_data.dart';
+import 'package:metra/domain/use_cases/backup_data.dart';
+import 'package:metra/domain/use_cases/restore_data.dart';
 import 'package:metra/features/backup/backup_screen.dart';
 import 'package:metra/features/backup/state/backup_notifier.dart';
 import 'package:metra/features/backup/state/backup_state.dart';
@@ -45,9 +55,26 @@ import 'package:metra/features/backup/widgets/passphrase_dialog.dart';
 import 'package:metra/l10n/app_localizations.dart';
 import 'package:metra/providers/backup_providers.dart';
 import 'package:metra/providers/encryption_provider.dart';
+import 'package:metra/providers/repository_providers.dart';
+import 'package:metra/providers/use_case_providers.dart';
 
+import '../../helpers/fake_app_settings_repository.dart';
 import '../../helpers/fake_dropbox_provider.dart';
+import '../../helpers/fake_sync_log_repository.dart';
 import '../../helpers/in_memory_secure_storage.dart';
+
+// ---------------------------------------------------------------------------
+// N: helper runner — always succeeds (BUG-R1 + BUG-01 tests)
+// ---------------------------------------------------------------------------
+
+/// A [BackupRunner] that immediately succeeds on both backup and restore.
+class _OkRunner implements BackupRunner {
+  @override
+  Future<void> backup() async {}
+
+  @override
+  Future<void> restore({String? filename}) async {}
+}
 
 // ---------------------------------------------------------------------------
 // Stub notifier (mirrors _StubBackupNotifier from backup_screen_test.dart)
@@ -179,6 +206,7 @@ void main() {
           const BackupConnected(
             email: 'test@metra.app',
             autoBackupActive: true,
+            passphraseSet: true,
           ),
         );
 
@@ -187,6 +215,7 @@ void main() {
             const BackupConnected(
               email: 'test@metra.app',
               autoBackupActive: true,
+              passphraseSet: true,
             ),
             stub: stub,
             fakeProvider: FakeDropboxProvider(seedEntries: [seedEntry]),
@@ -319,6 +348,7 @@ void main() {
           const BackupConnected(
             email: 'i2@metra.app',
             autoBackupActive: false,
+            passphraseSet: true,
             lastBackupAt: null,
           ),
           settle: true,
@@ -455,5 +485,219 @@ void main() {
     },
     skip:
         'cross-reference only — covered in test/static/token_discipline_test.dart',
+  );
+
+  // =========================================================================
+  // N — sp-20260524: BUG-01 state derivation + BUG-R1 restore invalidation
+  // =========================================================================
+
+  // ── N-1 … N-3: BUG-01 state derivation ────────────────────────────────────
+
+  group(
+    'N-1..3 — BUG-01: BackupConnected.passphraseSet derivation',
+    () {
+      late FakeAppSettingsRepository settingsRepo;
+      late InMemorySecureStorage storage;
+      late FakeSyncLogRepository syncLogRepo;
+
+      setUp(() {
+        settingsRepo = FakeAppSettingsRepository();
+        storage = InMemorySecureStorage();
+        syncLogRepo = FakeSyncLogRepository();
+      });
+
+      ProviderContainer makeContainer() => ProviderContainer(
+            overrides: [
+              appSettingsRepositoryProvider.overrideWith(
+                (_) async => settingsRepo,
+              ),
+              secureStorageProvider.overrideWithValue(storage),
+              // restoreDataProvider / backupDataProvider not exercised by build()
+              restoreDataProvider.overrideWith(
+                (_) async => RestoreData(_OkRunner()),
+              ),
+              backupDataProvider.overrideWith(
+                (_) async => BackupData(_OkRunner()),
+              ),
+              cloudBackupProvider.overrideWithValue(FakeDropboxProvider()),
+              syncLogRepositoryProvider.overrideWith((_) async => syncLogRepo),
+            ],
+          );
+
+      // N-1: no passphrase key in storage → passphraseSet: false, autoBackupActive: false
+      test(
+        'backup_connected_state_reports_passphraseSet_false_until_first_backup',
+        () async {
+          // Seed settings with a connected email; backupSuspended defaults to false.
+          settingsRepo.storedSettings = AppSettingsData.defaults().copyWith(
+            dropboxEmail: const Nullable('a@b.test'),
+          );
+          // Storage intentionally empty — no passphrase key present.
+
+          final container = makeContainer();
+          addTearDown(container.dispose);
+
+          final state = await container.read(backupNotifierProvider.future);
+          expect(state, isA<BackupConnected>());
+          final connected = state as BackupConnected;
+          expect(
+            connected.passphraseSet,
+            isFalse,
+            reason: 'passphraseSet must be false when no passphrase in storage',
+          );
+          expect(
+            connected.autoBackupActive,
+            isFalse,
+            reason: 'autoBackupActive must be false when passphrase absent '
+                '(conjunctive condition: !backupSuspended && passphraseSet)',
+          );
+        },
+      );
+
+      // N-2: passphrase key present in storage → passphraseSet: true, autoBackupActive: true
+      test(
+        'backup_connected_state_reports_passphraseSet_true_when_storage_has_value',
+        () async {
+          settingsRepo.storedSettings = AppSettingsData.defaults().copyWith(
+            dropboxEmail: const Nullable('a@b.test'),
+          );
+          storage.values[BackupNotifier.kPassphraseKey] = 'pw';
+
+          final container = makeContainer();
+          addTearDown(container.dispose);
+
+          final state = await container.read(backupNotifierProvider.future);
+          expect(state, isA<BackupConnected>());
+          final connected = state as BackupConnected;
+          expect(
+            connected.passphraseSet,
+            isTrue,
+            reason: 'passphraseSet must be true when storage contains value',
+          );
+          expect(
+            connected.autoBackupActive,
+            isTrue,
+            reason: 'autoBackupActive must be true when passphrase set and '
+                'backupSuspended = false',
+          );
+        },
+      );
+
+      // N-3: backupSuspended=true + passphrase set → autoBackupActive: false
+      test(
+        'backup_connected_state_autoBackupActive_false_when_suspended_even_if_passphrase_set',
+        () async {
+          settingsRepo.storedSettings = AppSettingsData.defaults().copyWith(
+            dropboxEmail: const Nullable('a@b.test'),
+          );
+          // Force backupSuspended = true via the dedicated writer.
+          await settingsRepo.updateBackupSuspended(true);
+          storage.values[BackupNotifier.kPassphraseKey] = 'pw';
+
+          final container = makeContainer();
+          addTearDown(container.dispose);
+
+          final state = await container.read(backupNotifierProvider.future);
+          expect(state, isA<BackupConnected>());
+          final connected = state as BackupConnected;
+          expect(
+            connected.passphraseSet,
+            isTrue,
+            reason: 'passphraseSet must still reflect storage truthfully',
+          );
+          expect(
+            connected.autoBackupActive,
+            isFalse,
+            reason:
+                'autoBackupActive must be false when backupSuspended = true, '
+                'even though passphrase is set',
+          );
+        },
+      );
+    },
+  );
+
+  // ── N-4: BUG-R1 post-restore invalidation ──────────────────────────────────
+
+  group(
+    'N-4 — BUG-R1: restore() Ok-branch invalidates currentCycleDayProvider + cycleDayForDateProvider',
+    () {
+      test(
+        'restore_ok_invalidates_currentCycleDay_and_cycleDayForDate',
+        () async {
+          // Counters track how many times each provider's create fn is called.
+          var cycleDayCount = 0;
+          var cycleDayForDateCount = 0;
+          final testDate = DateTime.utc(2026, 5, 24);
+
+          final settingsRepo = FakeAppSettingsRepository()
+            ..storedSettings = AppSettingsData.defaults().copyWith(
+              dropboxEmail: const Nullable('a@b.test'),
+            );
+          final storage = InMemorySecureStorage()
+            ..values[BackupNotifier.kPassphraseKey] = 'pw';
+
+          final container = ProviderContainer(
+            overrides: [
+              appSettingsRepositoryProvider.overrideWith(
+                (_) async => settingsRepo,
+              ),
+              secureStorageProvider.overrideWithValue(storage),
+              restoreDataProvider.overrideWith(
+                (_) async => RestoreData(_OkRunner()),
+              ),
+              backupDataProvider.overrideWith(
+                (_) async => BackupData(_OkRunner()),
+              ),
+              cloudBackupProvider.overrideWithValue(FakeDropboxProvider()),
+              syncLogRepositoryProvider.overrideWith(
+                (_) async => FakeSyncLogRepository(),
+              ),
+              // Counter providers — increment on every create() call.
+              currentCycleDayProvider.overrideWith((_) async {
+                cycleDayCount++;
+                return null;
+              }),
+              cycleDayForDateProvider.overrideWith((ref, date) async {
+                cycleDayForDateCount++;
+                return null;
+              }),
+            ],
+          );
+          addTearDown(container.dispose);
+
+          // Prime both providers once (count goes to 1).
+          await container.read(currentCycleDayProvider.future);
+          await container.read(cycleDayForDateProvider(testDate).future);
+          expect(cycleDayCount, 1, reason: 'primed once before restore');
+          expect(cycleDayForDateCount, 1, reason: 'primed once before restore');
+
+          // Ensure notifier is built before calling restore.
+          await container.read(backupNotifierProvider.future);
+
+          // Act: trigger restore — should land in Ok() branch.
+          await container
+              .read(backupNotifierProvider.notifier)
+              .restore(filename: 'test.enc');
+
+          // Re-read to trigger recreation (invalidate + read = count++).
+          await container.read(currentCycleDayProvider.future);
+          await container.read(cycleDayForDateProvider(testDate).future);
+
+          expect(
+            cycleDayCount,
+            2,
+            reason:
+                'currentCycleDayProvider must be invalidated by restore Ok branch',
+          );
+          expect(
+            cycleDayForDateCount,
+            2,
+            reason:
+                'cycleDayForDateProvider must be invalidated by restore Ok branch',
+          );
+        },
+      );
+    },
   );
 }

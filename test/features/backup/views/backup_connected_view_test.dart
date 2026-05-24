@@ -102,6 +102,7 @@ class _FakeBackupNotifier extends BackupNotifier {
 final _connectedState = BackupConnected(
   email: 'user@example.com',
   autoBackupActive: true,
+  passphraseSet: true,
   lastBackupAt: DateTime.utc(2026, 5, 20, 14, 30),
 );
 
@@ -194,6 +195,7 @@ void main() {
       final stateWithDate = BackupConnected(
         email: 'user@example.com',
         autoBackupActive: true,
+        passphraseSet: true,
         lastBackupAt: DateTime.utc(2026, 5, 20, 14, 30),
       );
       final fake = _FakeBackupNotifier(stateWithDate);
@@ -212,6 +214,7 @@ void main() {
       const stateNullDate = BackupConnected(
         email: 'user@example.com',
         autoBackupActive: false,
+        passphraseSet: true,
       );
       final fake2 = _FakeBackupNotifier(stateNullDate);
       await tester.pumpWidget(_harness(fake2, state: stateNullDate));
@@ -251,6 +254,7 @@ void main() {
       final stateActive = BackupConnected(
         email: 'user@example.com',
         autoBackupActive: true,
+        passphraseSet: true,
         lastBackupAt: DateTime.utc(2026, 5, 20),
       );
       final fake = _FakeBackupNotifier(stateActive);
@@ -275,6 +279,7 @@ void main() {
       const stateInactive = BackupConnected(
         email: 'user@example.com',
         autoBackupActive: false,
+        passphraseSet: true,
       );
       final fake = _FakeBackupNotifier(stateInactive);
       await tester.pumpWidget(_harness(fake, state: stateInactive));

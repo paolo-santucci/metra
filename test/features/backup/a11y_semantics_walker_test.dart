@@ -205,6 +205,7 @@ void main() {
       const connectedState = BackupConnected(
         email: 'user@example.com',
         autoBackupActive: true,
+        passphraseSet: true,
         lastBackupAt: null,
       );
 

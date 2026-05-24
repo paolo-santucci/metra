@@ -1513,14 +1513,18 @@ void main() {
     );
 
     // E-07: autoBackupActive projection
+    // BUG-01 fix: autoBackupActive is now conjunctive — requires both
+    // !backupSuspended AND passphraseSet. Seed storage with a passphrase.
     test(
-      'E-07: autoBackupActive is true when backupSuspended=false',
+      'E-07: autoBackupActive is true when backupSuspended=false and passphrase set',
       () async {
         await settingsRepo.updateBackupState(
           dropboxEmail: 'a@b.com',
           lastBackupAt: null,
         );
         // backupSuspended defaults to false.
+        // Passphrase must also be present (BUG-01 fix).
+        storage.values[BackupNotifier.kPassphraseKey] = 'pw';
 
         final container = makeContainer();
         addTearDown(container.dispose);

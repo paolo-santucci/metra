@@ -13,6 +13,7 @@ import '../../../domain/entities/sync_log_entity.dart';
 import '../../../providers/backup_providers.dart';
 import '../../../providers/encryption_provider.dart';
 import '../../../providers/repository_providers.dart';
+import '../../../providers/use_case_providers.dart';
 import 'backup_state.dart';
 
 class BackupNotifier extends AsyncNotifier<BackupState> {
@@ -32,10 +33,15 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     if (settings.dropboxEmail == null) {
       return const BackupNotConnected();
     }
+    final passphrase =
+        await ref.read(secureStorageProvider).read(key: _passphraseKey);
+    final passphraseSet = passphrase != null && passphrase.isNotEmpty;
+    final autoBackupActive = !settings.backupSuspended && passphraseSet;
     return BackupConnected(
       email: settings.dropboxEmail!,
       lastBackupAt: settings.lastBackupAt,
-      autoBackupActive: !settings.backupSuspended,
+      autoBackupActive: autoBackupActive,
+      passphraseSet: passphraseSet,
     );
   }
 
@@ -278,6 +284,12 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
       switch (result) {
         case Ok():
           ref.invalidateSelf();
+          // BUG-R1: invalidate cached cycle-day providers so the UI reflects
+          // the restored data. Do NOT invalidate cyclePredictionProvider —
+          // the Drift stream propagates that change automatically; manual
+          // invalidation would reset the badge to AsyncLoading (C-04).
+          ref.invalidate(currentCycleDayProvider);
+          ref.invalidate(cycleDayForDateProvider);
         case Err(:final error):
           state = AsyncData(BackupErrorState(error.message));
       }

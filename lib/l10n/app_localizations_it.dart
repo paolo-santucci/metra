@@ -797,6 +797,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get backupAutoSuspendedLabel => 'Backup automatico sospeso';
 
   @override
+  String get backupAutoNotActiveLabel => 'Backup automatico non attivo';
+
+  @override
   String get backupEmptyHeading => 'Nessun backup configurato';
 
   @override

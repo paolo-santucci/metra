@@ -213,6 +213,7 @@ void main() {
             backupState: const BackupConnected(
               email: 'user@test.com',
               autoBackupActive: true,
+              passphraseSet: true,
             ),
           ),
         );

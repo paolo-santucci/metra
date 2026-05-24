@@ -22,6 +22,7 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/theme/metra_colors.dart';
 import '../../../core/theme/metra_spacing.dart';
@@ -86,7 +87,9 @@ class PickerSheet extends StatelessWidget {
               children: List.generate(
                 entries.length,
                 (i) => PickerItem(
-                  text: entries[i].name,
+                  text: DateFormat.yMMMd(l10n.localeName)
+                      .add_jm()
+                      .format(entries[i].timestampUtc.toLocal()),
                   distanceFromSelected: (i - selected).abs(),
                 ),
               ),

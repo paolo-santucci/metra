@@ -110,6 +110,7 @@ final _stalledFileListProvider =
 const _connectedState = BackupConnected(
   email: 'test@example.com',
   autoBackupActive: true,
+  passphraseSet: true,
   lastBackupAt: null,
 );
 

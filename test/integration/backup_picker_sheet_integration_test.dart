@@ -105,6 +105,7 @@ class _StubBackupNotifier extends BackupNotifier {
         BackupConnected(
           email: 'a@b.it',
           autoBackupActive: true,
+          passphraseSet: true,
           lastBackupAt: null,
         ),
       );
@@ -236,6 +237,7 @@ void main() {
   const connectedState = BackupConnected(
     email: 'a@b.it',
     autoBackupActive: true,
+    passphraseSet: true,
     lastBackupAt: null,
   );
 

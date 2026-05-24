@@ -733,6 +733,11 @@
     "description": "Status label shown on the backup screen when automatic backup is suspended"
   },
 
+  "backupAutoNotActiveLabel": "Automatic backup not active",
+  "@backupAutoNotActiveLabel": {
+    "description": "Status label shown on the backup screen when no passphrase has been set yet (first backup not performed)"
+  },
+
   "backupEmptyHeading": "No backup configured",
   "@backupEmptyHeading": {
     "description": "Heading of the empty-state view on the Backup screen when no cloud provider is connected"

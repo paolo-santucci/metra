@@ -89,10 +89,22 @@ class _BackupConnectedViewState extends ConsumerState<BackupConnectedView>
       lastBackupText = '—';
     }
 
-    // FR-23: StatusIndicator label switches per autoBackupActive.
-    final statusLabel = widget.state.autoBackupActive
-        ? l10n.backupAutoActiveLabel
-        : l10n.backupAutoSuspendedLabel;
+    // FR-23 (revised): three-way StatusIndicator label.
+    // not-yet-set (passphraseSet=false) → "Backup automatico non attivo" / "Automatic backup not active"
+    // active (passphraseSet && !suspended)  → "Backup automatico attivo"   / "Automatic backup active"
+    // suspended (passphraseSet && suspended) → "Backup automatico sospeso"  / "Automatic backup suspended"
+    final String statusLabel;
+    final bool indicatorActive;
+    if (!widget.state.passphraseSet) {
+      statusLabel = l10n.backupAutoNotActiveLabel;
+      indicatorActive = false;
+    } else if (widget.state.autoBackupActive) {
+      statusLabel = l10n.backupAutoActiveLabel;
+      indicatorActive = true;
+    } else {
+      statusLabel = l10n.backupAutoSuspendedLabel;
+      indicatorActive = false;
+    }
 
     return Scaffold(
       backgroundColor: bg,
@@ -146,7 +158,7 @@ class _BackupConnectedViewState extends ConsumerState<BackupConnectedView>
                 children: [
                   StatusIndicator(
                     label: statusLabel,
-                    active: widget.state.autoBackupActive,
+                    active: indicatorActive,
                   ),
                 ],
               ),

@@ -1496,6 +1496,12 @@ abstract class AppLocalizations {
   /// **'Backup automatico sospeso'**
   String get backupAutoSuspendedLabel;
 
+  /// Status label shown on the backup screen when no passphrase has been set yet (first backup not performed)
+  ///
+  /// In it, this message translates to:
+  /// **'Backup automatico non attivo'**
+  String get backupAutoNotActiveLabel;
+
   /// Heading of the empty-state view on the Backup screen when no cloud provider is connected
   ///
   /// In it, this message translates to:

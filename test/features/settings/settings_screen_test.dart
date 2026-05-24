@@ -746,6 +746,7 @@ void main() {
             backupState: const BackupConnected(
               email: 'user@example.com',
               autoBackupActive: true,
+              passphraseSet: true,
             ),
           ),
         );

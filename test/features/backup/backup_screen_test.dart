@@ -188,6 +188,7 @@ void main() {
           const BackupConnected(
             email: 'a@b.it',
             autoBackupActive: true,
+            passphraseSet: true,
             lastBackupAt: null,
           ),
         ),
@@ -312,6 +313,7 @@ void main() {
         const connectedState = BackupConnected(
           email: 'scaffold@test.com',
           autoBackupActive: true,
+          passphraseSet: true,
           lastBackupAt: null,
         );
         await tester.pumpWidget(
@@ -429,6 +431,7 @@ void main() {
             const BackupConnected(
               email: 'scaffold@test.com',
               autoBackupActive: false,
+              passphraseSet: true,
               lastBackupAt: null,
             ),
           ),
@@ -461,6 +464,99 @@ void main() {
         expect(find.byType(AppBar), findsOneWidget);
       });
     });
+  });
+
+  // =========================================================================
+  // Group J — sp-20260524 BUG-01: three-way Stato label in BackupConnectedView
+  // =========================================================================
+
+  group('Group J — BUG-01: three-way Stato label (passphrase-aware)', () {
+    // J-1: passphrase not set → "Automatic backup not active"
+    testWidgets(
+      'backup_connected_view_shows_not_active_label_when_passphrase_unset',
+      (tester) async {
+        tester.view.physicalSize = const Size(2400, 6000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        const state = BackupConnected(
+          email: 'a@b.test',
+          autoBackupActive: false,
+          passphraseSet: false,
+          lastBackupAt: null,
+        );
+        await tester.pumpWidget(_wrap(state));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Automatic backup not active'),
+          findsOneWidget,
+          reason: 'StatusIndicator must show "Automatic backup not active" '
+              'when passphraseSet = false',
+        );
+      },
+    );
+
+    // J-2: passphrase set and not suspended → "Automatic backup active"
+    testWidgets(
+      'backup_connected_view_shows_active_label_when_passphrase_set_and_not_suspended',
+      (tester) async {
+        tester.view.physicalSize = const Size(2400, 6000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        const state = BackupConnected(
+          email: 'a@b.test',
+          autoBackupActive: true,
+          passphraseSet: true,
+          lastBackupAt: null,
+        );
+        await tester.pumpWidget(_wrap(state));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Automatic backup active'),
+          findsOneWidget,
+          reason: 'StatusIndicator must show "Automatic backup active" '
+              'when passphraseSet = true and autoBackupActive = true',
+        );
+      },
+    );
+
+    // J-3: passphrase set but suspended → "Automatic backup suspended"
+    testWidgets(
+      'backup_connected_view_shows_suspended_label_when_passphrase_set_but_suspended',
+      (tester) async {
+        tester.view.physicalSize = const Size(2400, 6000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        const state = BackupConnected(
+          email: 'a@b.test',
+          autoBackupActive: false,
+          passphraseSet: true,
+          lastBackupAt: null,
+        );
+        await tester.pumpWidget(_wrap(state));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Automatic backup suspended'),
+          findsOneWidget,
+          reason: 'StatusIndicator must show "Automatic backup suspended" '
+              'when passphraseSet = true but autoBackupActive = false',
+        );
+      },
+    );
   });
 
   // =========================================================================

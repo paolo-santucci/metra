@@ -191,4 +191,40 @@ void main() {
     await repo.replaceAll([makeEntry(startDate: DateTime.utc(2026, 5, 1))]);
     expect((await settingsRepo.getOrCreate()).backupSuspended, isTrue);
   });
+
+  // BUG-D1 — delete must clear the sentinel just like insert and update.
+  test('delete_clears_backupSuspended_sentinel_like_insert_and_update',
+      () async {
+    // Arrange: pre-insert one entry; capture its id.
+    final inserted = await repo.insert(
+      makeEntry(startDate: DateTime.utc(2026, 6, 1)),
+    );
+    final id = inserted.id;
+    // Reset the callLog so insert's own clearBackupSuspended is not counted.
+    settingsRepo.callLog.clear();
+    // Suspend the sentinel to make the assert deterministic.
+    await settingsRepo.updateBackupSuspended(true);
+    settingsRepo.callLog.clear(); // clear the updateBackupSuspended entry too
+
+    // Act.
+    await repo.delete(id);
+
+    // Assert 1: clearBackupSuspended was called exactly once.
+    expect(
+      settingsRepo.callLog,
+      equals(['clearBackupSuspended']),
+      reason: 'delete() must call clearBackupSuspended exactly once',
+    );
+
+    // Assert 2: the row was actually removed.
+    expect(await repo.getRecent(10), isEmpty);
+
+    // Assert 3: lastLogOrSymptomWriteAt was NOT touched (C-03).
+    // The callLog must contain only 'clearBackupSuspended' — no other writer.
+    expect(
+      settingsRepo.callLog.any((e) => e.startsWith('updateLastDataWriteAt')),
+      isFalse,
+      reason: 'delete() must not update lastLogOrSymptomWriteAt (C-03)',
+    );
+  });
 }

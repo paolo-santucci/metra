@@ -86,7 +86,10 @@ class DriftCycleEntryRepository implements CycleEntryRepository {
   }
 
   @override
-  Future<void> delete(int id) => _dao.deleteCycleEntry(id);
+  Future<void> delete(int id) async {
+    await _dao.deleteCycleEntry(id);
+    await _settingsRepo.clearBackupSuspended();
+  }
 
   @override
   Future<CycleEntryEntity?> getByStartDate(DateTime startDate) async {

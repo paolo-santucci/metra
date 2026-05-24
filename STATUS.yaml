@@ -1,37 +1,42 @@
 schema-version: 2
-last-updated: "2026-05-23T21:30:00+02:00"
+last-updated: "2026-05-24T17:00:00+02:00"
 active-plan: null
 last-plan: ".claude/docs/plans/archive/sp-20260521-backup-screen-restructure-plan.md"
 
 # Owned by the short-plan skill. update-status preserves verbatim.
 short-plan:
-  feature: null
-  slug: null
+  feature: "3 bug fixes: restore spinner shows filename instead of date/time; UI always shows 'Automatic backup active' even before passphrase set; prediction not recalculated after delete/restore"
+  slug: backup-ui-prediction-bugs
   auto: false
-  request-type: null
-  workflow: null
+  request-type: bug-fix
+  workflow: quick
   parent:
     spec: null
     plan: null
     milestone: null
     frs: null
   paths:
-    spec: null
-    plan: null
-    assess-dir: null
+    spec: ".claude/docs/specs/sp-20260524-backup-ui-prediction-bugs-spec.md"
+    plan: ".claude/docs/plans/qp-20260524-backup-ui-prediction-bugs.md"
+    assess-dir: ".claude/docs/specs/sp-20260524-backup-ui-prediction-bugs-assessment"
   phases:
-    assess: pending
-    triage: pending
-    spec: pending
-    plan: pending
-    build: pending
+    assess: done
+    triage: done
+    spec: skipped
+    plan: done
+    build: done
+
   approvals:
     spec: null
     plan: null
   rejection-note: null
   build-progress:
-    current-wave: null
-    waves-completed: []
+    current-wave: "complete"
+    waves-completed:
+      - "T-A (BUG-R01 — picker formatted date/time)"
+      - "T-B (BUG-01 + BUG-R1 — passphraseSet + restore cycle-day invalidation)"
+      - "T-C (BUG-D1 — delete() clears backup-suspended sentinel)"
+      - "T-D (integration — backup lifecycle + restore cycle-day invalidation)"
 
 # Owned by the long-plan skill. update-status preserves verbatim.
 long-plan:
@@ -54,22 +59,24 @@ long-plan:
 pending-consolidation: []
 
 recently-completed:
+  - date: "2026-05-24"
+    summary: "feat(backup): T-B+T-C+T-D qp-20260524 — passphraseSet conjunctive Stato, post-restore cycle-day invalidation, delete() sentinel fix, integration test; 1435 tests pass"
+  - date: "2026-05-24"
+    summary: "feat(backup): T-A BUG-R01 — BackupPickerSheet renders formatted date/time instead of raw filename; 24 tests pass"
+  - date: "2026-05-24"
+    summary: "chore(status): sync STATUS.yaml — sp-20260521 ADRs logged, M5 stale ref removed"
   - date: "2026-05-23"
     summary: "docs(adr): D-011..D-014 — sp-20260521 ui-design decisions; drain pending-consolidation"
   - date: "2026-05-23"
-    summary: "feat(backup): TASK-01..38 — backup screen restructure complete (sp-20260521); 56 files, 1425 tests pass, 0 analyzer issues; BackupPickerSheet, MetraConfirmDialog, StatusIndicator, settings atoms extracted, help docs updated"
+    summary: "feat(backup): TASK-01..38 — backup screen restructure complete (sp-20260521); 56 files, 1425 tests pass"
   - date: "2026-05-23"
     summary: "feat(test): TASK-22 — delete RestorePickerDialog and clean up stale references"
   - date: "2026-05-23"
     summary: "feat(ui): TASK-20 — RestoreProgressScreen with back-lock and live-region heading"
-  - date: "2026-05-18"
-    summary: "fix(ios): add NSCameraUsageDescription and NSLocationWhenInUseUsageDescription to Info.plist"
 
 in-progress: []
 
 next-steps:
-  - "LP lp-20260517-implement-next-patch confirmed COMPLETE — all M1..M4 milestones delivered; STATUS.yaml corrected (stale M5 reference removed)"
-  - "Define next initiative: new long-plan or standalone short-plan"
   - "FR-17 manual sign-off on physical iOS device (cold-start notification permission denied + dialog on toggle-on)"
   - "NFR-03 manual measurement: hasNotificationPermission() < 100ms p95 on cold-start iOS"
   - "Screenshot refresh for backup-connected IT+EN (TASK-39/40 deferred to next manual QA session with Android emulator)"
