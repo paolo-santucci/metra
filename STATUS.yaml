@@ -1,42 +1,37 @@
 schema-version: 2
-last-updated: "2026-05-24T17:00:00+02:00"
+last-updated: "2026-05-24T17:10:00+02:00"
 active-plan: null
-last-plan: ".claude/docs/plans/archive/sp-20260521-backup-screen-restructure-plan.md"
+last-plan: ".claude/docs/plans/archive/qp-20260524-backup-ui-prediction-bugs.md"
 
 # Owned by the short-plan skill. update-status preserves verbatim.
 short-plan:
-  feature: "3 bug fixes: restore spinner shows filename instead of date/time; UI always shows 'Automatic backup active' even before passphrase set; prediction not recalculated after delete/restore"
-  slug: backup-ui-prediction-bugs
+  feature: null
+  slug: null
   auto: false
-  request-type: bug-fix
-  workflow: quick
+  request-type: null
+  workflow: null
   parent:
     spec: null
     plan: null
     milestone: null
     frs: null
   paths:
-    spec: ".claude/docs/specs/sp-20260524-backup-ui-prediction-bugs-spec.md"
-    plan: ".claude/docs/plans/qp-20260524-backup-ui-prediction-bugs.md"
-    assess-dir: ".claude/docs/specs/sp-20260524-backup-ui-prediction-bugs-assessment"
+    spec: null
+    plan: null
+    assess-dir: null
   phases:
-    assess: done
-    triage: done
-    spec: skipped
-    plan: done
-    build: done
-
+    assess: pending
+    triage: pending
+    spec: pending
+    plan: pending
+    build: pending
   approvals:
     spec: null
     plan: null
   rejection-note: null
   build-progress:
-    current-wave: "complete"
-    waves-completed:
-      - "T-A (BUG-R01 — picker formatted date/time)"
-      - "T-B (BUG-01 + BUG-R1 — passphraseSet + restore cycle-day invalidation)"
-      - "T-C (BUG-D1 — delete() clears backup-suspended sentinel)"
-      - "T-D (integration — backup lifecycle + restore cycle-day invalidation)"
+    current-wave: null
+    waves-completed: []
 
 # Owned by the long-plan skill. update-status preserves verbatim.
 long-plan:
@@ -60,9 +55,7 @@ pending-consolidation: []
 
 recently-completed:
   - date: "2026-05-24"
-    summary: "feat(backup): T-B+T-C+T-D qp-20260524 — passphraseSet conjunctive Stato, post-restore cycle-day invalidation, delete() sentinel fix, integration test; 1435 tests pass"
-  - date: "2026-05-24"
-    summary: "feat(backup): T-A BUG-R01 — BackupPickerSheet renders formatted date/time instead of raw filename; 24 tests pass"
+    summary: "feat(backup): T-A..T-D qp-20260524 — 4 bug fixes (picker date format, passphrase-aware Stato, restore cycle-day invalidation, delete sentinel); 1435 tests pass"
   - date: "2026-05-24"
     summary: "chore(status): sync STATUS.yaml — sp-20260521 ADRs logged, M5 stale ref removed"
   - date: "2026-05-23"
@@ -71,8 +64,6 @@ recently-completed:
     summary: "feat(backup): TASK-01..38 — backup screen restructure complete (sp-20260521); 56 files, 1425 tests pass"
   - date: "2026-05-23"
     summary: "feat(test): TASK-22 — delete RestorePickerDialog and clean up stale references"
-  - date: "2026-05-23"
-    summary: "feat(ui): TASK-20 — RestoreProgressScreen with back-lock and live-region heading"
 
 in-progress: []
 
