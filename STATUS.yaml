@@ -1,7 +1,7 @@
 schema-version: 2
-last-updated: "2026-05-24T18:00:00+02:00"
+last-updated: "2026-05-24T20:00:00+02:00"
 active-plan: null
-last-plan: ".claude/docs/plans/archive/qp-20260524-backup-ui-prediction-bugs.md"
+last-plan: ".claude/docs/plans/archive/qp-20260524-backup-state-label-prediction-bugs.md"
 
 # Owned by the short-plan skill. update-status preserves verbatim.
 short-plan:
@@ -55,17 +55,15 @@ pending-consolidation: []
 
 recently-completed:
   - date: "2026-05-24"
-    summary: "fix(ci): pin Flutter 3.41.9 + --enforce-lockfile — fixes 9 consecutive quality failures caused by pubspec.lock drift between CI (3.44.0) and local (3.41.9)"
+    summary: "fix(backup+prediction): T-A..T-F qp-20260524 — 7 bug fixes, 1454 tests pass"
   - date: "2026-05-24"
-    summary: "feat(backup): T-A..T-D qp-20260524 — 4 bug fixes (picker date format, passphrase-aware Stato, restore cycle-day invalidation, delete sentinel); 1435 tests pass"
+    summary: "chore(status): log quality CI fix — 9 consecutive failures resolved"
   - date: "2026-05-24"
-    summary: "chore(status): sync STATUS.yaml — sp-20260521 ADRs logged, M5 stale ref removed"
-  - date: "2026-05-23"
-    summary: "docs(adr): D-011..D-014 — sp-20260521 ui-design decisions; drain pending-consolidation"
-  - date: "2026-05-23"
-    summary: "feat(backup): TASK-01..38 — backup screen restructure complete (sp-20260521); 56 files, 1425 tests pass"
-  - date: "2026-05-23"
-    summary: "feat(test): TASK-22 — delete RestorePickerDialog and clean up stale references"
+    summary: "fix(ci): pin Flutter to 3.41.9 and enforce pubspec.lock in quality workflow"
+  - date: "2026-05-24"
+    summary: "chore(release): bump version to 1.0.2+6 for TestFlight rc2"
+  - date: "2026-05-24"
+    summary: "feat(backup): T-A..T-D qp-20260524 — 4 bug fixes, 1435 tests pass"
 
 in-progress: []
 
