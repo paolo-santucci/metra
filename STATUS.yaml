@@ -1,5 +1,5 @@
 schema-version: 2
-last-updated: "2026-05-24T17:10:00+02:00"
+last-updated: "2026-05-24T18:00:00+02:00"
 active-plan: null
 last-plan: ".claude/docs/plans/archive/qp-20260524-backup-ui-prediction-bugs.md"
 
@@ -54,6 +54,8 @@ long-plan:
 pending-consolidation: []
 
 recently-completed:
+  - date: "2026-05-24"
+    summary: "fix(ci): pin Flutter 3.41.9 + --enforce-lockfile — fixes 9 consecutive quality failures caused by pubspec.lock drift between CI (3.44.0) and local (3.41.9)"
   - date: "2026-05-24"
     summary: "feat(backup): T-A..T-D qp-20260524 — 4 bug fixes (picker date format, passphrase-aware Stato, restore cycle-day invalidation, delete sentinel); 1435 tests pass"
   - date: "2026-05-24"
