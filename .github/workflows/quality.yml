@@ -17,12 +17,20 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x'
+          # Pin to the same Flutter version used in local development.
+          # Floating '3.x' causes pubspec.lock drift whenever Flutter stable
+          # bumps the Dart SDK, producing different transitive dep resolutions
+          # between local and CI. Update this pin when upgrading Flutter locally,
+          # then run `flutter pub get` and commit the updated pubspec.lock.
+          flutter-version: '3.41.9'
           channel: stable
           cache: 'pub'
 
-      - name: Install dependencies
-        run: flutter pub get
+      - name: Install dependencies (enforce lock)
+        # --enforce-lockfile fails fast with a clear error if pubspec.lock is
+        # stale (e.g. after a transitive dep update). Fix: run `flutter pub get`
+        # locally and commit the refreshed pubspec.lock.
+        run: flutter pub get --enforce-lockfile
 
       - name: Generate code (build_runner)
         run: dart run build_runner build --delete-conflicting-outputs
@@ -30,7 +38,10 @@ jobs:
       - name: Check formatting and codegen determinism
         run: |
           dart format .
-          git diff --exit-code
+          # Exclude pubspec.lock: lock-file freshness is enforced by the
+          # "Install dependencies" step above. Only formatting and codegen
+          # changes are checked here.
+          git diff --exit-code -- . ':!pubspec.lock'
 
       - name: Analyze
         run: flutter analyze
