@@ -1,5 +1,5 @@
 schema-version: 2
-last-updated: "2026-05-24T23:30:00+02:00"
+last-updated: "2026-05-25T17:41:00+02:00"
 active-plan: null
 last-plan: ".claude/docs/plans/archive/qp-20260524-notification-link-restore-toast.md"
 
@@ -57,6 +57,16 @@ pending-consolidation:
     has-spec-impact: true
 
 recently-completed:
+  - date: "2026-05-25"
+    summary: "fix(ci): deploy_testflight switched to macos-26 (Xcode 26 SDK) — Apple now rejects iOS 18.5 SDK builds; bump to 1.0.2+11, tag v1.0.2-rc9 — commits 5cfe25d + 2d6a746"
+  - date: "2026-05-25"
+    summary: "chore(release): bump version to 1.0.2+10, tag v1.0.2-rc8 — TestFlight rc8 build triggered (AppDelegate applicationRegistrar.messenger() fix)"
+  - date: "2026-05-25"
+    summary: "fix(ios): AppDelegate uses applicationRegistrar.messenger() on FlutterImplicitEngineBridge — commit ab92c4a"
+  - date: "2026-05-25"
+    summary: "chore(release): bump version to 1.0.2+9, tag v1.0.2-rc7 — TestFlight rc7 build triggered"
+  - date: "2026-05-25"
+    summary: "fix(ci): dart format drift + pin iOS runner to macos-15 (Xcode 26 binaryMessenger breakage) — commit 01ccf6e"
   - date: "2026-05-24"
     summary: "fix(notification+backup): 5 bugs fixed — iOS channel reg, dialog close, restore toast (qp-20260524), 1471 tests pass"
   - date: "2026-05-24"
