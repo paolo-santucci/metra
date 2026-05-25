@@ -1,7 +1,7 @@
 schema-version: 2
-last-updated: "2026-05-25T17:55:00+02:00"
+last-updated: "2026-05-25T20:58:00+02:00"
 active-plan: null
-last-plan: ".claude/docs/plans/archive/qp-20260524-notification-link-restore-toast.md"
+last-plan: ".claude/docs/plans/archive/qp-20260525-backup-restore-toast.md"
 
 # Owned by the short-plan skill. update-status preserves verbatim.
 short-plan:
@@ -51,49 +51,30 @@ long-plan:
     spec: approved
     plan: approved
 
-pending-consolidation:
-  - plan-id: qp-20260524-notification-link-restore-toast
-    archived-date: "2026-05-24"
-    has-spec-impact: true
+pending-consolidation: []
 
 recently-completed:
   - date: "2026-05-25"
-    summary: "iOS CONFIRMED WORKING: v1.0.2+11 (rc9) — deploy_testflight run 26408465818 on macos-26 succeeded 7m45s; altool upload to TestFlight: UPLOAD SUCCEEDED with no errors; Xcode 26.4.1 / iOS 26 SDK used"
+    summary: "fix(backup): restore success toast now shows after restore — moved toast before guard 5, added messenger.mounted guard; 1472 tests pass"
   - date: "2026-05-25"
-    summary: "fix(ci): deploy_testflight switched to macos-26 (Xcode 26 SDK) — Apple now rejects iOS 18.5 SDK builds; bump to 1.0.2+11, tag v1.0.2-rc9 — commits 5cfe25d + 2d6a746"
+    summary: "chore(status): confirm iOS rc9 delivered to TestFlight — UPLOAD SUCCEEDED"
   - date: "2026-05-25"
-    summary: "chore(release): bump version to 1.0.2+10, tag v1.0.2-rc8 — TestFlight rc8 build triggered (AppDelegate applicationRegistrar.messenger() fix)"
+    summary: "fix(ci): switch deploy_testflight runner to macos-26 (Xcode 26 SDK required) — Apple rejects iOS 18.5 SDK builds"
   - date: "2026-05-25"
-    summary: "fix(ios): AppDelegate uses applicationRegistrar.messenger() on FlutterImplicitEngineBridge — commit ab92c4a"
-  - date: "2026-05-25"
-    summary: "chore(release): bump version to 1.0.2+9, tag v1.0.2-rc7 — TestFlight rc7 build triggered"
-  - date: "2026-05-25"
-    summary: "fix(ci): dart format drift + pin iOS runner to macos-15 (Xcode 26 binaryMessenger breakage) — commit 01ccf6e"
+    summary: "fix(ios): use applicationRegistrar.messenger() on FlutterImplicitEngineBridge"
   - date: "2026-05-24"
-    summary: "fix(notification+backup): 5 bugs fixed — iOS channel reg, dialog close, restore toast (qp-20260524), 1471 tests pass"
-  - date: "2026-05-24"
-    summary: "chore(release): bump version to 1.0.2+7 for TestFlight rc5"
-  - date: "2026-05-24"
-    summary: "fix(backup+prediction): T-A..T-F qp-20260524 — 7 bug fixes, 1454 tests pass"
-  - date: "2026-05-24"
-    summary: "chore(status): log quality CI fix — 9 consecutive failures resolved"
-  - date: "2026-05-24"
-    summary: "fix(ci): pin Flutter to 3.41.9 and enforce pubspec.lock in quality workflow"
+    summary: "fix(notification+backup): 5 bugs fixed — iOS channel reg, dialog close, restore toast (qp-20260524)"
 
 in-progress: []
 
 next-steps:
-  - "finalize-plan BLOCKED: spec-delta restore-success-toast-add refused — anchor restore-flow not found in backup.md (no heading slugifies to restore-flow); fix: add ## Restore flow heading to backup.md or change section-anchor in archived QP, then /finalize-plan --resume"
-  - "Manual E2E on physical iOS device — MANDATORY: cold-start notification permission denied + dialog toggle-on per T-01 §6 step 6 (T-01 acceptance gate)"
+  - "Commit backup restore toast fix: backup_connected_view_handlers.dart, handle_restore_grep_test.dart, backup.md (Restore flow section + D-015/D-016 ADRs)"
+  - "Manual E2E on physical iOS device — MANDATORY: cold-start notification permission denied + dialog toggle-on per T-01 §6 step 6"
   - "NFR-03 manual measurement: hasNotificationPermission() < 100ms p95 on cold-start iOS"
   - "Screenshot refresh for backup-connected IT+EN (deferred — requires Android emulator with IT/EN locale)"
   - "Long-plan lp-20260517-implement-next-patch: approved, ready to start next sprint"
 
 known-issues:
-  - severity: warning
-    description: "finalize-plan stopped: spec-delta restore-success-toast-add refused — section-anchor restore-flow not found in backup.md slice; must add heading or fix anchor before re-running"
-    impact: low
-    workaround: "Add '## Restore flow' heading to .claude/docs/canon/spec/backup.md then /finalize-plan --resume"
   - severity: warning
     description: "save_daily_log_test.dart future date rejection — intermittent failure near Italian midnight UTC (timezone/DST boundary)"
     impact: medium

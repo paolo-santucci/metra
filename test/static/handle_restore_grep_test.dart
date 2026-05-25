@@ -210,6 +210,49 @@ void main() {
   //     its scan yields zero violations — which is itself an assertion.
   // ---------------------------------------------------------------------------
 
+  test(
+    'restoreSuccessToast_appears_before_fifth_mounted_guard_in_handleRestore',
+    () {
+      final src = File(handlersPath).readAsStringSync();
+      final body = extractHandleRestoreBody(src);
+
+      // Locate the success toast via its unique l10n key.
+      // IMPORTANT: do NOT use 'messenger.showSnackBar(' — that substring appears
+      // twice in handleRestore() (error toast + success toast). 'restoreSuccessToast'
+      // is unique to the success branch.
+      final toastPos = body.indexOf('restoreSuccessToast');
+      expect(
+        toastPos,
+        isNonNegative,
+        reason: 'handleRestore() must dispatch the success toast via '
+            'l10n.restoreSuccessToast — substring not found in body.',
+      );
+
+      // Locate the 5th 'if (!mounted) return;' guard.
+      const guard = 'if (!mounted) return;';
+      final matches = guard.allMatches(body).toList();
+      expect(
+        matches.length,
+        5,
+        reason: 'handleRestore() must contain exactly 5 mounted guards '
+            '(re-asserted here for clarity). Found: ${matches.length}',
+      );
+      final guard5Pos = matches[4].start;
+
+      expect(
+        toastPos,
+        lessThan(guard5Pos),
+        reason: 'In handleRestore(), the success-toast dispatch '
+            '(substring `restoreSuccessToast`) must appear BEFORE the 5th '
+            '`if (!mounted) return;` guard. Otherwise the toast is dead code: '
+            'in the real app, restore() swaps the view away synchronously and '
+            'BackupConnectedView unmounts before restoreWithPassphrase() returns, '
+            'so guard 5 always fires and the toast is never shown. '
+            'Found: toastPos=$toastPos, guard5Pos=$guard5Pos.',
+      );
+    },
+  );
+
   group('_handleRestore BuildContext after await guard', () {
     test(
       'no_BuildContext_use_after_await_without_mounted_guard_in_full_handlers_file',

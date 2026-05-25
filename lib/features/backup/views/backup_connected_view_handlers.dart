@@ -146,12 +146,12 @@ mixin BackupConnectedHandlers on ConsumerState<BackupConnectedView> {
         enteredPassphrase!, // safe: null-checked on line above
         filename: entries[pickedIndex].name,
       );
-      if (!mounted) return; // guard 5 — C-05
-      if (count != null) {
+      if (count != null && messenger.mounted) {
         messenger.showSnackBar(
           SnackBar(content: Text(l10n.restoreSuccessToast(count))),
         );
       }
+      if (!mounted) return; // guard 5 — C-05
     } finally {
       sub.close();
     }
