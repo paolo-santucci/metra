@@ -15,9 +15,11 @@ import UIKit
     // Register the notification-settings channel via the implicit engine's binary
     // messenger. Under iOS-13+ UIApplicationSceneManifest (scene lifecycle),
     // window is nil at didFinishLaunchingWithOptions time — this callback fires
-    // when the FlutterViewController for the first scene is initialised, at which
-    // point engineBridge.binaryMessenger is valid (FR-23, FR-25).
-    registerNotificationSettingsChannel(messenger: engineBridge.binaryMessenger)
+    // when the FlutterViewController for the first scene is initialised.
+    // FlutterImplicitEngineBridge exposes applicationRegistrar (which inherits
+    // FlutterPluginRegistrar.messenger) — not a top-level binaryMessenger
+    // property (FR-23, FR-25).
+    registerNotificationSettingsChannel(messenger: engineBridge.applicationRegistrar.messenger())
   }
 
   // Registers the notification-settings MethodChannel so Flutter can open the
