@@ -1,5 +1,5 @@
 schema-version: 2
-last-updated: "2026-05-25T17:41:00+02:00"
+last-updated: "2026-05-25T17:55:00+02:00"
 active-plan: null
 last-plan: ".claude/docs/plans/archive/qp-20260524-notification-link-restore-toast.md"
 
@@ -57,6 +57,8 @@ pending-consolidation:
     has-spec-impact: true
 
 recently-completed:
+  - date: "2026-05-25"
+    summary: "iOS CONFIRMED WORKING: v1.0.2+11 (rc9) — deploy_testflight run 26408465818 on macos-26 succeeded 7m45s; altool upload to TestFlight: UPLOAD SUCCEEDED with no errors; Xcode 26.4.1 / iOS 26 SDK used"
   - date: "2026-05-25"
     summary: "fix(ci): deploy_testflight switched to macos-26 (Xcode 26 SDK) — Apple now rejects iOS 18.5 SDK builds; bump to 1.0.2+11, tag v1.0.2-rc9 — commits 5cfe25d + 2d6a746"
   - date: "2026-05-25"
