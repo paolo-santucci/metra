@@ -151,7 +151,8 @@ void main() {
 
         // Tap "Open system settings" — openNotificationSettings throws;
         // the finally block must still call Navigator.pop(dialogCtx).
-        await tester.tap(find.widgetWithText(TextButton, 'Open system settings'));
+        await tester
+            .tap(find.widgetWithText(TextButton, 'Open system settings'));
         await tester.pumpAndSettle();
 
         // Assert: dialog is dismissed regardless of the exception.
@@ -182,7 +183,8 @@ void main() {
 
         expect(find.byType(AlertDialog), findsOneWidget);
 
-        await tester.tap(find.widgetWithText(TextButton, 'Open system settings'));
+        await tester
+            .tap(find.widgetWithText(TextButton, 'Open system settings'));
         await tester.pumpAndSettle();
 
         // Assert: dialog is dismissed on the happy path.

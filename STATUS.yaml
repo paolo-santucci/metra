@@ -1,15 +1,15 @@
 schema-version: 2
 last-updated: "2026-05-24T23:30:00+02:00"
 active-plan: null
-last-plan: ".claude/docs/plans/qp-20260524-notification-link-restore-toast.md"
+last-plan: ".claude/docs/plans/archive/qp-20260524-notification-link-restore-toast.md"
 
 # Owned by the short-plan skill. update-status preserves verbatim.
 short-plan:
-  feature: "1. notification settings link in blocked-permission popup doesn't work; 2. no toast after backup restore showing record count"
-  slug: "notification-link-restore-toast"
+  feature: null
+  slug: null
   auto: false
-  request-type: bug-fix
-  workflow: quick
+  request-type: null
+  workflow: null
   parent:
     spec: null
     plan: null
@@ -17,24 +17,21 @@ short-plan:
     frs: null
   paths:
     spec: null
-    plan: ".claude/docs/plans/qp-20260524-notification-link-restore-toast.md"
-    assess-dir: ".claude/docs/specs/sp-20260524-notification-link-restore-toast-assessment"
+    plan: null
+    assess-dir: null
   phases:
-    assess: done
-    triage: done
-    spec: skipped
-    plan: done
-    build: done
+    assess: pending
+    triage: pending
+    spec: pending
+    plan: pending
+    build: pending
   approvals:
     spec: null
     plan: null
   rejection-note: null
   build-progress:
-    current-wave: 3
-    waves-completed:
-      - 1
-      - 2
-      - 3
+    current-wave: null
+    waves-completed: []
 
 # Owned by the long-plan skill. update-status preserves verbatim.
 long-plan:
@@ -54,11 +51,14 @@ long-plan:
     spec: approved
     plan: approved
 
-pending-consolidation: []
+pending-consolidation:
+  - plan-id: qp-20260524-notification-link-restore-toast
+    archived-date: "2026-05-24"
+    has-spec-impact: true
 
 recently-completed:
   - date: "2026-05-24"
-    summary: "fix(notification+backup): qp-20260524 T-05 integration test — 1471 tests pass (wave 3 complete)"
+    summary: "fix(notification+backup): 5 bugs fixed — iOS channel reg, dialog close, restore toast (qp-20260524), 1471 tests pass"
   - date: "2026-05-24"
     summary: "chore(release): bump version to 1.0.2+7 for TestFlight rc5"
   - date: "2026-05-24"
@@ -67,17 +67,21 @@ recently-completed:
     summary: "chore(status): log quality CI fix — 9 consecutive failures resolved"
   - date: "2026-05-24"
     summary: "fix(ci): pin Flutter to 3.41.9 and enforce pubspec.lock in quality workflow"
-  - date: "2026-05-24"
-    summary: "chore(release): bump version to 1.0.2+6 for TestFlight rc2"
 
 in-progress: []
 
 next-steps:
-  - "qp-20260524 complete (T-01..T-05 all done, 1471 tests pass) — MANDATORY before declaring QP closed: §6 step 6 manual E2E on physical iOS device (cold-start notification permission denied + dialog on toggle-on) per T-01 done-when checklist"
+  - "finalize-plan BLOCKED: spec-delta restore-success-toast-add refused — anchor restore-flow not found in backup.md (no heading slugifies to restore-flow); fix: add ## Restore flow heading to backup.md or change section-anchor in archived QP, then /finalize-plan --resume"
+  - "Manual E2E on physical iOS device — MANDATORY: cold-start notification permission denied + dialog toggle-on per T-01 §6 step 6 (T-01 acceptance gate)"
   - "NFR-03 manual measurement: hasNotificationPermission() < 100ms p95 on cold-start iOS"
-  - "Screenshot refresh for backup-connected IT+EN (TASK-39/40 deferred to next manual QA session with Android emulator)"
+  - "Screenshot refresh for backup-connected IT+EN (deferred — requires Android emulator with IT/EN locale)"
+  - "Long-plan lp-20260517-implement-next-patch: approved, ready to start next sprint"
 
 known-issues:
+  - severity: warning
+    description: "finalize-plan stopped: spec-delta restore-success-toast-add refused — section-anchor restore-flow not found in backup.md slice; must add heading or fix anchor before re-running"
+    impact: low
+    workaround: "Add '## Restore flow' heading to .claude/docs/canon/spec/backup.md then /finalize-plan --resume"
   - severity: warning
     description: "save_daily_log_test.dart future date rejection — intermittent failure near Italian midnight UTC (timezone/DST boundary)"
     impact: medium
@@ -85,12 +89,8 @@ known-issues:
   - severity: warning
     description: "Screenshot refresh for backup-connected IT+EN deferred — requires Android emulator with IT/EN locale"
     impact: low
-    workaround: "Old screenshots remain in help docs; text updated correctly; refresh during next manual QA session"
+    workaround: "Old screenshots remain in help docs; text is correct; refresh at next manual QA session"
   - severity: warning
     description: "iOS PermissionDenied vs PermissionBlocked indistinguishable via flutter_local_notifications v17 — both return PermissionBlocked"
     impact: low
     workaround: "Conservative UX: settings dialog always offered on iOS denial; slightly over-eager on first-time denials"
-  - severity: info
-    description: "iOS: metra/notification_settings channel fix landed (T-01) — moved registration to didInitializeImplicitFlutterEngine; pending manual E2E on physical device (§6 step 6)"
-    impact: low
-    workaround: "Build via next TestFlight cut and verify on physical device"

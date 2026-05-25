@@ -467,7 +467,8 @@ class _FakeBackupNotifierForWidget extends BackupNotifier {
   Future<int?> restoreWithPassphrase(
     String passphrase, {
     String? filename,
-  }) async => null;
+  }) async =>
+      null;
 
   @override
   dynamic noSuchMethod(Invocation i) => super.noSuchMethod(i);

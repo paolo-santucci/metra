@@ -586,8 +586,7 @@ void main() {
         expect(
           captured.any((m) => m.contains('MissingPluginException')),
           isTrue,
-          reason:
-              'MissingPluginException must be surfaced via debugPrint with '
+          reason: 'MissingPluginException must be surfaced via debugPrint with '
               'the correct prefix',
         );
       },

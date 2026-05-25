@@ -632,11 +632,10 @@ void main() {
   group(
     'O-1..3 — BUG-RT01: BackupNotifier.restore/restoreWithPassphrase count propagation',
     () {
-      FakeAppSettingsRepository settingsRepo() =>
-          FakeAppSettingsRepository()
-            ..storedSettings = AppSettingsData.defaults().copyWith(
-              dropboxEmail: const Nullable('a@b.test'),
-            );
+      FakeAppSettingsRepository settingsRepo() => FakeAppSettingsRepository()
+        ..storedSettings = AppSettingsData.defaults().copyWith(
+          dropboxEmail: const Nullable('a@b.test'),
+        );
 
       ProviderContainer makeContainer({
         required FakeBackupRunner fakeRunner,
@@ -648,8 +647,9 @@ void main() {
                 (_) async => settingsRepo(),
               ),
               secureStorageProvider.overrideWithValue(
-                storage ?? (InMemorySecureStorage()
-                  ..values[BackupNotifier.kPassphraseKey] = 'pw'),
+                storage ??
+                    (InMemorySecureStorage()
+                      ..values[BackupNotifier.kPassphraseKey] = 'pw'),
               ),
               restoreDataProvider.overrideWith(
                 (_) async => RestoreData(fakeRunner),
@@ -692,8 +692,7 @@ void main() {
           addTearDown(container.dispose);
 
           await container.read(backupNotifierProvider.future);
-          final notifier =
-              container.read(backupNotifierProvider.notifier);
+          final notifier = container.read(backupNotifierProvider.notifier);
 
           final count = await notifier.restore();
 
