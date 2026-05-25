@@ -3,7 +3,7 @@ description: "Métra — privacy-first menstrual cycle tracker."
 publish_to: none
 # iOS version — source of truth for the iOS build.
 # Android version is pinned independently in android/app/build.gradle.kts.
-version: 1.0.2+10
+version: 1.0.2+11
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
