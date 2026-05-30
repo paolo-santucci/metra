@@ -22,7 +22,7 @@ jobs:
           # bumps the Dart SDK, producing different transitive dep resolutions
           # between local and CI. Update this pin when upgrading Flutter locally,
           # then run `flutter pub get` and commit the updated pubspec.lock.
-          flutter-version: '3.41.9'
+          flutter-version: '3.44.0'
           channel: stable
           cache: 'pub'
 
