@@ -1,5 +1,5 @@
 schema-version: 2
-last-updated: "2026-05-30T12:00:00+02:00"
+last-updated: "2026-05-30T18:30:00+02:00"
 active-plan: null
 last-plan: ".claude/docs/plans/archive/qp-20260525-backup-restore-toast.md"
 
@@ -55,34 +55,33 @@ pending-consolidation: []
 
 recently-completed:
   - date: "2026-05-30"
-    summary: "chore(deps): KGP migration phase 2 — flutter_secure_storage 9→10.3.1 (removed encryptedSharedPreferences, AppleOptions mock fix), flutter_web_auth_2 4→5.0.2, file_picker 8→11.0.2 (FilePicker.platform→static API), share_plus stays 10.x (12.x Kotlin K2 compilation bug, 13.x win32 ^6.x conflict blocked by file_picker 11.x), package_info_plus stays 9.x (win32 ^6.x conflict); build and tests pass"
+    summary: "test: fix 4 CI failures — clock injection in schedule_prediction_notification_test, v10 encryptedSharedPreferences assertion in encryption_provider_test, libsqlite3-dev in quality.yml, golden regen for segmented_control_metra after Flutter 3.41.9 upgrade"
   - date: "2026-05-30"
-    summary: "chore(android): migrate to builtInKotlin=true — flutter_timezone 3.0.1→5.1.0, removed id(kotlin-android) from app build.gradle.kts, API fix for TimezoneInfo.identifier, build succeeds"
+    summary: "fix(ios): downgrade flutter_web_auth_2 5→4.1.0 — v5 rootViewController acquisition fails under iOS scene lifecycle (keyWindow/delegate.window both nil), causing black screen on cold-start with backup configured"
+  - date: "2026-05-30"
+    summary: "fix(ci): downgrade actions/checkout and actions/upload-artifact @v6→@v4 in android.yml and ios.yml; sync l10n dart files with ARB (restoreSuccessToast: entries→records)"
+  - date: "2026-05-30"
+    summary: "chore(deps): KGP migration phase 2 — flutter_secure_storage 9→10.3.1, flutter_web_auth_2 4→5.0.2, file_picker 8→11.0.2; API fixes for AppleOptions mock signatures and FilePicker static API"
   - date: "2026-05-25"
-    summary: "chore(release): bump version to 1.0.2+12 for TestFlight rc10 — tag v1.0.2+12 pushed, CI deploy in flight"
+    summary: "chore(release): bump version to 1.0.2+12 for TestFlight rc10"
   - date: "2026-05-25"
-    summary: "fix(backup): restore success toast now shows after restore — moved toast before guard 5, added messenger.mounted guard"
-  - date: "2026-05-25"
-    summary: "chore(status): confirm iOS rc9 delivered to TestFlight — UPLOAD SUCCEEDED"
-  - date: "2026-05-25"
-    summary: "fix(ci): switch deploy_testflight runner to macos-26 (Xcode 26 SDK required)"
-  - date: "2026-05-25"
-    summary: "fix(ios): use applicationRegistrar.messenger() on FlutterImplicitEngineBridge"
+    summary: "fix(backup): restore success toast now shows after restore — moved toast before guard, added messenger.mounted guard"
 
 in-progress: []
 
 next-steps:
-  - "Confirm rc10 upload succeeded on TestFlight (monitor GitHub Actions deploy_testflight job)"
-  - "Manual E2E on physical iOS device — MANDATORY: cold-start notification permission denied + dialog toggle-on per T-01 §6 step 6"
+  - "Push pending commits to origin (SSH agent required in terminal)"
+  - "Manual E2E on physical iOS device — MANDATORY: verify black screen fix with backup configured; cold-start notification permission denied + dialog toggle-on per T-01 §6"
   - "NFR-03 manual measurement: hasNotificationPermission() < 100ms p95 on cold-start iOS"
+  - "Upgrade share_plus 13.x + package_info_plus 10.x when file_picker 12.x goes stable (unblocks win32 ^6.x chain)"
   - "Screenshot refresh for backup-connected IT+EN (deferred — requires Android emulator with IT/EN locale)"
   - "Long-plan lp-20260517-implement-next-patch: approved, ready to start next sprint"
 
 known-issues:
   - severity: warning
-    description: "file_picker / flutter_timezone / flutter_web_auth_2 / package_info_plus / share_plus still bundle KGP — Flutter warns on every build. flutter_secure_storage upgraded to 10.x. share_plus 12.x has a Kotlin K2 compilation bug (SharePlusPendingIntent::class.java unresolved with Kotlin 2.2.20). share_plus 13.x and package_info_plus 10.x require win32 ^6.x which conflicts with file_picker 11.x (win32 ^5.x). file_picker 12.x (which supports win32 ^6.x) is still in beta. Unblocks when file_picker 12.x goes stable."
+    description: "share_plus and package_info_plus still bundle KGP; share_plus 12.x has Kotlin K2 compilation bug; share_plus 13.x and package_info_plus 10.x require win32 ^6.x blocked by file_picker 11.x. Unblocks when file_picker 12.x is stable."
     impact: low
-    workaround: "Accept the KGP warnings; will auto-resolve when file_picker 12.x is stable (allows upgrading share_plus 13.x + package_info_plus 10.x)"
+    workaround: "Accept KGP warnings on every build; auto-resolves when file_picker 12.x is stable"
   - severity: warning
     description: "save_daily_log_test.dart future date rejection — intermittent failure near Italian midnight UTC (timezone/DST boundary)"
     impact: medium
