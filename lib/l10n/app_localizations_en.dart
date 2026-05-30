@@ -884,6 +884,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String restoreSuccessToast(int count) {
-    return '$count records restored';
+    return '$count entries restored';
   }
 }

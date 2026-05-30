@@ -2,8 +2,8 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
-    id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    // kotlin-android is now supplied by AGP built-in Kotlin (android.builtInKotlin=true).
+    // The Flutter Gradle Plugin must be applied after the Android plugin.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -15,8 +15,8 @@ if (keyPropertiesFile.exists()) {
 
 android {
     namespace = "com.paolosantucci.metraapp"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    compileSdk = 36
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
@@ -33,7 +33,7 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 36
         // Android version is pinned here, independent of pubspec.yaml.
         // iOS version is tracked in pubspec.yaml (and set via --build-name in ios.yml CI).
         // Bump versionCode by +1 for every Play Store submission (must be strictly increasing).

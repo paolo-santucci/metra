@@ -888,6 +888,6 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String restoreSuccessToast(int count) {
-    return 'Ripristinati $count record';
+    return 'Ripristinati $count elementi';
   }
 }
