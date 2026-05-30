@@ -47,11 +47,11 @@ class _OrderCapturingStorage implements FlutterSecureStorage {
   @override
   Future<void> delete({
     required String key,
-    IOSOptions? iOptions,
+    AppleOptions? iOptions,
     AndroidOptions? aOptions,
     LinuxOptions? lOptions,
     WebOptions? webOptions,
-    MacOsOptions? mOptions,
+    AppleOptions? mOptions,
     WindowsOptions? wOptions,
   }) async {
     callLogAtDelete = List<String>.from(_settingsRepo.callLog);

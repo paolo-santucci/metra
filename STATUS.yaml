@@ -1,5 +1,5 @@
 schema-version: 2
-last-updated: "2026-05-25T20:58:00+02:00"
+last-updated: "2026-05-30T12:00:00+02:00"
 active-plan: null
 last-plan: ".claude/docs/plans/archive/qp-20260525-backup-restore-toast.md"
 
@@ -54,27 +54,35 @@ long-plan:
 pending-consolidation: []
 
 recently-completed:
+  - date: "2026-05-30"
+    summary: "chore(deps): KGP migration phase 2 — flutter_secure_storage 9→10.3.1 (removed encryptedSharedPreferences, AppleOptions mock fix), flutter_web_auth_2 4→5.0.2, file_picker 8→11.0.2 (FilePicker.platform→static API), share_plus stays 10.x (12.x Kotlin K2 compilation bug, 13.x win32 ^6.x conflict blocked by file_picker 11.x), package_info_plus stays 9.x (win32 ^6.x conflict); build and tests pass"
+  - date: "2026-05-30"
+    summary: "chore(android): migrate to builtInKotlin=true — flutter_timezone 3.0.1→5.1.0, removed id(kotlin-android) from app build.gradle.kts, API fix for TimezoneInfo.identifier, build succeeds"
   - date: "2026-05-25"
-    summary: "fix(backup): restore success toast now shows after restore — moved toast before guard 5, added messenger.mounted guard; 1472 tests pass"
+    summary: "chore(release): bump version to 1.0.2+12 for TestFlight rc10 — tag v1.0.2+12 pushed, CI deploy in flight"
+  - date: "2026-05-25"
+    summary: "fix(backup): restore success toast now shows after restore — moved toast before guard 5, added messenger.mounted guard"
   - date: "2026-05-25"
     summary: "chore(status): confirm iOS rc9 delivered to TestFlight — UPLOAD SUCCEEDED"
   - date: "2026-05-25"
-    summary: "fix(ci): switch deploy_testflight runner to macos-26 (Xcode 26 SDK required) — Apple rejects iOS 18.5 SDK builds"
+    summary: "fix(ci): switch deploy_testflight runner to macos-26 (Xcode 26 SDK required)"
   - date: "2026-05-25"
     summary: "fix(ios): use applicationRegistrar.messenger() on FlutterImplicitEngineBridge"
-  - date: "2026-05-24"
-    summary: "fix(notification+backup): 5 bugs fixed — iOS channel reg, dialog close, restore toast (qp-20260524)"
 
 in-progress: []
 
 next-steps:
-  - "Commit backup restore toast fix: backup_connected_view_handlers.dart, handle_restore_grep_test.dart, backup.md (Restore flow section + D-015/D-016 ADRs)"
+  - "Confirm rc10 upload succeeded on TestFlight (monitor GitHub Actions deploy_testflight job)"
   - "Manual E2E on physical iOS device — MANDATORY: cold-start notification permission denied + dialog toggle-on per T-01 §6 step 6"
   - "NFR-03 manual measurement: hasNotificationPermission() < 100ms p95 on cold-start iOS"
   - "Screenshot refresh for backup-connected IT+EN (deferred — requires Android emulator with IT/EN locale)"
   - "Long-plan lp-20260517-implement-next-patch: approved, ready to start next sprint"
 
 known-issues:
+  - severity: warning
+    description: "file_picker / flutter_timezone / flutter_web_auth_2 / package_info_plus / share_plus still bundle KGP — Flutter warns on every build. flutter_secure_storage upgraded to 10.x. share_plus 12.x has a Kotlin K2 compilation bug (SharePlusPendingIntent::class.java unresolved with Kotlin 2.2.20). share_plus 13.x and package_info_plus 10.x require win32 ^6.x which conflicts with file_picker 11.x (win32 ^5.x). file_picker 12.x (which supports win32 ^6.x) is still in beta. Unblocks when file_picker 12.x goes stable."
+    impact: low
+    workaround: "Accept the KGP warnings; will auto-resolve when file_picker 12.x is stable (allows upgrading share_plus 13.x + package_info_plus 10.x)"
   - severity: warning
     description: "save_daily_log_test.dart future date rejection — intermittent failure near Italian midnight UTC (timezone/DST boundary)"
     impact: medium

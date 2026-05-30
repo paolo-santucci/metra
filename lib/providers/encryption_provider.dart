@@ -24,7 +24,10 @@ import '../data/services/key_management_service.dart';
 final secureStorageProvider = Provider<FlutterSecureStorage>(
   (_) => const FlutterSecureStorage(
     iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    // Note: encryptedSharedPreferences was deprecated in flutter_secure_storage
+    // 10.x (Jetpack Security library is deprecated by Google). Data is
+    // automatically migrated to custom AES-GCM ciphers on first access via
+    // migrateOnAlgorithmChange: true (the default). No code change required.
   ),
 );
 
