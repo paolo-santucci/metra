@@ -1,5 +1,5 @@
 schema-version: 2
-last-updated: "2026-05-30T18:30:00+02:00"
+last-updated: "2026-05-30T16:15:00+02:00"
 active-plan: null
 last-plan: ".claude/docs/plans/archive/qp-20260525-backup-restore-toast.md"
 
@@ -55,6 +55,8 @@ pending-consolidation: []
 
 recently-completed:
   - date: "2026-05-30"
+    summary: "fix(ci): remove android.newDsl=false (KTS kotlinOptions unresolved reference), refresh pubspec.lock (meta/test_api version drift), fix clock injection time-bomb in given_notificationDaysBefore_7 test (would fail 2026-06-03)"
+  - date: "2026-05-30"
     summary: "test: fix 4 CI failures — clock injection in schedule_prediction_notification_test, v10 encryptedSharedPreferences assertion in encryption_provider_test, libsqlite3-dev in quality.yml, golden regen for segmented_control_metra after Flutter 3.41.9 upgrade"
   - date: "2026-05-30"
     summary: "fix(ios): downgrade flutter_web_auth_2 5→4.1.0 — v5 rootViewController acquisition fails under iOS scene lifecycle (keyWindow/delegate.window both nil), causing black screen on cold-start with backup configured"
@@ -70,7 +72,7 @@ recently-completed:
 in-progress: []
 
 next-steps:
-  - "Push pending commits to origin (SSH agent required in terminal)"
+  - "Verify iOS CI triggered for v1.0.2-rc11 tag (check GitHub Actions → ios.yml)"
   - "Manual E2E on physical iOS device — MANDATORY: verify black screen fix with backup configured; cold-start notification permission denied + dialog toggle-on per T-01 §6"
   - "NFR-03 manual measurement: hasNotificationPermission() < 100ms p95 on cold-start iOS"
   - "Upgrade share_plus 13.x + package_info_plus 10.x when file_picker 12.x goes stable (unblocks win32 ^6.x chain)"
