@@ -47,19 +47,27 @@ void main() {
       );
     });
 
-    test('preserves AndroidOptions encryptedSharedPreferences: true', () {
-      // Regression guard: adding iOptions must not silently remove the
-      // existing Android security configuration (NFR-04).
+    test(
+        'uses default AndroidOptions without deprecated encryptedSharedPreferences',
+        () {
+      // Regression guard: flutter_secure_storage v10 deprecated
+      // encryptedSharedPreferences (backed by the now-deprecated Jetpack
+      // Security library). The production provider intentionally omits the
+      // option, letting the library default to false and rely on its own
+      // AES-GCM cipher with migrateOnAlgorithmChange: true (the default).
+      // This test verifies the provider initialises without error and that the
+      // deprecated field is NOT explicitly set to true (NFR-04).
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
       final storage = container.read(secureStorageProvider);
 
+      // v10 default: encryptedSharedPreferences is false (deprecated, not set).
       expect(
         storage.aOptions.toMap()['encryptedSharedPreferences'],
-        'true',
-        reason:
-            'aOptions must keep encryptedSharedPreferences: true unchanged.',
+        isNot('true'),
+        reason: 'flutter_secure_storage v10: encryptedSharedPreferences is '
+            'deprecated and must not be explicitly enabled (NFR-04).',
       );
     });
   });

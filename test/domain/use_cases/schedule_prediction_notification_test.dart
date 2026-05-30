@@ -180,11 +180,16 @@ void main() {
         onboardingCompleted: false,
       );
 
+      // Inject a clock anchored to 2026-05-01 so the computed notifyAt
+      // (2026-05-29 09:00) is always in the future regardless of the real
+      // current date. Without this, the use case's past-guard fires when the
+      // test runs on or after 2026-05-29.
       await uc.execute(
         prediction: prediction,
         settings: settings,
         title: 't',
         body: 'b',
+        clock: () => DateTime(2026, 5, 1),
       );
 
       // 1 day before windowStart = 2026-05-29 at 09:00 local (default 540 min)
@@ -214,11 +219,16 @@ void main() {
         onboardingCompleted: false,
       );
 
+      // Inject a clock anchored to 2026-05-01 so the computed notifyAt
+      // (2026-05-26 09:00) is always in the future regardless of the real
+      // current date. Without this, the use case's past-guard fires when the
+      // test runs on or after 2026-05-26.
       await uc.execute(
         prediction: prediction,
         settings: settings,
         title: 't',
         body: 'b',
+        clock: () => DateTime(2026, 5, 1),
       );
 
       // 4 days before windowStart = 2026-05-26 at 09:00 local (default 540 min)

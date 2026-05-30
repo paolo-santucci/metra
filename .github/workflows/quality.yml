@@ -49,8 +49,8 @@ jobs:
       - name: Check license headers
         run: bash tools/check_license_headers.sh
 
-      - name: Install lcov
-        run: sudo apt-get update && sudo apt-get install -y lcov
+      - name: Install lcov and sqlite3
+        run: sudo apt-get update && sudo apt-get install -y lcov libsqlite3-dev
 
       - name: Run tests with coverage
         run: flutter test --coverage --no-pub
