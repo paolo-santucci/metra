@@ -23,7 +23,7 @@ subprojects {
 // sqlcipher_flutter_libs hardcodes compileSdkVersion 28; lStar (API 31) is needed.
 gradle.afterProject {
     extensions.findByType<com.android.build.gradle.LibraryExtension>()?.apply {
-        if (compileSdk != null && compileSdk!! < 34) compileSdk = 34
+        if (compileSdk != null && compileSdk!! < 36) compileSdk = 36
     }
 }
 

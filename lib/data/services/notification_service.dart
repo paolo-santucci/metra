@@ -68,8 +68,8 @@ class FlutterNotificationService implements NotificationService {
   Future<void> initialize() async {
     tz.initializeTimeZones();
     try {
-      final timeZoneName = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(timeZoneName));
+      final tzInfo = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(tzInfo.identifier));
     } on Exception {
       // Fall back to UTC if timezone detection fails (unsupported platform,
       // unknown IANA name, or method channel not registered in tests).

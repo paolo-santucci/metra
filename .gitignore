@@ -55,3 +55,4 @@ app.*.map.json
 test/**/failures/
 .trash/
 .claude_reminder
+STATUS.yaml
