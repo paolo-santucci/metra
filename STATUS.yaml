@@ -1,5 +1,5 @@
 schema-version: 2
-last-updated: "2026-05-30T16:15:00+02:00"
+last-updated: "2026-05-30T21:45:00+02:00"
 active-plan: null
 last-plan: ".claude/docs/plans/archive/qp-20260525-backup-restore-toast.md"
 
@@ -55,19 +55,15 @@ pending-consolidation: []
 
 recently-completed:
   - date: "2026-05-30"
-    summary: "fix(ci): remove android.newDsl=false (KTS kotlinOptions unresolved reference), refresh pubspec.lock (meta/test_api version drift), fix clock injection time-bomb in given_notificationDaysBefore_7 test (would fail 2026-06-03)"
+    summary: "fix(ci): bump Flutter pin 3.41.9→3.44.0 in all three workflow files; remove orphaned kotlinOptions block in build.gradle.kts (unresolved under builtInKotlin=true); regenerate pubspec.lock for Dart 3.12.0"
   - date: "2026-05-30"
-    summary: "test: fix 4 CI failures — clock injection in schedule_prediction_notification_test, v10 encryptedSharedPreferences assertion in encryption_provider_test, libsqlite3-dev in quality.yml, golden regen for segmented_control_metra after Flutter 3.41.9 upgrade"
+    summary: "fix(ci): remove android.newDsl=false, refresh pubspec.lock (meta/test_api version drift), fix clock injection time-bomb in given_notificationDaysBefore_7 test"
   - date: "2026-05-30"
-    summary: "fix(ios): downgrade flutter_web_auth_2 5→4.1.0 — v5 rootViewController acquisition fails under iOS scene lifecycle (keyWindow/delegate.window both nil), causing black screen on cold-start with backup configured"
+    summary: "test: fix 4 CI failures — clock injection, v10 encryptedSharedPreferences assertion, libsqlite3-dev in quality.yml, golden regen for segmented_control_metra"
   - date: "2026-05-30"
-    summary: "fix(ci): downgrade actions/checkout and actions/upload-artifact @v6→@v4 in android.yml and ios.yml; sync l10n dart files with ARB (restoreSuccessToast: entries→records)"
+    summary: "fix(ios): downgrade flutter_web_auth_2 5→4.1.0 — v5 rootViewController acquisition fails under iOS scene lifecycle, causing black screen on cold-start with backup configured"
   - date: "2026-05-30"
-    summary: "chore(deps): KGP migration phase 2 — flutter_secure_storage 9→10.3.1, flutter_web_auth_2 4→5.0.2, file_picker 8→11.0.2; API fixes for AppleOptions mock signatures and FilePicker static API"
-  - date: "2026-05-25"
-    summary: "chore(release): bump version to 1.0.2+12 for TestFlight rc10"
-  - date: "2026-05-25"
-    summary: "fix(backup): restore success toast now shows after restore — moved toast before guard, added messenger.mounted guard"
+    summary: "fix(ci): downgrade actions/checkout and actions/upload-artifact @v6→@v4; sync l10n dart files with ARB (restoreSuccessToast)"
 
 in-progress: []
 
