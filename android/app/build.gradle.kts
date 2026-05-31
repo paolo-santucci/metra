@@ -24,6 +24,14 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    // Align Kotlin JVM target with Java. Without this, Kotlin defaults to
+    // JVM 21 while Java targets 17, breaking the build.
+    // Note: kotlinOptions requires android.newDsl=false to be ABSENT from
+    // gradle.properties (see that file for the full explanation).
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
     defaultConfig {
         applicationId = "com.paolosantucci.metraapp"
         // You can update the following values to match your application needs.
