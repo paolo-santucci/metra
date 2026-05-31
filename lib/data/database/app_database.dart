@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
@@ -338,10 +339,24 @@ class AppDatabase extends _$AppDatabase {
   /// Must be called once at app startup, before any database is opened.
   ///
   /// Wires the `sqlite3` dynamic library to use the SQLCipher build provided
-  /// by `sqlcipher_flutter_libs` instead of the system sqlite3 on Android.
-  /// On iOS/macOS the CocoaPod handles linking automatically.
+  /// by `sqlcipher_flutter_libs`.
+  ///
+  /// Android: uses [openCipherOnAndroid] from sqlcipher_flutter_libs.
+  ///
+  /// iOS: sqlite3 ≥ 2.9 first attempts to load `sqlite3.framework/sqlite3`
+  /// (bundled by sqlite3_flutter_libs). When only sqlcipher_flutter_libs is
+  /// present that path does not exist, so sqlite3 falls back to
+  /// DynamicLibrary.process() which resolves the SYSTEM sqlite3 — not
+  /// SQLCipher. We explicitly override to load SQLCipher.framework/SQLCipher,
+  /// which is the dynamic framework produced by the SQLCipher CocoaPod.
   static void initializeSQLCipher() {
     open.overrideFor(OperatingSystem.android, openCipherOnAndroid);
+    if (Platform.isIOS) {
+      open.overrideFor(
+        OperatingSystem.iOS,
+        () => DynamicLibrary.open('SQLCipher.framework/SQLCipher'),
+      );
+    }
   }
 
   /// Opens an encrypted SQLCipher database at [dbPath] using [hexKey].
@@ -364,6 +379,12 @@ class AppDatabase extends _$AppDatabase {
         // inherited by child isolates spawned by createInBackground.
         isolateSetup: () async {
           open.overrideFor(OperatingSystem.android, openCipherOnAndroid);
+          if (Platform.isIOS) {
+            open.overrideFor(
+              OperatingSystem.iOS,
+              () => DynamicLibrary.open('SQLCipher.framework/SQLCipher'),
+            );
+          }
         },
         setup: (rawDb) {
           // Unlock the SQLCipher database with the raw hex key.
