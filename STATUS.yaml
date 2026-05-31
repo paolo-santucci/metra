@@ -1,5 +1,5 @@
 schema-version: 2
-last-updated: "2026-05-31T20:00:00+02:00"
+last-updated: "2026-05-31T21:00:00+02:00"
 active-plan: null
 last-plan: ".claude/docs/plans/archive/qp-20260525-backup-restore-toast.md"
 
@@ -57,6 +57,10 @@ pending-consolidation: []
 
 recently-completed:
   - date: "2026-05-31"
+    summary: "fix(db): add missing flutter/foundation.dart import for debugPrint — rc16 commit 2 (6462a4b); tag v1.0.2-rc16 pushed"
+  - date: "2026-05-31"
+    summary: "fix(android): use compilerOptions (KGP 2.x) for JVM 17 target; survive newDsl=false — rc16 commit 1 (a8e5a5a)"
+  - date: "2026-05-31"
     summary: "fix(android): remove android.newDsl=false; restore kotlinOptions jvmTarget=17 — rc15 commit 1 (d6cdc3e)"
   - date: "2026-05-31"
     summary: "fix(ios): add SQLCipher load fallback chain + screen error-type display — rc15 commit 2 (445a69d); tag v1.0.2-rc15 pushed"
@@ -84,8 +88,8 @@ recently-completed:
 in-progress: []
 
 next-steps:
-  - "Install rc15 from TestFlight and verify: all screens load (look for runtimeType in error UI if not), check iOS Analytics log for [SQLCipher/iOS] lines to confirm which load path succeeded"
-  - "If rc15 screens still blank: check error text for runtimeType (e.g. StateError = SQLCipher not found; PlatformException = Keychain issue)"
+  - "Install rc16 from TestFlight and verify: all screens load; check iOS Analytics log for [SQLCipher/iOS] lines to confirm SQLCipher load path succeeded"
+  - "If rc16 screens still blank: check error text for runtimeType (e.g. StateError = SQLCipher not found; PlatformException = Keychain issue)"
   - "FR-16 TestFlight sign-off (final long-plan gate): cold-start with iOS notification permission revoked → in-app toggle reflects 'off'; no notification fires"
   - "NFR-03 measurement: hasNotificationPermission() < 100ms p95 on cold-start iOS"
   - "Once rc14 confirmed stable → tag v1.0.2 final (the long-plan wave is complete; all 13 issues implemented)"
