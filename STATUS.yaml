@@ -1,5 +1,5 @@
 schema-version: 2
-last-updated: "2026-05-31T19:01:00+02:00"
+last-updated: "2026-05-31T20:00:00+02:00"
 active-plan: null
 last-plan: ".claude/docs/plans/archive/qp-20260525-backup-restore-toast.md"
 
@@ -47,13 +47,21 @@ long-plan:
     assess: done
     spec: done
     plan: done
+    build: done
   approvals:
     spec: approved
     plan: approved
+  # All 13 issues implemented (verified audit 2026-05-31). Final gate: FR-16 TestFlight sign-off.
 
 pending-consolidation: []
 
 recently-completed:
+  - date: "2026-05-31"
+    summary: "fix(android): remove android.newDsl=false; restore kotlinOptions jvmTarget=17 — rc15 commit 1 (d6cdc3e)"
+  - date: "2026-05-31"
+    summary: "fix(ios): add SQLCipher load fallback chain + screen error-type display — rc15 commit 2 (445a69d); tag v1.0.2-rc15 pushed"
+  - date: "2026-05-31"
+    summary: "style(backup): fix stale N=10 retention comment in sync_orchestrator.dart — actual value is N=3 per TASK-04/NFR-02 (5faac81)"
   - date: "2026-05-31"
     summary: "chore(release): push annotated tag v1.0.2-rc14 — triggers ios.yml TestFlight upload for SQLCipher.framework explicit load fix (4b4dfe6)"
   - date: "2026-05-31"
@@ -76,11 +84,12 @@ recently-completed:
 in-progress: []
 
 next-steps:
-  - "Monitor ios.yml run for v1.0.2-rc14 (queued as of 2026-05-31T17:01:23Z) — must succeed for TestFlight upload"
-  - "Manual E2E on rc14 TestFlight: verify all screens (calendar, stats, daily log) load correctly — this is the first build with the SQLCipher.framework explicit override"
-  - "If rc14 still fails: the fallback hypothesis is Keychain access — check iOS device logs (Settings → Privacy → Analytics → Analytics Data) for PlatformException vs. StateError to distinguish"
-  - "NFR-03 manual measurement: hasNotificationPermission() < 100ms p95 on cold-start iOS"
-  - "Once iOS confirmed stable → start long-plan lp-20260517-implement-next-patch"
+  - "Install rc15 from TestFlight and verify: all screens load (look for runtimeType in error UI if not), check iOS Analytics log for [SQLCipher/iOS] lines to confirm which load path succeeded"
+  - "If rc15 screens still blank: check error text for runtimeType (e.g. StateError = SQLCipher not found; PlatformException = Keychain issue)"
+  - "FR-16 TestFlight sign-off (final long-plan gate): cold-start with iOS notification permission revoked → in-app toggle reflects 'off'; no notification fires"
+  - "NFR-03 measurement: hasNotificationPermission() < 100ms p95 on cold-start iOS"
+  - "Once rc14 confirmed stable → tag v1.0.2 final (the long-plan wave is complete; all 13 issues implemented)"
+  - "If rc14 still fails (screens blank): check iOS Settings → Privacy → Analytics for PlatformException (Keychain) vs StateError (SQLCipher) to distinguish remaining root cause"
   - "Upgrade share_plus 13.x + package_info_plus 10.x when file_picker 12.x goes stable (unblocks win32 ^6.x chain)"
   - "Screenshot refresh for backup-connected IT+EN (deferred — requires Android emulator with IT/EN locale)"
 
