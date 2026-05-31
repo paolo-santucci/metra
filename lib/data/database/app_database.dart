@@ -347,16 +347,47 @@ class AppDatabase extends _$AppDatabase {
   /// (bundled by sqlite3_flutter_libs). When only sqlcipher_flutter_libs is
   /// present that path does not exist, so sqlite3 falls back to
   /// DynamicLibrary.process() which resolves the SYSTEM sqlite3 — not
-  /// SQLCipher. We explicitly override to load SQLCipher.framework/SQLCipher,
-  /// which is the dynamic framework produced by the SQLCipher CocoaPod.
+  /// SQLCipher. We explicitly override with [_openCipherOnIOS], which tries
+  /// the dynamic-framework path first, then falls back to process().
   static void initializeSQLCipher() {
     open.overrideFor(OperatingSystem.android, openCipherOnAndroid);
     if (Platform.isIOS) {
-      open.overrideFor(
-        OperatingSystem.iOS,
-        () => DynamicLibrary.open('SQLCipher.framework/SQLCipher'),
-      );
+      open.overrideFor(OperatingSystem.iOS, _openCipherOnIOS);
     }
+  }
+
+  /// iOS SQLCipher loader — called by both the main isolate and the
+  /// background isolate (registrations are isolate-local).
+  ///
+  /// Tries paths in order and logs each attempt via [debugPrint] so the
+  /// result is visible in the iOS system log (Settings → Privacy →
+  /// Analytics → Analytics Data, or Xcode Devices console).
+  static DynamicLibrary _openCipherOnIOS() {
+    // Candidates for the SQLCipher dynamic framework produced by the
+    // SQLCipher CocoaPod when the Podfile uses use_frameworks!.
+    const candidates = [
+      'SQLCipher.framework/SQLCipher', // canonical CocoaPods module name
+      'sqlcipher.framework/sqlcipher', // lowercase variant (some pod versions)
+    ];
+    for (final path in candidates) {
+      try {
+        final lib = DynamicLibrary.open(path);
+        debugPrint('[SQLCipher/iOS] loaded via DynamicLibrary.open($path)');
+        return lib;
+      } catch (e) {
+        debugPrint(
+          '[SQLCipher/iOS] DynamicLibrary.open($path) failed: '
+          '${e.runtimeType}: $e',
+        );
+      }
+    }
+    // Fallback: SQLCipher may be statically linked (no use_frameworks!, or
+    // static xcframework). DynamicLibrary.process() finds symbols baked into
+    // the binary. WARNING: if SQLCipher is a dynamic framework and this path
+    // is reached, process() resolves the SYSTEM sqlite3 instead — the
+    // PRAGMA cipher_version smoke-test in setup() will then throw StateError.
+    debugPrint('[SQLCipher/iOS] falling back to DynamicLibrary.process()');
+    return DynamicLibrary.process();
   }
 
   /// Opens an encrypted SQLCipher database at [dbPath] using [hexKey].
@@ -380,10 +411,7 @@ class AppDatabase extends _$AppDatabase {
         isolateSetup: () async {
           open.overrideFor(OperatingSystem.android, openCipherOnAndroid);
           if (Platform.isIOS) {
-            open.overrideFor(
-              OperatingSystem.iOS,
-              () => DynamicLibrary.open('SQLCipher.framework/SQLCipher'),
-            );
+            open.overrideFor(OperatingSystem.iOS, _openCipherOnIOS);
           }
         },
         setup: (rawDb) {

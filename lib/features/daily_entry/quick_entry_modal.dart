@@ -153,10 +153,16 @@ class _QuickEntryModalState extends ConsumerState<QuickEntryModal> {
               child: const CircularProgressIndicator(),
             ),
           ),
-          error: (_, __) => Center(
-            key: const ValueKey<String>('error'),
-            child: Text(l10n.common_error_generic),
-          ),
+          error: (e, _) {
+            debugPrint('[QuickEntryModal] error: ${e.runtimeType}: $e');
+            return Center(
+              key: const ValueKey<String>('error'),
+              child: Text(
+                '${l10n.common_error_generic}\n(${e.runtimeType})',
+                textAlign: TextAlign.center,
+              ),
+            );
+          },
           data: (_) => _buildForm(
             context,
             l10n,

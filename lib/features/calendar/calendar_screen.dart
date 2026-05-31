@@ -133,12 +133,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               child: const CircularProgressIndicator(),
             ),
           ),
-          error: (_, __) => Center(
-            child: Text(
-              l10n.common_error_generic,
-              style: TextStyle(color: textColor),
-            ),
-          ),
+          error: (e, _) {
+            debugPrint('[CalendarScreen] error: ${e.runtimeType}: $e');
+            return Center(
+              child: Text(
+                '${l10n.common_error_generic}\n(${e.runtimeType})',
+                style: TextStyle(color: textColor),
+                textAlign: TextAlign.center,
+              ),
+            );
+          },
           data: (monthState) {
             final now = DateTime.now();
             final maxMonth = now.month == 12 ? 1 : now.month + 1;

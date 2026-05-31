@@ -77,12 +77,16 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                     child: const CircularProgressIndicator(),
                   ),
                 ),
-                error: (_, __) => Center(
-                  child: Text(
-                    l10n.common_error_generic,
-                    style: TextStyle(color: colors.textSecondary),
-                  ),
-                ),
+                error: (e, _) {
+                  debugPrint('[TimelineScreen] error: ${e.runtimeType}: $e');
+                  return Center(
+                    child: Text(
+                      '${l10n.common_error_generic}\n(${e.runtimeType})',
+                      style: TextStyle(color: colors.textSecondary),
+                      textAlign: TextAlign.center,
+                    ),
+                  );
+                },
                 data: (summaries) => _mode == _ViewMode.timeline
                     ? TimelineView(summaries: summaries)
                     : TableView(summaries: summaries),

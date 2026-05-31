@@ -249,14 +249,20 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
             ),
           ),
         ),
-        error: (_, __) => SafeArea(
-          child: Center(
-            child: Semantics(
-              liveRegion: true,
-              child: Text(l10n.common_error_generic),
+        error: (e, _) {
+          debugPrint('[HistoricalEntryScreen] error: ${e.runtimeType}: $e');
+          return SafeArea(
+            child: Center(
+              child: Semantics(
+                liveRegion: true,
+                child: Text(
+                  '${l10n.common_error_generic}\n(${e.runtimeType})',
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ),
-          ),
-        ),
+          );
+        },
         data: (_) => _buildForm(context, l10n, painEnabled, notesEnabled),
       ),
     );

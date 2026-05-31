@@ -82,14 +82,16 @@ class StatsScreen extends ConsumerWidget {
                   loading: () => const Center(
                     child: CircularProgressIndicator(),
                   ),
-                  error: (_, __) => Center(
-                    child: Text(
-                      l10n.common_error_generic,
-                      style: TextStyle(
-                        color: colors.textSecondary,
+                  error: (e, _) {
+                    debugPrint('[StatsScreen] error: ${e.runtimeType}: $e');
+                    return Center(
+                      child: Text(
+                        '${l10n.common_error_generic}\n(${e.runtimeType})',
+                        style: TextStyle(color: colors.textSecondary),
+                        textAlign: TextAlign.center,
                       ),
-                    ),
-                  ),
+                    );
+                  },
                   data: (statsData) => statsData == null
                       ? Center(
                           child: Text(
