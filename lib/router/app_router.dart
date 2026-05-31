@@ -58,9 +58,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         final settingsRepo = await ref
             .read(appSettingsRepositoryProvider.future)
             .timeout(const Duration(seconds: 15));
-        final settings = await settingsRepo
-            .getOrCreate()
-            .timeout(const Duration(seconds: 10));
+        final settings = await settingsRepo.getOrCreate().timeout(
+          const Duration(seconds: 10),
+        );
         if (!settings.onboardingCompleted) return '/onboarding';
         return null;
       } catch (e) {
