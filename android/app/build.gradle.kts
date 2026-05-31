@@ -24,14 +24,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    // Align Kotlin JVM target with Java. Without this, Kotlin defaults to
-    // JVM 21 while Java targets 17, breaking the build.
-    // Note: kotlinOptions requires android.newDsl=false to be ABSENT from
-    // gradle.properties (see that file for the full explanation).
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
     defaultConfig {
         applicationId = "com.paolosantucci.metraapp"
         // You can update the following values to match your application needs.
@@ -81,4 +73,20 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+}
+
+// Align Kotlin JVM target with Java (compileOptions targets JVM 17).
+//
+// android.newDsl=false is periodically re-injected by Flutter's gradle-
+// properties migrator; when it is present the kotlinOptions {} block inside
+// android {} is unresolved. Configuring via compilerOptions on the KotlinCompile
+// tasks directly survives the flag being set or removed, and uses the KGP 2.x
+// API (kotlinOptions was promoted to a hard error in KGP 2.2).
+afterEvaluate {
+    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile::class.java)
+        .configureEach {
+            compilerOptions {
+                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+            }
+        }
 }
