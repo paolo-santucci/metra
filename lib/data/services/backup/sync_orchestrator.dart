@@ -120,9 +120,9 @@ class SyncOrchestrator implements BackupRunner {
       if (!files.any((e) => e.name == filename)) {
         throw const SyncException('Upload verification failed');
       }
-      // Prune entries beyond the N=10 retention cap — best-effort; a per-file
+      // Prune entries beyond the N=3 retention cap — best-effort; a per-file
       // failure is logged and does not abort the overall backup operation.
-      // listFiles() returns entries newest-first; take(N) keeps the newest N.
+      // listFiles() returns entries newest-first; skip(N) keeps the newest N.
       final pruneSet = files.skip(kBackupRetentionMaxFiles);
       for (final BackupFileEntry entry in pruneSet) {
         try {
