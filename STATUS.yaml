@@ -1,5 +1,5 @@
 schema-version: 2
-last-updated: "2026-05-30T21:45:00+02:00"
+last-updated: "2026-05-31T19:01:00+02:00"
 active-plan: null
 last-plan: ".claude/docs/plans/archive/qp-20260525-backup-restore-toast.md"
 
@@ -54,6 +54,14 @@ long-plan:
 pending-consolidation: []
 
 recently-completed:
+  - date: "2026-05-31"
+    summary: "chore(release): push annotated tag v1.0.2-rc14 — triggers ios.yml TestFlight upload for SQLCipher.framework explicit load fix (4b4dfe6)"
+  - date: "2026-05-31"
+    summary: "fix(ios): explicitly load SQLCipher.framework on iOS for sqlite3 ≥ 2.9 — open.overrideFor(OperatingSystem.iOS) in both main isolate and background isolate to prevent system sqlite3 resolving instead of SQLCipher (4b4dfe6)"
+  - date: "2026-05-31"
+    summary: "style: fix dart format — collapse 3-line settingsRepo chain in redirect (quality CI gate fix, v1.0.2-rc13)"
+  - date: "2026-05-31"
+    summary: "fix(ios): wrap GoRouter redirect in try/catch + 15s/10s timeouts (v1.0.2-rc12); fail-open to /calendar on any error or hang so black screen is impossible"
   - date: "2026-05-30"
     summary: "fix(ci): bump Flutter pin 3.41.9→3.44.0 in all three workflow files; remove orphaned kotlinOptions block in build.gradle.kts (unresolved under builtInKotlin=true); regenerate pubspec.lock for Dart 3.12.0"
   - date: "2026-05-30"
@@ -68,12 +76,13 @@ recently-completed:
 in-progress: []
 
 next-steps:
-  - "Verify iOS CI triggered for v1.0.2-rc11 tag (check GitHub Actions → ios.yml)"
-  - "Manual E2E on physical iOS device — MANDATORY: verify black screen fix with backup configured; cold-start notification permission denied + dialog toggle-on per T-01 §6"
+  - "Monitor ios.yml run for v1.0.2-rc14 (queued as of 2026-05-31T17:01:23Z) — must succeed for TestFlight upload"
+  - "Manual E2E on rc14 TestFlight: verify all screens (calendar, stats, daily log) load correctly — this is the first build with the SQLCipher.framework explicit override"
+  - "If rc14 still fails: the fallback hypothesis is Keychain access — check iOS device logs (Settings → Privacy → Analytics → Analytics Data) for PlatformException vs. StateError to distinguish"
   - "NFR-03 manual measurement: hasNotificationPermission() < 100ms p95 on cold-start iOS"
+  - "Once iOS confirmed stable → start long-plan lp-20260517-implement-next-patch"
   - "Upgrade share_plus 13.x + package_info_plus 10.x when file_picker 12.x goes stable (unblocks win32 ^6.x chain)"
   - "Screenshot refresh for backup-connected IT+EN (deferred — requires Android emulator with IT/EN locale)"
-  - "Long-plan lp-20260517-implement-next-patch: approved, ready to start next sprint"
 
 known-issues:
   - severity: warning
