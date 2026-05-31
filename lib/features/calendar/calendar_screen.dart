@@ -137,7 +137,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             debugPrint('[CalendarScreen] error: ${e.runtimeType}: $e');
             return Center(
               child: Text(
-                '${l10n.common_error_generic}\n(${e.runtimeType})',
+                '${l10n.common_error_generic}\n(${e.runtimeType}: ${e.toString().substring(0, e.toString().length.clamp(0, 160))})',
                 style: TextStyle(color: textColor),
                 textAlign: TextAlign.center,
               ),

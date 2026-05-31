@@ -86,7 +86,7 @@ class StatsScreen extends ConsumerWidget {
                     debugPrint('[StatsScreen] error: ${e.runtimeType}: $e');
                     return Center(
                       child: Text(
-                        '${l10n.common_error_generic}\n(${e.runtimeType})',
+                        '${l10n.common_error_generic}\n(${e.runtimeType}: ${e.toString().substring(0, e.toString().length.clamp(0, 160))})',
                         style: TextStyle(color: colors.textSecondary),
                         textAlign: TextAlign.center,
                       ),

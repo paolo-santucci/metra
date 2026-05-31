@@ -45,6 +45,7 @@ import '../../core/widgets/settings/settings_card.dart';
 import '../../core/widgets/settings/settings_divider.dart';
 import '../../core/widgets/settings/settings_label.dart';
 import '../../core/widgets/settings/settings_row.dart';
+import '../../providers/database_provider.dart';
 import '../backup/state/backup_notifier.dart';
 import '../backup/state/backup_state.dart';
 import 'state/settings_notifier.dart';
@@ -61,6 +62,11 @@ class SettingsScreen extends ConsumerWidget {
     final textSecondary = colors.textSecondary;
     final settings = ref.watch(settingsNotifierProvider).valueOrNull ??
         AppSettingsData.defaults();
+    // Temporary diagnostic: exposes databaseProvider error type + message on
+    // the Settings screen (the only screen that renders when the DB fails).
+    // Remove once the iOS blank-screen root cause is confirmed.
+    final dbDiag = ref.watch(databaseProvider);
+
     // Backup-row value is state-aware (Design Bible § 18.6): only
     // BackupConnected resolves to "Configurato"; every other state
     // (loading, NotConnected, Running, ErrorState) falls back to
@@ -321,6 +327,24 @@ class SettingsScreen extends ConsumerWidget {
                 ],
               ),
             ),
+
+            // ── DB diagnostic (temporary — remove after iOS blank-screen fix) ─
+            if (dbDiag.hasError)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Text(
+                  'DB: ${dbDiag.error.runtimeType} — '
+                  '${dbDiag.error.toString().substring(0, dbDiag.error.toString().length.clamp(0, 120))}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Theme.of(context).colorScheme.error,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
           ],
         ),
       ),

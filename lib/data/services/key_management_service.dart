@@ -16,6 +16,7 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class KeyManagementService {
@@ -28,11 +29,25 @@ class KeyManagementService {
   /// Returns the DB key as a 64-char hex string.
   /// Generates and persists it on first call.
   Future<String> getOrCreateDatabaseKey() async {
-    final existing = await _storage.read(key: _dbKeyStorageKey);
-    if (existing != null && _isValidHexKey(existing)) return existing;
+    try {
+      final existing = await _storage.read(key: _dbKeyStorageKey);
+      if (existing != null && _isValidHexKey(existing)) return existing;
+    } catch (e) {
+      // Log the specific Keychain error code so it appears in Xcode console
+      // and in the Settings screen DB diagnostic (see settings_screen.dart).
+      // On iOS TestFlight, PlatformException(-34018) = errSecMissingEntitlement
+      // — fixed by Runner.entitlements with keychain-access-groups.
+      debugPrint('[KeyManagement] Keychain READ failed: ${e.runtimeType} — $e');
+      rethrow;
+    }
 
     final key = _generateHexKey();
-    await _storage.write(key: _dbKeyStorageKey, value: key);
+    try {
+      await _storage.write(key: _dbKeyStorageKey, value: key);
+    } catch (e) {
+      debugPrint('[KeyManagement] Keychain WRITE failed: ${e.runtimeType} — $e');
+      rethrow;
+    }
     return key;
   }
 

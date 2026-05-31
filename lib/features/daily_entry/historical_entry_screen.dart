@@ -256,7 +256,7 @@ class _HistoricalEntryScreenState extends ConsumerState<HistoricalEntryScreen> {
               child: Semantics(
                 liveRegion: true,
                 child: Text(
-                  '${l10n.common_error_generic}\n(${e.runtimeType})',
+                  '${l10n.common_error_generic}\n(${e.runtimeType}: ${e.toString().substring(0, e.toString().length.clamp(0, 160))})',
                   textAlign: TextAlign.center,
                 ),
               ),
