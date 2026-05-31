@@ -45,10 +45,28 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: '/calendar',
     redirect: (context, state) async {
       if (state.uri.path == '/onboarding') return null;
-      final settingsRepo = await ref.read(appSettingsRepositoryProvider.future);
-      final settings = await settingsRepo.getOrCreate();
-      if (!settings.onboardingCompleted) return '/onboarding';
-      return null;
+      // Defensive wrapper: if DB init hangs or throws (e.g. SQLCipher not
+      // loaded, Keychain timeout, or any other cold-start error on iOS), the
+      // redirect must still return so the router can navigate. Without this,
+      // an unhandled exception or hung future leaves the screen permanently
+      // black — the router never pushes any route.
+      //
+      // Fail-open: on error or 25-second timeout, pass through to the
+      // initial location (/calendar). The DB-backed screens will render their
+      // own AsyncError state, which is far better than an infinite black screen.
+      try {
+        final settingsRepo = await ref
+            .read(appSettingsRepositoryProvider.future)
+            .timeout(const Duration(seconds: 15));
+        final settings = await settingsRepo
+            .getOrCreate()
+            .timeout(const Duration(seconds: 10));
+        if (!settings.onboardingCompleted) return '/onboarding';
+        return null;
+      } catch (e) {
+        debugPrint('[router/redirect] ${e.runtimeType}: $e');
+        return null;
+      }
     },
     routes: [
       GoRoute(
