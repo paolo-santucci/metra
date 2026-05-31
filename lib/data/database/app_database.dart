@@ -18,6 +18,7 @@
 import 'dart:ffi';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:sqlite3/open.dart';
