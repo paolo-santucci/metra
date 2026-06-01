@@ -143,7 +143,7 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
   Future<void> _autoSyncIfConfigured() async {
     try {
       final storage = ref.read(secureStorageProvider);
-      final pass = await storage.read(key: 'metra_backup_passphrase_v1');
+      final pass = await storage.read(key: BackupNotifier.kPassphraseKey);
       if (pass == null) return; // first backup not done yet; no-op
       await ref.read(backupNotifierProvider.notifier).backupSilent();
     } catch (e) {

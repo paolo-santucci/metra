@@ -80,6 +80,15 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
       // which would make the Stato label show "non attivo" after reconnect even
       // when the user enters a passphrase.
       await settingsRepo.clearBackupSuspended();
+      // BUG-B06: wipe any passphrase left in iOS Keychain / Android EncryptedSharedPrefs
+      // from a prior install. KeychainAccessibility.first_unlock items survive app
+      // uninstall on iOS; EncryptedSharedPreferences survive on Android API 23+.
+      // Without this delete, build() reads the stale key and computes
+      // passphraseSet=true → autoBackupActive=true before the user has set a passphrase.
+      // Safe: disconnect() already deletes this key, so this is idempotent on a
+      // fresh-install first-connect. backupSilent() guards on pass==null and will
+      // not fire until the user enters a passphrase via backupWithPassphrase().
+      await ref.read(secureStorageProvider).delete(key: _passphraseKey);
       ref.invalidateSelf();
     } catch (e) {
       debugPrint('[BackupNotifier.connect] ${e.runtimeType}: $e');
