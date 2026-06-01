@@ -1,5 +1,5 @@
 schema-version: 2
-last-updated: "2026-05-25T20:58:00+02:00"
+last-updated: "2026-06-01T17:20:00+02:00"
 active-plan: null
 last-plan: ".claude/docs/plans/archive/qp-20260525-backup-restore-toast.md"
 
@@ -54,27 +54,34 @@ long-plan:
 pending-consolidation: []
 
 recently-completed:
+  - date: "2026-06-01"
+    summary: "fix(backup): wipe stale passphrase on connect — prevent false autoBackupActive (BUG-B06); bump pubspec to 1.0.2+13; tagged v1.0.2-rc19 (616e34d)"
+  - date: "2026-05-31"
+    summary: "fix(android): use compilerOptions (KGP 2.x) — remove kotlinOptions + kotlin-android plugin; force-pushed rollback/rc10 to origin/main; tagged v1.0.2-rc18 to trigger TestFlight (618a249)"
   - date: "2026-05-25"
-    summary: "fix(backup): restore success toast now shows after restore — moved toast before guard 5, added messenger.mounted guard; 1472 tests pass"
+    summary: "chore(release): bump version to 1.0.2+12 for TestFlight rc10 (66289df) — this commit is now HEAD of main"
   - date: "2026-05-25"
-    summary: "chore(status): confirm iOS rc9 delivered to TestFlight — UPLOAD SUCCEEDED"
+    summary: "fix(backup): restore success toast now shows after restore (bce76a2)"
   - date: "2026-05-25"
-    summary: "fix(ci): switch deploy_testflight runner to macos-26 (Xcode 26 SDK required) — Apple rejects iOS 18.5 SDK builds"
+    summary: "fix(ci): switch deploy_testflight runner to macos-26 (Xcode 26 SDK required) (5cfe25d)"
   - date: "2026-05-25"
-    summary: "fix(ios): use applicationRegistrar.messenger() on FlutterImplicitEngineBridge"
-  - date: "2026-05-24"
-    summary: "fix(notification+backup): 5 bugs fixed — iOS channel reg, dialog close, restore toast (qp-20260524)"
+    summary: "fix(ios): use applicationRegistrar.messenger() on FlutterImplicitEngineBridge (ab92c4a)"
 
 in-progress: []
 
 next-steps:
-  - "Commit backup restore toast fix: backup_connected_view_handlers.dart, handle_restore_grep_test.dart, backup.md (Restore flow section + D-015/D-016 ADRs)"
-  - "Manual E2E on physical iOS device — MANDATORY: cold-start notification permission denied + dialog toggle-on per T-01 §6 step 6"
-  - "NFR-03 manual measurement: hasNotificationPermission() < 100ms p95 on cold-start iOS"
+  - "Install v1.0.2-rc19 from TestFlight — verify BUG-B06 fix on physical iOS device (reinstall scenario: false autoBackupActive gone)"
+  - "Install v1.0.2-rc18 from TestFlight — verify app works end-to-end on physical iOS device (rc10 code base confirmed working before rc11 changes)"
+  - "FR-16 TestFlight sign-off: cold-start with iOS notification permission revoked → in-app toggle reflects 'off'"
+  - "If rc18 iOS confirmed stable → tag v1.0.2 final"
   - "Screenshot refresh for backup-connected IT+EN (deferred — requires Android emulator with IT/EN locale)"
-  - "Long-plan lp-20260517-implement-next-patch: approved, ready to start next sprint"
+  - "Upgrade share_plus 13.x + package_info_plus 10.x when file_picker 12.x goes stable"
 
 known-issues:
+  - severity: warning
+    description: "share_plus and package_info_plus still bundle KGP; share_plus 12.x has Kotlin K2 compilation bug; unblocks when file_picker 12.x is stable"
+    impact: low
+    workaround: "Accept KGP warnings on every build; auto-resolves when file_picker 12.x is stable"
   - severity: warning
     description: "save_daily_log_test.dart future date rejection — intermittent failure near Italian midnight UTC (timezone/DST boundary)"
     impact: medium
@@ -87,3 +94,7 @@ known-issues:
     description: "iOS PermissionDenied vs PermissionBlocked indistinguishable via flutter_local_notifications v17 — both return PermissionBlocked"
     impact: low
     workaround: "Conservative UX: settings dialog always offered on iOS denial; slightly over-eager on first-time denials"
+  - severity: warning
+    description: "android/gradle.properties and pubspec.lock have local uncommitted drift on rollback/rc10 branch — harmless, not pushed"
+    impact: low
+    workaround: "Leave as-is; resolves if branch is rebased or abandoned"
