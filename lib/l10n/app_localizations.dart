@@ -1667,7 +1667,7 @@ abstract class AppLocalizations {
   /// Snackbar mostrato dopo un ripristino riuscito; indica il numero di log giornalieri ripristinati dal backup
   ///
   /// In it, this message translates to:
-  /// **'Ripristinati {count} record'**
+  /// **'Ripristinati {count} elementi'**
   String restoreSuccessToast(int count);
 }
 

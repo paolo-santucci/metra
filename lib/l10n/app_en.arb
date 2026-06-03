@@ -873,7 +873,7 @@
     "description": "Dismiss button in the notification-permission-blocked alert — closes without opening settings"
   },
 
-  "restoreSuccessToast": "{count} records restored",
+  "restoreSuccessToast": "{count} entries restored",
   "@restoreSuccessToast": {
     "description": "Snackbar shown after a successful restore; displays the number of daily-log rows restored from the backup",
     "placeholders": {
