@@ -61,3 +61,21 @@
 # via reflection in loadScheduledNotifications().
 # ──────────────────────────────────────────────────────────────────────────────
 -keep class com.dexterous.flutterlocalnotifications.** { *; }
+
+# Tink cryptographic library — used by flutter_secure_storage 9.x via
+# EncryptedSharedPreferences (encryptedSharedPreferences: true).
+# Tink registers key type managers via reflection at runtime; R8 strips them
+# without these rules, causing NoClassDefFoundError on cold start when the
+# database encryption key is read from secure storage.
+-keep class com.google.crypto.tink.** { *; }
+-dontwarn com.google.crypto.tink.**
+
+# androidx.security.crypto — consumer ProGuard rules are absent from the AAR;
+# keep the EncryptedSharedPreferences entry points explicitly.
+-keep class androidx.security.crypto.** { *; }
+-dontwarn androidx.security.crypto.**
+
+# flutter_web_auth_2 — KeepAliveService is declared android:exported="true" in
+# the manifest; R8 may rename it if not kept explicitly (Service, not FlutterPlugin).
+-keep class com.linusu.flutter_web_auth_2.** { *; }
+-dontwarn com.linusu.flutter_web_auth_2.**
