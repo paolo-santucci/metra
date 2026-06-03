@@ -79,3 +79,15 @@
 # the manifest; R8 may rename it if not kept explicitly (Service, not FlutterPlugin).
 -keep class com.linusu.flutter_web_auth_2.** { *; }
 -dontwarn com.linusu.flutter_web_auth_2.**
+
+# ──────────────────────────────────────────────────────────────────────────────
+# App package — belt-and-suspenders keep for all application-layer classes.
+#
+# proguard-android-optimize.txt enables class-merging and other aggressive
+# optimisations that can rename or inline the app's own Activity/Service/
+# BroadcastReceiver entries before the manifest-referenced-class automatic keep
+# fires, causing ClassNotFoundException: MainActivity on cold start.
+# Explicitly keeping the entire app package costs nothing (a few dozen classes)
+# and makes R8's behaviour deterministic regardless of AGP or R8 version.
+# ──────────────────────────────────────────────────────────────────────────────
+-keep class com.paolosantucci.metraapp.** { *; }
