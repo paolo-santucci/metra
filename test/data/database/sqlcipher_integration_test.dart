@@ -26,15 +26,18 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('SQLCipher integration (device only)', () {
     test('same key reopens successfully', () {
+      // ignore: todo
       // TODO: open file DB with key A, insert row, close, reopen with key A → reads row
       // Skipped on Linux CI — must run on physical Android device.
     });
 
     test('wrong key fails to open', () {
+      // ignore: todo
       // TODO: open file DB with key A, close, reopen with key B → exception
     });
 
     test('no key fails to open', () {
+      // ignore: todo
       // TODO: open file DB with key A, close, reopen without key → exception
     });
   });

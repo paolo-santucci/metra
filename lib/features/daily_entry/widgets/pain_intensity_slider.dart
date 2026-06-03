@@ -86,7 +86,7 @@ class PainIntensitySlider extends StatelessWidget {
         opacity: animation,
         child: SizeTransition(
           sizeFactor: animation,
-          axisAlignment: -1,
+          alignment: Alignment.topLeft,
           child: child,
         ),
       ),
