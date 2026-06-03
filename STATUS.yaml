@@ -1,5 +1,5 @@
 schema-version: 2
-last-updated: "2026-06-01T17:20:00+02:00"
+last-updated: "2026-06-03T23:55:00+02:00"
 active-plan: null
 last-plan: ".claude/docs/plans/archive/qp-20260525-backup-restore-toast.md"
 
@@ -54,26 +54,27 @@ long-plan:
 pending-consolidation: []
 
 recently-completed:
+  - date: "2026-06-03"
+    summary: "fix(android): keep app package in ProGuard — prevent R8 from stripping MainActivity under proguard-android-optimize.txt (74300a7); verified clean launch on arm64-v8a device, pushed to origin/main"
+  - date: "2026-06-03"
+    summary: "fix(android): add Tink+security-crypto ProGuard rules, KeepAliveService keep rule, REQUEST_IGNORE_BATTERY_OPTIMIZATIONS permission — fixes release APK cold-start crash (36052f9)"
+  - date: "2026-06-03"
+    summary: "fix(quality): replace deprecated SizeTransition.axisAlignment → Alignment.topLeft; suppress todo analyzer warnings in sqlcipher_integration_test.dart (e4ed6c4)"
+  - date: "2026-06-03"
+    summary: "fix(l10n): sync ARB sources with restoreSuccessToast dart fix — restoreSuccessToast now reads 'entries' in both ARB and generated dart (f660e21)"
   - date: "2026-06-01"
     summary: "fix(backup): wipe stale passphrase on connect — prevent false autoBackupActive (BUG-B06); bump pubspec to 1.0.2+13; tagged v1.0.2-rc19 (616e34d)"
-  - date: "2026-05-31"
-    summary: "fix(android): use compilerOptions (KGP 2.x) — remove kotlinOptions + kotlin-android plugin; force-pushed rollback/rc10 to origin/main; tagged v1.0.2-rc18 to trigger TestFlight (618a249)"
-  - date: "2026-05-25"
-    summary: "chore(release): bump version to 1.0.2+12 for TestFlight rc10 (66289df) — this commit is now HEAD of main"
-  - date: "2026-05-25"
-    summary: "fix(backup): restore success toast now shows after restore (bce76a2)"
-  - date: "2026-05-25"
-    summary: "fix(ci): switch deploy_testflight runner to macos-26 (Xcode 26 SDK required) (5cfe25d)"
-  - date: "2026-05-25"
-    summary: "fix(ios): use applicationRegistrar.messenger() on FlutterImplicitEngineBridge (ab92c4a)"
+  - date: "2026-06-01"
+    summary: "fix(l10n): translation fix for restored data toast — 'elementi' wording (7c3e4d4)"
 
 in-progress: []
 
 next-steps:
+  - "Install new Android release APK (arm64-v8a, commit 74300a7) — ProGuard MainActivity fix verified locally; CI will rebuild and confirm"
   - "Install v1.0.2-rc19 from TestFlight — verify BUG-B06 fix on physical iOS device (reinstall scenario: false autoBackupActive gone)"
-  - "Install v1.0.2-rc18 from TestFlight — verify app works end-to-end on physical iOS device (rc10 code base confirmed working before rc11 changes)"
   - "FR-16 TestFlight sign-off: cold-start with iOS notification permission revoked → in-app toggle reflects 'off'"
-  - "If rc18 iOS confirmed stable → tag v1.0.2 final"
+  - "If iOS and Android verified stable → tag v1.0.2 final"
+  - "Consider adding universal fat APK build to CI alongside split APKs for easier sideload testing distribution"
   - "Screenshot refresh for backup-connected IT+EN (deferred — requires Android emulator with IT/EN locale)"
   - "Upgrade share_plus 13.x + package_info_plus 10.x when file_picker 12.x goes stable"
 
