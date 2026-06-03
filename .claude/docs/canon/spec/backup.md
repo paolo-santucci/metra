@@ -82,7 +82,7 @@ After `BackupNotifier.restoreWithPassphrase(passphrase)` returns a non-null rest
 
 Items 11–12 and 16–19 in [§ Current behaviour](#current-behaviour) document the orchestration layer (`BackupNotifier.restore()`, `restoreWithPassphrase()`, `SyncOrchestrator.restore()`). This section records UI-side affordances and user-observable outcomes of the restore operation.
 
-After a successful restore, Métra displays a localised snackbar showing the number of daily logs restored from the chosen backup. The snackbar uses the new `restoreSuccessToast` ARB key with `{count}` placeholder (IT: "Ripristinati {count} record"; EN: "{count} records restored").
+After a successful restore, Métra displays a localised snackbar showing the number of daily logs restored from the chosen backup. The snackbar uses the new `restoreSuccessToast` ARB key with `{count}` placeholder (IT: "Ripristinati {count} elementi"; EN: "{count} entries restored").
 
 ## Public contracts
 
