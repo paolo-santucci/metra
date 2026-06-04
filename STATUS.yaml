@@ -66,12 +66,13 @@ recently-completed:
     summary: "fix(backup): wipe stale passphrase on connect — prevent false autoBackupActive (BUG-B06); bump pubspec to 1.0.2+13; tagged v1.0.2-rc19 (616e34d)"
 
 in-progress:
-  - title: "Device-verify v1.0.2-rc20 (rollback/rc10 baseline) on iOS + Android"
-    state: "rc20 SHIPPED. iOS: TestFlight build 1.0.2 (320) uploaded OK (run 26979039298). Android: enabled android.yml to build on rollback/rc10 (push branches + v* tags + workflow_dispatch; pinned actions to checkout@v4/upload-artifact@v4 to match main's working build — rc10 had invalid @v6) → CI produces signed release split-APKs + AAB artifacts. Reconciliation with main abandoned."
+  - title: "Android startup crash FIXED (Kotlin plugin not applied) — iOS black screen still to verify"
+    state: "ROOT CAUSE of Android crash: app/build.gradle.kts plugins block never applied org.jetbrains.kotlin.android AND android.builtInKotlin=false → MainActivity.kt never compiled (0 matches in shipped APK dex) → ClassNotFoundException MainActivity on every startup. Earlier -keep ProGuard rule (74300a7) was a misdiagnosis. FIX: apply org.jetbrains.kotlin.android (declared @2.2.20 in settings.gradle.kts) in app plugins block. Verified on-device (Galaxy A32): no crash, MainActivity resumed."
     touched:
+      - "android/app/build.gradle.kts"
       - ".github/workflows/android.yml"
-    next-step: "Download release-apks artifact from the Android CI run; user installs from TestFlight + sideloads APK; confirm iOS cold-start black screen GONE + Android cold-start works. If stable → promote rollback/rc10 to canonical + tag v1.0.2 final."
-    blocker: "Awaiting on-device verification by user (physical iOS + Android)"
+    next-step: "Commit fix → triggers Android CI (signed split-APKs + AAB). iOS rc20 unaffected (Android-only fix); still verify TestFlight 1.0.2 (320) cold-start black screen with backup configured is GONE — separate issue. android.yml triggers on every rollback/rc10 push — consider narrowing to v* tags + dispatch."
+    blocker: "Awaiting iOS black-screen verification on TestFlight (Android startup crash now fixed)"
 
 next-steps:
   - "Device-test v1.0.2-rc20 (rollback/rc10 baseline): iOS via TestFlight — confirm black screen on cold-start with backup configured is GONE"
@@ -84,9 +85,9 @@ next-steps:
 
 known-issues:
   - severity: critical
-    description: "iOS cold-start black screen (backup configured) was NOT fixed by main's 26 commits (rc11–17: SQLCipher fallback, flutter_web_auth_2 downgrade, GoRouter try/catch, Keychain entitlements). rollback/rc10 was branched to roll back the KGP phase-2 dep upgrade (back to secure_storage 9.x, flutter_web_auth_2 4.1.0, file_picker 8.x) — this is the candidate fix, shipping as v1.0.2-rc20 to TestFlight. Reconciliation/merge of main into rollback/rc10 is ABANDONED (main's fixes are ineffective)."
+    description: "Android startup crash (ClassNotFoundException MainActivity) on rollback/rc10 — FIXED. Real cause: org.jetbrains.kotlin.android was declared in settings.gradle.kts but never applied in app/build.gradle.kts, and android.builtInKotlin=false, so MainActivity.kt was never compiled into the APK. The -keep ProGuard rule (74300a7) was a misdiagnosis. Fix applied + verified on Galaxy A32. SEPARATE open item: iOS cold-start black screen (backup configured) — rollback/rc10 reverts the KGP-2 dep upgrade as candidate fix; still pending TestFlight device verification (rc20 build 320)."
     impact: high
-    workaround: "Release line = rollback/rc10 only. Build + ship to TestFlight from rollback/rc10 via v* tag. Do not re-apply main's dep upgrades until 1.0.2 ships and black screen is confirmed gone."
+    workaround: "Release line = rollback/rc10 only. Android fix committed; CI rebuild produces working signed APKs. iOS black screen still to confirm on device before tagging v1.0.2 final."
   - severity: warning
     description: "share_plus and package_info_plus still bundle KGP; share_plus 12.x has Kotlin K2 compilation bug; unblocks when file_picker 12.x is stable"
     impact: low

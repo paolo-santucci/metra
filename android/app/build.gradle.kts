@@ -2,6 +2,11 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
+    // Kotlin Android plugin (declared in settings.gradle.kts, version 2.2.20).
+    // Required because android.builtInKotlin=false — without this, MainActivity.kt
+    // is never compiled and the app crashes at startup with
+    // ClassNotFoundException: com.paolosantucci.metraapp.MainActivity.
+    id("org.jetbrains.kotlin.android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
