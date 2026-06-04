@@ -66,13 +66,12 @@ recently-completed:
     summary: "fix(backup): wipe stale passphrase on connect — prevent false autoBackupActive (BUG-B06); bump pubspec to 1.0.2+13; tagged v1.0.2-rc19 (616e34d)"
 
 in-progress:
-  - title: "Ship rollback/rc10 → TestFlight as v1.0.2-rc20"
-    state: "Reconciliation with main ABANDONED — main's 26 commits (rc11–17) did NOT fix the iOS black screen; rollback/rc10 (rollback to old deps: secure_storage 9.x, flutter_web_auth_2 4.1.0, file_picker 8.x) is the candidate fix. TestFlight builds now come from rollback/rc10 only. Local rc10 was 6 commits ahead of origin (ProGuard fixes unpushed)."
+  - title: "Device-verify v1.0.2-rc20 (rollback/rc10 baseline) on iOS + Android"
+    state: "rc20 SHIPPED. iOS: TestFlight build 1.0.2 (320) uploaded OK (run 26979039298). Android: enabled android.yml to build on rollback/rc10 (push branches + v* tags + workflow_dispatch; pinned actions to checkout@v4/upload-artifact@v4 to match main's working build — rc10 had invalid @v6) → CI produces signed release split-APKs + AAB artifacts. Reconciliation with main abandoned."
     touched:
-      - ".github/workflows/ios.yml"
-      - "STATUS.yaml"
-    next-step: "Push rollback/rc10 to origin, tag v1.0.2-rc20, push tag → ios.yml deploy_testflight builds IPA (build#=GITHUB_RUN_NUMBER) + uploads to TestFlight. Then user device-tests iOS + Android."
-    blocker: null
+      - ".github/workflows/android.yml"
+    next-step: "Download release-apks artifact from the Android CI run; user installs from TestFlight + sideloads APK; confirm iOS cold-start black screen GONE + Android cold-start works. If stable → promote rollback/rc10 to canonical + tag v1.0.2 final."
+    blocker: "Awaiting on-device verification by user (physical iOS + Android)"
 
 next-steps:
   - "Device-test v1.0.2-rc20 (rollback/rc10 baseline): iOS via TestFlight — confirm black screen on cold-start with backup configured is GONE"
