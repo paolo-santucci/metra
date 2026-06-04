@@ -66,19 +66,18 @@ recently-completed:
     summary: "fix(backup): wipe stale passphrase on connect — prevent false autoBackupActive (BUG-B06); bump pubspec to 1.0.2+13; tagged v1.0.2-rc19 (616e34d)"
 
 in-progress:
-  - title: "Android startup crash FIXED (Kotlin plugin not applied) — iOS black screen still to verify"
-    state: "ROOT CAUSE of Android crash: app/build.gradle.kts plugins block never applied org.jetbrains.kotlin.android AND android.builtInKotlin=false → MainActivity.kt never compiled (0 matches in shipped APK dex) → ClassNotFoundException MainActivity on every startup. Earlier -keep ProGuard rule (74300a7) was a misdiagnosis. FIX: apply org.jetbrains.kotlin.android (declared @2.2.20 in settings.gradle.kts) in app plugins block. Verified on-device (Galaxy A32): no crash, MainActivity resumed."
+  - title: "main is now canonical (== old rollback/rc10); iOS black screen still to verify"
+    state: "main REPLACED with rollback/rc10 via fast-forward (origin/main had already been moved onto the rc10 line to eef96ca, so no force-push needed; old iOS commits preserved via v1.0.2-rc17 + earlier tags). main @469489d = working build: Android startup crash fixed (kotlin-android plugin applied), verified on Galaxy A32. rollback/rc10 branch deleted (redundant). android.yml trigger narrowed to main + v* tags + dispatch."
     touched:
       - "android/app/build.gradle.kts"
       - ".github/workflows/android.yml"
-    next-step: "Commit fix → triggers Android CI (signed split-APKs + AAB). iOS rc20 unaffected (Android-only fix); still verify TestFlight 1.0.2 (320) cold-start black screen with backup configured is GONE — separate issue. android.yml triggers on every rollback/rc10 push — consider narrowing to v* tags + dispatch."
-    blocker: "Awaiting iOS black-screen verification on TestFlight (Android startup crash now fixed)"
+    next-step: "Verify iOS rc20 TestFlight 1.0.2 (320) cold-start black screen (backup configured) is GONE — the last open blocker. When confirmed, cut a clean tag from main (v1.0.2-rc21 or v1.0.2 final) → one v* tag builds iOS TestFlight + Android signed artifacts."
+    blocker: "Awaiting iOS black-screen verification on TestFlight (Android crash fixed; main consolidated)"
 
 next-steps:
-  - "Device-test v1.0.2-rc20 (rollback/rc10 baseline): iOS via TestFlight — confirm black screen on cold-start with backup configured is GONE"
-  - "Build + sideload Android release APK from rollback/rc10 locally (android.yml only builds from main) — confirm cold-start works (ProGuard/Tink fixes)"
-  - "If rc20 verified stable on both platforms: promote rollback/rc10 to canonical (fast-forward or replace main), then tag v1.0.2 final"
-  - "Re-attempt main's dependency upgrades (KGP phase 2: secure_storage 10.x, file_picker 11.x, timezone 5.x) only AFTER 1.0.2 ships — they did not fix the black screen and reintroduced it"
+  - "Verify iOS rc20 TestFlight 1.0.2 (320) cold-start black screen (backup configured) is GONE — last open blocker before v1.0.2 final"
+  - "When iOS verified: tag v1.0.2 (or rc21) from main → v* trigger builds iOS TestFlight + Android signed split-APKs + AAB in one shot"
+  - "Re-attempt dependency upgrades (KGP phase 2: secure_storage 10.x, file_picker 11.x, timezone 5.x) only AFTER 1.0.2 ships — they did not fix the black screen and reintroduced it"
   - "FR-16 TestFlight sign-off: cold-start with iOS notification permission revoked → in-app toggle reflects 'off'"
   - "Consider adding universal fat APK build to CI alongside split APKs for easier sideload testing distribution"
   - "Screenshot refresh for backup-connected IT+EN (deferred — requires Android emulator with IT/EN locale)"
