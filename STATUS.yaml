@@ -1,5 +1,5 @@
 schema-version: 2
-last-updated: "2026-06-03T23:55:00+02:00"
+last-updated: "2026-06-04T22:22:09+02:00"
 active-plan: null
 last-plan: ".claude/docs/plans/archive/qp-20260525-backup-restore-toast.md"
 
@@ -55,30 +55,39 @@ pending-consolidation: []
 
 recently-completed:
   - date: "2026-06-03"
-    summary: "fix(android): keep app package in ProGuard — prevent R8 from stripping MainActivity under proguard-android-optimize.txt (74300a7); verified clean launch on arm64-v8a device, pushed to origin/main"
+    summary: "fix(android): keep app package in ProGuard — prevent R8 from stripping MainActivity under proguard-android-optimize.txt (74300a7)"
   - date: "2026-06-03"
     summary: "fix(android): add Tink+security-crypto ProGuard rules, KeepAliveService keep rule, REQUEST_IGNORE_BATTERY_OPTIMIZATIONS permission — fixes release APK cold-start crash (36052f9)"
   - date: "2026-06-03"
-    summary: "fix(quality): replace deprecated SizeTransition.axisAlignment → Alignment.topLeft; suppress todo analyzer warnings in sqlcipher_integration_test.dart (e4ed6c4)"
+    summary: "fix(quality): replace deprecated SizeTransition.axisAlignment; suppress todo analyzer warnings (e4ed6c4)"
   - date: "2026-06-03"
-    summary: "fix(l10n): sync ARB sources with restoreSuccessToast dart fix — restoreSuccessToast now reads 'entries' in both ARB and generated dart (f660e21)"
+    summary: "fix(l10n): sync ARB sources with restoreSuccessToast dart fix — restoreSuccessToast reads 'entries' in both ARB and generated dart (f660e21)"
   - date: "2026-06-01"
     summary: "fix(backup): wipe stale passphrase on connect — prevent false autoBackupActive (BUG-B06); bump pubspec to 1.0.2+13; tagged v1.0.2-rc19 (616e34d)"
-  - date: "2026-06-01"
-    summary: "fix(l10n): translation fix for restored data toast — 'elementi' wording (7c3e4d4)"
 
-in-progress: []
+in-progress:
+  - title: "Ship rollback/rc10 → TestFlight as v1.0.2-rc20"
+    state: "Reconciliation with main ABANDONED — main's 26 commits (rc11–17) did NOT fix the iOS black screen; rollback/rc10 (rollback to old deps: secure_storage 9.x, flutter_web_auth_2 4.1.0, file_picker 8.x) is the candidate fix. TestFlight builds now come from rollback/rc10 only. Local rc10 was 6 commits ahead of origin (ProGuard fixes unpushed)."
+    touched:
+      - ".github/workflows/ios.yml"
+      - "STATUS.yaml"
+    next-step: "Push rollback/rc10 to origin, tag v1.0.2-rc20, push tag → ios.yml deploy_testflight builds IPA (build#=GITHUB_RUN_NUMBER) + uploads to TestFlight. Then user device-tests iOS + Android."
+    blocker: null
 
 next-steps:
-  - "Install new Android release APK (arm64-v8a, commit 74300a7) — ProGuard MainActivity fix verified locally; CI will rebuild and confirm"
-  - "Install v1.0.2-rc19 from TestFlight — verify BUG-B06 fix on physical iOS device (reinstall scenario: false autoBackupActive gone)"
+  - "Device-test v1.0.2-rc20 (rollback/rc10 baseline): iOS via TestFlight — confirm black screen on cold-start with backup configured is GONE"
+  - "Build + sideload Android release APK from rollback/rc10 locally (android.yml only builds from main) — confirm cold-start works (ProGuard/Tink fixes)"
+  - "If rc20 verified stable on both platforms: promote rollback/rc10 to canonical (fast-forward or replace main), then tag v1.0.2 final"
+  - "Re-attempt main's dependency upgrades (KGP phase 2: secure_storage 10.x, file_picker 11.x, timezone 5.x) only AFTER 1.0.2 ships — they did not fix the black screen and reintroduced it"
   - "FR-16 TestFlight sign-off: cold-start with iOS notification permission revoked → in-app toggle reflects 'off'"
-  - "If iOS and Android verified stable → tag v1.0.2 final"
   - "Consider adding universal fat APK build to CI alongside split APKs for easier sideload testing distribution"
   - "Screenshot refresh for backup-connected IT+EN (deferred — requires Android emulator with IT/EN locale)"
-  - "Upgrade share_plus 13.x + package_info_plus 10.x when file_picker 12.x goes stable"
 
 known-issues:
+  - severity: critical
+    description: "iOS cold-start black screen (backup configured) was NOT fixed by main's 26 commits (rc11–17: SQLCipher fallback, flutter_web_auth_2 downgrade, GoRouter try/catch, Keychain entitlements). rollback/rc10 was branched to roll back the KGP phase-2 dep upgrade (back to secure_storage 9.x, flutter_web_auth_2 4.1.0, file_picker 8.x) — this is the candidate fix, shipping as v1.0.2-rc20 to TestFlight. Reconciliation/merge of main into rollback/rc10 is ABANDONED (main's fixes are ineffective)."
+    impact: high
+    workaround: "Release line = rollback/rc10 only. Build + ship to TestFlight from rollback/rc10 via v* tag. Do not re-apply main's dep upgrades until 1.0.2 ships and black screen is confirmed gone."
   - severity: warning
     description: "share_plus and package_info_plus still bundle KGP; share_plus 12.x has Kotlin K2 compilation bug; unblocks when file_picker 12.x is stable"
     impact: low
@@ -95,7 +104,3 @@ known-issues:
     description: "iOS PermissionDenied vs PermissionBlocked indistinguishable via flutter_local_notifications v17 — both return PermissionBlocked"
     impact: low
     workaround: "Conservative UX: settings dialog always offered on iOS denial; slightly over-eager on first-time denials"
-  - severity: warning
-    description: "android/gradle.properties and pubspec.lock have local uncommitted drift on rollback/rc10 branch — harmless, not pushed"
-    impact: low
-    workaround: "Leave as-is; resolves if branch is rebased or abandoned"
