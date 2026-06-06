@@ -37,7 +37,7 @@ android {
         // Android version is pinned here, independent of pubspec.yaml.
         // iOS version is tracked in pubspec.yaml (and set via --build-name in ios.yml CI).
         // Bump versionCode by +1 for every Play Store submission (must be strictly increasing).
-        versionCode = 9
+        versionCode = 10
         versionName = "1.0.0"
     }
 
