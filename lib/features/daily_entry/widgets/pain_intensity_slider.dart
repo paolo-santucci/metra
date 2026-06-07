@@ -86,7 +86,10 @@ class PainIntensitySlider extends StatelessWidget {
         opacity: animation,
         child: SizeTransition(
           sizeFactor: animation,
-          alignment: Alignment.topLeft,
+          // axisAlignment (not the 3.44+ `alignment` param) — keeps the app
+          // compilable on the CI-pinned Flutter 3.41.9 SDK. -1 == top for the
+          // default vertical axis (equivalent to Alignment.topLeft).
+          axisAlignment: -1,
           child: child,
         ),
       ),
