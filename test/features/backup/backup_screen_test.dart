@@ -674,7 +674,7 @@ void main() {
         await driveRestoreFlow(tester);
 
         expect(
-          find.text('7 records restored'),
+          find.text('7 entries restored'),
           findsOneWidget,
           reason: 'restoreSuccessToast must show the count from '
               'restoreWithPassphrase (locale: en)',

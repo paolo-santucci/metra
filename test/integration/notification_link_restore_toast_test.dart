@@ -382,13 +382,13 @@ void main() {
             // Step 4: PassphraseDialog → enter passphrase and submit.
             await _enterPassphrase(tester, 'test-pass');
 
-            // Assert: snackbar shows localised count (EN locale: "14 records restored").
+            // Assert: snackbar shows localised count (EN locale: "14 entries restored").
             expect(
-              find.text('14 records restored'),
+              find.text('14 entries restored'),
               findsOneWidget,
               reason: 'Snackbar must appear with the exact count returned by '
                   'FakeBackupRunner.restore() (14); ARB key restoreSuccessToast '
-                  'with {count}=14 in EN locale yields "14 records restored"',
+                  'with {count}=14 in EN locale yields "14 entries restored"',
             );
 
             // Assert: runner was called exactly once with the picked filename.
