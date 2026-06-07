@@ -160,15 +160,20 @@ void main() {
       expect(entry.body, equals('Test body'));
     });
 
+    // NOTE: windowStart is computed relative to DateTime.now() (not a hardcoded
+    // calendar date) so the assertions never rot — a notifyAt in the past is
+    // correctly NOT scheduled by the use case, which previously turned these
+    // into time-bombs once the hardcoded dates elapsed.
     test(
         'given_notificationDaysBefore_1_when_execute_then_notifyAt_is_windowStart_minus_1_day',
         () async {
       final notifService = FakeNotificationService();
       final uc = SchedulePredictionNotification(notifService);
+      final windowStart = DateTime.now().add(const Duration(days: 30));
       final prediction = CyclePrediction(
-        expectedStart: DateTime.utc(2026, 6, 1),
-        windowStart: DateTime.utc(2026, 5, 30),
-        windowEnd: DateTime.utc(2026, 6, 3),
+        expectedStart: windowStart.add(const Duration(days: 2)),
+        windowStart: windowStart,
+        windowEnd: windowStart.add(const Duration(days: 3)),
         cyclesUsed: 3,
       );
       final settings = AppSettingsData(
@@ -187,10 +192,11 @@ void main() {
         body: 'b',
       );
 
-      // 1 day before windowStart = 2026-05-29 at 09:00 local (default 540 min)
+      // 1 day before windowStart at 09:00 local (default 540 min)
+      final base = windowStart.subtract(const Duration(days: 1));
       expect(
         notifService.scheduled.first.notifyAt,
-        equals(DateTime(2026, 5, 29, 9, 0)),
+        equals(DateTime(base.year, base.month, base.day, 9, 0)),
       );
     });
 
@@ -199,10 +205,11 @@ void main() {
         () async {
       final notifService = FakeNotificationService();
       final uc = SchedulePredictionNotification(notifService);
+      final windowStart = DateTime.now().add(const Duration(days: 30));
       final prediction = CyclePrediction(
-        expectedStart: DateTime.utc(2026, 6, 1),
-        windowStart: DateTime.utc(2026, 5, 30),
-        windowEnd: DateTime.utc(2026, 6, 3),
+        expectedStart: windowStart.add(const Duration(days: 2)),
+        windowStart: windowStart,
+        windowEnd: windowStart.add(const Duration(days: 3)),
         cyclesUsed: 3,
       );
       final settings = AppSettingsData(
@@ -221,10 +228,11 @@ void main() {
         body: 'b',
       );
 
-      // 4 days before windowStart = 2026-05-26 at 09:00 local (default 540 min)
+      // 4 days before windowStart at 09:00 local (default 540 min)
+      final base = windowStart.subtract(const Duration(days: 4));
       expect(
         notifService.scheduled.first.notifyAt,
-        equals(DateTime(2026, 5, 26, 9, 0)),
+        equals(DateTime(base.year, base.month, base.day, 9, 0)),
       );
     });
 
@@ -233,10 +241,11 @@ void main() {
         () async {
       final notifService = FakeNotificationService();
       final uc = SchedulePredictionNotification(notifService);
+      final windowStart = DateTime.now().add(const Duration(days: 30));
       final prediction = CyclePrediction(
-        expectedStart: DateTime.utc(2026, 6, 1),
-        windowStart: DateTime.utc(2026, 6, 10),
-        windowEnd: DateTime.utc(2026, 6, 13),
+        expectedStart: windowStart.add(const Duration(days: 2)),
+        windowStart: windowStart,
+        windowEnd: windowStart.add(const Duration(days: 3)),
         cyclesUsed: 3,
       );
       final settings = AppSettingsData(
@@ -255,10 +264,11 @@ void main() {
         body: 'b',
       );
 
-      // 7 days before windowStart (2026-06-10) = 2026-06-03 at 09:00 local (default 540 min)
+      // 7 days before windowStart at 09:00 local (default 540 min)
+      final base = windowStart.subtract(const Duration(days: 7));
       expect(
         notifService.scheduled.first.notifyAt,
-        equals(DateTime(2026, 6, 3, 9, 0)),
+        equals(DateTime(base.year, base.month, base.day, 9, 0)),
       );
     });
   });

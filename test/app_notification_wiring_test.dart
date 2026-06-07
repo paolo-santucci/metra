@@ -633,7 +633,10 @@ void main() {
   // ===========================================================================
 
   group('FR-09 prediction → scheduler → service wiring (TASK-05)', () {
-    final windowStart = DateTime.utc(2026, 6, 10);
+    // Relative to now (not a hardcoded date) so notifyAt stays in the future
+    // and the use case actually schedules — otherwise this rots into a
+    // time-bomb once the fixed date elapses.
+    final windowStart = DateTime.now().add(const Duration(days: 30));
     final prediction = CyclePrediction(
       windowStart: windowStart.subtract(const Duration(days: 2)),
       windowEnd: windowStart.add(const Duration(days: 2)),
