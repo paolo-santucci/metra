@@ -6,8 +6,8 @@ lang_ref: home
 permalink: /en/
 tagline: A quiet notebook to know yourself, cycle after cycle.
 links:
-  - label: Soon on App Store
-    url: "#"
+  - label: On App Store
+    url: "https://apps.apple.com/en/app/m%C4%93tra/id6767364948"
     primary: true
   - label: Soon on Google Play
     url: "#"
