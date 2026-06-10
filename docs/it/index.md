@@ -6,8 +6,8 @@ lang_ref: home
 permalink: /it/
 tagline: Un quaderno silenzioso per conoscerti, ciclo dopo ciclo.
 links:
-  - label: Presto su App Store
-    url: "#"
+  - label: Su App Store
+    url: "https://apps.apple.com/it/app/m%C4%93tra/id6767364948"
     primary: true
   - label: Presto su Google Play
     url: "#"
