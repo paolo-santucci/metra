@@ -15,7 +15,7 @@ La scheda **Calendario** è la schermata principale di Mētra. È qui che il lin
 
 ## La griglia mensile
 
-![Schermata calendario con un mese tipico: giorni di flusso, icone dei sintomi.](/metra/assets/calendar-overview-it.png)
+![Schermata calendario con un mese tipico: giorni di flusso, icone dei sintomi.](/assets/calendar-overview-it.png)
 
 Ogni giorno è una piccola cella. I giorni passati possono avere celle colorate e icone sotto il numero; i giorni futuri possono avere indicatori di previsione.
 
@@ -54,7 +54,7 @@ Cinque icone completano il vocabolario. Appaiono **sotto il numero del giorno** 
 
 ## La striscia legenda
 
-![La striscia legenda sotto l'intestazione dei giorni della settimana: le cinque icone con le loro etichette.](/metra/assets/calendar-legend-it.png)
+![La striscia legenda sotto l'intestazione dei giorni della settimana: le cinque icone con le loro etichette.](/assets/calendar-legend-it.png)
 
 La striscia legenda si trova appena sotto la griglia del calendario. Mostra le cinque icone descritte sopra con le relative etichette: il vocabolario completo, sempre a portata di sguardo.
 
@@ -80,4 +80,4 @@ Tocca un giorno per aprire un pannello che raccoglie tutto ciò che riguarda que
 - **Pill dolore** — il livello di dolore (Lieve / Moderato / Intenso), se registrato.
 - **Chip sintomi** — un chip per ogni sintomo registrato quel giorno.
 - **Note** — la nota in testo libero, se presente.
-- Pulsante **Aggiungi giornata** o **Modifica giornata** — apre la [schermata di registrazione](/metra/it/help/daily-entry/) per quel giorno.
+- Pulsante **Aggiungi giornata** o **Modifica giornata** — apre la [schermata di registrazione](/it/help/daily-entry/) per quel giorno.

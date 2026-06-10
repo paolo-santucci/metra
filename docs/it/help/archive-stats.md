@@ -17,7 +17,7 @@ La scheda **Archivio** (icona onda) raccoglie l'intera storia delle tue registra
 
 ### Vista Timeline
 
-![Vista Timeline: lista verticale di card ciclo, ognuna con data di inizio, durata, pill flusso e chip sintomi.](/metra/assets/archive-timeline-it.png)
+![Vista Timeline: lista verticale di card ciclo, ognuna con data di inizio, durata, pill flusso e chip sintomi.](/assets/archive-timeline-it.png)
 
 La vista Timeline raggruppa le tue registrazioni per **ciclo**, mostrando un ciclo per card, dall'ultimo in cima fino al primo in fondo. Ogni card mostra:
 
@@ -34,7 +34,7 @@ Scorri verso l'alto per risalire nel tempo.
 
 ### Vista Tabella
 
-![Vista Tabella: righe sono i giorni, colonne sono data, flusso, dolore, sintomi, note. Celle con codice colore.](/metra/assets/archive-table-it.png)
+![Vista Tabella: righe sono i giorni, colonne sono data, flusso, dolore, sintomi, note. Celle con codice colore.](/assets/archive-table-it.png)
 
 La vista Tabella mostra una riga per ogni mese registrato, utile quando vuoi confrontare più mesi in un colpo d'occhio. Colonne:
 
@@ -49,7 +49,7 @@ La vista Tabella mostra una riga per ogni mese registrato, utile quando vuoi con
 
 ## Scheda Statistiche
 
-![Schermata Statistiche: quattro card riepilogative in alto, poi grafici a barre.](/metra/assets/stats-overview-it.png)
+![Schermata Statistiche: quattro card riepilogative in alto, poi grafici a barre.](/assets/stats-overview-it.png)
 
 La scheda **Statistiche** è la parte numerica dello stesso archivio: dove la Vista Timeline e la Tabella mostrano i singoli giorni, qui Mētra calcola medie e distribuzioni sull'insieme dei parametri registrati durante i cicli. Tutti i calcoli avvengono localmente sul tuo dispositivo, nessun servizio esterno vede questi numeri.
 
@@ -90,7 +90,7 @@ Un grafico a barre che mostra l'intensità media del dolore per ogni ciclo, in o
 
 ### Grafico frequenza sintomi
 
-![Grafico a barre orizzontale: una barra per tipo di sintomo, lunghezza = percentuale di cicli in cui è comparso.](/metra/assets/stats-symptoms-chart-it.png)
+![Grafico a barre orizzontale: una barra per tipo di sintomo, lunghezza = percentuale di cicli in cui è comparso.](/assets/stats-symptoms-chart-it.png)
 
 Un grafico a barre orizzontale che mostra con quale frequenza ogni sintomo è comparso nei tuoi cicli registrati. I sintomi più frequenti appaiono in cima. Nel tempo, un pattern che non avevi notato può diventare evidente.
 

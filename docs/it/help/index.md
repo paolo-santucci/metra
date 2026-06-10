@@ -16,7 +16,7 @@ La prima volta che apri Mētra non trovi un account da creare né un indirizzo e
 
 ### Schermata 1 — Benvenuto
 
-![Schermata di benvenuto\: wordmark Mētra, manifesto, pulsante 'Inizia'.](/metra/assets/onboarding-welcome-it.png)
+![Schermata di benvenuto\: wordmark Mētra, manifesto, pulsante 'Inizia'.](/assets/onboarding-welcome-it.png)
 
 Vedrai il wordmark **Mētra** e un breve manifesto su cosa è l'app... e cosa non è. Vale la pena leggerlo: fissa le aspettative prima ancora di iniziare a usarla.
 
@@ -26,7 +26,7 @@ Tocca **Inizia** per continuare.
 
 ### Schermata 2 — I tuoi dati di partenza
 
-![Schermata con tre campi\: data dell'ultimo ciclo, durata media del ciclo, durata tipica delle mestruazioni.](/metra/assets/onboarding-data-it.png)
+![Schermata con tre campi\: data dell'ultimo ciclo, durata media del ciclo, durata tipica delle mestruazioni.](/assets/onboarding-data-it.png)
 
 Mētra ti chiede tre cose per poter produrre subito previsioni calibrate sul tuo ciclo:
 
