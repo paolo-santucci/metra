@@ -41,7 +41,7 @@ Mētra requests the minimum permissions: only access to a dedicated app folder, 
 Once connected:
 
 1. Tap **Back up now**.
-2. Mētra asks for your **passphrase**, the same one used to encrypt the backup. You will need it unchanged to restore.
+2. On your **first backup**, Mētra asks you to set a passphrase. This passphrase is stored securely on your device (iOS Keychain / Android Keystore) and reused automatically for all subsequent backups — you will not be prompted again unless you disconnect and reconnect.
 3. Mētra encrypts the database on your device and uploads it. A progress indicator shows the status.
 4. When complete, the screen displays the date and time of the last successful backup.
 
@@ -55,11 +55,13 @@ Mētra automatically keeps the 3 most recent encrypted backups in the cloud fold
 
 ## What is backed up
 
-The backup contains the complete contents of your encrypted database:
+The backup contains:
 
 - All daily logs (flow, pain, symptoms, notes).
-- Cycle entries derived from your logs.
-- App settings (cycle-length baseline, notification preferences).
+
+Cycle entries are **not** stored separately — they are recomputed automatically from the restored logs.
+
+App settings (theme, language, notifications, cycle-length baseline) are **not** included. After restoring, you will need to re-configure those preferences.
 
 It does **not** include local notification schedule state: those are re-created automatically after a restore.
 
@@ -95,7 +97,7 @@ Mētra now retains up to the 3 most recent encrypted blobs in the App folder.
 
 - Encryption algorithm: **AES-256-GCM**.
 - Key derivation: **Argon2id** from your passphrase.
-- The key is never stored in the cloud, never sent to any server, and never stored on the device itself: it is derived from the passphrase each time it is needed, then discarded.
+- The derived encryption key is never stored anywhere — not in the cloud, not on the device. It is computed from your passphrase on demand, used, then discarded. Your passphrase itself is stored in the device's secure hardware storage (iOS Keychain / Android Keystore) so that subsequent backups can run without prompting you.
 - The backup file has a `.enc` extension and is stored in a dedicated Mētra folder inside your cloud account.
 
 These are not marketing claims: they are specific choices in the code. You can verify them in `lib/data/services/encryption_service.dart`.

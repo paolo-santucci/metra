@@ -39,7 +39,7 @@ Mētra richiede i permessi minimi: solo l'accesso a una cartella dedicata, non a
 Una volta collegata:
 
 1. Tocca **Salva ora**.
-2. Mētra ti chiede la tua **passphrase**, quella usata per cifrare il file. Ti servirà identica per il ripristino.
+2. Al **primo backup**, Mētra ti chiede di impostare una passphrase. Questa viene conservata in modo sicuro sul dispositivo (iOS Keychain / Android Keystore) e riutilizzata automaticamente per tutti i backup successivi — non ti verrà richiesta di nuovo a meno che tu non ti disconnetta e riconnetta.
 3. Mētra cifra il database sul dispositivo e lo carica. Un indicatore di avanzamento mostra lo stato.
 4. Al termine, la schermata mostra data e ora dell'ultimo backup riuscito.
 
@@ -53,13 +53,15 @@ Mētra mantiene automaticamente i 3 backup cifrati più recenti nella cartella c
 
 ## Cosa viene salvato nel backup
 
-Il backup contiene il contenuto completo del database cifrato:
+Il backup contiene:
 
 - Tutte le registrazioni giornaliere (flusso, dolore, sintomi, note).
-- I cicli derivati dalle registrazioni.
-- Le impostazioni dell'app (durata del ciclo di riferimento, preferenze notifiche).
 
-**Non** include lo stato delle notifiche locali, queste vengono ricreate automaticamente dopo un ripristino.
+Le voci del ciclo **non** sono salvate separatamente: vengono ricalcolate automaticamente dalle registrazioni ripristinate.
+
+Le impostazioni dell'app (tema, lingua, notifiche, durata del ciclo di riferimento) **non** sono incluse nel backup. Dopo il ripristino dovrai riconfigurarle.
+
+**Non** include lo stato delle notifiche locali: vengono ricreate automaticamente dopo un ripristino.
 
 ---
 
@@ -92,7 +94,7 @@ Mētra conserva fino a 3 backup cifrati più recenti nella cartella dell'app.
 
 - Algoritmo di cifratura: **AES-256-GCM**.
 - Derivazione della chiave: **Argon2id** dalla tua passphrase.
-- La chiave non viene mai salvata nel cloud, mai inviata a nessun server e mai conservata sul dispositivo: viene derivata dalla passphrase ogni volta che ne hai bisogno, poi scartata.
+- La chiave di cifratura derivata non viene mai salvata da nessuna parte — né nel cloud né sul dispositivo. Viene calcolata dalla passphrase quando serve, utilizzata e poi scartata. La passphrase stessa è conservata nell'archiviazione sicura hardware del dispositivo (iOS Keychain / Android Keystore) in modo che i backup successivi possano avviarsi senza chiederti nulla.
 - Il file di backup ha estensione `.enc` ed è archiviato in una cartella dedicata a Mētra nel tuo account cloud.
 
 Questi non sono annunci di marketing: sono le scelte specifiche nel codice. Puoi verificarlo leggendo `lib/data/services/encryption_service.dart`.
