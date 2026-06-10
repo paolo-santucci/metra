@@ -994,7 +994,12 @@
   "@settings_help_label": {
     "description": "Settings row label: link to the help centre"
   },
-
+  
+  "settings_bug_label": "Segnala un problema",
+  "@settings_bug_label": {
+    "description": "Settings row label: link to the bug report"
+  },
+  
   "settings_github_label": "Codice sorgente",
   "@settings_github_label": {
     "description": "Settings row label: link to GitHub source code"

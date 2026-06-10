@@ -576,6 +576,11 @@
     "description": "Settings row label: link to the help centre"
   },
 
+  "settings_bug_label": "Report an issue",
+  "@settings_bug_label": {
+    "description": "Settings row label: link to the bug report"
+  },
+  
   "settings_github_label": "Source code",
   "@settings_github_label": {
     "description": "Settings row label: link to GitHub source code"
