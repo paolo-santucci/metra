@@ -254,6 +254,14 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 const SettingsDivider(),
                 SettingsRow.nav(
+                  label: l10n.settings_bug_label,
+                  onTap: () => launchUrl(
+                    Uri.parse(AppConstants.kUrlBug),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                ),
+                const SettingsDivider(),
+                SettingsRow.nav(
                   label: l10n.settings_github_label,
                   semanticsLabel: '${l10n.settings_github_label} — GPL-3.0',
                   onTap: () => launchUrl(

@@ -669,6 +669,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get settings_help_label => 'Guida';
 
   @override
+  String get settings_bug_label => 'Segnala un problema';
+
+  @override
   String get settings_github_label => 'Codice sorgente';
 
   @override

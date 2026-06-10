@@ -1250,6 +1250,12 @@ abstract class AppLocalizations {
   /// **'Guida'**
   String get settings_help_label;
 
+  /// Settings row label: link to the bug report
+  ///
+  /// In it, this message translates to:
+  /// **'Segnala un problema'**
+  String get settings_bug_label;
+
   /// Settings row label: link to GitHub source code
   ///
   /// In it, this message translates to:

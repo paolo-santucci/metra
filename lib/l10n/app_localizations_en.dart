@@ -667,6 +667,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings_help_label => 'Guide';
 
   @override
+  String get settings_bug_label => 'Report an issue';
+
+  @override
   String get settings_github_label => 'Source code';
 
   @override

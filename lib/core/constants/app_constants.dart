@@ -18,10 +18,12 @@
 class AppConstants {
   AppConstants._();
 
-  static const String kUrlHelp = 'https://paolo-santucci.github.io/metra/help/';
+  static const String kUrlHelp = 'https://metra.paolosantucci.com/help/';
   static const String kUrlGitHub = 'https://github.com/paolo-santucci/metra';
   static const String kUrlPrivacy =
-      'https://paolo-santucci.github.io/metra/privacy/';
+      'https://metra.paolosantucci.com/privacy/';
+  static const String kUrlBug =
+      'https://metra.paolosantucci.com/bug/';
   static const String kUrlKoFi = 'https://ko-fi.com/D1D31YPYRX';
   static const String kUrlKoFiBadge =
       'https://storage.ko-fi.com/cdn/kofi2.png?v=6';
