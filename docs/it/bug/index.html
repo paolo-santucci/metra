@@ -1,0 +1,273 @@
+---
+layout: page
+title: Segnala un bug
+lang: it
+permalink: /it/bug/
+---
+
+<div class="bug-report">
+  <p class="bug-lead">
+    Grazie per aiutarci a migliorare Mētra. I campi contrassegnati come <span class="req-key">obbligatori</span> vanno compilati.
+  </p>
+
+  <form id="bug-form" novalidate>
+    <!-- Piattaforma -->
+    <fieldset class="bug-field">
+      <legend>Piattaforma <span class="req">obbligatorio</span></legend>
+      <p class="bug-help">Quale piattaforma è interessata?</p>
+      <label class="bug-check"><input type="checkbox" name="platform" value="Android"> Android</label>
+      <label class="bug-check"><input type="checkbox" name="platform" value="iOS"> iOS</label>
+    </fieldset>
+
+    <!-- Area interessata -->
+    <fieldset class="bug-field">
+      <legend>Area interessata <span class="req">obbligatorio</span></legend>
+      <p class="bug-help">Quale parte dell’app?</p>
+      <label class="bug-check"><input type="checkbox" name="area" value="Backup / integrità dei dati"> Backup / integrità dei dati</label>
+      <label class="bug-check"><input type="checkbox" name="area" value="Interfaccia / interazione"> Interfaccia / interazione</label>
+      <label class="bug-check"><input type="checkbox" name="area" value="Importazione / esportazione"> Importazione / esportazione</label>
+      <label class="bug-check"><input type="checkbox" name="area" value="Impostazioni / preferenze"> Impostazioni / preferenze</label>
+      <label class="bug-check"><input type="checkbox" name="area" value="Notifiche / promemoria"> Notifiche / promemoria</label>
+      <label class="bug-check"><input type="checkbox" name="area" value="Previsione / calendario"> Previsione / calendario</label>
+      <label class="bug-check"><input type="checkbox" name="area" value="Altro"> Altro</label>
+    </fieldset>
+
+    <!-- Versione dell'app -->
+    <div class="bug-field">
+      <label class="bug-label" for="app_version">Versione dell’app <span class="req">obbligatorio</span></label>
+      <p class="bug-help">La trovi in Impostazioni → Info.</p>
+      <input type="text" id="app_version" name="app_version" placeholder="es. 0.3.0 (build 42)" required>
+    </div>
+
+    <!-- Versione del sistema operativo -->
+    <div class="bug-field">
+      <label class="bug-label" for="os_version">Versione del sistema operativo <span class="req">obbligatorio</span></label>
+      <input type="text" id="os_version" name="os_version" placeholder="es. Android 14 / iOS 17.4" required>
+    </div>
+
+    <!-- Modello del dispositivo -->
+    <div class="bug-field">
+      <label class="bug-label" for="device">Modello del dispositivo <span class="opt">facoltativo</span></label>
+      <input type="text" id="device" name="device" placeholder="es. Pixel 8 / iPhone 15 Pro">
+    </div>
+
+    <!-- Impatto -->
+    <div class="bug-field">
+      <label class="bug-label" for="impact">Impatto <span class="req">obbligatorio</span></label>
+      <p class="bug-help">Quanto è grave?</p>
+      <select id="impact" name="impact" required>
+        <option value="" disabled selected>Seleziona un livello di gravità…</option>
+        <option value="Blocca un’operazione fondamentale">Blocca un’operazione fondamentale</option>
+        <option value="Perdita o incongruenza dei dati">Perdita o incongruenza dei dati</option>
+        <option value="Crash o blocco">Crash o blocco</option>
+        <option value="Solo problema visivo">Solo problema visivo</option>
+      </select>
+    </div>
+
+    <!-- Descrizione -->
+    <div class="bug-field">
+      <label class="bug-label" for="description">Descrizione <span class="req">obbligatorio</span></label>
+      <p class="bug-help">Cosa succede e perché è inatteso.</p>
+      <textarea id="description" name="description" rows="4" required></textarea>
+    </div>
+
+    <!-- Passi per riprodurre -->
+    <div class="bug-field">
+      <label class="bug-label" for="steps">Passi per riprodurre <span class="req">obbligatorio</span></label>
+      <textarea id="steps" name="steps" rows="5" required
+        placeholder="1. Apri l’app&#10;2. Vai a …&#10;3. Tocca …&#10;4. Osserva …"></textarea>
+    </div>
+
+    <!-- Comportamento atteso -->
+    <div class="bug-field">
+      <label class="bug-label" for="expected">Comportamento atteso <span class="req">obbligatorio</span></label>
+      <textarea id="expected" name="expected" rows="3" required></textarea>
+    </div>
+
+    <!-- Regressione -->
+    <fieldset class="bug-field">
+      <legend>Regressione? <span class="opt">facoltativo</span></legend>
+      <label class="bug-check"><input type="checkbox" name="regression"> Funzionava in una versione precedente</label>
+    </fieldset>
+
+    <!-- Ultima versione funzionante -->
+    <div class="bug-field">
+      <label class="bug-label" for="last_working">Ultima versione funzionante nota <span class="opt">facoltativo</span></label>
+      <p class="bug-help">Solo se si tratta di una regressione.</p>
+      <input type="text" id="last_working" name="last_working" placeholder="es. 0.2.0">
+    </div>
+
+    
+    <!-- Contesto aggiuntivo -->
+    <div class="bug-field">
+      <label class="bug-label" for="additional">Contesto aggiuntivo <span class="opt">facoltativo</span></label>
+      <textarea id="additional" name="additional" rows="3"></textarea>
+    </div>
+
+    <!-- Email di contatto -->
+    <div class="bug-field">
+      <label class="bug-label" for="email">La tua email <span class="opt">facoltativo</span></label>
+      <p class="bug-help">Se vuoi una risposta.</p>
+      <input type="email" id="email" name="email" placeholder="tu@esempio.com">
+    </div>
+
+    <button type="submit" class="bug-submit">Invia segnalazione</button>
+    <p id="bug-status" class="bug-status" role="status" aria-live="polite"></p>
+
+    <noscript>
+      <p class="bug-help">Per inviare il modulo è necessario JavaScript. In alternativa scrivici a
+        <a href="mailto:bugs@paolosantucci.com">bugs@paolosantucci.com</a>.</p>
+    </noscript>
+  </form>
+</div>
+
+<style>
+  .bug-report { max-width: 640px; margin: 0 auto; }
+  .bug-report .bug-lead { font-size: 1.05rem; line-height: 1.6; margin: 0 0 1.5rem; }
+  .bug-report .req-key { font-variant: small-caps; letter-spacing: .04em; opacity: .8; }
+
+  .bug-note {
+    border-left: 3px solid rgba(122, 92, 110, .55);
+    background: rgba(122, 92, 110, .06);
+    padding: .85rem 1rem; margin: 0 0 1rem; border-radius: 0 8px 8px 0;
+    font-size: .94rem; line-height: 1.55;
+  }
+  .bug-note--alert {
+    border-left-color: rgba(176, 96, 72, .7);
+    background: rgba(176, 96, 72, .07);
+  }
+  .bug-note a { color: inherit; text-underline-offset: 2px; }
+
+  .bug-report fieldset.bug-field { border: 0; padding: 0; margin: 0 0 1.6rem; }
+  .bug-report .bug-field { margin: 0 0 1.6rem; }
+  .bug-report legend, .bug-report .bug-label {
+    font-weight: 600; font-size: .98rem; padding: 0; margin: 0 0 .15rem; display: block;
+  }
+  .bug-report .bug-help { font-size: .85rem; opacity: .65; margin: 0 0 .5rem; line-height: 1.45; }
+
+  .bug-report .req, .bug-report .opt {
+    font-size: .68rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+    margin-left: .4rem; vertical-align: 1px;
+  }
+  .bug-report .req { color: #a85a44; }
+  .bug-report .opt { color: rgba(0,0,0,.4); }
+
+  .bug-report input[type="text"],
+  .bug-report input[type="email"],
+  .bug-report select,
+  .bug-report textarea {
+    width: 100%; box-sizing: border-box; font: inherit; color: inherit;
+    padding: .6rem .75rem; background: #fff;
+    border: 1px solid rgba(0,0,0,.18); border-radius: 7px;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .bug-report textarea { resize: vertical; line-height: 1.5; }
+  .bug-report input:focus-visible,
+  .bug-report select:focus-visible,
+  .bug-report textarea:focus-visible {
+    outline: none; border-color: rgba(122,92,110,.9);
+    box-shadow: 0 0 0 3px rgba(122,92,110,.18);
+  }
+
+  .bug-report .bug-check {
+    display: flex; gap: .6rem; align-items: flex-start;
+    font-weight: 400; font-size: .95rem; line-height: 1.5;
+    padding: .35rem 0; cursor: pointer;
+  }
+  .bug-report .bug-check input { margin-top: .2rem; flex: 0 0 auto; accent-color: #7a5c6e; }
+
+  .bug-report .bug-submit {
+    font: inherit; font-weight: 600; cursor: pointer;
+    background: #7a5c6e; color: #fff; border: 0;
+    padding: .7rem 1.5rem; border-radius: 8px; margin-top: .5rem;
+    transition: background .15s ease, opacity .15s ease;
+  }
+  .bug-report .bug-submit:hover { background: #6a4d5e; }
+  .bug-report .bug-submit:focus-visible { outline: 2px solid #7a5c6e; outline-offset: 3px; }
+  .bug-report .bug-submit:disabled { opacity: .55; cursor: default; }
+
+  .bug-report .bug-status { font-size: .92rem; margin: .9rem 0 0; min-height: 1.2em; }
+  .bug-report .bug-status[data-kind="success"] { color: #3f7a52; }
+  .bug-report .bug-status[data-kind="error"] { color: #b0432f; }
+  .bug-report .bug-status[data-kind="pending"] { opacity: .7; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bug-report * { transition: none !important; }
+  }
+</style>
+
+<script>
+(function () {
+  var form = document.getElementById('bug-form');
+  if (!form) return;
+  var statusEl = document.getElementById('bug-status');
+
+  // Ottieni la chiave gratuita su https://web3forms.com — la stessa chiave vale per entrambe le pagine.
+  var ACCESS_KEY = 'bb0cf9b0-9407-4b15-8357-f9c83f1dfe35';
+
+  function checkedValues(name) {
+    return Array.prototype.slice
+      .call(form.querySelectorAll('input[name="' + name + '"]:checked'))
+      .map(function (el) { return el.value; });
+  }
+  function setStatus(msg, kind) {
+    statusEl.textContent = msg;
+    statusEl.setAttribute('data-kind', kind || '');
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!form.reportValidity()) return;
+
+    var platform = checkedValues('platform');
+    var area = checkedValues('area');
+    if (platform.length === 0) { setStatus('Seleziona almeno una piattaforma.', 'error'); return; }
+    if (area.length === 0) { setStatus('Seleziona almeno un’area interessata.', 'error'); return; }
+
+    var data = new FormData();
+    data.append('access_key', ACCESS_KEY);
+    data.append('subject', 'Mētra — Segnalazione bug');
+    data.append('from_name', 'Mētra — Segnalazioni');
+
+    data.append('Piattaforma', platform.join(', '));
+    data.append('Area interessata', area.join(', '));
+    data.append('Versione app', form.app_version.value);
+    data.append('Versione sistema operativo', form.os_version.value);
+    data.append('Dispositivo', form.device.value || '—');
+    data.append('Impatto', form.impact.value);
+    data.append('Descrizione', form.description.value);
+    data.append('Passi per riprodurre', form.steps.value);
+    data.append('Comportamento atteso', form.expected.value);
+    data.append('Regressione', form.regression.checked ? 'Sì — funzionava in una versione precedente' : 'No / non indicato');
+    data.append('Ultima versione funzionante', form.last_working.value || '—');
+    data.append('Contesto aggiuntivo', form.additional.value || '—');
+    data.append('Email di contatto', form.email.value || '—');
+    data.append('Inviato da', window.location.href);
+    data.append('Browser di invio', navigator.userAgent);
+    data.append('Data invio', new Date().toLocaleString('it-IT'));
+
+    var btn = form.querySelector('.bug-submit');
+    setStatus('Invio in corso…', 'pending');
+    btn.disabled = true;
+
+    fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      headers: { 'Accept': 'application/json' },
+      body: data
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (res.success) {
+          form.reset();
+          setStatus('Grazie! La segnalazione è stata inviata.', 'success');
+        } else {
+          setStatus('Invio non riuscito. Riprova tra poco.', 'error');
+        }
+      })
+      .catch(function () {
+        setStatus('Connessione assente. Verifica la rete e riprova.', 'error');
+      })
+      .then(function () { btn.disabled = false; });
+  });
+})();
+</script>
