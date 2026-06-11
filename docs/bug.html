@@ -1,0 +1,19 @@
+---
+layout: default
+---
+
+<!-- Language-detection redirect -->
+<script>
+(function() {
+  var lang = (navigator.language || navigator.userLanguage || 'it').slice(0, 2);
+  var target = (lang === 'it') ? '/it/bug/' : '/en/bug/';
+  var base = '{{ site.baseurl }}';
+  window.location.replace(base + target);
+})();
+</script>
+<noscript>
+  <meta http-equiv="refresh" content="0;url={{ '/it/bug/' | relative_url }}">
+</noscript>
+<div class="page-wrapper" style="padding:120px 24px;text-align:center;">
+  <p><a href="{{ '/it/bug/' | relative_url }}">Italiano</a> · <a href="{{ '/en/bug/' | relative_url }}">English</a></p>
+</div>
