@@ -1,0 +1,272 @@
+---
+layout: page
+title: Report an issue
+lang: en
+permalink: /en/bug/
+---
+
+<div class="bug-report">
+  <p class="bug-lead">
+    Thanks for helping improve Mētra. Fields marked <span class="req-key">required</span> must be filled in.
+  </p>
+
+  <form id="bug-form" novalidate>
+    <!-- Platform -->
+    <fieldset class="bug-field">
+      <legend>Platform <span class="req">required</span></legend>
+      <p class="bug-help">Which platform is affected?</p>
+      <label class="bug-check"><input type="checkbox" name="platform" value="Android"> Android</label>
+      <label class="bug-check"><input type="checkbox" name="platform" value="iOS"> iOS</label>
+    </fieldset>
+
+    <!-- Affected area -->
+    <fieldset class="bug-field">
+      <legend>Affected area <span class="req">required</span></legend>
+      <p class="bug-help">Which part of the app?</p>
+      <label class="bug-check"><input type="checkbox" name="area" value="Backup / data consistency"> Backup / data consistency</label>
+      <label class="bug-check"><input type="checkbox" name="area" value="UI / interaction"> UI / interaction</label>
+      <label class="bug-check"><input type="checkbox" name="area" value="Import / Export"> Import / Export</label>
+      <label class="bug-check"><input type="checkbox" name="area" value="Settings / preferences"> Settings / preferences</label>
+      <label class="bug-check"><input type="checkbox" name="area" value="Notifications / reminders"> Notifications / reminders</label>
+      <label class="bug-check"><input type="checkbox" name="area" value="Prediction / calendar"> Prediction / calendar</label>
+      <label class="bug-check"><input type="checkbox" name="area" value="Other"> Other</label>
+    </fieldset>
+
+    <!-- App version -->
+    <div class="bug-field">
+      <label class="bug-label" for="app_version">App version <span class="req">required</span></label>
+      <p class="bug-help">Shown in Settings → About.</p>
+      <input type="text" id="app_version" name="app_version" placeholder="e.g. 0.3.0 (build 42)" required>
+    </div>
+
+    <!-- OS version -->
+    <div class="bug-field">
+      <label class="bug-label" for="os_version">OS version <span class="req">required</span></label>
+      <input type="text" id="os_version" name="os_version" placeholder="e.g. Android 14 / iOS 17.4" required>
+    </div>
+
+    <!-- Device model -->
+    <div class="bug-field">
+      <label class="bug-label" for="device">Device model <span class="opt">optional</span></label>
+      <input type="text" id="device" name="device" placeholder="e.g. Pixel 8 / iPhone 15 Pro">
+    </div>
+
+    <!-- Impact -->
+    <div class="bug-field">
+      <label class="bug-label" for="impact">Impact <span class="req">required</span></label>
+      <p class="bug-help">How severe is it?</p>
+      <select id="impact" name="impact" required>
+        <option value="" disabled selected>Select a severity…</option>
+        <option value="Blocks a core workflow">Blocks a core workflow</option>
+        <option value="Data loss or mismatch">Data loss or mismatch</option>
+        <option value="Crash or freeze">Crash or freeze</option>
+        <option value="Visual issue only">Visual issue only</option>
+      </select>
+    </div>
+
+    <!-- Description -->
+    <div class="bug-field">
+      <label class="bug-label" for="description">Description <span class="req">required</span></label>
+      <p class="bug-help">What happens, and why it’s unexpected.</p>
+      <textarea id="description" name="description" rows="4" required></textarea>
+    </div>
+
+    <!-- Steps to reproduce -->
+    <div class="bug-field">
+      <label class="bug-label" for="steps">Steps to reproduce <span class="req">required</span></label>
+      <textarea id="steps" name="steps" rows="5" required
+        placeholder="1. Open the app&#10;2. Go to …&#10;3. Tap …&#10;4. See …"></textarea>
+    </div>
+
+    <!-- Expected behavior -->
+    <div class="bug-field">
+      <label class="bug-label" for="expected">Expected behavior <span class="req">required</span></label>
+      <textarea id="expected" name="expected" rows="3" required></textarea>
+    </div>
+
+    <!-- Regression -->
+    <fieldset class="bug-field">
+      <legend>Regression? <span class="opt">optional</span></legend>
+      <label class="bug-check"><input type="checkbox" name="regression"> This worked in a previous version</label>
+    </fieldset>
+
+    <!-- Last known working version -->
+    <div class="bug-field">
+      <label class="bug-label" for="last_working">Last known working version <span class="opt">optional</span></label>
+      <p class="bug-help">Only if this is a regression.</p>
+      <input type="text" id="last_working" name="last_working" placeholder="e.g. 0.2.0">
+    </div>
+
+    <!-- Additional context -->
+    <div class="bug-field">
+      <label class="bug-label" for="additional">Additional context <span class="opt">optional</span></label>
+      <textarea id="additional" name="additional" rows="3"></textarea>
+    </div>
+
+    <!-- Contact email -->
+    <div class="bug-field">
+      <label class="bug-label" for="email">Your email <span class="opt">optional</span></label>
+      <p class="bug-help">If you’d like a reply.</p>
+      <input type="email" id="email" name="email" placeholder="you@example.com">
+    </div>
+
+    <button type="submit" class="bug-submit">Send report</button>
+    <p id="bug-status" class="bug-status" role="status" aria-live="polite"></p>
+
+    <noscript>
+      <p class="bug-help">JavaScript is required to send this form. You can also email us at
+        <a href="mailto:apps@paolosantucci.com">apps@paolosantucci.com</a>.</p>
+    </noscript>
+  </form>
+</div>
+
+<style>
+  .bug-report { max-width: 640px; margin: 0 auto; }
+  .bug-report .bug-lead { font-size: 1.05rem; line-height: 1.6; margin: 0 0 1.5rem; }
+  .bug-report .req-key { font-variant: small-caps; letter-spacing: .04em; opacity: .8; }
+
+  .bug-note {
+    border-left: 3px solid rgba(122, 92, 110, .55);
+    background: rgba(122, 92, 110, .06);
+    padding: .85rem 1rem; margin: 0 0 1rem; border-radius: 0 8px 8px 0;
+    font-size: .94rem; line-height: 1.55;
+  }
+  .bug-note--alert {
+    border-left-color: rgba(176, 96, 72, .7);
+    background: rgba(176, 96, 72, .07);
+  }
+  .bug-note a { color: inherit; text-underline-offset: 2px; }
+
+  .bug-report fieldset.bug-field { border: 0; padding: 0; margin: 0 0 1.6rem; }
+  .bug-report .bug-field { margin: 0 0 1.6rem; }
+  .bug-report legend, .bug-report .bug-label {
+    font-weight: 600; font-size: .98rem; padding: 0; margin: 0 0 .15rem; display: block;
+  }
+  .bug-report .bug-help { font-size: .85rem; opacity: .65; margin: 0 0 .5rem; line-height: 1.45; }
+
+  .bug-report .req, .bug-report .opt {
+    font-size: .68rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+    margin-left: .4rem; vertical-align: 1px;
+  }
+  .bug-report .req { color: #a85a44; }
+  .bug-report .opt { color: rgba(0,0,0,.4); }
+
+  .bug-report input[type="text"],
+  .bug-report input[type="email"],
+  .bug-report select,
+  .bug-report textarea {
+    width: 100%; box-sizing: border-box; font: inherit; color: inherit;
+    padding: .6rem .75rem; background: #fff;
+    border: 1px solid rgba(0,0,0,.18); border-radius: 7px;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .bug-report textarea { resize: vertical; line-height: 1.5; }
+  .bug-report input:focus-visible,
+  .bug-report select:focus-visible,
+  .bug-report textarea:focus-visible {
+    outline: none; border-color: rgba(122,92,110,.9);
+    box-shadow: 0 0 0 3px rgba(122,92,110,.18);
+  }
+
+  .bug-report .bug-check {
+    display: flex; gap: .6rem; align-items: flex-start;
+    font-weight: 400; font-size: .95rem; line-height: 1.5;
+    padding: .35rem 0; cursor: pointer;
+  }
+  .bug-report .bug-check input { margin-top: .2rem; flex: 0 0 auto; accent-color: #7a5c6e; }
+
+  .bug-report .bug-submit {
+    font: inherit; font-weight: 600; cursor: pointer;
+    background: #7a5c6e; color: #fff; border: 0;
+    padding: .7rem 1.5rem; border-radius: 8px; margin-top: .5rem;
+    transition: background .15s ease, opacity .15s ease;
+  }
+  .bug-report .bug-submit:hover { background: #6a4d5e; }
+  .bug-report .bug-submit:focus-visible { outline: 2px solid #7a5c6e; outline-offset: 3px; }
+  .bug-report .bug-submit:disabled { opacity: .55; cursor: default; }
+
+  .bug-report .bug-status { font-size: .92rem; margin: .9rem 0 0; min-height: 1.2em; }
+  .bug-report .bug-status[data-kind="success"] { color: #3f7a52; }
+  .bug-report .bug-status[data-kind="error"] { color: #b0432f; }
+  .bug-report .bug-status[data-kind="pending"] { opacity: .7; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bug-report * { transition: none !important; }
+  }
+</style>
+
+<script>
+(function () {
+  var form = document.getElementById('bug-form');
+  if (!form) return;
+  var statusEl = document.getElementById('bug-status');
+
+  // Get your free key at https://web3forms.com — same key works on both language pages.
+  var ACCESS_KEY = 'bb0cf9b0-9407-4b15-8357-f9c83f1dfe35';
+
+  function checkedValues(name) {
+    return Array.prototype.slice
+      .call(form.querySelectorAll('input[name="' + name + '"]:checked'))
+      .map(function (el) { return el.value; });
+  }
+  function setStatus(msg, kind) {
+    statusEl.textContent = msg;
+    statusEl.setAttribute('data-kind', kind || '');
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!form.reportValidity()) return;
+
+    var platform = checkedValues('platform');
+    var area = checkedValues('area');
+    if (platform.length === 0) { setStatus('Please select at least one platform.', 'error'); return; }
+    if (area.length === 0) { setStatus('Please select at least one affected area.', 'error'); return; }
+
+    var data = new FormData();
+    data.append('access_key', ACCESS_KEY);
+    data.append('subject', 'Mētra — Bug report');
+    data.append('from_name', 'Mētra — Bug reports');
+
+    data.append('Platform', platform.join(', '));
+    data.append('Affected area', area.join(', '));
+    data.append('App version', form.app_version.value);
+    data.append('OS version', form.os_version.value);
+    data.append('Device', form.device.value || '—');
+    data.append('Impact', form.impact.value);
+    data.append('Description', form.description.value);
+    data.append('Steps to reproduce', form.steps.value);
+    data.append('Expected behavior', form.expected.value);
+    data.append('Regression', form.regression.checked ? 'Yes — worked in a previous version' : 'No / not stated');
+    data.append('Last working version', form.last_working.value || '—');
+    data.append('Additional context', form.additional.value || '—');
+    data.append('Contact email', form.email.value || '—');
+    data.append('Submitted from', window.location.href);
+    data.append('Submitting browser', navigator.userAgent);
+    data.append('Submitted at', new Date().toLocaleString('en-GB'));
+
+    var btn = form.querySelector('.bug-submit');
+    setStatus('Sending…', 'pending');
+    btn.disabled = true;
+
+    fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      headers: { 'Accept': 'application/json' },
+      body: data
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (res.success) {
+          form.reset();
+          setStatus('Thanks! Your report has been sent.', 'success');
+        } else {
+          setStatus('Couldn’t send the report. Please try again shortly.', 'error');
+        }
+      })
+      .catch(function () {
+        setStatus('No connection. Check your network and try again.', 'error');
+      })
+      .then(function () { btn.disabled = false; });
+  });
+})();
+</script>
