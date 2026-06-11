@@ -11,7 +11,8 @@ navigation_it:
     url: /it/#novita
   - title: Privacy
     url: /it/privacy/
-
+  - title: Segnala un problma
+    url: /it/bug/
 # Navigation — English
 navigation_en:
   - title: Help
@@ -20,7 +21,8 @@ navigation_en:
     url: /en/#news
   - title: Privacy
     url: /en/privacy/
-
+  - title: Report an issue
+    url: /en/bug/
 # Theme
 remote_theme: false
 
