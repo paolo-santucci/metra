@@ -1,6 +1,6 @@
 ---
 layout: home
-title: Métra
+title: Mētra
 lang: en
 lang_ref: home
 permalink: /en/
