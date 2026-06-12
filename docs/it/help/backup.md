@@ -57,8 +57,6 @@ Il backup contiene:
 
 - Tutte le registrazioni giornaliere (flusso, dolore, sintomi, note).
 
-Le voci del ciclo **non** sono salvate separatamente: vengono ricalcolate automaticamente dalle registrazioni ripristinate.
-
 Le impostazioni dell'app (tema, lingua, notifiche, durata del ciclo di riferimento) **non** sono incluse nel backup. Dopo il ripristino dovrai riconfigurarle.
 
 **Non** include lo stato delle notifiche locali: vengono ricreate automaticamente dopo un ripristino.
@@ -74,7 +72,7 @@ Le impostazioni dell'app (tema, lingua, notifiche, durata del ciclo di riferimen
 3. Vai in **Impostazioni → Backup cloud**.
 4. Collega il tuo account Dropbox. Se sono presenti backup ti verrà indicato e sarà riportata la data dell'ultimo.
 5. Tocca **Ripristina da backup** e conferma nella finestra di avviso che i dati attuali verranno sostituiti.
-6. Apparirà un pannello con una rotella di selezione: scorri per scegliere la versione da ripristinare. Ogni voce mostra data, ora e dimensione del file (fino a 3 backup disponibili, il più recente è quello più in alto).
+6. Apparirà un pannello con una rotella di selezione: scorri per scegliere la versione da ripristinare. Ogni voce mostra data e ora (fino a 3 backup disponibili, il più recente è quello più in alto).
 7. Tocca **Ripristina** per confermare, oppure **Annulla** per tornare indietro.
 8. Inserisci la tua passphrase. Mētra scarica il backup scelto, lo decifra e sostituisce il database locale.
 

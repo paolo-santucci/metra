@@ -59,8 +59,6 @@ The backup contains:
 
 - All daily logs (flow, pain, symptoms, notes).
 
-Cycle entries are **not** stored separately — they are recomputed automatically from the restored logs.
-
 App settings (theme, language, notifications, cycle-length baseline) are **not** included. After restoring, you will need to re-configure those preferences.
 
 It does **not** include local notification schedule state: those are re-created automatically after a restore.
@@ -77,7 +75,7 @@ It does **not** include local notification schedule state: those are re-created 
 3. Go to **Settings → Cloud backup**.
 4. Connect your Dropbox account. If backups are found, Mētra will indicate it and show when the most recent one was created.
 5. Tap **Restore from backup** and confirm in the warning dialog that current data will be replaced.
-6. A picker sheet appears: scroll the wheel to select the backup version you want. Each entry shows date, time, and file size (up to 3 backups available, newest at the top).
+6. A picker sheet appears: scroll the wheel to select the backup version you want. Each entry shows date and time (up to 3 backups available, newest at the top).
 7. Tap **Restore** to confirm, or **Cancel** to go back.
 8. Enter your passphrase. Mētra downloads the chosen backup, decrypts it, and replaces the local database.
 
