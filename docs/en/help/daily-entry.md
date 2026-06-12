@@ -15,8 +15,7 @@ You can log or edit any present or past day from the [Calendar](/metra/en/help/c
 
 ## Today's entry
 
-<!-- SCREENSHOT PLACEHOLDER: daily-entry-today.png -->
-<!-- The Today screen with all sections expanded: flow chips, intensity dots, pain selector, symptom chips, notes textarea. -->
+![The Today screen with all sections expanded: flow chips, intensity dots, pain selector, symptom chips, notes textarea.](/assets/daily-entry-today-en.png)
 
 The Today screen shows the current date and four sections. What you fill in is your choice: every field is optional.
 
@@ -70,8 +69,7 @@ Tapping the already-selected circle deselects it — no pain data saved for that
 
 ### 3. Symptoms
 
-<!-- SCREENSHOT PLACEHOLDER: daily-entry-symptoms.png -->
-<!-- Symptom chip row: pre-defined chips + dashed "Add" chip. -->
+![Symptom chip row: pre-defined chips + dashed "Add" chip.](/assets/daily-entry-symptoms-en.png)
 
 A row of tappable chips. Tap to toggle a symptom on or off. Available symptoms:
 
