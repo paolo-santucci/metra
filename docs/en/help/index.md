@@ -16,7 +16,7 @@ The first time you open Mētra, there is no account to create and no email to en
 
 ### Screen 1 — Welcome
 
-![Welcome screen: Mētra wordmark, manifesto, 'Get started' button.](/metra/assets/onboarding-welcome-en.png)
+![Welcome screen: Mētra wordmark, manifesto, 'Get started' button.](/assets/onboarding-welcome-en.png)
 
 You see the **Mētra** wordmark and a short manifesto about what the app is — and what it isn't. Worth reading: it sets the frame before you log a single day.
 
@@ -26,7 +26,7 @@ Tap **Get started** to continue.
 
 ### Screen 2 — Your baseline data
 
-![Setup screen with three fields: last period start date, average cycle length, and typical period duration.](/metra/assets/onboarding-data-en.png)
+![Setup screen with three fields: last period start date, average cycle length, and typical period duration.](/assets/onboarding-data-en.png)
 
 Mētra  asks for three things so it can start making predictions calibrated to your cycle:
 
