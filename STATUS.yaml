@@ -1,5 +1,5 @@
 schema-version: 2
-last-updated: "2026-06-04T22:22:09+02:00"
+last-updated: "2026-06-12T00:00:00+02:00"
 active-plan: null
 last-plan: ".claude/docs/plans/archive/qp-20260525-backup-restore-toast.md"
 
@@ -54,39 +54,62 @@ long-plan:
 pending-consolidation: []
 
 recently-completed:
-  - date: "2026-06-03"
-    summary: "fix(android): keep app package in ProGuard — prevent R8 from stripping MainActivity under proguard-android-optimize.txt (74300a7)"
-  - date: "2026-06-03"
-    summary: "fix(android): add Tink+security-crypto ProGuard rules, KeepAliveService keep rule, REQUEST_IGNORE_BATTERY_OPTIMIZATIONS permission — fixes release APK cold-start crash (36052f9)"
-  - date: "2026-06-03"
-    summary: "fix(quality): replace deprecated SizeTransition.axisAlignment; suppress todo analyzer warnings (e4ed6c4)"
-  - date: "2026-06-03"
-    summary: "fix(l10n): sync ARB sources with restoreSuccessToast dart fix — restoreSuccessToast reads 'entries' in both ARB and generated dart (f660e21)"
-  - date: "2026-06-01"
-    summary: "fix(backup): wipe stale passphrase on connect — prevent false autoBackupActive (BUG-B06); bump pubspec to 1.0.2+13; tagged v1.0.2-rc19 (616e34d)"
+  - date: "2026-06-12"
+    summary: "docs: audit and update EN backup help page — replaced 3 screenshot placeholder comments with real image tags; fixed wording alignment to IT source; merged upstream changes (25 screenshot assets, content edits) via stash-pop with no conflicts"
+  - date: "2026-06-11"
+    summary: "docs: add bug report page to Jekyll site (IT+EN) + bug report link in app Settings l10n files (2b78f34..4f36fa5)"
+  - date: "2026-06-10"
+    summary: "feat: add bug report link to Settings screen (17af3b6)"
+  - date: "2026-06-10"
+    summary: "docs: update backup help pages (IT+EN) for passphrase handling precision (b679c2c)"
+  - date: "2026-06-10"
+    summary: "audit: backup help pages (IT+EN) vs. spec — 3 discrepancies found: wrong 'what is backed up', misleading passphrase-every-time UX copy, passphrase-stored precision gap"
 
 in-progress:
+  - title: "EN backup help page has uncommitted local edits"
+    state: "docs/en/help/backup.md has image tags + wording fix merged with upstream content edits; not yet committed."
+    touched:
+      - "docs/en/help/backup.md"
+    next-step: "Review diff and commit docs/en/help/backup.md with a docs: message."
+    blocker: null
+  - title: "Quality CI fix on branch fix/quality-3.41.9-compat (not pushed)"
+    state: "4 split commits fix the Quality workflow: lockfile re-pinned to Flutter 3.41.9, SizeTransition axisAlignment compat, relative-date notification tests, restore-toast wording. Full pipeline verified locally."
+    touched:
+      - "pubspec.lock"
+      - "lib/features/daily_entry/widgets/pain_intensity_slider.dart"
+      - "test/app_notification_wiring_test.dart"
+      - "test/domain/use_cases/schedule_prediction_notification_test.dart"
+      - "test/features/backup/backup_screen_test.dart"
+      - "test/integration/notification_link_restore_toast_test.dart"
+    next-step: "Push/merge fix/quality-3.41.9-compat into main so Quality CI goes green."
+    blocker: null
   - title: "main is now canonical (== old rollback/rc10); iOS black screen still to verify"
-    state: "main REPLACED with rollback/rc10 via fast-forward (origin/main had already been moved onto the rc10 line to eef96ca, so no force-push needed; old iOS commits preserved via v1.0.2-rc17 + earlier tags). main @469489d = working build: Android startup crash fixed (kotlin-android plugin applied), verified on Galaxy A32. rollback/rc10 branch deleted (redundant). android.yml trigger narrowed to main + v* tags + dispatch."
+    state: "main @4f36fa5. Android startup crash fixed (kotlin-android plugin applied), verified on Galaxy A32."
     touched:
       - "android/app/build.gradle.kts"
       - ".github/workflows/android.yml"
-    next-step: "Verify iOS rc20 TestFlight 1.0.2 (320) cold-start black screen (backup configured) is GONE — the last open blocker. When confirmed, cut a clean tag from main (v1.0.2-rc21 or v1.0.2 final) → one v* tag builds iOS TestFlight + Android signed artifacts."
-    blocker: "Awaiting iOS black-screen verification on TestFlight (Android crash fixed; main consolidated)"
+    next-step: "Verify iOS rc20 TestFlight 1.0.2 (320) cold-start black screen (backup configured) is GONE."
+    blocker: "Awaiting iOS black-screen verification on TestFlight"
 
 next-steps:
+  - "Commit uncommitted docs/en/help/backup.md edits (image tags + wording fix)"
   - "Verify iOS rc20 TestFlight 1.0.2 (320) cold-start black screen (backup configured) is GONE — last open blocker before v1.0.2 final"
+  - "Push/merge branch fix/quality-3.41.9-compat into main to make the Quality CI workflow green again"
   - "When iOS verified: tag v1.0.2 (or rc21) from main → v* trigger builds iOS TestFlight + Android signed split-APKs + AAB in one shot"
-  - "Re-attempt dependency upgrades (KGP phase 2: secure_storage 10.x, file_picker 11.x, timezone 5.x) only AFTER 1.0.2 ships — they did not fix the black screen and reintroduced it"
+  - "Re-attempt dependency upgrades (KGP phase 2: secure_storage 10.x, file_picker 11.x, timezone 5.x) only AFTER 1.0.2 ships"
   - "FR-16 TestFlight sign-off: cold-start with iOS notification permission revoked → in-app toggle reflects 'off'"
   - "Consider adding universal fat APK build to CI alongside split APKs for easier sideload testing distribution"
   - "Screenshot refresh for backup-connected IT+EN (deferred — requires Android emulator with IT/EN locale)"
 
 known-issues:
   - severity: critical
-    description: "Android startup crash (ClassNotFoundException MainActivity) on rollback/rc10 — FIXED. Real cause: org.jetbrains.kotlin.android was declared in settings.gradle.kts but never applied in app/build.gradle.kts, and android.builtInKotlin=false, so MainActivity.kt was never compiled into the APK. The -keep ProGuard rule (74300a7) was a misdiagnosis. Fix applied + verified on Galaxy A32. SEPARATE open item: iOS cold-start black screen (backup configured) — rollback/rc10 reverts the KGP-2 dep upgrade as candidate fix; still pending TestFlight device verification (rc20 build 320)."
+    description: "iOS cold-start black screen (backup configured) — open. rollback/rc10 (now == main) reverts the KGP-2 dep upgrade as candidate fix; still pending TestFlight device verification (rc20 build 320). Android ClassNotFoundException crash is FIXED."
     impact: high
-    workaround: "Release line = rollback/rc10 only. Android fix committed; CI rebuild produces working signed APKs. iOS black screen still to confirm on device before tagging v1.0.2 final."
+    workaround: "Confirm iOS black screen gone on device before tagging v1.0.2 final. Android CI rebuild produces working signed APKs."
+  - severity: warning
+    description: "Local distrobox lacks the libsqlite3.so symlink, so DB/SQLCipher tests fail locally. CI (ubuntu) has the lib."
+    impact: low
+    workaround: "ln -sf /usr/lib/x86_64-linux-gnu/libsqlite3.so.0 /tmp/sqlitelib/libsqlite3.so then run flutter test with LD_LIBRARY_PATH=/tmp/sqlitelib"
   - severity: warning
     description: "share_plus and package_info_plus still bundle KGP; share_plus 12.x has Kotlin K2 compilation bug; unblocks when file_picker 12.x is stable"
     impact: low
@@ -95,10 +118,6 @@ known-issues:
     description: "save_daily_log_test.dart future date rejection — intermittent failure near Italian midnight UTC (timezone/DST boundary)"
     impact: medium
     workaround: null
-  - severity: warning
-    description: "Screenshot refresh for backup-connected IT+EN deferred — requires Android emulator with IT/EN locale"
-    impact: low
-    workaround: "Old screenshots remain in help docs; text is correct; refresh at next manual QA session"
   - severity: warning
     description: "iOS PermissionDenied vs PermissionBlocked indistinguishable via flutter_local_notifications v17 — both return PermissionBlocked"
     impact: low

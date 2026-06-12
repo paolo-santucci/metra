@@ -21,8 +21,7 @@ When you enable it, Mētra encrypts your entire database on your device **before
 
 ## Connecting a cloud provider
 
-<!-- SCREENSHOT PLACEHOLDER: backup-connect.png -->
-<!-- Backup screen before connection: Dropbox connect button. -->
+![Backup screen before connection: Dropbox connect button.](/assets/backup-connect-en.png)
 
 1. Go to **Settings → Cloud backup**.
 2. Tap **Connect Dropbox**.
@@ -35,8 +34,7 @@ Mētra requests the minimum permissions: only access to a dedicated app folder, 
 
 ## Creating a backup
 
-<!-- SCREENSHOT PLACEHOLDER: backup-connected.png -->
-<!-- Backup screen after connection: connected email, last backup date, "Back up now" and "Disconnect" buttons. -->
+![Backup screen after connection: connected email, last backup date, "Back up now" and "Disconnect" buttons.](/assets/backup-connected-en.png)
 
 Once connected:
 
@@ -67,8 +65,7 @@ It does **not** include local notification schedule state: those are re-created 
 
 ## Restoring from a backup
 
-<!-- SCREENSHOT PLACEHOLDER: backup-restore.png -->
-<!-- Restore flow: backup picker sheet (scroll wheel), then passphrase entry, then progress and success confirmation. -->
+![Restore flow: backup picker sheet (scroll wheel), then passphrase entry, then progress and success confirmation.](/assets/backup-restore-en.png)
 
 1. Install Mētra on the new device (or after a factory reset).
 2. Complete the onboarding flow, the baseline numbers do not matter, they will be overwritten by the restore.
@@ -87,7 +84,7 @@ It does **not** include local notification schedule state: those are re-created 
 
 Tap **Disconnect** in the backup screen to unlink the cloud account. The backup files already on the cloud are **not deleted**, you must delete them manually from the Dropbox app or website.
 
-Mētra now retains up to the 3 most recent encrypted blobs in the App folder.
+Mētra retains up to the 3 most recent encrypted backups in the app folder.
 
 ---
 
