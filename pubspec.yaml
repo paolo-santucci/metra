@@ -29,7 +29,7 @@ dependencies:
   path_provider: ^2.1.0
 
   # DB encryption (added in P-0b)
-  sqlcipher_flutter_libs: ^0.5.4
+  sqlcipher_flutter_libs: ^0.6.8
   sqlite3: ^2.4.4 # required to call open.overrideFor in production code
 
   # Cryptography (added in P-0b)
