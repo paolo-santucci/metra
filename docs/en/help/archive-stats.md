@@ -17,8 +17,7 @@ The **Archive** tab (wave icon) holds the full record of your logged entries. Th
 
 ### Timeline view
 
-<!-- SCREENSHOT PLACEHOLDER: archive-timeline.png -->
-<!-- Timeline view: a vertical list of cycle cards, each showing start date, length, flow pill, and symptom chips. -->
+![Timeline view: a vertical list of cycle cards, each showing start date, length, flow pill, and symptom chips.](/assets/archive-timeline-en.png)
 
 The Timeline view groups your entries by **cycle**, one card per cycle, most recent at the top, earliest at the bottom. Each card shows:
 
@@ -35,8 +34,7 @@ Scroll up to go further back.
 
 ### Table view
 
-<!-- SCREENSHOT PLACEHOLDER: archive-table.png -->
-<!-- Table view: rows are months, columns are month, cycle, duration, flow. Colour-coded cells. -->
+![Table view: rows are months, columns are month, cycle, duration, flow. Colour-coded cells.](/assets/archive-table-en.png)
 
 The Table view shows one row per logged month, useful when you want to compare several months at a glance. Columns:
 
@@ -51,8 +49,7 @@ The Table view shows one row per logged month, useful when you want to compare s
 
 ## Statistics tab
 
-<!-- SCREENSHOT PLACEHOLDER: stats-overview.png -->
-<!-- Statistics screen: four summary cards at top, then bar charts. -->
+![Statistics screen: four summary cards at top, then bar charts.](/assets/stats-overview-en.png)
 
 The **Statistics** tab is the numerical side of the same archive: where the Timeline and Table show individual days, here Mētra calculates averages and distributions across the full set of parameters logged during your cycles. All calculations run locally on your device — no external service ever sees these numbers.
 
@@ -93,8 +90,7 @@ A bar chart showing the average pain intensity for each cycle in chronological o
 
 ### Symptom frequency chart
 
-<!-- SCREENSHOT PLACEHOLDER: stats-symptoms-chart.png -->
-<!-- Horizontal bar chart: one bar per symptom type, length = percentage of cycles in which it appeared. -->
+![Horizontal bar chart: one bar per symptom type, length = percentage of cycles in which it appeared.](/assets/stats-symptoms-chart-en.png)
 
 A horizontal bar chart showing how often each symptom has appeared across your recorded cycles. The most frequent symptoms appear at the top. Over time, a pattern you had not noticed can become clear.
 

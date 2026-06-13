@@ -18,8 +18,7 @@ The **Settings** tab is where you shape the app to fit your habits: choose the l
 
 ## Preferences
 
-<!-- SCREENSHOT PLACEHOLDER: settings-preferences.png -->
-<!-- Preferences section showing the three rows: Language, Theme, First day of week. -->
+![Preferences section showing the three rows: Language, Theme, First day of week.](/assets/settings-preferences-en.png)
 
 Appearance and language: three settings that determine how Mētra looks every time you open it.
 
@@ -35,8 +34,7 @@ Appearance and language: three settings that determine how Mētra looks every ti
 
 ## Notifications
 
-<!-- SCREENSHOT PLACEHOLDER: settings-notifications.png -->
-<!-- Notifications section with the Cycle reminder toggle on and the two configuration rows (Advance notice, Reminder time). -->
+![Notifications section with the Cycle reminder toggle on and the two configuration rows (Advance notice, Reminder time).](/assets/settings-notifications-en.png)
 
 Mētra does not send notifications unless you turn them on. If you want a reminder, you enable it; if you do not, the app stays silent.
 
@@ -56,8 +54,7 @@ The two configuration rows are active only when the reminder is enabled.
 
 ## Log
 
-<!-- SCREENSHOT PLACEHOLDER: settings-log.png -->
-<!-- Log section with the two toggles: Pain and Daily notes. -->
+![Log section with the two toggles: Pain and Daily notes.](/assets/settings-log-en.png)
 
 Not everyone tracks the same things. These two toggles decide which fields appear on the daily log screen.
 
@@ -71,8 +68,7 @@ See [Daily entry](/en/help/daily-entry/) for a description of all log fields.
 
 ## Data
 
-<!-- SCREENSHOT PLACEHOLDER: settings-data.png -->
-<!-- Data section with the Cloud backup row (status), Export CSV, and Import CSV rows. -->
+![Data section with the Cloud backup row (status), Export CSV, and Import CSV rows.](/assets/settings-data-en.png)
 
 From here you decide whether and how your data moves: to an encrypted cloud backup, out as a CSV file, or in from a file you exported elsewhere.
 
@@ -86,8 +82,7 @@ From here you decide whether and how your data moves: to an encrypted cloud back
 
 ## About
 
-<!-- SCREENSHOT PLACEHOLDER: settings-about.png -->
-<!-- About section with the three rows: Guide, Source code, Privacy policy. -->
+![About section with the three rows: Guide, Source code, Privacy policy.](/assets/settings-about-en.png)
 
 Where to find this documentation, the source code, and the statement on how data is handled.
 
@@ -103,8 +98,7 @@ At the bottom of the screen you will find the app version number and a link to t
 
 ## Irreversible actions
 
-<!-- SCREENSHOT PLACEHOLDER: settings-danger.png -->
-<!-- Irreversible actions section with the red "Delete all data" row. -->
+![Irreversible actions section with the red "Delete all data" row.](/assets/settings-danger-en.png)
 
 **Delete all data**: tap this row to open a confirmation dialog. If you confirm, Mētra wipes the local database: all daily entries and cycles are deleted. App settings remain unchanged.
 

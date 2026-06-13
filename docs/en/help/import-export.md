@@ -22,8 +22,7 @@ Practical uses:
 
 ## Exporting your data
 
-<!-- SCREENSHOT PLACEHOLDER: settings-export.png -->
-<!-- Settings screen with the "Export CSV" row highlighted. -->
+![Settings screen with the "Export CSV" row highlighted.](/assets/settings-export-en.png)
 
 1. Go to **Settings**.
 2. Tap **Export CSV**.
@@ -35,8 +34,7 @@ The export includes one row per day with logged data, in reverse chronological o
 
 ## Importing data
 
-<!-- SCREENSHOT PLACEHOLDER: settings-import.png -->
-<!-- Settings screen with the "Import CSV" row highlighted. The import confirmation dialog. -->
+![Settings screen with the "Import CSV" row highlighted.](/assets/settings-import-en.png)
 
 1. Go to **Settings**.
 2. Tap **Import CSV**.
@@ -44,6 +42,8 @@ The export includes one row per day with logged data, in reverse chronological o
 4. Mētra  parses the file. If any rows contain errors, Mētra  shows a summary before you commit: you can cancel at this point.
 5. Mētra  shows the **Import mode** dialog. Choose one of the three options described below.
 6. Confirm to apply.
+
+![Import confirmation dialog.](/assets/settings-import-confirm-en.png)
 
 ### Import modes
 

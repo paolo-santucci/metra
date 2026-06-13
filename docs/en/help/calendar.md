@@ -15,8 +15,7 @@ The **Calendar** tab is the main screen of Mētra. This is where the app's visua
 
 ## The monthly grid
 
-<!-- SCREENSHOT PLACEHOLDER: calendar-overview.png -->
-<!-- Full calendar screen showing a typical month with flow days, a predicted window, and symptom dots. -->
+![Full calendar screen showing a typical month with flow days, a predicted window, and symptom dots.](/assets/calendar-overview-en.png)
 
 Each day is a small cell. Past days may have coloured cells and icons under the day number; future days may carry prediction markers.
 
@@ -55,8 +54,7 @@ Five icons complete the vocabulary. They appear **under the day number** in the 
 
 ## The legend strip
 
-<!-- SCREENSHOT PLACEHOLDER: calendar-legend.png -->
-<!-- The thin legend bar beneath the day-of-week header showing all five icons with their labels. -->
+![The thin legend bar beneath the day-of-week header showing all five icons with their labels.](/assets/calendar-legend-en.png)
 
 The legend strip sits just below the calendar grid. It shows the five icons described above with their labels: the full vocabulary, always in view.
 
