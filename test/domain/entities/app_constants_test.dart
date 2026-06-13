@@ -25,10 +25,7 @@ void main() {
     // pubspec.yaml automatically across releases.
 
     test('kUrlHelp points to the help index', () {
-      expect(
-        AppConstants.kUrlHelp,
-        'https://paolo-santucci.github.io/metra/help/',
-      );
+      expect(AppConstants.kUrlHelp, 'https://metra.paolosantucci.com/help/');
     });
 
     test('kUrlGitHub points to the GitHub repository', () {
@@ -41,7 +38,14 @@ void main() {
     test('kUrlPrivacy points to the privacy policy page', () {
       expect(
         AppConstants.kUrlPrivacy,
-        'https://paolo-santucci.github.io/metra/privacy/',
+        'https://metra.paolosantucci.com/privacy/',
+      );
+    });
+
+    test('kUrlBug points to the bug report page', () {
+      expect(
+        AppConstants.kUrlBug,
+        'https://metra.paolosantucci.com/bug/',
       );
     });
 
