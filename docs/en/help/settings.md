@@ -88,6 +88,8 @@ Where to find this documentation, the source code, and the statement on how data
 
 **Guide**: opens this documentation in a browser.
 
+**Report an issue**: opens a form in a browser to report an issue in the app.
+
 **Source code**: opens the Mētra GitHub repository. The app is distributed under the GPL-3.0 licence: anyone can read, modify, and redistribute the source code.
 
 **Privacy policy**: opens the privacy statement in a browser.

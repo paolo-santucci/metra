@@ -88,6 +88,8 @@ Dove trovare questa documentazione, il codice e la dichiarazione su come i dati 
 
 **Guida**: apre questa documentazione nel browser.
 
+**Segnala un problema**: apre nel browser un modulo per segnalare eventuali problemi dell'appicazione.
+
 **Codice sorgente**: apre il repository GitHub di Mētra. L'app è distribuita con licenza GPL-3.0: chiunque può leggere, modificare e ridistribuire il codice sorgente.
 
 **Informativa sulla privacy**: apre l'informativa sulla privacy nel browser.
