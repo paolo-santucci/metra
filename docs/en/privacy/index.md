@@ -8,7 +8,7 @@ permalink: /en/privacy/
 
 # Métra — Privacy Policy
 
-**Last updated: 2026-04-29**
+**Last updated: 2026-06-14**
 
 ## What data Métra collects
 
@@ -17,6 +17,22 @@ Métra stores only the data you enter: cycle dates, flow intensity, pain symptom
 ## Optional cloud backup
 
 If you connect Dropbox, Métra uploads an encrypted backup blob. The blob is encrypted on your device with a passphrase you choose. Dropbox cannot read your data. The developer cannot read your data. There is no password reset — you are the only holder of your key.
+
+## How long we keep your data
+
+Mētra sets no time limit and applies no automatic expiry: your data stays on your device for as long as you decide. Because there is no server operated by the developer, there is no remote location where your data could be retained or stored without your knowledge. Data persists locally until you delete it or uninstall the app.
+
+If you enabled Dropbox backup, the encrypted blob stays in your own Dropbox account until you delete it: it is kept in your own cloud storage, under your control, and never in a system run by the developer.
+
+## How to delete your data
+
+You stay in full control and can delete your data at any time, directly from the app:
+
+- **A single entry:** open it and use the day's delete action.
+- **All data:** open Settings → "Delete all data." This is irreversible and removes your entire log from the local encrypted database.
+- **Uninstalling:** removing the app from your device deletes the local encrypted database along with it.
+
+If you used Dropbox backup, remember to also delete the backup file from the app's folder in your Dropbox account: that file remains in your own cloud storage until you remove it.
 
 ## Third-party services
 
