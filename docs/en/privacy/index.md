@@ -6,17 +6,17 @@ lang_ref: privacy-policy
 permalink: /en/privacy/
 ---
 
-# Métra — Privacy Policy
+# Mētra — Privacy Policy
 
 **Last updated: 2026-06-14**
 
-## What data Métra collects
+## What data Mētra collects
 
-Métra stores only the data you enter: cycle dates, flow intensity, pain symptoms, and notes. All data is saved **locally on your device** using an encrypted database (SQLCipher AES-256). No data is ever sent to any server operated by the app developer.
+Mētra stores only the data you enter: cycle dates, flow intensity, pain symptoms, and notes. All data is saved **locally on your device** using an encrypted database (SQLCipher AES-256). No data is ever sent to any server operated by the app developer.
 
 ## Optional cloud backup
 
-If you connect Dropbox, Métra uploads an encrypted backup blob. The blob is encrypted on your device with a passphrase you choose. Dropbox cannot read your data. The developer cannot read your data. There is no password reset — you are the only holder of your key.
+If you connect Dropbox, Mētra uploads an encrypted backup blob. The blob is encrypted on your device with a passphrase you choose. Dropbox cannot read your data. The developer cannot read your data. There is no password reset — you are the only holder of your key.
 
 ## How long we keep your data
 
