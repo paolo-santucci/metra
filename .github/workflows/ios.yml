@@ -2,11 +2,14 @@ name: iOS
 
 on:
   push:
-    branches: [main]
+    branches: 
+      - main
+      - metra-1.1.0
     tags: ['v*']
   pull_request:
     branches: [main]
-
+  workflow_dispatch:
+  
 jobs:
   build_ios:
     runs-on: macos-15
