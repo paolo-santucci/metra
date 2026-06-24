@@ -8,7 +8,8 @@ import 'dart:typed_data';
 import 'package:metra/core/errors/metra_exception.dart';
 import 'package:metra/data/services/backup/backup_file_entry.dart';
 import 'package:metra/data/services/backup/backup_filename.dart';
-import 'package:metra/data/services/backup/dropbox_provider.dart';
+import 'package:metra/data/services/backup/cloud_backup_provider.dart';
+import 'package:metra/domain/entities/sync_log_entity.dart';
 
 /// In-memory [CloudBackupProvider] for tests.
 ///
@@ -66,6 +67,9 @@ class FakeDropboxProvider implements CloudBackupProvider {
   /// filename instead of removing it from [files]. The call is still recorded
   /// in [deleteCalls].
   Map<String, Exception>? deleteThrows;
+
+  @override
+  SyncProvider get id => SyncProvider.dropbox;
 
   @override
   Future<void> authorize() async {}

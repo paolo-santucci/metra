@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/constants/app_constants.dart';
 
@@ -25,5 +27,24 @@ void main() {
 
   test('AppConstants exposes kDefaultNotificationTimeMinutes = 540', () {
     expect(AppConstants.kDefaultNotificationTimeMinutes, 540);
+  });
+
+  group('kBackupPassphraseKey', () {
+    test('value equals metra_backup_passphrase_v1', () {
+      expect(
+        AppConstants.kBackupPassphraseKey,
+        equals('metra_backup_passphrase_v1'),
+      );
+    });
+  });
+
+  group('Domain purity', () {
+    test('app_constants.dart does not import package:flutter', () {
+      // Read the app_constants.dart source file and verify no Flutter import
+      final file = File('lib/core/constants/app_constants.dart');
+      final content = file.readAsStringSync();
+      expect(content, isNot(contains('import \'package:flutter/')));
+      expect(content, isNot(contains('import "package:flutter/')));
+    });
   });
 }

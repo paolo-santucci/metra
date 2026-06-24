@@ -18,6 +18,7 @@
 import 'package:metra/core/constants/app_constants.dart';
 import 'package:metra/core/util/nullable.dart';
 import 'package:metra/domain/entities/first_day_of_week_setting.dart';
+import 'package:metra/domain/entities/sync_log_entity.dart';
 
 class AppSettingsData {
   AppSettingsData({
@@ -37,6 +38,9 @@ class AppSettingsData {
     // NOT in copyWith — owned by updateBackupSuspended (dedicated-writer pattern).
     // See AppSettingsRepository.updateBackupSuspended.
     this.backupSuspended = false,
+    // NOT in copyWith — owned by setActiveProvider (dedicated-writer pattern).
+    // See AppSettingsRepository.setActiveProvider.
+    this.activeProvider = SyncProvider.dropbox,
   }) {
     if (notificationDaysBefore < 1 || notificationDaysBefore > 7) {
       throw ArgumentError.value(
@@ -107,6 +111,12 @@ class AppSettingsData {
   /// See AppSettingsRepository.updateBackupSuspended.
   final bool backupSuspended;
 
+  /// The currently active cloud backup provider.
+  ///
+  /// NOT in copyWith — owned by setActiveProvider (dedicated-writer pattern).
+  /// See AppSettingsRepository.setActiveProvider.
+  final SyncProvider activeProvider;
+
   // lastLogOrSymptomWriteAt intentionally omitted from copyWith — it is
   // written exclusively via updateLastDataWriteAt() and must never be reset
   // to null by a general settings update. Mirrors the declaredCycleLength
@@ -114,6 +124,9 @@ class AppSettingsData {
   //
   // backupSuspended intentionally omitted from copyWith — dedicated-writer
   // pattern, written exclusively via updateBackupSuspended().
+  //
+  // activeProvider intentionally omitted from copyWith — dedicated-writer
+  // pattern, written exclusively via setActiveProvider().
   AppSettingsData copyWith({
     String? languageCode,
     Nullable<bool>? darkMode,
@@ -151,6 +164,8 @@ class AppSettingsData {
       lastLogOrSymptomWriteAt: lastLogOrSymptomWriteAt,
       // backupSuspended preserved as-is — dedicated-writer pattern.
       backupSuspended: backupSuspended,
+      // activeProvider preserved as-is — dedicated-writer pattern.
+      activeProvider: activeProvider,
     );
   }
 
@@ -172,7 +187,8 @@ class AppSettingsData {
           notificationTimeMinutes == other.notificationTimeMinutes &&
           firstDayOfWeek == other.firstDayOfWeek &&
           lastLogOrSymptomWriteAt == other.lastLogOrSymptomWriteAt &&
-          backupSuspended == other.backupSuspended;
+          backupSuspended == other.backupSuspended &&
+          activeProvider == other.activeProvider;
 
   @override
   int get hashCode =>
@@ -189,7 +205,8 @@ class AppSettingsData {
       notificationTimeMinutes.hashCode ^
       firstDayOfWeek.hashCode ^
       lastLogOrSymptomWriteAt.hashCode ^
-      backupSuspended.hashCode;
+      backupSuspended.hashCode ^
+      activeProvider.hashCode;
 }
 
 class _AppSettingsDataDefaults extends AppSettingsData {
@@ -204,5 +221,6 @@ class _AppSettingsDataDefaults extends AppSettingsData {
           onboardingCompleted: false,
           notificationTimeMinutes: AppConstants.kDefaultNotificationTimeMinutes,
           firstDayOfWeek: FirstDayOfWeekSetting.system,
+          activeProvider: SyncProvider.dropbox,
         );
 }

@@ -25,6 +25,117 @@ import 'package:metra/domain/entities/sync_log_entity.dart';
 AppDatabase _openTestDb() => AppDatabase(NativeDatabase.memory());
 
 void main() {
+  // ---- TASK-01: wire-map pure functions (no DB required) ----
+
+  group('wire-map pure functions (no DB required)', () {
+    group('providerToString', () {
+      test(
+        'given_dropbox_when_converting_to_string_then_returns_dropbox',
+        () {
+          expect(
+            DriftSyncLogRepository.providerToString(SyncProvider.dropbox),
+            'dropbox',
+          );
+        },
+      );
+
+      test(
+        'given_googleDrive_when_converting_to_string_then_returns_google_drive',
+        () {
+          expect(
+            DriftSyncLogRepository.providerToString(SyncProvider.googleDrive),
+            'google_drive',
+          );
+        },
+      );
+
+      test(
+        'given_iCloud_when_converting_to_string_then_returns_icloud',
+        () {
+          expect(
+            DriftSyncLogRepository.providerToString(SyncProvider.iCloud),
+            'icloud',
+          );
+        },
+      );
+
+      test(
+        'given_all_providers_when_converting_to_string_then_results_are_string_based_not_positional',
+        () {
+          // Verifies wire strings are hard-coded names, not enum index or .name.
+          // If code used .name, dropbox→"dropbox" (coincidentally correct) but
+          // googleDrive→"googleDrive" (not "google_drive") and iCloud→"iCloud"
+          // (not "icloud") — these assertions catch any .name regression.
+          expect(
+            DriftSyncLogRepository.providerToString(SyncProvider.googleDrive),
+            isNot(SyncProvider.googleDrive.name),
+          );
+          expect(
+            DriftSyncLogRepository.providerToString(SyncProvider.iCloud),
+            isNot(SyncProvider.iCloud.name),
+          );
+        },
+      );
+    });
+
+    group('stringToProvider', () {
+      test(
+        'given_dropbox_string_when_converting_then_returns_dropbox',
+        () {
+          expect(
+            DriftSyncLogRepository.stringToProvider('dropbox'),
+            SyncProvider.dropbox,
+          );
+        },
+      );
+
+      test(
+        'given_google_drive_string_when_converting_then_returns_googleDrive',
+        () {
+          expect(
+            DriftSyncLogRepository.stringToProvider('google_drive'),
+            SyncProvider.googleDrive,
+          );
+        },
+      );
+
+      test(
+        'given_icloud_string_when_converting_then_returns_iCloud',
+        () {
+          expect(
+            DriftSyncLogRepository.stringToProvider('icloud'),
+            SyncProvider.iCloud,
+          );
+        },
+      );
+
+      test(
+        'given_unknown_value_when_converting_then_throws_StateError',
+        () {
+          expect(
+            () => DriftSyncLogRepository.stringToProvider('unknown_value'),
+            throwsA(isA<StateError>()),
+          );
+        },
+      );
+
+      test(
+        'given_oneDrive_legacy_string_when_converting_then_throws_StateError',
+        () {
+          // The read path stays strict: unknown values throw, never silently map.
+          expect(
+            () => DriftSyncLogRepository.stringToProvider('one_drive'),
+            throwsA(isA<StateError>()),
+          );
+        },
+      );
+    });
+  });
+
+  // ---- end TASK-01 ----
+
+  // ---- DB-dependent tests (GREEN-ON-CI-ONLY: require native sqlite3) ----
+
   late AppDatabase db;
   late SyncLogDao dao;
   late DriftSyncLogRepository repo;

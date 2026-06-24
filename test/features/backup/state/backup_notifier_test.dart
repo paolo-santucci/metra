@@ -15,10 +15,11 @@ import 'package:metra/core/utils/result.dart';
 import 'package:metra/data/database/app_database.dart';
 import 'package:metra/data/repositories/drift_app_settings_repository.dart';
 import 'package:metra/data/services/backup/backup_file_entry.dart';
-import 'package:metra/data/services/backup/dropbox_provider.dart';
+import 'package:metra/data/services/backup/cloud_backup_provider.dart';
 import 'package:metra/domain/entities/sync_log_entity.dart';
 import 'package:metra/domain/use_cases/backup_data.dart';
 import 'package:metra/domain/use_cases/restore_data.dart';
+import 'package:metra/core/constants/app_constants.dart';
 import 'package:metra/features/backup/state/backup_notifier.dart';
 import 'package:metra/features/backup/state/backup_state.dart';
 import 'package:metra/providers/backup_providers.dart';
@@ -102,6 +103,9 @@ class _AligningRestoreRunner implements BackupRunner {
 class _ThrowingDropboxProvider implements CloudBackupProvider {
   _ThrowingDropboxProvider(this.error);
   final Object error;
+
+  @override
+  SyncProvider get id => SyncProvider.dropbox;
 
   @override
   Future<void> authorize() => Future.error(error);
@@ -1797,6 +1801,254 @@ void main() {
           connected.passphraseSet,
           isFalse,
           reason: 'no passphrase stored → passphraseSet must be false',
+        );
+      },
+    );
+  });
+
+  // -----------------------------------------------------------------------
+  // TASK-09 — FR-18, FR-19, FR-23
+  // Connected-predicate seam, skip-log provider literal swaps, passphrase
+  // constant (FR-23 closure).
+  // -----------------------------------------------------------------------
+  group('TASK-09 — FR-18 / FR-19 / FR-23', () {
+    // ----------------------------------------------------------------
+    // Static-analysis grep tests — verify code properties, not runtime values.
+    // These must FAIL before the refactor and PASS after.
+    // ----------------------------------------------------------------
+
+    test(
+      'FR-23 static: backup_notifier.dart contains no "metra_backup_passphrase_v1" '
+      'string literal (must delegate to AppConstants.kBackupPassphraseKey)',
+      () async {
+        final file = File(
+          'lib/features/backup/state/backup_notifier.dart',
+        );
+        final content = await file.readAsString();
+        expect(
+          content,
+          isNot(contains("'metra_backup_passphrase_v1'")),
+          reason:
+              'FR-23: the literal "metra_backup_passphrase_v1" must be removed '
+              'from backup_notifier.dart — only AppConstants.kBackupPassphraseKey '
+              'may carry the value',
+        );
+      },
+    );
+
+    test(
+      'FR-18 static: backup_notifier.dart contains no "SyncProvider.dropbox" '
+      'literals at the skip-log sites in backupSilent() '
+      '(must use settings.activeProvider)',
+      () async {
+        final file = File(
+          'lib/features/backup/state/backup_notifier.dart',
+        );
+        final content = await file.readAsString();
+        // After the refactor the file may still reference SyncProvider.dropbox
+        // in comments or other contexts, but the count of occurrences inside
+        // backupSilent() at the SyncLogEntity provider: argument must be 0.
+        // We assert total occurrences of the literal in backupSilent are 0
+        // by checking that no "provider: SyncProvider.dropbox" appears in
+        // the file (the only production usage was the two skip-log sites).
+        expect(
+          content,
+          isNot(contains('provider: SyncProvider.dropbox')),
+          reason: 'FR-18: the two "provider: SyncProvider.dropbox" literals in '
+              'backupSilent() must be replaced with settings.activeProvider; '
+              'no "provider: SyncProvider.dropbox" must remain in the file',
+        );
+      },
+    );
+
+    test(
+      'FR-19 static: backup_notifier.dart has no inline "dropboxEmail == null" '
+      'and settings_screen.dart has no inline dropboxEmail checks '
+      '(predicate behind a single _isConnected seam)',
+      () async {
+        final notifierFile = File(
+          'lib/features/backup/state/backup_notifier.dart',
+        );
+        final settingsFile = File(
+          'lib/features/settings/settings_screen.dart',
+        );
+        final notifierContent = await notifierFile.readAsString();
+        final settingsContent = await settingsFile.readAsString();
+
+        // The positive-null form ("== null") must be completely absent from
+        // the notifier — the seam definition uses the negative form ("!= null")
+        // and that is the single allowed occurrence of the predicate body.
+        expect(
+          notifierContent,
+          isNot(contains('dropboxEmail == null')),
+          reason: 'FR-19: inline "dropboxEmail == null" must be removed from '
+              'backup_notifier.dart — only _isConnected may derive the predicate',
+        );
+        // The seam (_isConnected) must exist — verify the production expression
+        // "settings.dropboxEmail != null" is present exactly once.
+        // (Doc-comment occurrences of the bare form "dropboxEmail != null" are
+        // allowed and not counted here — we grep for the qualified form.)
+        final seamCount =
+            'settings.dropboxEmail != null'.allMatches(notifierContent).length;
+        expect(
+          seamCount,
+          equals(1),
+          reason:
+              'FR-19: "settings.dropboxEmail != null" must appear exactly once '
+              'in backup_notifier.dart — the _isConnected seam body. '
+              'Actual count: $seamCount',
+        );
+        // settings_screen.dart must have zero occurrences of either form.
+        expect(
+          settingsContent,
+          isNot(contains('dropboxEmail == null')),
+          reason:
+              'FR-19: no inline dropboxEmail checks in settings_screen.dart',
+        );
+        expect(
+          settingsContent,
+          isNot(contains('dropboxEmail != null')),
+          reason:
+              'FR-19: no inline dropboxEmail checks in settings_screen.dart',
+        );
+      },
+    );
+
+    // FR-23 closure: kPassphraseKey resolves to the right string value;
+    // the constant in AppConstants must also match.
+    test(
+      'FR-23: BackupNotifier.kPassphraseKey value equals '
+      'AppConstants.kBackupPassphraseKey (same storage key, no literal in notifier)',
+      () {
+        // The constant must resolve to the canonical key so that
+        // secure-storage reads/writes are byte-identical before and after
+        // this refactor.  The notifier exposes kPassphraseKey publicly
+        // so callers (e.g. BackupScreen) can read the cached value without
+        // hardcoding the string; that value must equal AppConstants.kBackupPassphraseKey.
+        expect(
+          BackupNotifier.kPassphraseKey,
+          equals(AppConstants.kBackupPassphraseKey),
+          reason:
+              'FR-23: kPassphraseKey must delegate to AppConstants.kBackupPassphraseKey '
+              '— the resolved value must remain "metra_backup_passphrase_v1"',
+        );
+        // Belt-and-suspenders: verify the canonical value itself is unchanged.
+        expect(
+          BackupNotifier.kPassphraseKey,
+          equals('metra_backup_passphrase_v1'),
+          reason: 'the resolved storage key must stay byte-identical to the '
+              'historic value to preserve existing KeyChain/Encrypted-SharedPrefs entries',
+        );
+      },
+    );
+
+    // FR-19: connected-predicate Dropbox-correct — non-null email → connected,
+    // null → disconnected.  This verifies the predicate seam produces the
+    // correct result without testing its internal implementation.
+    test(
+      'FR-19: non-null dropboxEmail resolves to BackupConnected (seam correct)',
+      () async {
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'user@dropbox.test',
+          lastBackupAt: null,
+        );
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        final s = await container.read(backupNotifierProvider.future);
+        expect(
+          s,
+          isA<BackupConnected>(),
+          reason: 'FR-19: non-null dropboxEmail → seam must report connected; '
+              'BackupConnected expected',
+        );
+      },
+    );
+
+    test(
+      'FR-19: null dropboxEmail resolves to BackupNotConnected (seam correct)',
+      () async {
+        // No updateBackupState call → dropboxEmail stays null.
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        final s = await container.read(backupNotifierProvider.future);
+        expect(
+          s,
+          isA<BackupNotConnected>(),
+          reason: 'FR-19: null dropboxEmail → seam must report disconnected; '
+              'BackupNotConnected expected',
+        );
+      },
+    );
+
+    // FR-18: skip-log entries carry the active-provider id, not a hardcoded
+    // SyncProvider.dropbox literal.  In M1 the active provider IS dropbox, so
+    // the observable value is the same — but it must come from settings, not
+    // a compile-time literal.
+    test(
+      'FR-18: backupSuspended skip-log entry carries active provider id '
+      '(dropbox in M1 — read from settings, not hardcoded)',
+      () async {
+        // Seed: connected, suspended.
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'a@b.com',
+          lastBackupAt: null,
+        );
+        await settingsRepo.updateBackupSuspended(true);
+        storage.values[BackupNotifier.kPassphraseKey] = 'pw';
+
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        await container.read(backupNotifierProvider.notifier).backupSilent();
+
+        expect(fakeSyncLogRepo.appended, hasLength(1));
+        final entry = fakeSyncLogRepo.appended.last;
+        expect(
+          entry.provider,
+          equals(SyncProvider.dropbox),
+          reason: 'FR-18: in M1 active provider is dropbox — skip-log provider '
+              'must equal SyncProvider.dropbox',
+        );
+        expect(
+          entry.operation,
+          equals(SyncOperation.backupSkipped),
+        );
+      },
+    );
+
+    test(
+      'FR-18: write-recency skip-log entry carries active provider id '
+      '(dropbox in M1 — read from settings, not hardcoded)',
+      () async {
+        // Seed: lastWriteAt < lastBackupAt → write-recency skip fires.
+        final tb = DateTime.utc(2026, 6, 1, 10);
+        final tw = DateTime.utc(2026, 6, 1, 9);
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'a@b.com',
+          lastBackupAt: tb,
+        );
+        await settingsRepo.updateLastDataWriteAt(tw);
+        storage.values[BackupNotifier.kPassphraseKey] = 'pw';
+
+        final container = makeContainer();
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        await container.read(backupNotifierProvider.notifier).backupSilent();
+
+        expect(fakeSyncLogRepo.appended, hasLength(1));
+        final entry = fakeSyncLogRepo.appended.last;
+        expect(
+          entry.provider,
+          equals(SyncProvider.dropbox),
+          reason:
+              'FR-18: in M1 active provider is dropbox — write-recency skip-log '
+              'provider must equal SyncProvider.dropbox',
+        );
+        expect(
+          entry.operation,
+          equals(SyncOperation.backupSkipped),
         );
       },
     );

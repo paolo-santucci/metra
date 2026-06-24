@@ -1,7 +1,7 @@
 schema-version: 2
-last-updated: "2026-06-12T00:00:00+02:00"
+last-updated: "2026-06-24T22:15:00+02:00"
 active-plan: null
-last-plan: ".claude/docs/plans/archive/qp-20260525-backup-restore-toast.md"
+last-plan: ".claude/docs/plans/archive/sp-20260624-m2-google-drive-provider-plan.md"
 
 # Owned by the short-plan skill. update-status preserves verbatim.
 short-plan:
@@ -20,6 +20,7 @@ short-plan:
     plan: null
     assess-dir: null
   phases:
+    brainstorm: pending
     assess: pending
     triage: pending
     spec: pending
@@ -35,81 +36,104 @@ short-plan:
 
 # Owned by the long-plan skill. update-status preserves verbatim.
 long-plan:
-  feature: "implement issues: #11, #12, #13, #16, #18, #20, #21, #22, #28, #29, #31, #32, #33"
-  slug: "implement-next-patch"
+  feature: |
+    Extend Métra cloud backup beyond Dropbox to Google Drive (cross-platform,
+    OAuth, drive.file scope, visible "Metra" folder) and iCloud (iOS/iPadOS
+    only, icloud_storage plugin + container entitlement, hidden on Android),
+    same rules as Dropbox (zero-knowledge AES-256-GCM + Argon2id, app-folder
+    isolation, retention=3, 507 progressive-prune). Single active provider at
+    a time (new activeProvider field; SyncProvider enum += googleDrive,iCloud);
+    switching = confirm → revoke old token → connect new → fresh chain;
+    passphrase REUSED across providers; old provider .enc files LEFT intact;
+    existing Dropbox users unaffected (additive DB migration). UI: CupertinoPicker
+    wheel in bottom sheet (both platforms) with Connect button, on empty view
+    and reachable from connected view for switching. Language: follow-system
+    fallback resolves Italian only for Italian system locale (incl. it-CH),
+    English for every other language (update _effectiveLangCode + MaterialApp
+    localeResolutionCallback); explicit Settings choice unaffected. Docs: new
+    internal dev guide .claude/docs/guides/cloud-provider-setup.md (not on Jekyll
+    site) for Google Drive + iCloud credential provisioning + Dropbox recap.
+  slug: "cloud-backup-google-drive-icloud"
   auto: false
-  request-type: bug-fix
+  request-type: feature
   paths:
-    spec: ".claude/docs/specs/lp-20260517-implement-next-patch-spec.md"
-    plan: ".claude/docs/plans/lp-20260517-implement-next-patch-plan.md"
-    assess-dir: ".claude/docs/specs/lp-20260517-implement-next-patch-assessment"
+    spec: ".claude/docs/specs/lp-20260624-cloud-backup-google-drive-icloud-spec.md"
+    plan: ".claude/docs/plans/lp-20260624-cloud-backup-google-drive-icloud-plan.md"
+    assess-dir: ".claude/docs/specs/lp-20260624-cloud-backup-google-drive-icloud-assessment"
   phases:
+    brainstorm: done
     assess: done
     spec: done
     plan: done
   approvals:
     spec: approved
-    plan: approved
 
-pending-consolidation: []
+pending-consolidation:
+  - plan-id: sp-20260624-m1-provider-abstraction-foundation-spec
+    archived-date: "2026-06-24"
+    has-spec-impact: true
+  - plan-id: sp-20260624-m2-google-drive-provider-spec
+    archived-date: "2026-06-24"
+    has-spec-impact: true
 
 recently-completed:
-  - date: "2026-06-12"
-    summary: "docs: audit and update EN backup help page — replaced 3 screenshot placeholder comments with real image tags; fixed wording alignment to IT source; merged upstream changes (25 screenshot assets, content edits) via stash-pop with no conflicts"
-  - date: "2026-06-11"
-    summary: "docs: add bug report page to Jekyll site (IT+EN) + bug report link in app Settings l10n files (2b78f34..4f36fa5)"
-  - date: "2026-06-10"
-    summary: "feat: add bug report link to Settings screen (17af3b6)"
-  - date: "2026-06-10"
-    summary: "docs: update backup help pages (IT+EN) for passphrase handling precision (b679c2c)"
-  - date: "2026-06-10"
-    summary: "audit: backup help pages (IT+EN) vs. spec — 3 discrepancies found: wrong 'what is backed up', misleading passphrase-every-time UX copy, passphrase-stored precision gap"
+  - date: "2026-06-24"
+    summary: "M2 Google Drive provider built & verified via /short-plan --auto (6 tasks/2 waves, all 17 SP-FRs) — UNCOMMITTED in working tree (no git commit yet). GoogleDriveProvider (raw OAuth PKCE+CSRF, drive.file, memoized Metra folder, token refresh, 403 storageQuotaExceeded->InsufficientStorageException, listFiles name-desc/empty) + FakeGoogleDriveProvider + composition-root wiring (EC-04 inverted) + GOOGLE_OAUTH_CLIENT_ID dart-define x5 + 2nd Android intent-filter (metra://oauth-callback-google). Full suite 1611 pass/4 skip/0 fail; format+analyze clean. Spec+plan archived; spec-delta pushed to pending-consolidation."
+  - date: "2026-06-24"
+    summary: "docs: authored internal credential-setup guide .claude/docs/guides/cloud-provider-setup.md (FR-33) — Dropbox recap, Google Drive GCP/OAuth/intent-filter/dart-define wiring, iCloud App ID/container/Runner.entitlements/profile-rotation; OQ-07 resolved as reuse metra://oauth-callback with distinct host"
+  - date: "2026-06-14"
+    summary: "docs(privacy): added data-retention and data-deletion sections to IT+EN privacy policies to fix Google Play rejection (84a8115, merged accecf8, on origin/main)"
+  - date: "2026-06-13"
+    summary: "fix(android): 16 KB page-size support for Play production — sqlcipher_flutter_libs 0.5.7->0.6.8, useLegacyPackaging=false, versionCode 11->12; readelf-verified libsqlcipher.so 0x1000->0x4000 all ABIs (396eb98, merged d702ab3, on origin/main)"
+  - date: "2026-06-13"
+    summary: "fix(ci): Quality workflow green — formatted app_constants.dart, aligned test expectations to custom domain metra.paolosantucci.com (c508c03)"
 
 in-progress:
-  - title: "EN backup help page has uncommitted local edits"
-    state: "docs/en/help/backup.md has image tags + wording fix merged with upstream content edits; not yet committed."
+  - title: "M1 + M2 cloud-backup — built & verified, UNCOMMITTED in working tree (M2 built on top of uncommitted M1)"
+    state: "M1 (foundation: 13 tasks, schemaVersion 10->11, two-seam unification) + M2 (Google Drive provider: 6 tasks, GoogleDriveProvider + composition-root wiring + CI dart-define + Android intent-filter) both done via /short-plan --auto. Full suite 1611 pass/4 skip/0 fail (LD_LIBRARY_PATH sqlite workaround). format+analyze clean. Premature M1 agent commits were reverted (git reset --mixed 43a83a7); all M1+M2 work staged uncommitted on main."
     touched:
-      - "docs/en/help/backup.md"
-    next-step: "Review diff and commit docs/en/help/backup.md with a docs: message."
+      - "lib/data/services/backup/cloud_backup_provider.dart"
+      - "lib/data/services/backup/dropbox_provider.dart"
+      - "lib/data/services/backup/sync_orchestrator.dart"
+      - "lib/data/services/backup/google_drive_provider.dart"
+      - "lib/providers/backup_providers.dart"
+      - "lib/data/database/app_database.dart"
+      - "lib/domain/entities/app_settings_data.dart"
+      - "lib/domain/entities/sync_log_entity.dart"
+      - "lib/domain/use_cases/delete_all_data.dart"
+      - ".github/workflows/android.yml"
+      - ".github/workflows/ios.yml"
+      - "android/app/src/main/AndroidManifest.xml"
+    next-step: "Commit M1+M2 (decide feature branch vs main; M1 and M2 diffs are interleaved), then consolidate the 2 pending spec-deltas to canon."
     blocker: null
-  - title: "Quality CI fix on branch fix/quality-3.41.9-compat (not pushed)"
-    state: "4 split commits fix the Quality workflow: lockfile re-pinned to Flutter 3.41.9, SizeTransition axisAlignment compat, relative-date notification tests, restore-toast wording. Full pipeline verified locally."
-    touched:
-      - "pubspec.lock"
-      - "lib/features/daily_entry/widgets/pain_intensity_slider.dart"
-      - "test/app_notification_wiring_test.dart"
-      - "test/domain/use_cases/schedule_prediction_notification_test.dart"
-      - "test/features/backup/backup_screen_test.dart"
-      - "test/integration/notification_link_restore_toast_test.dart"
-    next-step: "Push/merge fix/quality-3.41.9-compat into main so Quality CI goes green."
-    blocker: null
-  - title: "main is now canonical (== old rollback/rc10); iOS black screen still to verify"
-    state: "main @4f36fa5. Android startup crash fixed (kotlin-android plugin applied), verified on Galaxy A32."
+  - title: "iOS black screen on cold-start (backup configured) — pending device verification"
+    state: "main @c508c03. iOS rc20 TestFlight build 320 is the candidate. Android crash is FIXED."
     touched:
       - "android/app/build.gradle.kts"
       - ".github/workflows/android.yml"
     next-step: "Verify iOS rc20 TestFlight 1.0.2 (320) cold-start black screen (backup configured) is GONE."
-    blocker: "Awaiting iOS black-screen verification on TestFlight"
+    blocker: "Awaiting iOS black-screen verification on physical device"
 
-next-steps:
-  - "Commit uncommitted docs/en/help/backup.md edits (image tags + wording fix)"
-  - "Verify iOS rc20 TestFlight 1.0.2 (320) cold-start black screen (backup configured) is GONE — last open blocker before v1.0.2 final"
-  - "Push/merge branch fix/quality-3.41.9-compat into main to make the Quality CI workflow green again"
-  - "When iOS verified: tag v1.0.2 (or rc21) from main → v* trigger builds iOS TestFlight + Android signed split-APKs + AAB in one shot"
-  - "Re-attempt dependency upgrades (KGP phase 2: secure_storage 10.x, file_picker 11.x, timezone 5.x) only AFTER 1.0.2 ships"
-  - "FR-16 TestFlight sign-off: cold-start with iOS notification permission revoked → in-app toggle reflects 'off'"
-  - "Consider adding universal fat APK build to CI alongside split APKs for easier sideload testing distribution"
-  - "Screenshot refresh for backup-connected IT+EN (deferred — requires Android emulator with IT/EN locale)"
+  - "Commit the uncommitted M1+M2 work — recommend a feature branch (e.g. feat/cloud-backup-m1-m2) off main, NOT a direct main commit; full suite is green via the LD_LIBRARY_PATH sqlite workaround. M1 and M2 diffs are interleaved in the working tree."
+  - "Consolidate the 2 pending spec-deltas (sp-20260624-m1-provider-abstraction-foundation-spec + sp-20260624-m2-google-drive-provider-spec) into the backup spec-canon slice once M1+M2 land."
+  - "Provision the Google Cloud OAuth client (installed-app client id + metra://oauth-callback-google redirect) and add the GOOGLE_OAUTH_CLIENT_ID GitHub secret — required before Drive backup works end-to-end (empty client id ships an OAuth failure no unit test catches)."
+  - "Run the manual E2E Drive round-trip pre-merge gate (OQ-QA-05): back up to Google Drive -> download .enc -> verify unreadable binary -> restore on a 2nd Android device -> data identical. NFR-07 80% coverage gate closes only on CI quality.yml (OQ-QA-01)."
+  - "M3 (iCloud) and M5 (locale fix) depend only on M1; M4 (picker + switch flow) is now unblocked by M2 (consumes M3 for the iOS iCloud row)."
+  - "After GitHub Pages rebuilds, verify retention/deletion sections live at metra.paolosantucci.com/{it,en}/privacy/, then resubmit to Google Play to clear the privacy-policy rejection."
+  - "Download the signed release-aab artifact from the Android CI run on main (d702ab3) and upload to Play Console (versionCode 12) to retry the production promotion (16 KB page-size fix)."
+  - "iOS release stays on rollback/rc10 track — do NOT push a v* tag on main (would auto-upload the unverified iOS black-screen build to TestFlight via ios.yml deploy_testflight)."
+  - "When iOS black screen verified gone: reconcile iOS onto main, then tag v1.0.2 for the full iOS TestFlight + Android release."
+  - "Defer: migrate off EOL sqlcipher_flutter_libs to package:sqlite3 3.x (pub.dev EOL notice) — separate plan, after 1.0.2 ships."
 
 known-issues:
   - severity: critical
     description: "iOS cold-start black screen (backup configured) — open. rollback/rc10 (now == main) reverts the KGP-2 dep upgrade as candidate fix; still pending TestFlight device verification (rc20 build 320). Android ClassNotFoundException crash is FIXED."
     impact: high
-    workaround: "Confirm iOS black screen gone on device before tagging v1.0.2 final. Android CI rebuild produces working signed APKs."
+    workaround: "Confirm iOS black screen gone on device before tagging v1.0.2 final."
   - severity: warning
-    description: "Local distrobox lacks the libsqlite3.so symlink, so DB/SQLCipher tests fail locally. CI (ubuntu) has the lib."
+    description: "Drift DB/SQLCipher tests need a native sqlite3 lib absent in the local distrobox; without the workaround they fail locally (CI ubuntu has the lib). The workaround DOES run them green locally."
     impact: low
-    workaround: "ln -sf /usr/lib/x86_64-linux-gnu/libsqlite3.so.0 /tmp/sqlitelib/libsqlite3.so then run flutter test with LD_LIBRARY_PATH=/tmp/sqlitelib"
+    workaround: "mkdir -p /tmp/sqlitelib && ln -sf /usr/lib/x86_64-linux-gnu/libsqlite3.so.0 /tmp/sqlitelib/libsqlite3.so then run flutter test with LD_LIBRARY_PATH=/tmp/sqlitelib"
   - severity: warning
     description: "share_plus and package_info_plus still bundle KGP; share_plus 12.x has Kotlin K2 compilation bug; unblocks when file_picker 12.x is stable"
     impact: low

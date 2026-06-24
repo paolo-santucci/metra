@@ -16,6 +16,7 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import '../../data/database/app_database.dart';
 import '../../data/database/daos/sync_log_dao.dart';
@@ -31,12 +32,21 @@ class DriftSyncLogRepository implements SyncLogRepository {
 
   // Explicit switch guards against future enum members being silently stored
   // as arbitrary .name strings that differ from the DB contract.
-  static String _providerToString(SyncProvider provider) => switch (provider) {
+  // Wire strings are hard-coded names (FR-04, NFR-06) — never `.name`.
+  @visibleForTesting
+  static String providerToString(SyncProvider provider) => switch (provider) {
         SyncProvider.dropbox => 'dropbox',
+        SyncProvider.googleDrive => 'google_drive',
+        SyncProvider.iCloud => 'icloud',
       };
 
-  static SyncProvider _stringToProvider(String value) => switch (value) {
+  // The sync-log read path stays strict: unknown values throw (never clamp).
+  // The settings read path uses a separate clamp-mapper (TASK-07).
+  @visibleForTesting
+  static SyncProvider stringToProvider(String value) => switch (value) {
         'dropbox' => SyncProvider.dropbox,
+        'google_drive' => SyncProvider.googleDrive,
+        'icloud' => SyncProvider.iCloud,
         _ => throw StateError('Unknown SyncProvider in DB: "$value"'),
       };
 
@@ -81,7 +91,7 @@ class DriftSyncLogRepository implements SyncLogRepository {
   static SyncLogEntity _fromRow(SyncLog row) => SyncLogEntity(
         id: row.id,
         timestamp: row.timestamp.toUtc(),
-        provider: _stringToProvider(row.provider),
+        provider: stringToProvider(row.provider),
         operation: _stringToOperation(row.operation),
         success: row.success,
         errorMessage: row.errorMessage,
@@ -90,7 +100,7 @@ class DriftSyncLogRepository implements SyncLogRepository {
   static SyncLogsCompanion _toInsertCompanion(SyncLogEntity entity) =>
       SyncLogsCompanion.insert(
         timestamp: entity.timestamp,
-        provider: _providerToString(entity.provider),
+        provider: providerToString(entity.provider),
         operation: _operationToString(entity.operation),
         success: entity.success,
         errorMessage: Value(_redactErrorMessage(entity.errorMessage)),

@@ -33,4 +33,6 @@ class AppConstants {
   static const double tapTargetMd = 48.0;
   static const double contentPad = 24.0;
   static const double maxWidth = 420.0;
+
+  static const String kBackupPassphraseKey = 'metra_backup_passphrase_v1';
 }

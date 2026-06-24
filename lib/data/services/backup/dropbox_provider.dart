@@ -25,19 +25,9 @@ import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../core/errors/metra_exception.dart';
+import '../../../domain/entities/sync_log_entity.dart';
 import 'backup_file_entry.dart';
-
-abstract class CloudBackupProvider {
-  Future<void> upload(Uint8List blob, String filename);
-  Future<Uint8List> download(String filename);
-  Future<List<BackupFileEntry>> listFiles();
-  Future<void> deleteFile(String filename);
-
-  // Widening additions (C-08: additive-only)
-  Future<void> authorize();
-  Future<String?> currentEmail();
-  Future<void> disconnect();
-}
+import 'cloud_backup_provider.dart';
 
 class DropboxProvider implements CloudBackupProvider {
   DropboxProvider({
@@ -82,6 +72,9 @@ class DropboxProvider implements CloudBackupProvider {
         url: url,
         callbackUrlScheme: callbackUrlScheme,
       );
+
+  @override
+  SyncProvider get id => SyncProvider.dropbox;
 
   Future<bool> get isConnected async =>
       (await _storage.read(key: _accessTokenKey)) != null;

@@ -143,6 +143,21 @@ class AppSettings extends Table {
   /// Default false — backup is active by default.
   BoolColumn get backupSuspended =>
       boolean().withDefault(const Constant(false))();
+
+  /// The currently active cloud backup provider, stored as a stable string id.
+  ///
+  /// Wire vocabulary: 'dropbox' | 'google_drive' | 'icloud'. The DEFAULT
+  /// 'dropbox' backfills every existing row during the v10→v11 ALTER TABLE
+  /// (see onUpgrade if (from < 11)). No backfill statement is needed.
+  ///
+  /// IMPORTANT: stored as TEXT, never as an enum integer index. Reordering
+  /// the SyncProvider enum must never corrupt persisted rows (NFR-06).
+  ///
+  /// Not included in [AppSettingsCompanion] built by
+  /// [DriftAppSettingsRepository._toCompanion] — it is owned exclusively by
+  /// [DriftAppSettingsRepository.setActiveProvider].
+  TextColumn get activeProvider =>
+      text().withDefault(const Constant('dropbox'))();
 }
 
 /// Local-only audit trail of cloud backup/restore operations.
@@ -176,7 +191,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -331,6 +346,13 @@ class AppDatabase extends _$AppDatabase {
               // Step 3: add backup_suspended column (default false).
               await m.addColumn(appSettings, appSettings.backupSuspended);
             });
+          }
+          if (from < 11) {
+            // Add active_provider column to app_settings.
+            // Purely additive; existing rows receive the default 'dropbox'
+            // via the column DEFAULT during the underlying ALTER TABLE.
+            // No backfill statement is needed (NFR-06 purity guard).
+            await m.addColumn(appSettings, appSettings.activeProvider);
           }
         },
       );

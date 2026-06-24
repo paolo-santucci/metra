@@ -16,6 +16,8 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'package:metra/domain/entities/app_settings_data.dart';
+import 'package:metra/domain/entities/first_day_of_week_setting.dart';
+import 'package:metra/domain/entities/sync_log_entity.dart';
 import 'package:metra/domain/repositories/app_settings_repository.dart';
 
 class FakeAppSettingsRepository implements AppSettingsRepository {
@@ -28,6 +30,69 @@ class FakeAppSettingsRepository implements AppSettingsRepository {
   /// [updateBackupSuspended] fires before [clearBackupSuspended] in a
   /// suspend-then-clear sequence.
   final List<String> callLog = [];
+
+  // ---------------------------------------------------------------------------
+  // Private rebuild helper — eliminates the six-block silent-reset risk (EC-10).
+  //
+  // Every field is forwarded from [current] unless the caller passes a named
+  // override. A nullable-field override is expressed as a zero-arg function
+  // (factory) so callers can distinguish "set to null" from "no override".
+  //
+  // New fields added to AppSettingsData MUST be added here too — the compiler
+  // will flag the missing named parameter in the AppSettingsData(...) call
+  // below if a required param is omitted, making future omissions a compile
+  // error rather than a silent runtime reset.
+  // ---------------------------------------------------------------------------
+  AppSettingsData _rebuild(
+    AppSettingsData current, {
+    String? languageCode,
+    // nullable bool — factory pattern lets callers set to null
+    bool? Function()? darkMode,
+    bool? painEnabled,
+    bool? notesEnabled,
+    int? notificationDaysBefore,
+    bool? notificationsEnabled,
+    // nullable String — factory pattern
+    String? Function()? dropboxEmail,
+    // nullable DateTime — factory pattern
+    DateTime? Function()? lastBackupAt,
+    bool? onboardingCompleted,
+    // nullable int — factory pattern
+    int? Function()? declaredCycleLength,
+    int? notificationTimeMinutes,
+    FirstDayOfWeekSetting? firstDayOfWeek,
+    // nullable DateTime — factory pattern
+    DateTime? Function()? lastLogOrSymptomWriteAt,
+    bool? backupSuspended,
+    SyncProvider? activeProvider,
+  }) {
+    return AppSettingsData(
+      languageCode: languageCode ?? current.languageCode,
+      darkMode: darkMode != null ? darkMode() : current.darkMode,
+      painEnabled: painEnabled ?? current.painEnabled,
+      notesEnabled: notesEnabled ?? current.notesEnabled,
+      notificationDaysBefore:
+          notificationDaysBefore ?? current.notificationDaysBefore,
+      notificationsEnabled:
+          notificationsEnabled ?? current.notificationsEnabled,
+      dropboxEmail:
+          dropboxEmail != null ? dropboxEmail() : current.dropboxEmail,
+      lastBackupAt:
+          lastBackupAt != null ? lastBackupAt() : current.lastBackupAt,
+      onboardingCompleted: onboardingCompleted ?? current.onboardingCompleted,
+      declaredCycleLength: declaredCycleLength != null
+          ? declaredCycleLength()
+          : current.declaredCycleLength,
+      notificationTimeMinutes:
+          notificationTimeMinutes ?? current.notificationTimeMinutes,
+      firstDayOfWeek: firstDayOfWeek ?? current.firstDayOfWeek,
+      lastLogOrSymptomWriteAt: lastLogOrSymptomWriteAt != null
+          ? lastLogOrSymptomWriteAt()
+          : current.lastLogOrSymptomWriteAt,
+      backupSuspended: backupSuspended ?? current.backupSuspended,
+      activeProvider: activeProvider ?? current.activeProvider,
+    );
+  }
 
   @override
   Stream<AppSettingsData?> watchSettings() => Stream.value(storedSettings);
@@ -49,84 +114,34 @@ class FakeAppSettingsRepository implements AppSettingsRepository {
     final current = storedSettings ?? AppSettingsData.defaults();
     // Full constructor used intentionally — copyWith cannot clear nullable
     // fields to null, which is exactly what callers of updateBackupState need.
-    storedSettings = AppSettingsData(
-      languageCode: current.languageCode,
-      darkMode: current.darkMode,
-      painEnabled: current.painEnabled,
-      notesEnabled: current.notesEnabled,
-      notificationDaysBefore: current.notificationDaysBefore,
-      notificationsEnabled: current.notificationsEnabled,
-      dropboxEmail: dropboxEmail,
-      lastBackupAt: lastBackupAt,
-      onboardingCompleted: current.onboardingCompleted,
-      declaredCycleLength: current.declaredCycleLength,
-      notificationTimeMinutes: current.notificationTimeMinutes,
-      firstDayOfWeek: current.firstDayOfWeek,
-      lastLogOrSymptomWriteAt: current.lastLogOrSymptomWriteAt,
-      backupSuspended: current.backupSuspended,
+    storedSettings = _rebuild(
+      current,
+      dropboxEmail: () => dropboxEmail,
+      lastBackupAt: () => lastBackupAt,
     );
   }
 
   @override
   Future<void> markOnboardingComplete() async {
     final current = storedSettings ?? AppSettingsData.defaults();
-    storedSettings = AppSettingsData(
-      languageCode: current.languageCode,
-      darkMode: current.darkMode,
-      painEnabled: current.painEnabled,
-      notesEnabled: current.notesEnabled,
-      notificationDaysBefore: current.notificationDaysBefore,
-      notificationsEnabled: current.notificationsEnabled,
-      dropboxEmail: current.dropboxEmail,
-      lastBackupAt: current.lastBackupAt,
-      onboardingCompleted: true,
-      declaredCycleLength: current.declaredCycleLength,
-      notificationTimeMinutes: current.notificationTimeMinutes,
-      firstDayOfWeek: current.firstDayOfWeek,
-      lastLogOrSymptomWriteAt: current.lastLogOrSymptomWriteAt,
-      backupSuspended: current.backupSuspended,
-    );
+    storedSettings = _rebuild(current, onboardingCompleted: true);
   }
 
   @override
   Future<void> saveDeclaredCycleLength(int cycleLength) async {
     final current = storedSettings ?? AppSettingsData.defaults();
-    storedSettings = AppSettingsData(
-      languageCode: current.languageCode,
-      darkMode: current.darkMode,
-      painEnabled: current.painEnabled,
-      notesEnabled: current.notesEnabled,
-      notificationDaysBefore: current.notificationDaysBefore,
-      notificationsEnabled: current.notificationsEnabled,
-      dropboxEmail: current.dropboxEmail,
-      lastBackupAt: current.lastBackupAt,
-      onboardingCompleted: current.onboardingCompleted,
-      declaredCycleLength: cycleLength,
-      notificationTimeMinutes: current.notificationTimeMinutes,
-      firstDayOfWeek: current.firstDayOfWeek,
-      lastLogOrSymptomWriteAt: current.lastLogOrSymptomWriteAt,
-      backupSuspended: current.backupSuspended,
+    storedSettings = _rebuild(
+      current,
+      declaredCycleLength: () => cycleLength,
     );
   }
 
   @override
   Future<void> updateLastDataWriteAt(DateTime timestamp) async {
     final current = storedSettings ?? AppSettingsData.defaults();
-    storedSettings = AppSettingsData(
-      languageCode: current.languageCode,
-      darkMode: current.darkMode,
-      painEnabled: current.painEnabled,
-      notesEnabled: current.notesEnabled,
-      notificationDaysBefore: current.notificationDaysBefore,
-      notificationsEnabled: current.notificationsEnabled,
-      dropboxEmail: current.dropboxEmail,
-      lastBackupAt: current.lastBackupAt,
-      onboardingCompleted: current.onboardingCompleted,
-      declaredCycleLength: current.declaredCycleLength,
-      notificationTimeMinutes: current.notificationTimeMinutes,
-      firstDayOfWeek: current.firstDayOfWeek,
-      lastLogOrSymptomWriteAt: timestamp,
-      backupSuspended: current.backupSuspended,
+    storedSettings = _rebuild(
+      current,
+      lastLogOrSymptomWriteAt: () => timestamp,
     );
   }
 
@@ -134,23 +149,8 @@ class FakeAppSettingsRepository implements AppSettingsRepository {
   Future<void> updateBackupSuspended(bool value) async {
     final current = storedSettings ?? AppSettingsData.defaults();
     // backupSuspended is excluded from copyWith — dedicated-writer pattern.
-    // Full constructor used to set backupSuspended directly.
-    storedSettings = AppSettingsData(
-      languageCode: current.languageCode,
-      darkMode: current.darkMode,
-      painEnabled: current.painEnabled,
-      notesEnabled: current.notesEnabled,
-      notificationDaysBefore: current.notificationDaysBefore,
-      notificationsEnabled: current.notificationsEnabled,
-      dropboxEmail: current.dropboxEmail,
-      lastBackupAt: current.lastBackupAt,
-      onboardingCompleted: current.onboardingCompleted,
-      declaredCycleLength: current.declaredCycleLength,
-      notificationTimeMinutes: current.notificationTimeMinutes,
-      firstDayOfWeek: current.firstDayOfWeek,
-      lastLogOrSymptomWriteAt: current.lastLogOrSymptomWriteAt,
-      backupSuspended: value,
-    );
+    // Full constructor used via _rebuild to set backupSuspended directly.
+    storedSettings = _rebuild(current, backupSuspended: value);
     callLog.add('updateBackupSuspended:$value');
   }
 
@@ -164,22 +164,17 @@ class FakeAppSettingsRepository implements AppSettingsRepository {
     final current = storedSettings ?? AppSettingsData.defaults();
     // Dedicated writer — touches only backupSuspended.
     // lastLogOrSymptomWriteAt is preserved unchanged (HC-6, NFR-05).
-    storedSettings = AppSettingsData(
-      languageCode: current.languageCode,
-      darkMode: current.darkMode,
-      painEnabled: current.painEnabled,
-      notesEnabled: current.notesEnabled,
-      notificationDaysBefore: current.notificationDaysBefore,
-      notificationsEnabled: current.notificationsEnabled,
-      dropboxEmail: current.dropboxEmail,
-      lastBackupAt: current.lastBackupAt,
-      onboardingCompleted: current.onboardingCompleted,
-      declaredCycleLength: current.declaredCycleLength,
-      notificationTimeMinutes: current.notificationTimeMinutes,
-      firstDayOfWeek: current.firstDayOfWeek,
-      lastLogOrSymptomWriteAt: current.lastLogOrSymptomWriteAt,
-      backupSuspended: false,
-    );
+    storedSettings = _rebuild(current, backupSuspended: false);
     callLog.add('clearBackupSuspended');
+  }
+
+  /// Updates the active cloud backup provider.
+  ///
+  /// Dedicated writer — touches only [AppSettingsData.activeProvider].
+  /// Every other field is preserved byte-for-byte (FR-13, NFR-05).
+  @override
+  Future<void> setActiveProvider(SyncProvider provider) async {
+    final current = storedSettings ?? AppSettingsData.defaults();
+    storedSettings = _rebuild(current, activeProvider: provider);
   }
 }

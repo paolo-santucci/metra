@@ -518,9 +518,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your data stays on your device. Connect Dropbox to keep an encrypted copy in the cloud — only you can read it.';
 
   @override
-  String get backup_connect_dropbox => 'Connect Dropbox';
-
-  @override
   String backup_connected_as(String email) {
     return 'Connected as: $email';
   }

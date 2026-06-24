@@ -18,8 +18,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:metra/core/constants/app_constants.dart';
 import 'package:metra/domain/entities/cycle_entry_entity.dart';
 import 'package:metra/domain/entities/daily_log_entity.dart';
+import 'package:metra/domain/entities/sync_log_entity.dart';
 import 'package:metra/domain/use_cases/delete_all_data.dart';
 import 'package:metra/providers/encryption_provider.dart';
 import 'package:metra/providers/repository_providers.dart';
@@ -29,6 +31,19 @@ import '../../helpers/fake_app_settings_repository.dart';
 import '../../helpers/fake_cycle_entry_repository.dart';
 import '../../helpers/fake_daily_log_repository.dart';
 import '../../helpers/in_memory_secure_storage.dart';
+
+// ---------------------------------------------------------------------------
+// Local subclass that also logs setActiveProvider calls.
+// Needed for EC-08 ordering tests: the base FakeAppSettingsRepository does not
+// log setActiveProvider, so we add that here without touching the shared fake.
+// ---------------------------------------------------------------------------
+class _LoggingSettingsRepo extends FakeAppSettingsRepository {
+  @override
+  Future<void> setActiveProvider(SyncProvider provider) async {
+    await super.setActiveProvider(provider);
+    callLog.add('setActiveProvider:$provider');
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Tiny wrapper used ONLY for call-order assertion in Test 1.
@@ -71,8 +86,6 @@ class _OrderCapturingStorage implements FlutterSecureStorage {
 }
 
 void main() {
-  const kPassphraseKey = 'metra_backup_passphrase_v1';
-
   late FakeDailyLogRepository fakeLogRepo;
   late FakeCycleEntryRepository fakeCycleRepo;
   late FakeAppSettingsRepository fakeSettingsRepo;
@@ -175,7 +188,8 @@ void main() {
     () async {
       // Arrange: storage pre-seeded; use the order-capturing wrapper to prove
       // updateBackupSuspended(true) ran BEFORE secureStorage.delete().
-      final storage = InMemorySecureStorage()..values[kPassphraseKey] = 'pw';
+      final storage = InMemorySecureStorage()
+        ..values[AppConstants.kBackupPassphraseKey] = 'pw';
       final settings = FakeAppSettingsRepository();
       final capturingStorage = _OrderCapturingStorage(storage, settings);
 
@@ -190,7 +204,10 @@ void main() {
       await uc.execute();
 
       // Assert: key removed from storage.
-      expect(storage.values.containsKey(kPassphraseKey), isFalse);
+      expect(
+        storage.values.containsKey(AppConstants.kBackupPassphraseKey),
+        isFalse,
+      );
 
       // Assert: at the moment delete() ran, settingsRepo had already recorded
       // updateBackupSuspended(true) — proving HC-2 ordering.
@@ -227,7 +244,10 @@ void main() {
       await expectLater(uc.execute(), completes);
 
       // The key is still absent — no side-effects.
-      expect(emptyStorage.values.containsKey(kPassphraseKey), isFalse);
+      expect(
+        emptyStorage.values.containsKey(AppConstants.kBackupPassphraseKey),
+        isFalse,
+      );
     },
   );
 
@@ -235,7 +255,8 @@ void main() {
     'deleteAllDataProvider_wires_secureStorageProvider',
     () async {
       // Arrange: seeded storage so we can confirm the SAME instance is used.
-      final storage = InMemorySecureStorage()..values[kPassphraseKey] = 'pw';
+      final storage = InMemorySecureStorage()
+        ..values[AppConstants.kBackupPassphraseKey] = 'pw';
 
       final container = ProviderContainer(
         overrides: [
@@ -259,10 +280,107 @@ void main() {
 
       // Assert: the same FakeStorage instance had its key deleted.
       expect(
-        storage.values.containsKey(kPassphraseKey),
+        storage.values.containsKey(AppConstants.kBackupPassphraseKey),
         isFalse,
         reason:
             'deleteAllDataProvider must wire secureStorageProvider — same instance',
+      );
+    },
+  );
+
+  // ── FR-21 / FR-23 new tests (TASK-11) ────────────────────────────────────
+
+  test(
+    'given_execute_when_called_then_setActiveProvider_dropbox_is_invoked_via_dedicated_writer',
+    () async {
+      // FR-21: execute() must call setActiveProvider(SyncProvider.dropbox).
+      // The logging subclass records the call; we assert it appears in callLog.
+      final loggingSettings = _LoggingSettingsRepo();
+      final uc = DeleteAllData(
+        FakeDailyLogRepository(),
+        FakeCycleEntryRepository(),
+        loggingSettings,
+        InMemorySecureStorage(),
+      );
+
+      await uc.execute();
+
+      expect(
+        loggingSettings.callLog,
+        contains('setActiveProvider:SyncProvider.dropbox'),
+        reason:
+            'execute() must reset activeProvider to dropbox via dedicated writer',
+      );
+      // Confirm the stored value reflects the reset.
+      final stored = await loggingSettings.getOrCreate();
+      expect(stored.activeProvider, SyncProvider.dropbox);
+    },
+  );
+
+  test(
+    'given_execute_when_called_then_setActiveProvider_and_updateBackupSuspended_precede_passphrase_wipe_EC08',
+    () async {
+      // EC-08 ordering: setActiveProvider(dropbox) + updateBackupSuspended(true)
+      // must both appear in callLog BEFORE secureStorage.delete() fires.
+      final loggingSettings = _LoggingSettingsRepo();
+      final storage = InMemorySecureStorage()
+        ..values[AppConstants.kBackupPassphraseKey] = 'pw';
+      final capturingStorage = _OrderCapturingStorage(storage, loggingSettings);
+
+      final uc = DeleteAllData(
+        FakeDailyLogRepository(),
+        FakeCycleEntryRepository(),
+        loggingSettings,
+        capturingStorage,
+      );
+
+      await uc.execute();
+
+      // Both writes must have been recorded before delete() fired.
+      expect(
+        capturingStorage.callLogAtDelete,
+        isNotNull,
+        reason: 'delete() must have been called',
+      );
+      expect(
+        capturingStorage.callLogAtDelete,
+        contains('setActiveProvider:SyncProvider.dropbox'),
+        reason: 'setActiveProvider(dropbox) must precede passphrase wipe',
+      );
+      expect(
+        capturingStorage.callLogAtDelete,
+        contains('updateBackupSuspended:true'),
+        reason: 'updateBackupSuspended(true) must precede passphrase wipe',
+      );
+    },
+  );
+
+  test(
+    'given_execute_when_called_then_delete_all_data_references_shared_constant',
+    () async {
+      // FR-23: kBackupPassphraseKey from app_constants.dart must be used
+      // (not an inline literal). The storage uses the shared constant as key;
+      // if delete_all_data.dart still used its own literal, the key would not
+      // be deleted.
+      final storage = InMemorySecureStorage()
+        ..values[AppConstants.kBackupPassphraseKey] = 'pw';
+
+      final uc = DeleteAllData(
+        FakeDailyLogRepository(),
+        FakeCycleEntryRepository(),
+        FakeAppSettingsRepository(),
+        storage,
+      );
+
+      await uc.execute();
+
+      // If the production code used a different literal key, the value would
+      // remain in storage — which would fail this assertion.
+      expect(
+        storage.values.containsKey(AppConstants.kBackupPassphraseKey),
+        isFalse,
+        reason:
+            'execute() must delete using the shared AppConstants.kBackupPassphraseKey',
       );
     },
   );

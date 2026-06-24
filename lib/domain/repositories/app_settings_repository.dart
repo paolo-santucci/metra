@@ -16,6 +16,7 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import '../entities/app_settings_data.dart';
+import '../entities/sync_log_entity.dart';
 
 abstract class AppSettingsRepository {
   Stream<AppSettingsData?> watchSettings();
@@ -78,6 +79,20 @@ abstract class AppSettingsRepository {
   ///
   /// **Errors**: propagate storage exceptions to the caller unchanged.
   Future<void> updateBackupSuspended(bool value);
+
+  /// Persists the active cloud backup provider in persistent storage.
+  ///
+  /// **Pre-conditions**: A singleton settings row exists (guaranteed by
+  /// [getOrCreate]). If no row exists the implementation must propagate the
+  /// storage error — do not silently swallow it.
+  ///
+  /// **Post-conditions**: Only [AppSettingsData.activeProvider] changes.
+  /// Every other column is byte-for-byte preserved. This is a dedicated-writer
+  /// method — it must NOT touch any other field (contrast with
+  /// [updateSettings], which updates all non-dedicated-writer columns).
+  ///
+  /// **Errors**: propagate storage exceptions to the caller unchanged.
+  Future<void> setActiveProvider(SyncProvider provider);
 
   /// Clears the backup-suspended sentinel by writing
   /// [AppSettingsData.backupSuspended] = `false` in persistent storage.

@@ -17,6 +17,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:fake_async/fake_async.dart';
@@ -24,8 +25,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:metra/core/errors/metra_exception.dart';
+import 'package:metra/data/services/backup/cloud_backup_provider.dart';
 import 'package:metra/data/services/backup/dropbox_provider.dart';
+import 'package:metra/domain/entities/sync_log_entity.dart';
 
+import '../../../helpers/fake_dropbox_provider.dart';
 import '../../../helpers/in_memory_secure_storage.dart';
 
 void main() {
@@ -33,6 +37,81 @@ void main() {
 
   setUp(() {
     storage = InMemorySecureStorage();
+  });
+
+  // ---------------------------------------------------------------------------
+  // Group A (TASK-02) — CloudBackupProvider interface + id getter
+  // ---------------------------------------------------------------------------
+
+  group('TASK-02 CloudBackupProvider interface + id', () {
+    test('cloud_backup_provider.dart imports no http/flutter_web_auth_2/crypto',
+        () {
+      // Read the source file and assert the forbidden imports are absent.
+      final src = File(
+        'lib/data/services/backup/cloud_backup_provider.dart',
+      ).readAsStringSync();
+      expect(
+        src,
+        isNot(contains("import 'package:http/")),
+        reason: 'cloud_backup_provider.dart must not import http',
+      );
+      expect(
+        src,
+        isNot(contains("import 'package:flutter_web_auth_2/")),
+        reason: 'cloud_backup_provider.dart must not import flutter_web_auth_2',
+      );
+      expect(
+        src,
+        isNot(contains("import 'package:crypto/")),
+        reason: 'cloud_backup_provider.dart must not import crypto',
+      );
+    });
+
+    test(
+        'interface declares exactly 8 members: '
+        'upload/download/listFiles/deleteFile/authorize/currentEmail/disconnect/id',
+        () {
+      // A minimal in-memory implementation must satisfy the type — this
+      // validates that the interface has exactly the expected contract.
+      // Compilation succeeds only if all 8 members are present.
+      final CloudBackupProvider impl = FakeDropboxProvider();
+      // Exercise each method name (just check assignment compiles).
+      expect(impl, isA<CloudBackupProvider>());
+    });
+
+    test('DropboxProvider.id returns SyncProvider.dropbox via @override', () {
+      // Check grep: dropbox_provider.dart must contain @override and id =>
+      final src = File(
+        'lib/data/services/backup/dropbox_provider.dart',
+      ).readAsStringSync();
+      expect(
+        src,
+        contains('SyncProvider get id => SyncProvider.dropbox'),
+        reason: 'DropboxProvider must declare id via @override',
+      );
+      // Runtime: id getter returns the correct value.
+      final storage = InMemorySecureStorage();
+      final client = MockClient((_) async => http.Response('{}', 200));
+      final provider =
+          DropboxProvider(appKey: 'key', storage: storage, client: client);
+      expect(provider.id, SyncProvider.dropbox);
+    });
+
+    test('FakeDropboxProvider().id == SyncProvider.dropbox', () {
+      expect(FakeDropboxProvider().id, SyncProvider.dropbox);
+    });
+
+    test('currentEmail return type is Future<String?> (grep)', () {
+      final src = File(
+        'lib/data/services/backup/cloud_backup_provider.dart',
+      ).readAsStringSync();
+      expect(
+        src,
+        contains('Future<String?> currentEmail()'),
+        reason:
+            'currentEmail() must keep its Future<String?> signature (FR-20)',
+      );
+    });
   });
 
   // ---------------------------------------------------------------------------

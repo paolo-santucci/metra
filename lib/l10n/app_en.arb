@@ -502,7 +502,6 @@
 
   "backup_screen_title": "Backup",
   "backup_not_connected_body": "Your data stays on your device. Connect Dropbox to keep an encrypted copy in the cloud — only you can read it.",
-  "backup_connect_dropbox": "Connect Dropbox",
   "backup_connected_as": "Connected as: {email}",
   "@backup_connected_as": {
     "placeholders": {

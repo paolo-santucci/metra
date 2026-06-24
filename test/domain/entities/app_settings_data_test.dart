@@ -21,6 +21,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/util/nullable.dart';
 import 'package:metra/domain/entities/app_settings_data.dart';
 import 'package:metra/domain/entities/first_day_of_week_setting.dart';
+import 'package:metra/domain/entities/sync_log_entity.dart';
 
 String readAppSettingsDataSource() =>
     File('lib/domain/entities/app_settings_data.dart').readAsStringSync();
@@ -41,6 +42,7 @@ void main() {
     FirstDayOfWeekSetting firstDayOfWeek = FirstDayOfWeekSetting.system,
     DateTime? lastLogOrSymptomWriteAt,
     bool backupSuspended = false,
+    SyncProvider activeProvider = SyncProvider.dropbox,
   }) =>
       AppSettingsData(
         languageCode: languageCode,
@@ -57,6 +59,7 @@ void main() {
         firstDayOfWeek: firstDayOfWeek,
         lastLogOrSymptomWriteAt: lastLogOrSymptomWriteAt,
         backupSuspended: backupSuspended,
+        activeProvider: activeProvider,
       );
 
   group('AppSettingsData construction', () {
@@ -848,6 +851,167 @@ void main() {
       final b = makeSettings(backupSuspended: false);
       expect(a, equals(b));
       expect(a.hashCode, b.hashCode);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // TASK-03 — activeProvider (FR-06, FR-08, FR-12, NFR-02)
+  // ---------------------------------------------------------------------------
+
+  group('activeProvider field — defaults (FR-06)', () {
+    test(
+        'given_no_activeProvider_arg_when_defaults_factory_then_activeProvider_is_dropbox',
+        () {
+      final defaults = AppSettingsData.defaults();
+      expect(defaults.activeProvider, SyncProvider.dropbox);
+    });
+
+    test(
+        'given_no_activeProvider_arg_when_constructed_then_activeProvider_defaults_to_dropbox',
+        () {
+      final settings = AppSettingsData(
+        languageCode: 'it',
+        painEnabled: true,
+        notesEnabled: true,
+        notificationDaysBefore: 2,
+        notificationsEnabled: false,
+        onboardingCompleted: false,
+      );
+      expect(settings.activeProvider, SyncProvider.dropbox);
+    });
+  });
+
+  group('activeProvider field — equality and hashCode (FR-08)', () {
+    test(
+        'given_instances_differing_only_in_activeProvider_dropbox_vs_googleDrive_when_compared_then_not_equal_and_hashCodes_differ',
+        () {
+      final a = makeSettings(activeProvider: SyncProvider.dropbox);
+      final b = makeSettings(activeProvider: SyncProvider.googleDrive);
+      expect(a, isNot(equals(b)));
+      expect(a.hashCode, isNot(equals(b.hashCode)));
+    });
+
+    test(
+        'given_three_distinct_activeProvider_values_when_hashCode_computed_then_all_three_differ',
+        () {
+      final dropbox = makeSettings(activeProvider: SyncProvider.dropbox);
+      final googleDrive =
+          makeSettings(activeProvider: SyncProvider.googleDrive);
+      final iCloud = makeSettings(activeProvider: SyncProvider.iCloud);
+      final hashes = {dropbox.hashCode, googleDrive.hashCode, iCloud.hashCode};
+      expect(hashes.length, 3);
+    });
+  });
+
+  group('activeProvider field — copyWith exclusion (FR-08 dedicated-writer)',
+      () {
+    test(
+        'given_activeProvider_dropbox_when_copyWith_called_without_activeProvider_then_field_preserved',
+        () {
+      final a = makeSettings(activeProvider: SyncProvider.dropbox);
+      final b = a.copyWith(languageCode: 'en');
+      expect(b.activeProvider, SyncProvider.dropbox);
+    });
+
+    test(
+        'given_activeProvider_googleDrive_when_copyWith_called_without_activeProvider_then_field_preserved',
+        () {
+      final a = makeSettings(activeProvider: SyncProvider.googleDrive);
+      final b = a.copyWith(languageCode: 'en');
+      expect(b.activeProvider, SyncProvider.googleDrive);
+    });
+  });
+
+  group(
+      'activeProvider field — hashCode uses ^ chain, not Object.hash (NFR-02)',
+      () {
+    test(
+        'given_entity_source_file_when_grepped_then_hashCode_uses_XOR_and_not_Object_hash',
+        () {
+      final source = readAppSettingsDataSource();
+      // The hashCode getter must use ^ (XOR chain style), never Object.hash.
+      expect(
+        source.contains('Object.hash'),
+        isFalse,
+        reason: 'hashCode must use ^ chain, not Object.hash',
+      );
+      // activeProvider must participate in the ^ chain.
+      expect(
+        source.contains('activeProvider.hashCode'),
+        isTrue,
+        reason: 'activeProvider.hashCode must appear in the ^ chain',
+      );
+    });
+
+    test(
+        'given_entity_source_file_when_grepped_for_copyWith_params_then_activeProvider_not_a_parameter',
+        () {
+      final source = readAppSettingsDataSource();
+      // The copyWith parameter list must NOT declare activeProvider as a
+      // named parameter (dedicated-writer pattern). We check that no line
+      // matching a Dart parameter pattern for activeProvider exists between
+      // the copyWith opening brace and the closing paren.
+      //
+      // Strategy: extract the parameter list of copyWith by finding the
+      // method signature. A parameter would appear as e.g.
+      //   "SyncProvider? activeProvider," or
+      //   "activeProvider,"
+      // but NEVER as a bare pass-through comment "activeProvider: activeProvider".
+      // We look for "activeProvider" immediately after whitespace on its own
+      // dedicated parameter line (with comma or ?) — a simple regex-free
+      // check: does the text contain "SyncProvider? activeProvider" or
+      // "SyncProvider activeProvider" in a parameter context?
+      expect(
+        source.contains('SyncProvider? activeProvider'),
+        isFalse,
+        reason:
+            'activeProvider must NOT be a copyWith parameter (dedicated-writer pattern)',
+      );
+      // Also verify no untyped parameter line like "activeProvider," appears
+      // immediately after a newline+whitespace in the copyWith param section.
+      // Extract the copyWith section (from method start to @override).
+      final copyWithStart = source.indexOf('AppSettingsData copyWith(');
+      final overrideAfterCopyWith =
+          source.indexOf('\n  @override', copyWithStart);
+      final copyWithSection =
+          source.substring(copyWithStart, overrideAfterCopyWith);
+      // The parameter block ends at the first '{'. Extract just the param list.
+      final paramEnd = copyWithSection.indexOf('{');
+      final paramSection = copyWithSection.substring(0, paramEnd);
+      expect(
+        paramSection.contains('activeProvider'),
+        isFalse,
+        reason:
+            'activeProvider must NOT appear in copyWith parameter list (dedicated-writer pattern)',
+      );
+    });
+  });
+
+  group('activeProvider field — domain source purity extended (NFR-02)', () {
+    test(
+        'given_entity_source_file_when_grepped_then_no_flutter_drift_http_or_TimeOfDay_import',
+        () {
+      final source = readAppSettingsDataSource();
+      expect(
+        source.contains('package:flutter/'),
+        isFalse,
+        reason: 'domain entity must not import package:flutter/',
+      );
+      expect(
+        source.contains('package:drift/'),
+        isFalse,
+        reason: 'domain entity must not import package:drift/',
+      );
+      expect(
+        source.contains('package:http/'),
+        isFalse,
+        reason: 'domain entity must not import package:http/',
+      );
+      expect(
+        source.contains('TimeOfDay'),
+        isFalse,
+        reason: 'domain entity must not reference Flutter TimeOfDay',
+      );
     });
   });
 }

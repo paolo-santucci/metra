@@ -6,9 +6,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../../../core/errors/metra_exception.dart';
 import '../../../core/utils/result.dart';
 import '../../../data/services/backup/backup_filename.dart';
+import '../../../domain/entities/app_settings_data.dart';
 import '../../../domain/entities/sync_log_entity.dart';
 import '../../../providers/backup_providers.dart';
 import '../../../providers/encryption_provider.dart';
@@ -19,12 +21,27 @@ import 'backup_state.dart';
 class BackupNotifier extends AsyncNotifier<BackupState> {
   /// Secure-storage key for the cached backup passphrase.
   ///
-  /// Exposed as a public constant so [BackupScreen] can read the cached value
-  /// without hardcoding the literal string in the UI layer.
-  static const kPassphraseKey = 'metra_backup_passphrase_v1';
+  /// Delegates to [AppConstants.kBackupPassphraseKey] so there is exactly one
+  /// definition of the key string in the codebase (FR-23).  Exposed as a
+  /// public constant so [BackupScreen] can read the cached value without
+  /// hardcoding the literal string in the UI layer.
+  static const kPassphraseKey = AppConstants.kBackupPassphraseKey;
 
   // Keep the private alias to avoid changing every internal call-site.
   static const _passphraseKey = kPassphraseKey;
+
+  /// Single derivation point for the "is a backup provider connected?"
+  /// predicate (FR-19).
+  ///
+  /// In M1 (Dropbox only) this is equivalent to `dropboxEmail != null`.
+  /// When M3 adds iCloud (email-less), this seam is the only place to extend
+  /// — no scattered inline `dropboxEmail` checks anywhere else.
+  ///
+  /// IMPORTANT: the result must match the Dropbox-correct semantic exactly:
+  ///   connected ⟺ dropboxEmail != null
+  /// The iCloud email-less case (ODQ-2) is DEFERRED to M3.
+  static bool _isConnected(AppSettingsData settings) =>
+      settings.dropboxEmail != null;
 
   @override
   Future<BackupState> build() async {
@@ -38,7 +55,7 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     await ref.watch(appSettingsStreamProvider.future);
     final settingsRepo = await ref.read(appSettingsRepositoryProvider.future);
     final settings = await settingsRepo.getOrCreate();
-    if (settings.dropboxEmail == null) {
+    if (!_isConnected(settings)) {
       return const BackupNotConnected();
     }
     final passphrase =
@@ -185,7 +202,10 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
       await syncLogRepo.append(
         SyncLogEntity(
           timestamp: DateTime.now().toUtc(),
-          provider: SyncProvider.dropbox,
+          // FR-18: use the active-provider id from settings, not a hardcoded
+          // SyncProvider.dropbox literal — preserves correctness when the
+          // active provider changes in future milestones.
+          provider: settings.activeProvider,
           operation: SyncOperation.backupSkipped,
           success: true,
           errorMessage: 'skipped: backupSuspended=true',
@@ -208,7 +228,10 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
         await syncLogRepo.append(
           SyncLogEntity(
             timestamp: DateTime.now().toUtc(),
-            provider: SyncProvider.dropbox,
+            // FR-18: use the active-provider id from settings, not a hardcoded
+            // SyncProvider.dropbox literal — preserves correctness when the
+            // active provider changes in future milestones.
+            provider: settings.activeProvider,
             operation: SyncOperation.backupSkipped,
             success: true,
             errorMessage:

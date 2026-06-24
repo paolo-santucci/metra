@@ -986,12 +986,6 @@ abstract class AppLocalizations {
   /// **'I tuoi dati restano sul dispositivo. Collega Dropbox per conservare una copia cifrata nel cloud — solo tu puoi leggerla.'**
   String get backup_not_connected_body;
 
-  /// Button to initiate Dropbox OAuth connection
-  ///
-  /// In it, this message translates to:
-  /// **'Collega Dropbox'**
-  String get backup_connect_dropbox;
-
   /// Status line showing the connected Dropbox account email
   ///
   /// In it, this message translates to:

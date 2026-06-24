@@ -520,9 +520,6 @@ class AppLocalizationsIt extends AppLocalizations {
       'I tuoi dati restano sul dispositivo. Collega Dropbox per conservare una copia cifrata nel cloud — solo tu puoi leggerla.';
 
   @override
-  String get backup_connect_dropbox => 'Collega Dropbox';
-
-  @override
   String backup_connected_as(String email) {
     return 'Connesso come: $email';
   }

@@ -19,6 +19,41 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/domain/entities/sync_log_entity.dart';
 
 void main() {
+  // ---- TASK-01: SyncProvider enum contract ----
+
+  group('SyncProvider enum contract', () {
+    test(
+      'given_syncProvider_when_checking_values_length_then_exactly_three_members',
+      () {
+        expect(SyncProvider.values.length, 3);
+      },
+    );
+
+    test(
+      'given_syncProvider_when_listing_members_then_contains_exactly_dropbox_googleDrive_iCloud',
+      () {
+        expect(
+          SyncProvider.values,
+          containsAll([
+            SyncProvider.dropbox,
+            SyncProvider.googleDrive,
+            SyncProvider.iCloud,
+          ]),
+        );
+      },
+    );
+
+    test(
+      'given_syncProvider_when_checking_names_then_no_oneDrive_member_exists',
+      () {
+        final names = SyncProvider.values.map((e) => e.name).toList();
+        expect(names, isNot(contains('oneDrive')));
+      },
+    );
+  });
+
+  // ---- end TASK-01 ----
+
   final ts = DateTime.utc(2026, 5, 1, 12, 0);
 
   SyncLogEntity makeLog({

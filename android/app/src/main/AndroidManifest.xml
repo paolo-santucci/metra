@@ -47,6 +47,21 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="metra" android:host="oauth-callback" />
             </intent-filter>
+            <!-- Google Drive OAuth callback. Reuses the same metra:// scheme as
+                 Dropbox (MainActivity's callback map is keyed by scheme, not host —
+                 MainActivity.kt:120). The distinct host oauth-callback-google routes
+                 Android intents to this activity while sharing the scheme-keyed
+                 callback slot. EC-08 concurrency invariant: only one provider OAuth
+                 flow may be in flight at a time; concurrent flows would collide on
+                 the scheme-keyed map. Host string is byte-identical to the Dart
+                 _redirectUri constant in google_drive_provider.dart and to the
+                 authorized redirect URI in the Google Cloud console. -->
+            <intent-filter android:label="oauth_callback_google">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="metra" android:host="oauth-callback-google" />
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

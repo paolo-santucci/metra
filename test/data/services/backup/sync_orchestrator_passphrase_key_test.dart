@@ -10,11 +10,15 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  // ── Test 3 (BUG-B05) — sync_orchestrator references public key constant ────
+  // ── Test 3 (BUG-B05, updated by M1 FR-23) — single passphrase-key source ────
   //
   // Guards against re-introduction of the literal 'metra_backup_passphrase_v1'
-  // in sync_orchestrator.dart. After T-A the literal must appear exactly ONCE
-  // across lib/ (in backup_notifier.dart:24 only).
+  // outside its single source of truth. M1 FR-23 moved that single source from
+  // backup_notifier.dart to lib/core/constants/app_constants.dart
+  // (AppConstants.kBackupPassphraseKey), so it is import-safe from both the
+  // domain (delete_all_data.dart) and feature (backup_notifier.dart) layers.
+  // After FR-23 the literal must appear exactly ONCE across lib/ — in
+  // app_constants.dart only; every consumer references the constant.
   //
   // This is a source-level assertion, not a runtime test — it reads the actual
   // .dart files on disk and greps for the literal string.
@@ -30,6 +34,9 @@ void main() {
       final notifierFile = File(
         'lib/features/backup/state/backup_notifier.dart',
       );
+      final constantsFile = File(
+        'lib/core/constants/app_constants.dart',
+      );
 
       expect(
         orchestratorFile.existsSync(),
@@ -41,27 +48,42 @@ void main() {
         isTrue,
         reason: 'backup_notifier.dart must exist',
       );
+      expect(
+        constantsFile.existsSync(),
+        isTrue,
+        reason: 'app_constants.dart must exist',
+      );
 
-      // Count occurrences of the literal string in both files.
+      // Count occurrences of the literal string in each file.
       final orchestratorCount =
           orchestratorFile.readAsStringSync().split(literal).length - 1;
       final notifierCount =
           notifierFile.readAsStringSync().split(literal).length - 1;
+      final constantsCount =
+          constantsFile.readAsStringSync().split(literal).length - 1;
 
-      // After T-A: orchestrator must have zero occurrences (deduped to public
-      // constant). Notifier must have exactly one (the kPassphraseKey definition
-      // at line 24). Total across the two files must be exactly 1.
+      // After FR-23: the literal lives ONLY in app_constants.dart (exactly once,
+      // at kBackupPassphraseKey). Both consumers — sync_orchestrator.dart and
+      // backup_notifier.dart — must reference the constant, never the literal.
       expect(
         orchestratorCount,
         equals(0),
         reason: 'sync_orchestrator.dart must not contain the literal '
-            "'$literal' — it must reference BackupNotifier.kPassphraseKey instead",
+            "'$literal' — it must reference the shared constant instead",
       );
       expect(
         notifierCount,
+        equals(0),
+        reason: 'backup_notifier.dart must not contain the literal '
+            "'$literal' — FR-23 moved it to AppConstants.kBackupPassphraseKey; "
+            'kPassphraseKey must reference that constant',
+      );
+      expect(
+        constantsCount,
         equals(1),
-        reason: "backup_notifier.dart must contain the literal '$literal' "
-            'exactly once (at the kPassphraseKey constant definition)',
+        reason: "app_constants.dart must contain the literal '$literal' "
+            'exactly once (the kBackupPassphraseKey definition — the single '
+            'source of truth after FR-23)',
       );
     },
   );

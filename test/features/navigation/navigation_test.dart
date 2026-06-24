@@ -22,6 +22,7 @@ import 'package:metra/core/widgets/metra_tab_bar.dart';
 import 'package:metra/domain/entities/app_settings_data.dart';
 import 'package:metra/domain/entities/cycle_stats_data.dart';
 import 'package:metra/domain/entities/cycle_summary.dart';
+import 'package:metra/domain/entities/sync_log_entity.dart';
 import 'package:metra/domain/repositories/app_settings_repository.dart';
 import 'package:metra/features/calendar/calendar_screen.dart';
 import 'package:metra/features/calendar/state/calendar_month_controller.dart';
@@ -98,6 +99,9 @@ class _StubAppSettingsRepository implements AppSettingsRepository {
 
   @override
   Future<void> clearBackupSuspended() async {}
+
+  @override
+  Future<void> setActiveProvider(SyncProvider provider) async {}
 }
 
 /// Provider override that injects [_StubCalendarMonthNotifier].

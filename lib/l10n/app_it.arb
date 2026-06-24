@@ -775,11 +775,6 @@
     "description": "Body text shown on the backup screen when no provider is connected"
   },
 
-  "backup_connect_dropbox": "Collega Dropbox",
-  "@backup_connect_dropbox": {
-    "description": "Button to initiate Dropbox OAuth connection"
-  },
-
   "backup_connected_as": "Connesso come: {email}",
   "@backup_connected_as": {
     "description": "Status line showing the connected Dropbox account email",

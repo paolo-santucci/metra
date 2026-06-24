@@ -19,8 +19,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/services/backup/backup_file_entry.dart';
 import '../data/services/backup/backup_service.dart';
+import '../data/services/backup/cloud_backup_provider.dart';
 import '../data/services/backup/dropbox_provider.dart';
+import '../data/services/backup/google_drive_provider.dart';
 import '../data/services/backup/sync_orchestrator.dart';
+import '../domain/entities/sync_log_entity.dart';
 import '../domain/use_cases/backup_data.dart';
 import '../domain/use_cases/restore_data.dart';
 import 'encryption_provider.dart';
@@ -28,6 +31,7 @@ import 'repository_providers.dart';
 import 'use_case_providers.dart';
 
 const _dropboxAppKey = String.fromEnvironment('DROPBOX_APP_KEY');
+const _googleOauthClientId = String.fromEnvironment('GOOGLE_OAUTH_CLIENT_ID');
 
 final dropboxProviderProvider = Provider<DropboxProvider>((ref) {
   return DropboxProvider(
@@ -36,11 +40,43 @@ final dropboxProviderProvider = Provider<DropboxProvider>((ref) {
   );
 });
 
-/// Thin seam: all BackupNotifier provider reads go through this so tests
-/// can override with FakeDropboxProvider without touching the real OAuth flow.
-final cloudBackupProvider = Provider<CloudBackupProvider>(
-  (ref) => ref.watch(dropboxProviderProvider),
+final googleDriveProviderProvider = Provider<GoogleDriveProvider>(
+  (ref) => GoogleDriveProvider(
+    clientId: _googleOauthClientId,
+    storage: ref.watch(secureStorageProvider),
+  ),
 );
+
+/// Resolves the active backup provider implementation from the persisted
+/// [AppSettingsData.activeProvider] setting.
+///
+/// Stays a synchronous [Provider] — converting to [FutureProvider] would break
+/// 40+ [overrideWithValue] test sites and cascade [await] through
+/// [backupFileListProvider] and [BackupNotifier] (NFR-03).
+///
+/// Resolution rules:
+/// - Reads [appSettingsStreamProvider].valueOrNull?.activeProvider synchronously.
+/// - Defaults to [SyncProvider.dropbox] during the settings-loading frame
+///   (when the stream has not yet emitted — EC-01).
+/// - M2: googleDrive → GoogleDriveProvider (ODQ-1 resolved).
+/// - iCloud has no impl yet — falls back to Dropbox (ODQ-1, pending M3).
+final cloudBackupProvider = Provider<CloudBackupProvider>((ref) {
+  // Read activeProvider synchronously; default to dropbox during the
+  // settings-loading frame (stream has not yet emitted — EC-01).
+  final activeProvider =
+      ref.watch(appSettingsStreamProvider).valueOrNull?.activeProvider ??
+          SyncProvider.dropbox;
+
+  switch (activeProvider) {
+    case SyncProvider.dropbox:
+      return ref.watch(dropboxProviderProvider);
+    case SyncProvider.googleDrive:
+      return ref.watch(googleDriveProviderProvider);
+    case SyncProvider.iCloud:
+      // iCloud has no impl yet — fall back to Dropbox (ODQ-1, pending M3).
+      return ref.watch(dropboxProviderProvider);
+  }
+});
 
 final backupServiceProvider = FutureProvider<BackupService>((ref) async {
   final logRepo = await ref.watch(dailyLogRepositoryProvider.future);
@@ -57,7 +93,7 @@ final syncOrchestratorProvider = FutureProvider<SyncOrchestrator>((ref) async {
   return SyncOrchestrator(
     backupService: backupSvc,
     encryptionService: ref.watch(encryptionServiceProvider),
-    provider: ref.watch(dropboxProviderProvider),
+    provider: ref.watch(cloudBackupProvider),
     settingsRepo: settingsRepo,
     syncLogRepo: syncLogRepo,
     logRepo: logRepo,
