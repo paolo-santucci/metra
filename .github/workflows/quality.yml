@@ -2,7 +2,9 @@ name: Quality
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - metra-1.1.0
   pull_request:
     branches: [main]
 
