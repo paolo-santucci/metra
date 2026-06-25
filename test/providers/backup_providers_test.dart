@@ -5,6 +5,7 @@
 
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/errors/metra_exception.dart';
@@ -17,6 +18,7 @@ import 'package:metra/providers/repository_providers.dart';
 
 import '../helpers/fake_dropbox_provider.dart';
 import '../helpers/fake_google_drive_provider.dart';
+import '../helpers/fake_icloud_provider.dart';
 
 // ---------------------------------------------------------------------------
 // Source-file reader for grep assertions.
@@ -225,11 +227,18 @@ void main() {
       },
     );
 
-    // TASK-08 / EC-04 / ODQ-1: activeProvider==iCloud in M1 → falls back to
-    // Dropbox impl (no concrete impl exists), never throws.
+    // EC-04 (INVERTED for M3): activeProvider==iCloud on iOS → IcloudProvider
+    // (id == SyncProvider.iCloud). M1 previously fell back to Dropbox (ODQ-1);
+    // M3 inverts the arm to a platform-guarded real provider (FR-13).
+    // Reset debugDefaultTargetPlatformOverride in tearDown to prevent leakage.
     test(
-      'EC-04 M1 stub: activeProvider==iCloud → Dropbox fallback, no throw',
-      () {
+      'EC-04 M3: activeProvider==iCloud on iOS → IcloudProvider (id == iCloud)',
+      () async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        addTearDown(() {
+          debugDefaultTargetPlatformOverride = null;
+        });
+
         final settings = _makeSettings(activeProvider: SyncProvider.iCloud);
         final container = ProviderContainer(
           overrides: [
@@ -240,12 +249,102 @@ void main() {
         );
         addTearDown(container.dispose);
 
-        // Must not throw; must fall back to Dropbox impl.
+        // Pump the event loop so the StreamProvider delivers its first value
+        // and valueOrNull is set before cloudBackupProvider reads it.
+        await container.read(appSettingsStreamProvider.future);
+
         final result = container.read(cloudBackupProvider);
         expect(result, isNotNull);
         expect(result, isA<CloudBackupProvider>());
-        // M1: iCloud falls back to Dropbox impl.
+        // M3: iCloud on iOS resolves the real IcloudProvider (id == iCloud).
+        expect(result.id, SyncProvider.iCloud);
+      },
+    );
+
+    // EC-04 M3 companion: the resolved iCloud provider on iOS is NOT the Dropbox
+    // impl (FR-13).
+    test(
+      'iCloud on iOS: resolved provider is not the Dropbox impl (FR-13)',
+      () async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        addTearDown(() {
+          debugDefaultTargetPlatformOverride = null;
+        });
+
+        final settings = _makeSettings(activeProvider: SyncProvider.iCloud);
+        final container = ProviderContainer(
+          overrides: [
+            appSettingsStreamProvider.overrideWith(
+              (ref) => Stream.value(settings),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await container.read(appSettingsStreamProvider.future);
+
+        final result = container.read(cloudBackupProvider);
+        expect(result.id, isNot(SyncProvider.dropbox));
+        expect(result, isNot(isA<FakeDropboxProvider>()));
+      },
+    );
+
+    // EC-10: activeProvider==iCloud off-iOS (Linux CI, no platform override) →
+    // Dropbox fallback, no throw.  The switch is exhaustive; the iCloud arm
+    // falls back to the Dropbox impl without throwing on non-iOS platforms (FR-13).
+    test(
+      'EC-10: activeProvider==iCloud off-iOS → Dropbox fallback, no throw (EC-10)',
+      () async {
+        // debugDefaultTargetPlatformOverride is intentionally NOT set here
+        // (= null → Linux TargetPlatform on CI → defaultTargetPlatform != iOS).
+        final settings = _makeSettings(activeProvider: SyncProvider.iCloud);
+        final container = ProviderContainer(
+          overrides: [
+            appSettingsStreamProvider.overrideWith(
+              (ref) => Stream.value(settings),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await container.read(appSettingsStreamProvider.future);
+
+        final result = container.read(cloudBackupProvider);
+        expect(result, isNotNull);
+        expect(result, isA<CloudBackupProvider>());
+        // Off-iOS: iCloud arm falls back to Dropbox without throwing (EC-10).
         expect(result.id, SyncProvider.dropbox);
+      },
+    );
+
+    // source-grep: iCloud arm uses defaultTargetPlatform (from flutter/foundation,
+    // NOT dart:io Platform) — always false on Linux CI, always evaluable (FR-13).
+    test(
+      'source grep: iCloud arm uses defaultTargetPlatform guard, not dart:io (FR-13)',
+      () async {
+        const filePath = 'lib/providers/backup_providers.dart';
+        final source = await readSourceFile(filePath);
+        expect(source, contains('defaultTargetPlatform == TargetPlatform.iOS'));
+        // dart:io Platform.isIOS is always false on Linux CI — must NOT be used.
+        expect(source, isNot(contains('Platform.isIOS')));
+        expect(source, isNot(contains("import 'dart:io'")));
+      },
+    );
+
+    // overrideWithValue(FakeICloudProvider()) compiles and reads back the fake
+    // (NFR-03 override-site guard for the 13+ overrideWithValue sites).
+    test(
+      'overrideWithValue(FakeICloudProvider) compiles and reads back iCloud id (NFR-03)',
+      () {
+        final fake = FakeICloudProvider();
+        final container = ProviderContainer(
+          overrides: [cloudBackupProvider.overrideWithValue(fake)],
+        );
+        addTearDown(container.dispose);
+
+        final result = container.read(cloudBackupProvider);
+        expect(result, same(fake));
+        expect(result.id, SyncProvider.iCloud);
       },
     );
 
@@ -263,6 +362,58 @@ void main() {
         final result = container.read(cloudBackupProvider);
         expect(result, same(fake));
         expect(result.id, SyncProvider.dropbox);
+      },
+    );
+  });
+
+  // -------------------------------------------------------------------------
+  // Group H — iCloudProviderProvider (FR-12, FR-14, NFR-03)
+  // -------------------------------------------------------------------------
+  group('iCloudProviderProvider', () {
+    // FR-12: iCloudProviderProvider resolves an IcloudProvider with id == iCloud.
+    test(
+      'resolves IcloudProvider with id == SyncProvider.iCloud (FR-12)',
+      () {
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+
+        final result = container.read(iCloudProviderProvider);
+        expect(result, isA<CloudBackupProvider>());
+        expect(result.id, SyncProvider.iCloud);
+      },
+    );
+
+    // FR-12: the resolved provider is NOT the Dropbox impl.
+    test(
+      'resolved provider is not the Dropbox impl (FR-12)',
+      () {
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+
+        final result = container.read(iCloudProviderProvider);
+        expect(result.id, isNot(SyncProvider.dropbox));
+        expect(result, isNot(isA<FakeDropboxProvider>()));
+      },
+    );
+
+    // FR-14: resolving iCloudProviderProvider on Linux must NOT invoke any
+    // ICloudStorage.* static (no native channel call). ProductionIcloudGateway
+    // is lazy — it stores only the container id and makes no platform calls
+    // until a method is invoked.
+    test(
+      'lazy: resolving iCloudProviderProvider on Linux invokes no ICloudStorage native call (FR-14)',
+      () {
+        // If ProductionIcloudGateway's constructor (or IcloudProvider's
+        // constructor) triggered a platform-channel call, this would throw
+        // MissingPluginException on Linux. The test verifies it does NOT.
+        expect(
+          () {
+            final container = ProviderContainer();
+            addTearDown(container.dispose);
+            container.read(iCloudProviderProvider);
+          },
+          returnsNormally,
+        );
       },
     );
   });

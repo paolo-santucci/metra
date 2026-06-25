@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/services/backup/backup_file_entry.dart';
@@ -22,6 +23,8 @@ import '../data/services/backup/backup_service.dart';
 import '../data/services/backup/cloud_backup_provider.dart';
 import '../data/services/backup/dropbox_provider.dart';
 import '../data/services/backup/google_drive_provider.dart';
+import '../data/services/backup/icloud_provider.dart';
+import '../data/services/backup/production_icloud_gateway.dart';
 import '../data/services/backup/sync_orchestrator.dart';
 import '../domain/entities/sync_log_entity.dart';
 import '../domain/use_cases/backup_data.dart';
@@ -47,11 +50,21 @@ final googleDriveProviderProvider = Provider<GoogleDriveProvider>(
   ),
 );
 
+/// Resolves the iCloud backup provider backed by [ProductionIcloudGateway].
+///
+/// iOS/iPadOS only — no OAuth, no token keys. Mirroring the M2
+/// [googleDriveProviderProvider] factory shape (FR-12). Lazy: neither
+/// [IcloudProvider] nor [ProductionIcloudGateway] makes a native call until
+/// a method is invoked (FR-14).
+final iCloudProviderProvider = Provider<IcloudProvider>(
+  (ref) => IcloudProvider(gateway: ProductionIcloudGateway()),
+);
+
 /// Resolves the active backup provider implementation from the persisted
 /// [AppSettingsData.activeProvider] setting.
 ///
 /// Stays a synchronous [Provider] — converting to [FutureProvider] would break
-/// 40+ [overrideWithValue] test sites and cascade [await] through
+/// 13+ [overrideWithValue] test sites and cascade [await] through
 /// [backupFileListProvider] and [BackupNotifier] (NFR-03).
 ///
 /// Resolution rules:
@@ -59,7 +72,9 @@ final googleDriveProviderProvider = Provider<GoogleDriveProvider>(
 /// - Defaults to [SyncProvider.dropbox] during the settings-loading frame
 ///   (when the stream has not yet emitted — EC-01).
 /// - M2: googleDrive → GoogleDriveProvider (ODQ-1 resolved).
-/// - iCloud has no impl yet — falls back to Dropbox (ODQ-1, pending M3).
+/// - M3: iCloud → [IcloudProvider] on iOS; Dropbox fallback off-iOS (FR-13).
+///   Guard uses [defaultTargetPlatform] (never dart:io Platform, which is
+///   always false on the Linux CI runner).
 final cloudBackupProvider = Provider<CloudBackupProvider>((ref) {
   // Read activeProvider synchronously; default to dropbox during the
   // settings-loading frame (stream has not yet emitted — EC-01).
@@ -73,7 +88,12 @@ final cloudBackupProvider = Provider<CloudBackupProvider>((ref) {
     case SyncProvider.googleDrive:
       return ref.watch(googleDriveProviderProvider);
     case SyncProvider.iCloud:
-      // iCloud has no impl yet — fall back to Dropbox (ODQ-1, pending M3).
+      // Platform-guarded: iCloud is iOS/iPadOS only. Off-iOS (Android, Linux
+      // CI runner) falls back to Dropbox without throwing, keeping the switch
+      // total and the override seam intact (EC-10, FR-13).
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        return ref.watch(iCloudProviderProvider);
+      }
       return ref.watch(dropboxProviderProvider);
   }
 });

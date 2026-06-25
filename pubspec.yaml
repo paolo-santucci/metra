@@ -56,6 +56,9 @@ dependencies:
   flutter_web_auth_2: ^4.0.0
   crypto: ^3.0.3
 
+  # iCloud backup (added in M3), iOS/iPadOS only
+  icloud_storage: 2.2.0 # rule-8: no existing lib wraps the iOS ubiquity-container (iCloud Drive) API; exact-pinned (no caret) so the native binding cannot drift unreviewed
+
   # Export/share (added in P-5)
   file_picker: ^8.1.2
   share_plus: ^10.0.2

@@ -18,7 +18,7 @@ class BackupConnected extends BackupState {
     required this.passphraseSet,
     this.lastBackupAt,
   });
-  final String email;
+  final String? email;
   final bool autoBackupActive; // true ⇔ !backupSuspended && passphraseSet
   final bool passphraseSet; // derived from secure-storage read in build()
   final DateTime? lastBackupAt;

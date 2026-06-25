@@ -1,7 +1,7 @@
 schema-version: 2
-last-updated: "2026-06-24T22:15:00+02:00"
+last-updated: "2026-06-25T21:25:00+02:00"
 active-plan: null
-last-plan: ".claude/docs/plans/archive/sp-20260624-m2-google-drive-provider-plan.md"
+last-plan: ".claude/docs/plans/archive/sp-20260625-m3-icloud-provider-plan.md"
 
 # Owned by the short-plan skill. update-status preserves verbatim.
 short-plan:
@@ -75,10 +75,13 @@ pending-consolidation:
   - plan-id: sp-20260624-m2-google-drive-provider-spec
     archived-date: "2026-06-24"
     has-spec-impact: true
+  - plan-id: sp-20260625-m3-icloud-provider-spec
+    archived-date: "2026-06-25"
+    has-spec-impact: true
 
 recently-completed:
   - date: "2026-06-24"
-    summary: "M2 Google Drive provider built & verified via /short-plan --auto (6 tasks/2 waves, all 17 SP-FRs) — UNCOMMITTED in working tree (no git commit yet). GoogleDriveProvider (raw OAuth PKCE+CSRF, drive.file, memoized Metra folder, token refresh, 403 storageQuotaExceeded->InsufficientStorageException, listFiles name-desc/empty) + FakeGoogleDriveProvider + composition-root wiring (EC-04 inverted) + GOOGLE_OAUTH_CLIENT_ID dart-define x5 + 2nd Android intent-filter (metra://oauth-callback-google). Full suite 1611 pass/4 skip/0 fail; format+analyze clean. Spec+plan archived; spec-delta pushed to pending-consolidation."
+    summary: "M1+M2 multi-provider cloud backup COMMITTED as 06311d7 on new branch metra-1.1.0, pushed to origin/metra-1.1.0 (upstream tracking). 47 files (+5156/-271): CloudBackupProvider abstraction + Dropbox unification; GoogleDriveProvider (raw OAuth PKCE+CSRF, drive.file, memoized Metra folder, token refresh, 403 storageQuotaExceeded->InsufficientStorageException); Drift schemaVersion 10->11 activeProvider; CI GOOGLE_OAUTH_CLIENT_ID dart-defines; 2nd Android intent-filter; full test coverage. Suite 1611 pass/4 skip/0 fail; format+analyze clean. Two personal docs (COLLOQUIO-METRA.md, about-page.md) deliberately left untracked, excluded from the public repo."
   - date: "2026-06-24"
     summary: "docs: authored internal credential-setup guide .claude/docs/guides/cloud-provider-setup.md (FR-33) — Dropbox recap, Google Drive GCP/OAuth/intent-filter/dart-define wiring, iCloud App ID/container/Runner.entitlements/profile-rotation; OQ-07 resolved as reuse metra://oauth-callback with distinct host"
   - date: "2026-06-14"
@@ -89,41 +92,43 @@ recently-completed:
     summary: "fix(ci): Quality workflow green — formatted app_constants.dart, aligned test expectations to custom domain metra.paolosantucci.com (c508c03)"
 
 in-progress:
-  - title: "M1 + M2 cloud-backup — built & verified, UNCOMMITTED in working tree (M2 built on top of uncommitted M1)"
-    state: "M1 (foundation: 13 tasks, schemaVersion 10->11, two-seam unification) + M2 (Google Drive provider: 6 tasks, GoogleDriveProvider + composition-root wiring + CI dart-define + Android intent-filter) both done via /short-plan --auto. Full suite 1611 pass/4 skip/0 fail (LD_LIBRARY_PATH sqlite workaround). format+analyze clean. Premature M1 agent commits were reverted (git reset --mixed 43a83a7); all M1+M2 work staged uncommitted on main."
+  - title: "M3 iCloud provider — build COMPLETE (uncommitted on metra-1.1.0)"
+    state: "LP M3 done: IcloudProvider + IcloudGateway seam + ProductionIcloudGateway, Runner.entitlements + CODE_SIGN_ENTITLEMENTS, icloud_storage 2.2.0, platform-guarded iCloud arm, email-less connected predicate. Suite 1689 pass/4 skip/0 fail; format+analyze clean. MC-02 archive-signing + device verify gated on external profile (M6)."
     touched:
-      - "lib/data/services/backup/cloud_backup_provider.dart"
-      - "lib/data/services/backup/dropbox_provider.dart"
-      - "lib/data/services/backup/sync_orchestrator.dart"
-      - "lib/data/services/backup/google_drive_provider.dart"
+      - "lib/data/services/backup/icloud_provider.dart"
+      - "lib/data/services/backup/icloud_gateway.dart"
+      - "lib/data/services/backup/production_icloud_gateway.dart"
       - "lib/providers/backup_providers.dart"
+      - "ios/Runner/Runner.entitlements"
+    next-step: "Commit M3 on metra-1.1.0; provision the Apple iCloud container + rotate the provisioning profile (external) before any iOS archive."
+    blocker: null
+  - title: "metra-1.1.0 branch — M1+M2 committed & pushed, awaiting PR / merge"
+    state: "06311d7 on origin/metra-1.1.0. M1 (foundation) + M2 (Google Drive) landed. Suite green via LD_LIBRARY_PATH sqlite workaround. Not yet merged to main; 2 spec-deltas still pending consolidation."
+    touched:
+      - "lib/data/services/backup/google_drive_provider.dart"
       - "lib/data/database/app_database.dart"
-      - "lib/domain/entities/app_settings_data.dart"
-      - "lib/domain/entities/sync_log_entity.dart"
-      - "lib/domain/use_cases/delete_all_data.dart"
-      - ".github/workflows/android.yml"
-      - ".github/workflows/ios.yml"
-      - "android/app/src/main/AndroidManifest.xml"
-    next-step: "Commit M1+M2 (decide feature branch vs main; M1 and M2 diffs are interleaved), then consolidate the 2 pending spec-deltas to canon."
+      - "lib/providers/backup_providers.dart"
+    next-step: "Open a PR for metra-1.1.0, then consolidate the 2 pending spec-deltas into canon once merged."
     blocker: null
   - title: "iOS black screen on cold-start (backup configured) — pending device verification"
-    state: "main @c508c03. iOS rc20 TestFlight build 320 is the candidate. Android crash is FIXED."
+    state: "iOS rc20 TestFlight build 320 is the candidate. Android crash is FIXED."
     touched:
       - "android/app/build.gradle.kts"
       - ".github/workflows/android.yml"
     next-step: "Verify iOS rc20 TestFlight 1.0.2 (320) cold-start black screen (backup configured) is GONE."
     blocker: "Awaiting iOS black-screen verification on physical device"
 
-  - "Commit the uncommitted M1+M2 work — recommend a feature branch (e.g. feat/cloud-backup-m1-m2) off main, NOT a direct main commit; full suite is green via the LD_LIBRARY_PATH sqlite workaround. M1 and M2 diffs are interleaved in the working tree."
-  - "Consolidate the 2 pending spec-deltas (sp-20260624-m1-provider-abstraction-foundation-spec + sp-20260624-m2-google-drive-provider-spec) into the backup spec-canon slice once M1+M2 land."
+next-steps:
+  - "Open a PR for branch metra-1.1.0 (M1+M2 multi-provider cloud backup) into main; CI quality.yml closes the NFR-07 80% coverage gate (OQ-QA-01)."
+  - "Consolidate the 2 pending spec-deltas (sp-20260624-m1-provider-abstraction-foundation-spec + sp-20260624-m2-google-drive-provider-spec) into the backup spec-canon slice once metra-1.1.0 lands."
   - "Provision the Google Cloud OAuth client (installed-app client id + metra://oauth-callback-google redirect) and add the GOOGLE_OAUTH_CLIENT_ID GitHub secret — required before Drive backup works end-to-end (empty client id ships an OAuth failure no unit test catches)."
-  - "Run the manual E2E Drive round-trip pre-merge gate (OQ-QA-05): back up to Google Drive -> download .enc -> verify unreadable binary -> restore on a 2nd Android device -> data identical. NFR-07 80% coverage gate closes only on CI quality.yml (OQ-QA-01)."
-  - "M3 (iCloud) and M5 (locale fix) depend only on M1; M4 (picker + switch flow) is now unblocked by M2 (consumes M3 for the iOS iCloud row)."
+  - "Run the manual E2E Drive round-trip pre-merge gate (OQ-QA-05): back up to Google Drive -> download .enc -> verify unreadable binary -> restore on a 2nd Android device -> data identical."
+  - "M3 (iCloud) build complete (code) — commit it on metra-1.1.0 alongside M1+M2. M4 (picker + switch flow) and M5 (locale fix) remain; M4 now consumes M3 for the iOS iCloud row."
+  - "M3 external deps (user-owned, M6): create the Apple App-ID iCloud capability + container iCloud.com.paolosantucci.metra, regenerate the App Store provisioning profile, re-encode IOS_PROVISIONING_PROFILE_BASE64 — required before any iOS archive (MC-02). Confirm the icloud_storage kQuotaExceededCode PlatformException value on-device (OQ-01)."
   - "After GitHub Pages rebuilds, verify retention/deletion sections live at metra.paolosantucci.com/{it,en}/privacy/, then resubmit to Google Play to clear the privacy-policy rejection."
   - "Download the signed release-aab artifact from the Android CI run on main (d702ab3) and upload to Play Console (versionCode 12) to retry the production promotion (16 KB page-size fix)."
   - "iOS release stays on rollback/rc10 track — do NOT push a v* tag on main (would auto-upload the unverified iOS black-screen build to TestFlight via ios.yml deploy_testflight)."
   - "When iOS black screen verified gone: reconcile iOS onto main, then tag v1.0.2 for the full iOS TestFlight + Android release."
-  - "Defer: migrate off EOL sqlcipher_flutter_libs to package:sqlite3 3.x (pub.dev EOL notice) — separate plan, after 1.0.2 ships."
 
 known-issues:
   - severity: critical

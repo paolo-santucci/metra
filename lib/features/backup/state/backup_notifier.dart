@@ -31,17 +31,30 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
   static const _passphraseKey = kPassphraseKey;
 
   /// Single derivation point for the "is a backup provider connected?"
-  /// predicate (FR-19).
+  /// predicate (FR-15).
   ///
-  /// In M1 (Dropbox only) this is equivalent to `dropboxEmail != null`.
-  /// When M3 adds iCloud (email-less), this seam is the only place to extend
-  /// — no scattered inline `dropboxEmail` checks anywhere else.
+  /// Exhaustive switch over [AppSettingsData.activeProvider] (TASK-07, M3):
+  ///   - dropbox / googleDrive → email-sentinel (`dropboxEmail != null`),
+  ///     preserving the pre-M3 behaviour exactly (zero regression).
+  ///   - iCloud → idempotent container probe via [CloudBackupProvider.authorize];
+  ///     a [SyncException] means signed-out/unavailable (NFR-06); the catch is
+  ///     LOCAL — no exception may escape [build()] (EC-07).
   ///
-  /// IMPORTANT: the result must match the Dropbox-correct semantic exactly:
-  ///   connected ⟺ dropboxEmail != null
-  /// The iCloud email-less case (ODQ-2) is DEFERRED to M3.
-  static bool _isConnected(AppSettingsData settings) =>
-      settings.dropboxEmail != null;
+  /// Not `activeProvider != null` — that defaults to dropbox and is never null.
+  Future<bool> _isConnected(AppSettingsData settings) async {
+    switch (settings.activeProvider) {
+      case SyncProvider.dropbox:
+      case SyncProvider.googleDrive:
+        return settings.dropboxEmail != null; // unchanged sentinel (FR-19)
+      case SyncProvider.iCloud:
+        try {
+          await ref.read(cloudBackupProvider).authorize(); // container probe
+          return true;
+        } on SyncException {
+          return false; // signed-out → not connected (NFR-06)
+        }
+    }
+  }
 
   @override
   Future<BackupState> build() async {
@@ -55,7 +68,7 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     await ref.watch(appSettingsStreamProvider.future);
     final settingsRepo = await ref.read(appSettingsRepositoryProvider.future);
     final settings = await settingsRepo.getOrCreate();
-    if (!_isConnected(settings)) {
+    if (!await _isConnected(settings)) {
       return const BackupNotConnected();
     }
     final passphrase =
@@ -63,7 +76,7 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     final passphraseSet = passphrase != null && passphrase.isNotEmpty;
     final autoBackupActive = !settings.backupSuspended && passphraseSet;
     return BackupConnected(
-      email: settings.dropboxEmail!,
+      email: settings.dropboxEmail, // nullable — no `!` (FR-16)
       lastBackupAt: settings.lastBackupAt,
       autoBackupActive: autoBackupActive,
       passphraseSet: passphraseSet,
@@ -73,14 +86,17 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
   Future<void> connect() async {
     state = const AsyncData(BackupRunning(BackupOperation.connecting));
     try {
-      final dropbox = ref.read(cloudBackupProvider);
-      await dropbox.authorize();
-      final email = await dropbox.currentEmail();
-      if (email == null) throw const SyncException('Could not fetch account');
+      final provider = ref.read(cloudBackupProvider);
+      await provider.authorize();
+      final email = await provider.currentEmail();
+      // iCloud has no email; only fail on null for OAuth-based providers (FR-16).
+      if (email == null && provider.id != SyncProvider.iCloud) {
+        throw const SyncException('Could not fetch account');
+      }
       final settingsRepo = await ref.read(appSettingsRepositoryProvider.future);
       DateTime? discoveredLastBackupAt;
       try {
-        final files = await dropbox.listFiles(); // sorted desc, newest first
+        final files = await provider.listFiles(); // sorted desc, newest first
         if (files.isNotEmpty) {
           discoveredLastBackupAt =
               BackupFilename.parseTimestamp(files.first.name);

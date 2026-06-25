@@ -28,6 +28,7 @@ import 'package:metra/providers/repository_providers.dart';
 
 import '../../../helpers/fake_app_settings_repository.dart';
 import '../../../helpers/fake_dropbox_provider.dart';
+import '../../../helpers/fake_icloud_provider.dart';
 import '../../../helpers/fake_sync_log_repository.dart';
 import '../../../helpers/in_memory_secure_storage.dart';
 
@@ -2049,6 +2050,226 @@ void main() {
         expect(
           entry.operation,
           equals(SyncOperation.backupSkipped),
+        );
+      },
+    );
+  });
+
+  // -----------------------------------------------------------------------
+  // TASK-07 — Group I + Scenario Group D
+  // Connected-predicate generalisation + nullable BackupConnected.email
+  // FR-15, FR-16, NFR-06
+  // -----------------------------------------------------------------------
+  group('TASK-07 — connected-predicate generalisation (FR-15/FR-16/NFR-06)',
+      () {
+    // Helper that wires the iCloud fake as the active cloud provider.
+    ProviderContainer makeIcloudContainer(FakeICloudProvider iCloudProvider) {
+      return ProviderContainer(
+        overrides: [
+          appSettingsRepositoryProvider.overrideWith((_) async => settingsRepo),
+          secureStorageProvider.overrideWithValue(storage),
+          backupDataProvider.overrideWith((_) async => BackupData(runner)),
+          restoreDataProvider.overrideWith((_) async => RestoreData(runner)),
+          cloudBackupProvider.overrideWithValue(iCloudProvider),
+          syncLogRepositoryProvider.overrideWith((_) async => fakeSyncLogRepo),
+        ],
+      );
+    }
+
+    // I-01 EC-11: iCloud connected (authorize succeeds) → _isConnected true
+    //             → build() emits BackupConnected
+    test(
+      'I-01 EC-11: iCloud connected (authorize succeeds) → BackupConnected',
+      () async {
+        await settingsRepo.setActiveProvider(SyncProvider.iCloud);
+        final container = makeIcloudContainer(
+          FakeICloudProvider(authorizeThrows: false),
+        );
+        addTearDown(container.dispose);
+        final s = await container.read(backupNotifierProvider.future);
+        expect(
+          s,
+          isA<BackupConnected>(),
+          reason:
+              'EC-11: iCloud authorize() success → _isConnected must return '
+              'true (probe, not dropboxEmail check)',
+        );
+      },
+    );
+
+    // I-02 EC-07/NFR-06: iCloud signed-out (authorize throws SyncException)
+    //                     → BackupNotConnected; no exception escapes build()
+    test(
+      'I-02 EC-07/NFR-06: iCloud signed-out (authorize throws SyncException) '
+      '→ BackupNotConnected, no exception escapes build()',
+      () async {
+        await settingsRepo.setActiveProvider(SyncProvider.iCloud);
+        final container = makeIcloudContainer(
+          FakeICloudProvider(authorizeThrows: true),
+        );
+        addTearDown(container.dispose);
+        // If an exception escaped build() this would throw rather than returning
+        // a BackupNotConnected.
+        final s = await container.read(backupNotifierProvider.future);
+        expect(
+          s,
+          isA<BackupNotConnected>(),
+          reason: 'EC-07/NFR-06: SyncException from authorize() must be caught '
+              'locally; signed-out iCloud reports not-connected',
+        );
+      },
+    );
+
+    // I-03 EC-12: dropbox email present → BackupConnected (no regression)
+    test(
+      'I-03 EC-12 regression: dropbox email present → BackupConnected',
+      () async {
+        // activeProvider defaults to SyncProvider.dropbox
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'user@dropbox.test',
+          lastBackupAt: null,
+        );
+        final container = makeIcloudContainer(FakeICloudProvider());
+        addTearDown(container.dispose);
+        final s = await container.read(backupNotifierProvider.future);
+        expect(
+          s,
+          isA<BackupConnected>(),
+          reason: 'EC-12: dropbox email present → connected predicate must '
+              'return true (email-sentinel path unchanged)',
+        );
+      },
+    );
+
+    // I-04 EC-12: dropbox no email → BackupNotConnected (no regression)
+    test(
+      'I-04 EC-12 regression: dropbox no email → BackupNotConnected',
+      () async {
+        // No email, activeProvider = dropbox (default)
+        final container = makeIcloudContainer(FakeICloudProvider());
+        addTearDown(container.dispose);
+        final s = await container.read(backupNotifierProvider.future);
+        expect(
+          s,
+          isA<BackupNotConnected>(),
+          reason: 'EC-12: dropbox null email → connected predicate must '
+              'return false (email-sentinel path unchanged)',
+        );
+      },
+    );
+
+    // I-05 EC-12: googleDrive email present → BackupConnected (no regression)
+    test(
+      'I-05 EC-12 regression: googleDrive email present → BackupConnected',
+      () async {
+        await settingsRepo.setActiveProvider(SyncProvider.googleDrive);
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'user@gmail.test',
+          lastBackupAt: null,
+        );
+        final container = makeIcloudContainer(FakeICloudProvider());
+        addTearDown(container.dispose);
+        final s = await container.read(backupNotifierProvider.future);
+        expect(
+          s,
+          isA<BackupConnected>(),
+          reason: 'EC-12: googleDrive email present → connected predicate '
+              'must return true (email-sentinel path unchanged)',
+        );
+      },
+    );
+
+    // I-06 FR-16: build() iCloud connected → BackupConnected.email is null
+    //             (no force-unwrap, no throw)
+    test(
+      'I-06 FR-16: build() iCloud connected → BackupConnected.email is null',
+      () async {
+        await settingsRepo.setActiveProvider(SyncProvider.iCloud);
+        final container = makeIcloudContainer(
+          FakeICloudProvider(authorizeThrows: false),
+        );
+        addTearDown(container.dispose);
+        final s = await container.read(backupNotifierProvider.future);
+        expect(s, isA<BackupConnected>());
+        expect(
+          (s as BackupConnected).email,
+          isNull,
+          reason: 'FR-16: iCloud has no email; build() must not force-unwrap '
+              'dropboxEmail — BackupConnected.email must be null',
+        );
+      },
+    );
+
+    // I-07 FR-16: connect() iCloud (currentEmail()==null) stores dropboxEmail:null,
+    //             completes without SyncException
+    test(
+      'I-07 FR-16: connect() iCloud stores dropboxEmail:null, NO SyncException',
+      () async {
+        await settingsRepo.setActiveProvider(SyncProvider.iCloud);
+        final container = makeIcloudContainer(
+          FakeICloudProvider(authorizeThrows: false),
+        );
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        // connect() must complete without throwing and must NOT emit BackupErrorState.
+        await container.read(backupNotifierProvider.notifier).connect();
+
+        // Stored settings must have dropboxEmail = null for iCloud.
+        final settings = await settingsRepo.getOrCreate();
+        expect(
+          settings.dropboxEmail,
+          isNull,
+          reason: 'FR-16: iCloud connect() must store dropboxEmail:null '
+              '(no email available), not throw SyncException',
+        );
+
+        // Final state must not be BackupErrorState (no SyncException escaped).
+        final s = await container.read(backupNotifierProvider.future);
+        expect(
+          s,
+          isNot(isA<BackupErrorState>()),
+          reason: 'FR-16: connect() for iCloud must not throw '
+              'SyncException("Could not fetch account") when email is null',
+        );
+      },
+    );
+
+    // I-08 FR-16: BackupConnected.email is String? (compile-time guard)
+    test(
+      'I-08 FR-16: BackupConnected.email is String? (accepts null)',
+      () {
+        // If BackupConnected.email were non-nullable this would fail at compile time.
+        const state = BackupConnected(
+          email: null,
+          autoBackupActive: false,
+          passphraseSet: false,
+        );
+        expect(state.email, isNull);
+      },
+    );
+
+    // I-09 FR-15/FR-16-neg static: no dropboxEmail! in the notifier file;
+    //      _isConnected has an explicit 'case SyncProvider.iCloud:' arm.
+    test(
+      'I-09 FR-15/FR-16-neg static: no dropboxEmail! in backup_notifier.dart; '
+      '_isConnected has case SyncProvider.iCloud:',
+      () async {
+        final file = File(
+          'lib/features/backup/state/backup_notifier.dart',
+        );
+        final content = await file.readAsString();
+        expect(
+          content,
+          isNot(contains('dropboxEmail!')),
+          reason: 'FR-16: dropboxEmail must never be force-unwrapped — '
+              'BackupConnected.email is now nullable',
+        );
+        expect(
+          content,
+          contains('case SyncProvider.iCloud:'),
+          reason: 'FR-15: _isConnected must have an explicit '
+              'case SyncProvider.iCloud: arm (not a default: or activeProvider != null)',
         );
       },
     );

@@ -128,7 +128,8 @@ class _BackupConnectedViewState extends ConsumerState<BackupConnectedView>
                 children: [
                   SettingsRow.staticInfo(
                     label: l10n.backupAccountLabel,
-                    valueText: widget.state.email,
+                    valueText: widget.state.email ??
+                        '', // EC-13: null-guard (provider-name render is M4/FR-26)
                   ),
                   const SettingsDivider(),
                   SettingsRow.staticInfo(
