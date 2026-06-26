@@ -59,6 +59,7 @@ import 'package:metra/data/services/notification_service.dart';
 import 'package:metra/domain/use_cases/restore_data.dart';
 import 'package:metra/features/backup/backup_screen.dart';
 import 'package:metra/features/backup/state/backup_notifier.dart';
+import 'package:metra/domain/entities/sync_log_entity.dart';
 import 'package:metra/features/backup/state/backup_state.dart';
 import 'package:metra/features/backup/widgets/backup_picker_sheet.dart';
 import 'package:metra/features/backup/widgets/metra_confirm_dialog.dart';
@@ -92,6 +93,7 @@ class _RealishBackupNotifier extends BackupNotifier {
 // ---------------------------------------------------------------------------
 
 const _connectedState = BackupConnected(
+  provider: SyncProvider.dropbox,
   email: 'a@b.test',
   autoBackupActive: true,
   passphraseSet: true,

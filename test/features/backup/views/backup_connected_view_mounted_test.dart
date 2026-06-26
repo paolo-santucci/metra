@@ -48,6 +48,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/theme/metra_theme.dart';
 import 'package:metra/data/services/backup/backup_file_entry.dart';
 import 'package:metra/features/backup/state/backup_notifier.dart';
+import 'package:metra/domain/entities/sync_log_entity.dart';
 import 'package:metra/features/backup/state/backup_state.dart';
 import 'package:metra/features/backup/views/backup_connected_view.dart';
 import 'package:metra/l10n/app_localizations.dart';
@@ -109,6 +110,7 @@ final _stalledFileListProvider =
 // ---------------------------------------------------------------------------
 
 const _connectedState = BackupConnected(
+  provider: SyncProvider.dropbox,
   email: 'test@example.com',
   autoBackupActive: true,
   passphraseSet: true,

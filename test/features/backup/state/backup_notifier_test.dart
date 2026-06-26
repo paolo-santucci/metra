@@ -130,6 +130,102 @@ class _ThrowingDropboxProvider implements CloudBackupProvider {
   Future<void> deleteFile(String filename) async {}
 }
 
+/// Spy-enabled Google Drive fake for [BackupNotifier.switchProvider] tests.
+///
+/// Tracks [authorizeCalls], [disconnectCalls], and [deleteCalls] so ordering
+/// invariants and exclusion assertions can be made without modifying
+/// the shared [FakeDropboxProvider] helper with Google-Drive-specific logic.
+class _FakeGoogleDriveProvider implements CloudBackupProvider {
+  int disconnectCalls = 0;
+  int authorizeCalls = 0;
+  bool disconnectThrows = false;
+  bool authorizeThrows = false;
+  String? currentEmailResult = 'user@google.com';
+  bool failNextList = false;
+  final List<String> deleteCalls = [];
+
+  @override
+  SyncProvider get id => SyncProvider.googleDrive;
+
+  @override
+  Future<void> authorize() async {
+    authorizeCalls++;
+    if (authorizeThrows) {
+      throw const SyncException('Google Drive auth failed');
+    }
+  }
+
+  @override
+  Future<String?> currentEmail() async => currentEmailResult;
+
+  @override
+  Future<void> disconnect() async {
+    disconnectCalls++;
+    if (disconnectThrows) {
+      disconnectThrows = false;
+      throw const SyncException('Google Drive disconnect failed');
+    }
+  }
+
+  @override
+  Future<void> upload(Uint8List blob, String filename) async {}
+
+  @override
+  Future<Uint8List> download(String filename) async => Uint8List(0);
+
+  @override
+  Future<List<BackupFileEntry>> listFiles() async {
+    if (failNextList) {
+      failNextList = false;
+      throw Exception('list failed');
+    }
+    return [];
+  }
+
+  @override
+  Future<void> deleteFile(String filename) async {
+    deleteCalls.add(filename);
+  }
+}
+
+/// Google Drive fake whose [authorize] blocks until [release] is completed.
+///
+/// Used in the re-entrancy (EC-06) test to hold [switchProvider] inside
+/// the post-flip connect step so the second call can see [BackupRunning].
+class _BlockingAuthGoogleDriveProvider implements CloudBackupProvider {
+  _BlockingAuthGoogleDriveProvider(this.release);
+
+  final Completer<void> release;
+  int authorizeCalls = 0;
+
+  @override
+  SyncProvider get id => SyncProvider.googleDrive;
+
+  @override
+  Future<void> authorize() async {
+    authorizeCalls++;
+    await release.future;
+  }
+
+  @override
+  Future<String?> currentEmail() async => 'user@google.com';
+
+  @override
+  Future<void> disconnect() async {}
+
+  @override
+  Future<void> upload(Uint8List blob, String filename) async {}
+
+  @override
+  Future<Uint8List> download(String filename) async => Uint8List(0);
+
+  @override
+  Future<List<BackupFileEntry>> listFiles() async => [];
+
+  @override
+  Future<void> deleteFile(String filename) async {}
+}
+
 void main() {
   late FakeAppSettingsRepository settingsRepo;
   late InMemorySecureStorage storage;
@@ -2241,6 +2337,7 @@ void main() {
       () {
         // If BackupConnected.email were non-nullable this would fail at compile time.
         const state = BackupConnected(
+          provider: SyncProvider.dropbox,
           email: null,
           autoBackupActive: false,
           passphraseSet: false,
@@ -2270,6 +2367,673 @@ void main() {
           contains('case SyncProvider.iCloud:'),
           reason: 'FR-15: _isConnected must have an explicit '
               'case SyncProvider.iCloud: arm (not a default: or activeProvider != null)',
+        );
+      },
+    );
+  });
+
+  // ── TASK-05 TDD: BackupNotifier.switchProvider ordered flow ──
+  //
+  // These tests are written BEFORE the implementation (TDD red phase).
+  // They drive the exact contract of §5.1 and EC-02/04/05/06/07/08.
+  //
+  // Container strategy: override [resolveBackupProvider] family directly so
+  // [ref.read(resolveBackupProvider(target))] inside switchProvider returns the
+  // spy fakes.  [cloudBackupProvider] is left unoverridden in most tests so it
+  // chains through the family (for the CC-2 test it is explicitly pinned to
+  // fakeDropbox to expose a stale-read scenario).
+
+  group('TASK-05 — BackupNotifier.switchProvider', () {
+    late _FakeGoogleDriveProvider fakeGoogleDrive;
+    late FakeICloudProvider fakeICloud;
+
+    setUp(() {
+      fakeGoogleDrive = _FakeGoogleDriveProvider();
+      fakeICloud = FakeICloudProvider();
+    });
+
+    /// Standard container for switchProvider tests.
+    ///
+    /// Overrides [resolveBackupProvider] so the spy fakes are returned for
+    /// each [SyncProvider] key.  [cloudBackupProvider] resolves through the
+    /// family (not pinned), which is correct for all tests except CC-2.
+    ProviderContainer makeSwitchContainer() {
+      return ProviderContainer(
+        overrides: [
+          appSettingsRepositoryProvider.overrideWith(
+            (_) async => settingsRepo,
+          ),
+          secureStorageProvider.overrideWithValue(storage),
+          backupDataProvider.overrideWith((_) async => BackupData(runner)),
+          restoreDataProvider.overrideWith((_) async => RestoreData(runner)),
+          resolveBackupProvider.overrideWith((ref, id) {
+            switch (id) {
+              case SyncProvider.dropbox:
+                return fakeDropbox;
+              case SyncProvider.googleDrive:
+                return fakeGoogleDrive;
+              case SyncProvider.iCloud:
+                return fakeICloud;
+            }
+          }),
+          syncLogRepositoryProvider.overrideWith((_) async => fakeSyncLogRepo),
+        ],
+      );
+    }
+
+    // ── S-01: token scope ────────────────────────────────────────────────────
+    // active=dropbox, switchProvider(googleDrive) ok:
+    //   fakeDropbox.disconnectCalls == 1
+    //   fakeGoogleDrive.disconnectCalls == 0
+    //   passphrase key value unchanged before/after
+    test(
+      'S-01 token scope: active=dropbox → switchProvider(googleDrive) ok — '
+      'disconnect/authorize counts and passphrase unchanged',
+      () async {
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'user@dropbox.com',
+          lastBackupAt: null,
+        );
+        storage.values[BackupNotifier.kPassphraseKey] = 'my-passphrase';
+
+        final container = makeSwitchContainer();
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        await container
+            .read(backupNotifierProvider.notifier)
+            .switchProvider(SyncProvider.googleDrive);
+
+        expect(
+          fakeDropbox.disconnectCalls,
+          1,
+          reason: 'old provider (dropbox) disconnect() must be called once',
+        );
+        expect(
+          fakeGoogleDrive.disconnectCalls,
+          0,
+          reason: 'new provider (googleDrive) disconnect() must NOT be called',
+        );
+        expect(
+          fakeGoogleDrive.authorizeCalls,
+          1,
+          reason: 'new provider (googleDrive) authorize() must be called once',
+        );
+        expect(
+          storage.values[BackupNotifier.kPassphraseKey],
+          'my-passphrase',
+          reason: 'switchProvider must never touch the passphrase key (FR-13)',
+        );
+        final settings = await settingsRepo.getOrCreate();
+        expect(settings.activeProvider, SyncProvider.googleDrive);
+      },
+    );
+
+    // ── S-02: no notifier routing ────────────────────────────────────────────
+    // Verifies that BackupNotifier.connect() and .disconnect() are not invoked.
+    // Proxy: both notifier-level methods delete the passphrase key.  If the key
+    // is still present after switch, neither was called.
+    test(
+      'S-02 no notifier routing: notifier connect()/disconnect() NOT invoked '
+      '— passphrase key survives (both methods delete it)',
+      () async {
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'user@dropbox.com',
+          lastBackupAt: null,
+        );
+        storage.values[BackupNotifier.kPassphraseKey] = 'must-survive';
+
+        final container = makeSwitchContainer();
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        await container
+            .read(backupNotifierProvider.notifier)
+            .switchProvider(SyncProvider.googleDrive);
+
+        expect(
+          storage.values.containsKey(BackupNotifier.kPassphraseKey),
+          isTrue,
+          reason:
+              'passphrase key must be present — notifier disconnect/connect '
+              'would have deleted it (CC-1)',
+        );
+        expect(
+          storage.values[BackupNotifier.kPassphraseKey],
+          'must-survive',
+          reason: 'passphrase value must be unchanged (FR-13)',
+        );
+      },
+    );
+
+    // ── S-03: deleteFile not called ──────────────────────────────────────────
+    test(
+      'S-03 deleteFile: fakeDropbox.deleteCalls empty after success (.enc intact)',
+      () async {
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'user@dropbox.com',
+          lastBackupAt: null,
+        );
+
+        final container = makeSwitchContainer();
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        await container
+            .read(backupNotifierProvider.notifier)
+            .switchProvider(SyncProvider.googleDrive);
+
+        expect(
+          fakeDropbox.deleteCalls,
+          isEmpty,
+          reason: 'switchProvider must never call deleteFile on the old '
+              'provider — old .enc files stay intact (FR-13)',
+        );
+        expect(fakeGoogleDrive.deleteCalls, isEmpty);
+      },
+    );
+
+    // ── S-04: abort gate (EC-04) ─────────────────────────────────────────────
+    // old.disconnect() throws → activeProvider stays dropbox,
+    // fakeGoogleDrive.authorizeCalls == 0, setActiveProvider never called,
+    // state BackupErrorState.
+    test(
+      'S-04 abort gate (EC-04): old.disconnect() throws → '
+      'activeProvider unchanged, new not authorized, BackupErrorState',
+      () async {
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'user@dropbox.com',
+          lastBackupAt: null,
+        );
+        fakeDropbox.disconnectThrows = true;
+
+        final container = makeSwitchContainer();
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        settingsRepo.callLog.clear();
+        await container
+            .read(backupNotifierProvider.notifier)
+            .switchProvider(SyncProvider.googleDrive);
+
+        final settings = await settingsRepo.getOrCreate();
+        expect(
+          settings.activeProvider,
+          SyncProvider.dropbox,
+          reason: 'abort gate: activeProvider must stay dropbox (FR-11)',
+        );
+        expect(
+          fakeGoogleDrive.authorizeCalls,
+          0,
+          reason: 'abort gate: new provider must not be authorized (FR-11)',
+        );
+        expect(
+          settingsRepo.callLog,
+          isNot(contains('setActiveProvider')),
+          reason: 'abort gate: setActiveProvider must not be called (FR-11)',
+        );
+        final s = container.read(backupNotifierProvider).valueOrNull;
+        expect(
+          s,
+          isA<BackupErrorState>(),
+          reason: 'abort gate: state must be BackupErrorState',
+        );
+      },
+    );
+
+    // ── S-05: pre-flip ordering ──────────────────────────────────────────────
+    // old.disconnect() must complete before setActiveProvider is ever called.
+    test(
+      'S-05 pre-flip ordering: old.disconnect() completes before '
+      'setActiveProvider is called',
+      () async {
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'user@dropbox.com',
+          lastBackupAt: null,
+        );
+
+        // Capture whether setActiveProvider has been called at the moment
+        // disconnect() runs.  If it has, the ordering invariant is violated.
+        bool setActiveProviderCalledBeforeDisconnect = false;
+        fakeDropbox.onDisconnectCalled = () {
+          setActiveProviderCalledBeforeDisconnect =
+              settingsRepo.callLog.contains('setActiveProvider');
+        };
+
+        final container = makeSwitchContainer();
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        settingsRepo.callLog.clear();
+        await container
+            .read(backupNotifierProvider.notifier)
+            .switchProvider(SyncProvider.googleDrive);
+
+        expect(
+          setActiveProviderCalledBeforeDisconnect,
+          isFalse,
+          reason:
+              'setActiveProvider must NOT be called before disconnect() returns '
+              '(FR-10 ordering)',
+        );
+        expect(
+          settingsRepo.callLog,
+          contains('setActiveProvider'),
+          reason:
+              'setActiveProvider must be called at some point during switch',
+        );
+      },
+    );
+
+    // ── S-06: post-flip failure (EC-05 / OQ-01) ──────────────────────────────
+    // authorize() throws AFTER setActiveProvider:
+    //   activeProvider == googleDrive (no rollback)
+    //   dropboxEmail cleared
+    //   state BackupErrorState
+    //   next build() → BackupNotConnected for googleDrive
+    test(
+      'S-06 post-flip failure (EC-05/OQ-01): authorize() throws after flip → '
+      'activeProvider stays googleDrive (no rollback), state BackupErrorState, '
+      'next build() → BackupNotConnected',
+      () async {
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'user@dropbox.com',
+          lastBackupAt: null,
+        );
+        fakeGoogleDrive.authorizeThrows = true;
+
+        final container = makeSwitchContainer();
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        await container
+            .read(backupNotifierProvider.notifier)
+            .switchProvider(SyncProvider.googleDrive);
+
+        // No rollback: activeProvider stays target.
+        final settings = await settingsRepo.getOrCreate();
+        expect(
+          settings.activeProvider,
+          SyncProvider.googleDrive,
+          reason: 'OQ-01: activeProvider must stay flipped (no rollback)',
+        );
+        expect(
+          settings.dropboxEmail,
+          isNull,
+          reason: 'old identity cleared at step 4 — dropboxEmail must be null',
+        );
+
+        // Current state is BackupErrorState.
+        final s = container.read(backupNotifierProvider).valueOrNull;
+        expect(
+          s,
+          isA<BackupErrorState>(),
+          reason: 'post-flip failure must surface BackupErrorState',
+        );
+
+        // "Next build()" — trigger a rebuild and verify BackupNotConnected.
+        // With activeProvider=googleDrive and dropboxEmail=null,
+        // _isConnected() returns false → BackupNotConnected.
+        container.invalidate(backupNotifierProvider);
+        final nextState = await container.read(backupNotifierProvider.future);
+        expect(
+          nextState,
+          isA<BackupNotConnected>(),
+          reason:
+              'OQ-01: next build() must emit BackupNotConnected for the new '
+              'provider so the user can retry from a clean state',
+        );
+      },
+    );
+
+    // ── S-07: iCloud null email (EC-08) ──────────────────────────────────────
+    // iOS override; currentEmail()==null tolerated; completes successfully.
+    test(
+      'S-07 iCloud null email (EC-08): iOS platform; currentEmail()==null; '
+      'switchProvider(iCloud) completes — BackupConnected(provider: iCloud)',
+      () async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'user@dropbox.com',
+          lastBackupAt: null,
+        );
+        // fakeICloud.currentEmail() returns null by default (iCloud has no email).
+
+        final container = makeSwitchContainer();
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        // Must NOT throw — null email is tolerated for iCloud (EC-08).
+        await container
+            .read(backupNotifierProvider.notifier)
+            .switchProvider(SyncProvider.iCloud);
+
+        final settings = await settingsRepo.getOrCreate();
+        expect(
+          settings.activeProvider,
+          SyncProvider.iCloud,
+          reason: 'activeProvider must be flipped to iCloud',
+        );
+        expect(
+          settings.dropboxEmail,
+          isNull,
+          reason: 'iCloud stores null email (EC-08)',
+        );
+
+        // Build re-run via invalidateSelf → iCloud probe → connected.
+        final finalState = await container.read(backupNotifierProvider.future);
+        expect(
+          finalState,
+          isA<BackupConnected>(),
+          reason: 'iCloud null email must NOT yield BackupErrorState',
+        );
+        expect(
+          (finalState as BackupConnected).provider,
+          SyncProvider.iCloud,
+        );
+      },
+    );
+
+    // ── S-08: first-connect idempotent forget (EC-02) ────────────────────────
+    // NotConnected state (no email); old.disconnect() is a no-op;
+    // switchProvider(googleDrive) proceeds to authorize; passphrase untouched.
+    test(
+      'S-08 EC-02: NotConnected, no dropbox token — old.disconnect() is a '
+      'no-op; switchProvider(googleDrive) proceeds; passphrase untouched',
+      () async {
+        // No email → BackupNotConnected; activeProvider defaults to dropbox.
+        storage.values[BackupNotifier.kPassphraseKey] = 'existing-pass';
+
+        final container = makeSwitchContainer();
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        await container
+            .read(backupNotifierProvider.notifier)
+            .switchProvider(SyncProvider.googleDrive);
+
+        final settings = await settingsRepo.getOrCreate();
+        expect(
+          settings.activeProvider,
+          SyncProvider.googleDrive,
+          reason: 'EC-02: switch must proceed even from NotConnected state',
+        );
+        expect(
+          fakeGoogleDrive.authorizeCalls,
+          1,
+          reason: 'new provider must be authorized',
+        );
+        // Passphrase untouched (switchProvider never reads/writes/deletes it).
+        expect(
+          storage.values[BackupNotifier.kPassphraseKey],
+          'existing-pass',
+          reason: 'EC-02: passphrase must be untouched (FR-13)',
+        );
+      },
+    );
+
+    // ── S-09: re-entrancy (EC-06) ─────────────────────────────────────────────
+    // state BackupRunning(switching); 2nd call returns immediately;
+    // authorizeCalls <= 1; single invalidateSelf.
+    test(
+      'S-09 EC-06: state BackupRunning(switching); 2nd call returns immediately; '
+      'authorizeCalls <= 1',
+      () async {
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'user@dropbox.com',
+          lastBackupAt: null,
+        );
+
+        final releaser = Completer<void>();
+        final blockingGoogleDrive = _BlockingAuthGoogleDriveProvider(releaser);
+
+        final container = ProviderContainer(
+          overrides: [
+            appSettingsRepositoryProvider.overrideWith(
+              (_) async => settingsRepo,
+            ),
+            secureStorageProvider.overrideWithValue(storage),
+            backupDataProvider.overrideWith((_) async => BackupData(runner)),
+            restoreDataProvider.overrideWith((_) async => RestoreData(runner)),
+            resolveBackupProvider.overrideWith((ref, id) {
+              switch (id) {
+                case SyncProvider.dropbox:
+                  return fakeDropbox;
+                case SyncProvider.googleDrive:
+                  return blockingGoogleDrive;
+                case SyncProvider.iCloud:
+                  return fakeICloud;
+              }
+            }),
+            syncLogRepositoryProvider
+                .overrideWith((_) async => fakeSyncLogRepo),
+          ],
+        );
+        addTearDown(container.dispose);
+        addTearDown(() {
+          if (!releaser.isCompleted) releaser.complete();
+        });
+
+        await container.read(backupNotifierProvider.future);
+
+        // First call blocks inside blockingGoogleDrive.authorize().
+        unawaited(
+          container
+              .read(backupNotifierProvider.notifier)
+              .switchProvider(SyncProvider.googleDrive),
+        );
+        // Allow microtasks to advance state to BackupRunning(switching).
+        await Future<void>.delayed(Duration.zero);
+
+        expect(
+          container.read(backupNotifierProvider).valueOrNull,
+          isA<BackupRunning>(),
+          reason: 'precondition: first call must have entered BackupRunning',
+        );
+
+        // Second call must return immediately (re-entrancy guard).
+        await container
+            .read(backupNotifierProvider.notifier)
+            .switchProvider(SyncProvider.googleDrive)
+            .timeout(
+              const Duration(seconds: 3),
+              onTimeout: () => throw StateError(
+                'switchProvider did not return within 3 s — '
+                're-entrancy guard is missing',
+              ),
+            );
+
+        expect(
+          blockingGoogleDrive.authorizeCalls,
+          lessThanOrEqualTo(1),
+          reason: 'EC-06: re-entrant call must not invoke authorize() again',
+        );
+
+        // Unblock the first call.
+        releaser.complete();
+      },
+      timeout: const Timeout(Duration(seconds: 10)),
+    );
+
+    // ── S-10: explicit resolver (CC-2) ────────────────────────────────────────
+    // switchProvider reads resolveBackupProvider(target), NOT cloudBackupProvider.
+    // Setup: cloudBackupProvider is pinned to fakeDropbox (simulating stale-read).
+    // If the implementation incorrectly uses cloudBackupProvider for the new
+    // provider, fakeDropbox.authorizeCalls would increment instead of
+    // fakeGoogleDrive.authorizeCalls.
+    test(
+      'S-10 CC-2: explicit resolver — resolveBackupProvider(target) used, '
+      'NOT cloudBackupProvider (stale-read hazard)',
+      () async {
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'user@dropbox.com',
+          lastBackupAt: null,
+        );
+
+        // Pin cloudBackupProvider to fakeDropbox to expose the stale-read hazard.
+        // resolveBackupProvider(googleDrive) correctly returns fakeGoogleDrive.
+        final container = ProviderContainer(
+          overrides: [
+            appSettingsRepositoryProvider.overrideWith(
+              (_) async => settingsRepo,
+            ),
+            secureStorageProvider.overrideWithValue(storage),
+            backupDataProvider.overrideWith((_) async => BackupData(runner)),
+            restoreDataProvider.overrideWith((_) async => RestoreData(runner)),
+            // Stale pin: cloudBackupProvider always returns fakeDropbox,
+            // even after setActiveProvider(googleDrive).
+            cloudBackupProvider.overrideWithValue(fakeDropbox),
+            // resolveBackupProvider correctly routes to the fakes.
+            resolveBackupProvider.overrideWith((ref, id) {
+              switch (id) {
+                case SyncProvider.dropbox:
+                  return fakeDropbox;
+                case SyncProvider.googleDrive:
+                  return fakeGoogleDrive;
+                case SyncProvider.iCloud:
+                  return fakeICloud;
+              }
+            }),
+            syncLogRepositoryProvider
+                .overrideWith((_) async => fakeSyncLogRepo),
+          ],
+        );
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        final dropboxAuthBefore = fakeDropbox.authorizeCalls;
+
+        await container
+            .read(backupNotifierProvider.notifier)
+            .switchProvider(SyncProvider.googleDrive);
+
+        expect(
+          fakeGoogleDrive.authorizeCalls,
+          1,
+          reason: 'CC-2: resolveBackupProvider(googleDrive) must be used — '
+              'fakeGoogleDrive.authorizeCalls must be 1',
+        );
+        expect(
+          fakeDropbox.authorizeCalls,
+          dropboxAuthBefore,
+          reason:
+              'CC-2: cloudBackupProvider must NOT be used for the new provider — '
+              'fakeDropbox.authorizeCalls must be unchanged',
+        );
+      },
+    );
+
+    // ── S-11: reactive churn (EC-07) ──────────────────────────────────────────
+    // Even with intermediate settings writes mid-switch, the flow converges via
+    // invalidateSelf.  Verified by asserting the correct final state.
+    test(
+      'S-11 EC-07: converges via invalidateSelf — final state '
+      'BackupConnected(provider: googleDrive) after switch',
+      () async {
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'user@dropbox.com',
+          lastBackupAt: null,
+        );
+
+        final container = makeSwitchContainer();
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        await container
+            .read(backupNotifierProvider.notifier)
+            .switchProvider(SyncProvider.googleDrive);
+
+        // invalidateSelf() causes build() to re-run; verify convergence.
+        final finalState = await container.read(backupNotifierProvider.future);
+        expect(
+          finalState,
+          isA<BackupConnected>(),
+          reason: 'EC-07: switch must converge to BackupConnected via '
+              'invalidateSelf()',
+        );
+        expect(
+          (finalState as BackupConnected).provider,
+          SyncProvider.googleDrive,
+        );
+        expect(
+          fakeGoogleDrive.authorizeCalls,
+          1,
+          reason: 'target provider authorized exactly once',
+        );
+      },
+    );
+
+    // ── S-12: post-switch field (FR-15) ───────────────────────────────────────
+    // success → emitted BackupConnected.provider == googleDrive.
+    test(
+      'S-12 FR-15: success → BackupConnected.provider == googleDrive',
+      () async {
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'user@dropbox.com',
+          lastBackupAt: null,
+        );
+
+        final container = makeSwitchContainer();
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        await container
+            .read(backupNotifierProvider.notifier)
+            .switchProvider(SyncProvider.googleDrive);
+
+        final finalState = await container.read(backupNotifierProvider.future);
+        expect(finalState, isA<BackupConnected>());
+        expect(
+          (finalState as BackupConnected).provider,
+          SyncProvider.googleDrive,
+          reason: 'FR-15: emitted BackupConnected.provider must equal the '
+              'switched-to provider (googleDrive)',
+        );
+      },
+    );
+  });
+
+  // ── TASK-04 TDD: build() populates BackupConnected.provider from settings ──
+
+  group('TASK-04 — BackupConnected.provider populated from settings', () {
+    test(
+      'build() with activeProvider==iCloud emits BackupConnected.provider==iCloud',
+      () async {
+        // Seed iCloud as the active provider so _isConnected() takes the
+        // SyncProvider.iCloud arm (container probe via authorize()).
+        await settingsRepo.setActiveProvider(SyncProvider.iCloud);
+        // No dropboxEmail needed: iCloud uses the authorize() container probe,
+        // not the email sentinel used for Dropbox / Google Drive.
+
+        // Override cloudBackupProvider with FakeICloudProvider so that
+        // authorize() succeeds (no SyncException) → _isConnected() returns true.
+        final icloudContainer = ProviderContainer(
+          overrides: [
+            appSettingsRepositoryProvider.overrideWith(
+              (_) async => settingsRepo,
+            ),
+            secureStorageProvider.overrideWithValue(storage),
+            backupDataProvider.overrideWith((_) async => BackupData(runner)),
+            restoreDataProvider.overrideWith((_) async => RestoreData(runner)),
+            cloudBackupProvider.overrideWithValue(FakeICloudProvider()),
+            syncLogRepositoryProvider.overrideWith(
+              (_) async => fakeSyncLogRepo,
+            ),
+          ],
+        );
+        addTearDown(icloudContainer.dispose);
+
+        final s = await icloudContainer.read(backupNotifierProvider.future);
+        // Fails before implementation: BackupConnected has no `provider` field.
+        expect(s, isA<BackupConnected>());
+        expect(
+          (s as BackupConnected).provider,
+          SyncProvider.iCloud,
+          reason: 'build() must populate BackupConnected.provider from '
+              'settings.activeProvider (not from a view re-read), so that '
+              'the connected view can render the active provider name (FR-15)',
         );
       },
     );

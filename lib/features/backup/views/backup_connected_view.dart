@@ -17,21 +17,24 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 // TASK-18 — BackupConnectedView
+// TASK-08 (M4) — active-provider name row + switch action + Disconnetti relocation
 //
 // Three-card layout shown when BackupState == BackupConnected.
 //
-// Sections:
-//   1. "Account connesso" — email, last-backup date, disconnect row.
+// Sections (per ui-design-bible.md §18.6.2 as updated by SP-20260625/M4):
+//   1. "Account connesso" — Provider name (always), Account/email (omitted when
+//      email==null, e.g. iCloud — EC-08), Ultimo backup.
 //   2. "Stato"            — StatusIndicator (auto-backup active/suspended).
-//   3. "Azioni"           — backup-now row, restore row.
+//   3. "Azioni"           — Esegui backup, Cambia provider (new — FR-08),
+//                           Ripristina, Disconnetti (moved from Section 1).
 //
-// Async handlers (_handleBackup, _handleRestore, _handleDisconnect) live in
-// backup_connected_view_handlers.dart (mixin applied here) per NFR-08.
+// Async handlers (handleBackup, handleRestore, handleDisconnect, handleSwitchProvider)
+// live in backup_connected_view_handlers.dart (mixin applied here) per NFR-08.
 //
-// HC-2 view-side gate (EC-05): each interactive row is wrapped in
+// HC-2 view-side gate (EC-05/EC-10): each interactive row is wrapped in
 // IgnorePointer(ignoring: isRunning) so it becomes inert during BackupRunning.
 //
-// FR-28 / FR-32: _handleRestore has exactly four if(!mounted) guards;
+// FR-28 / FR-32: handleRestore has exactly four if(!mounted) guards;
 // every destructive row carries Semantics(label: 'Distruttivo: …').
 
 import 'package:flutter/material.dart';
@@ -46,10 +49,11 @@ import '../../../l10n/app_localizations.dart';
 import '../state/backup_notifier.dart';
 import '../state/backup_state.dart';
 import '../../../core/widgets/settings/settings_divider.dart';
+import '../widgets/backup_provider_labels.dart';
 import '../widgets/status_indicator.dart';
 import 'backup_connected_view_handlers.dart';
 
-/// Connected-account backup view (FR-22..FR-27, FR-28, FR-32).
+/// Connected-account backup view (FR-22..FR-27, FR-28, FR-32, FR-08, FR-15).
 ///
 /// Receives [state] from the dispatcher (TASK-21). HC-2 guard reads the
 /// _provider_ value (not [state]) to detect [BackupRunning] in real-time
@@ -90,9 +94,9 @@ class _BackupConnectedViewState extends ConsumerState<BackupConnectedView>
     }
 
     // FR-23 (revised): three-way StatusIndicator label.
-    // not-yet-set (passphraseSet=false) → "Backup automatico non attivo" / "Automatic backup not active"
-    // active (passphraseSet && !suspended)  → "Backup automatico attivo"   / "Automatic backup active"
-    // suspended (passphraseSet && suspended) → "Backup automatico sospeso"  / "Automatic backup suspended"
+    // not-yet-set (passphraseSet=false) → "Backup automatico non attivo"
+    // active (passphraseSet && !suspended)  → "Backup automatico attivo"
+    // suspended (passphraseSet && suspended) → "Backup automatico sospeso"
     final String statusLabel;
     final bool indicatorActive;
     if (!widget.state.passphraseSet) {
@@ -123,32 +127,34 @@ class _BackupConnectedViewState extends ConsumerState<BackupConnectedView>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // ── Section 1: Account connesso ─────────────────────────────
+              // bible §18.6.2 (SP-20260625/M4): Provider (always) · Account
+              // (omitted when email==null, e.g. iCloud — EC-08) · Ultimo backup.
+              // Disconnetti moved to Section 3 (per updated bible table).
               SettingsLabel(l10n.backupAccountConnesso, first: true),
               SettingsCard(
                 children: [
+                  // FR-15 / OQ-05: active-provider name — plain SettingsRow,
+                  // sourced from BackupConnected.provider (never from email).
                   SettingsRow.staticInfo(
-                    label: l10n.backupAccountLabel,
-                    valueText: widget.state.email ??
-                        '', // EC-13: null-guard (provider-name render is M4/FR-26)
+                    label: l10n.backupProviderLabel,
+                    valueText: backupProviderDisplayName(
+                      l10n,
+                      widget.state.provider,
+                    ),
                   ),
                   const SettingsDivider(),
+                  // EC-08: Account (email) row omitted when email is null
+                  // (iCloud exposes no email). When non-null, show as before.
+                  if (widget.state.email != null) ...[
+                    SettingsRow.staticInfo(
+                      label: l10n.backupAccountLabel,
+                      valueText: widget.state.email!, // non-null asserted above
+                    ),
+                    const SettingsDivider(),
+                  ],
                   SettingsRow.staticInfo(
                     label: l10n.backupLastBackupLabel,
                     valueText: lastBackupText,
-                  ),
-                  const SettingsDivider(),
-                  // FR-32: destructive row carries 'Distruttivo: …' semantics.
-                  Semantics(
-                    label: 'Distruttivo: ${l10n.backupDisconnectLabel}',
-                    excludeSemantics: true,
-                    child: IgnorePointer(
-                      ignoring: isRunning,
-                      child: SettingsRow.destructive(
-                        key: const Key('backup_disconnect_row'),
-                        label: l10n.backupDisconnectLabel,
-                        onTap: handleDisconnect,
-                      ),
-                    ),
                   ),
                 ],
               ),
@@ -165,9 +171,12 @@ class _BackupConnectedViewState extends ConsumerState<BackupConnectedView>
               ),
 
               // ── Section 3: Azioni ────────────────────────────────────────
+              // bible §18.6.2 (updated): Esegui backup · Cambia provider (new)
+              // · Ripristina · Disconnetti (moved from Section 1).
               SettingsLabel(l10n.backupAzioni),
               SettingsCard(
                 children: [
+                  // Esegui backup
                   IgnorePointer(
                     ignoring: isRunning,
                     child: SettingsRow.action(
@@ -176,12 +185,43 @@ class _BackupConnectedViewState extends ConsumerState<BackupConnectedView>
                     ),
                   ),
                   const SettingsDivider(),
+
+                  // FR-08 / EC-10: Cambia provider — opens BackupProviderPickerSheet;
+                  // switch is gated by MetraConfirmDialog (FR-14, §19.8).
+                  // IgnorePointer gate disables row during BackupRunning (EC-10).
+                  IgnorePointer(
+                    ignoring: isRunning,
+                    child: SettingsRow.action(
+                      key: const Key('backup_switch_action_row'),
+                      label: l10n.backupSwitchActionLabel,
+                      onTap: handleSwitchProvider,
+                    ),
+                  ),
+                  const SettingsDivider(),
+
+                  // Ripristina (FR-26 / FR-28)
                   IgnorePointer(
                     ignoring: isRunning,
                     child: SettingsRow.action(
                       key: const Key('backup_restore_action_row'),
                       label: l10n.backupRestoreAction,
                       onTap: handleRestore,
+                    ),
+                  ),
+                  const SettingsDivider(),
+
+                  // FR-32: destructive row carries 'Distruttivo: …' semantics.
+                  // Moved from Section 1 per bible §18.6.2 (SP-20260625/M4).
+                  Semantics(
+                    label: 'Distruttivo: ${l10n.backupDisconnectLabel}',
+                    excludeSemantics: true,
+                    child: IgnorePointer(
+                      ignoring: isRunning,
+                      child: SettingsRow.destructive(
+                        key: const Key('backup_disconnect_row'),
+                        label: l10n.backupDisconnectLabel,
+                        onTap: handleDisconnect,
+                      ),
                     ),
                   ),
                 ],

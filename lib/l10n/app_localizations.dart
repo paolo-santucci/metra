@@ -1514,12 +1514,6 @@ abstract class AppLocalizations {
   /// **'Collega un account per salvare i tuoi dati in modo sicuro e cifrato.'**
   String get backupEmptyBody;
 
-  /// CTA button label on the Backup empty-state view; initiates Dropbox OAuth connection
-  ///
-  /// In it, this message translates to:
-  /// **'Collega Dropbox'**
-  String get backupConnectDropbox;
-
   /// Section heading on the connected-state Backup screen showing the authenticated provider account
   ///
   /// In it, this message translates to:
@@ -1669,6 +1663,66 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Ripristinati {count} elementi'**
   String restoreSuccessToast(int count);
+
+  /// Display name for the Dropbox cloud backup provider; shown in the picker and on the connected-view provider row
+  ///
+  /// In it, this message translates to:
+  /// **'Dropbox'**
+  String get backupProviderNameDropbox;
+
+  /// Display name for the Google Drive cloud backup provider; shown in the picker and on the connected-view provider row
+  ///
+  /// In it, this message translates to:
+  /// **'Google Drive'**
+  String get backupProviderNameGoogleDrive;
+
+  /// Display name for the iCloud cloud backup provider (iOS only); shown in the picker and on the connected-view provider row
+  ///
+  /// In it, this message translates to:
+  /// **'iCloud'**
+  String get backupProviderNameICloud;
+
+  /// Title shown at the top of the BackupProviderPickerSheet bottom sheet (OQ-04 confirmed)
+  ///
+  /// In it, this message translates to:
+  /// **'Scegli un provider'**
+  String get backupProviderPickerTitle;
+
+  /// Confirm button label on the BackupProviderPickerSheet; initiates connection to the selected provider. Replaces the retired backupConnectDropbox key.
+  ///
+  /// In it, this message translates to:
+  /// **'Connetti'**
+  String get backupConnectAction;
+
+  /// Title of the switch-provider MetraConfirmDialog shown before switching from one connected provider to another
+  ///
+  /// In it, this message translates to:
+  /// **'Cambiare provider?'**
+  String get backupSwitchConfirmTitle;
+
+  /// Body text of the switch-provider confirmation dialog; explains passphrase reuse and that old .enc backups are left intact
+  ///
+  /// In it, this message translates to:
+  /// **'Passerai a {provider}. La passphrase resta la stessa e i backup esistenti non vengono toccati; dovrai riconnetterti al nuovo provider.'**
+  String backupSwitchConfirmBody(String provider);
+
+  /// Confirm button label on the switch-provider confirmation dialog; proceeds with switching to the new provider
+  ///
+  /// In it, this message translates to:
+  /// **'Cambia'**
+  String get backupSwitchConfirmSwitch;
+
+  /// Row label for the active-provider name row in Section 1 (Account connesso) of the backup connected view (TASK-08 / FR-15)
+  ///
+  /// In it, this message translates to:
+  /// **'Provider'**
+  String get backupProviderLabel;
+
+  /// Row label for the switch-provider action row in Section 3 (Azioni) of the backup connected view (TASK-08 / FR-08)
+  ///
+  /// In it, this message translates to:
+  /// **'Cambia provider'**
+  String get backupSwitchActionLabel;
 }
 
 class _AppLocalizationsDelegate

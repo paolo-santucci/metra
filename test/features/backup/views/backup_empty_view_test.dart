@@ -20,7 +20,9 @@
 // Covers:
 //   1. Widget structure: heading, body, CTA present; cloud icon 64×64;
 //      body capped at 240dp; CTA anchored 24dp from bottom safe-area.
-//   2. CTA tap → notifier.connect() called once.
+//   2. CTA tap → BackupProviderPickerSheet opens (FR-07, TASK-07).
+//      Full wiring assertions (switchProvider, cancel/confirm, EC-01/02/10)
+//      live in test/features/backup/backup_empty_view_test.dart.
 //   3. HC-2 gate: CTA disabled during BackupRunning(connecting).
 
 import 'package:flutter/material.dart';
@@ -137,22 +139,40 @@ void main() {
     },
   );
 
-  // ── 2. CTA tap → connect() called once ───────────────────────────────────
+  // ── 2. CTA tap → provider picker opens (TASK-07 / FR-07) ───────────────────
+  //
+  // After TASK-07 the CTA no longer calls connect() directly; it opens the
+  // BackupProviderPickerSheet. Full wiring assertions (switchProvider calls,
+  // cancel / confirm paths, EC-01, EC-02, EC-10) live in:
+  //   test/features/backup/backup_empty_view_test.dart
 
   testWidgets(
-    'BackupEmptyView: CTA tap → notifier.connect() called once',
+    'BackupEmptyView: CTA tap → BackupProviderPickerSheet opens (FR-07)',
     (tester) async {
+      // physicalSize + DPR=1.0: prevents CupertinoPickerScaffold toolbar
+      // overflow inside the picker sheet (Flutter test default DPR is 3.0).
+      tester.view.physicalSize = const Size(800, 4000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       final fake = _FakeBackupNotifier(const BackupNotConnected());
       await tester.pumpWidget(_harness(fake));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('backup_empty_cta')));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
+      // The picker sheet must be open; connect() must never be called (TASK-07).
+      expect(
+        find.byKey(const Key('sheetRoot')),
+        findsOneWidget,
+        reason: 'Provider picker must open after CTA tap (FR-07)',
+      );
       expect(
         fake.connectCalls,
-        1,
-        reason: 'connect() must be called exactly once on CTA tap',
+        0,
+        reason: 'connect() must NOT be called — CTA now routes through picker',
       );
     },
   );

@@ -41,6 +41,7 @@ import 'package:metra/core/theme/metra_theme.dart';
 import 'package:metra/data/services/backup/backup_file_entry.dart';
 import 'package:metra/features/backup/restore_progress_screen.dart';
 import 'package:metra/features/backup/state/backup_notifier.dart';
+import 'package:metra/domain/entities/sync_log_entity.dart';
 import 'package:metra/features/backup/state/backup_state.dart';
 import 'package:metra/features/backup/views/backup_connected_view.dart';
 import 'package:metra/features/backup/views/backup_empty_view.dart';
@@ -204,6 +205,7 @@ void main() {
       final handle = tester.ensureSemantics();
 
       const connectedState = BackupConnected(
+        provider: SyncProvider.dropbox,
         email: 'user@example.com',
         autoBackupActive: true,
         passphraseSet: true,

@@ -1,6 +1,7 @@
 // Copyright (C) 2026  Paolo Santucci
 //
 // This file is part of Métra.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // Métra is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published
@@ -22,8 +23,22 @@
 //   • Centered empty-state column: 64×64 cloud icon, DM Serif 22 heading,
 //     Inter 14 body capped at 240dp.
 //   • Full-width terracotta CTA anchored 24dp from bottom safe-area.
-//   • HC-2 gate (EC-05): CTA disabled during BackupRunning state.
+//   • HC-2 gate (EC-10): CTA disabled during BackupRunning state.
+//
+// TASK-07 (M4) — handleConnectViaPicker
+//
+// Rewires the CTA to open BackupProviderPickerSheet (FR-07 / EC-01 / EC-02 / EC-10).
+//   (1) Open BackupProviderPickerSheet → picker returns SyncProvider? or null.
+//   (2) null → no-op (EC-01: user cancelled).
+//   (3) Non-null → await notifier.switchProvider(picked). No MetraConfirmDialog
+//       because this is a first connect — the forget step is an idempotent
+//       no-op on a never-connected state (EC-02).
+//
+// Follows the handleRestore discipline from backup_connected_view_handlers.dart:
+//   • notifier reference captured before first await.
+//   • mounted-guard after each await boundary.
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -33,14 +48,56 @@ import '../../../core/theme/metra_spacing.dart';
 import '../../../core/theme/metra_typography.dart';
 import '../../../core/widgets/button_primary.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../providers/backup_providers.dart';
 import '../state/backup_notifier.dart';
 import '../state/backup_state.dart';
+import '../widgets/backup_provider_picker_sheet.dart';
 
-class BackupEmptyView extends ConsumerWidget {
+class BackupEmptyView extends ConsumerStatefulWidget {
   const BackupEmptyView({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<BackupEmptyView> createState() => _BackupEmptyViewState();
+}
+
+class _BackupEmptyViewState extends ConsumerState<BackupEmptyView> {
+  // ---------------------------------------------------------------------------
+  // handleConnectViaPicker — FR-07 / EC-01 / EC-02 / EC-10
+  // ---------------------------------------------------------------------------
+
+  /// Opens the provider picker and, if the user confirms, calls
+  /// [BackupNotifier.switchProvider] with the selected provider.
+  ///
+  /// No [MetraConfirmDialog] is shown: this is a first-connect flow where
+  /// there is nothing to lose (EC-02). The forget step inside [switchProvider]
+  /// is an idempotent no-op when no provider has ever been connected.
+  ///
+  /// Caller must ensure the CTA is not tapped while [isRunning] (EC-10);
+  /// the [onPressed:null] gate in [build] enforces this.
+  Future<void> handleConnectViaPicker() async {
+    // Capture notifier before any await (avoid stale ref if widget disposes).
+    final notifier = ref.read(backupNotifierProvider.notifier);
+
+    // Step 1: present the provider picker (null → user cancelled, EC-01).
+    final picked = await BackupProviderPickerSheet.show(
+      context,
+      providers: availableProviders(defaultTargetPlatform),
+      initialIndex: 0,
+    );
+    if (picked == null) return; // user cancelled — EC-01
+    if (!mounted) return; // mounted-guard after first await
+
+    // Step 2: switch to the chosen provider — no confirm dialog (EC-02).
+    await notifier.switchProvider(picked);
+    if (!mounted) return; // mounted-guard after second await
+  }
+
+  // ---------------------------------------------------------------------------
+  // build
+  // ---------------------------------------------------------------------------
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colors = MetraColors.of(context);
     final bg = colors.bgPrimary;
@@ -126,12 +183,10 @@ class BackupEmptyView extends ConsumerWidget {
                 key: const Key('backup_empty_cta'),
                 width: double.infinity,
                 child: ButtonPrimary(
-                  label: l10n.backupConnectDropbox,
-                  semanticsLabel: l10n.backupConnectDropbox,
-                  onPressed: isRunning
-                      ? null
-                      : () =>
-                          ref.read(backupNotifierProvider.notifier).connect(),
+                  label: l10n.backupConnectAction,
+                  semanticsLabel: l10n.backupConnectAction,
+                  // EC-10: disabled while BackupRunning; otherwise opens picker.
+                  onPressed: isRunning ? null : handleConnectViaPicker,
                 ),
               ),
             ),

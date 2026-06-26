@@ -474,6 +474,168 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
+  // TASK-02 — availableProviders enumerator (FR-02, CC-3.1)
+  // -------------------------------------------------------------------------
+  group('availableProviders', () {
+    test(
+      'iOS → [dropbox, googleDrive, iCloud] (len 3, iCloud last)',
+      () {
+        final result = availableProviders(TargetPlatform.iOS);
+        expect(
+          result,
+          equals([
+            SyncProvider.dropbox,
+            SyncProvider.googleDrive,
+            SyncProvider.iCloud,
+          ]),
+        );
+        expect(result.length, 3);
+        expect(result.last, SyncProvider.iCloud);
+      },
+    );
+
+    test(
+      'android → [dropbox, googleDrive] (len 2, no iCloud)',
+      () {
+        final result = availableProviders(TargetPlatform.android);
+        expect(
+          result,
+          equals([SyncProvider.dropbox, SyncProvider.googleDrive]),
+        );
+        expect(result.length, 2);
+        expect(result, isNot(contains(SyncProvider.iCloud)));
+      },
+    );
+
+    test(
+      'linux → [dropbox, googleDrive] (len 2, defensive non-iOS)',
+      () {
+        final result = availableProviders(TargetPlatform.linux);
+        expect(
+          result,
+          equals([SyncProvider.dropbox, SyncProvider.googleDrive]),
+        );
+        expect(result.length, 2);
+        expect(result, isNot(contains(SyncProvider.iCloud)));
+      },
+    );
+
+    test(
+      'windows → [dropbox, googleDrive] (len 2, defensive non-iOS)',
+      () {
+        final result = availableProviders(TargetPlatform.windows);
+        expect(
+          result,
+          equals([SyncProvider.dropbox, SyncProvider.googleDrive]),
+        );
+        expect(result.length, 2);
+        expect(result, isNot(contains(SyncProvider.iCloud)));
+      },
+    );
+  });
+
+  // -------------------------------------------------------------------------
+  // TASK-02 — resolveBackupProvider family (FR-03, CC-3.2, EC-09)
+  // -------------------------------------------------------------------------
+  group('resolveBackupProvider', () {
+    test(
+      'dropbox → DropboxProvider (id == dropbox)',
+      () {
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+
+        final result =
+            container.read(resolveBackupProvider(SyncProvider.dropbox));
+        expect(result, isA<CloudBackupProvider>());
+        expect(result.id, SyncProvider.dropbox);
+      },
+    );
+
+    test(
+      'googleDrive → GoogleDriveProvider (id == googleDrive)',
+      () {
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+
+        final result =
+            container.read(resolveBackupProvider(SyncProvider.googleDrive));
+        expect(result, isA<CloudBackupProvider>());
+        expect(result.id, SyncProvider.googleDrive);
+      },
+    );
+
+    test(
+      'iCloud on iOS → IcloudProvider (id == iCloud) [iOS override]',
+      () {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        addTearDown(() {
+          debugDefaultTargetPlatformOverride = null;
+        });
+
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+
+        final result =
+            container.read(resolveBackupProvider(SyncProvider.iCloud));
+        expect(result, isA<CloudBackupProvider>());
+        expect(result.id, SyncProvider.iCloud);
+      },
+    );
+
+    test(
+      'EC-09: iCloud off-iOS → NOT IcloudProvider, no throw (Dropbox fallback)',
+      () {
+        // debugDefaultTargetPlatformOverride intentionally NOT set →
+        // Linux default → defaultTargetPlatform != iOS.
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+
+        // Must not throw; must fall back to a non-iCloud provider.
+        final result =
+            container.read(resolveBackupProvider(SyncProvider.iCloud));
+        expect(result, isA<CloudBackupProvider>());
+        expect(result, isNot(isA<FakeICloudProvider>()));
+        expect(result.id, isNot(SyncProvider.iCloud));
+      },
+    );
+
+    // seam stability: cloudBackupProvider.overrideWithValue still works after
+    // the redefinition delegates to resolveBackupProvider (NFR-03).
+    test(
+      'cloudBackupProvider.overrideWithValue(FakeDropboxProvider) resolves the fake (seam stability)',
+      () {
+        final fake = FakeDropboxProvider();
+        final container = ProviderContainer(
+          overrides: [cloudBackupProvider.overrideWithValue(fake)],
+        );
+        addTearDown(container.dispose);
+
+        final result = container.read(cloudBackupProvider);
+        expect(result, same(fake));
+        expect(result.id, SyncProvider.dropbox);
+      },
+    );
+
+    // Source-grep: defaultTargetPlatform appears exactly ONCE in the source
+    // file — inside resolveBackupProvider — and NOT in cloudBackupProvider.
+    // This guards the "single iCloud guard" invariant (CC-3.1 / FR-02).
+    test(
+      'source grep: defaultTargetPlatform guard appears exactly once (no second check in cloudBackupProvider)',
+      () async {
+        const filePath = 'lib/providers/backup_providers.dart';
+        final source = await readSourceFile(filePath);
+        // Guard present (in resolveBackupProvider).
+        expect(source, contains('defaultTargetPlatform == TargetPlatform.iOS'));
+        // Exactly one occurrence — no second check elsewhere.
+        final occurrences = 'defaultTargetPlatform == TargetPlatform.iOS'
+            .allMatches(source)
+            .length;
+        expect(occurrences, equals(1));
+      },
+    );
+  });
+
+  // -------------------------------------------------------------------------
   // Group 3 — NET-NEW orchestrator-seam test (FR-16, NFR-05, R-01)
   //
   // Verifies that syncOrchestratorProvider injects the provider resolved

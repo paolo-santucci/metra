@@ -807,9 +807,6 @@ class AppLocalizationsIt extends AppLocalizations {
       'Collega un account per salvare i tuoi dati in modo sicuro e cifrato.';
 
   @override
-  String get backupConnectDropbox => 'Collega Dropbox';
-
-  @override
   String get backupAccountConnesso => 'Account connesso';
 
   @override
@@ -890,4 +887,36 @@ class AppLocalizationsIt extends AppLocalizations {
   String restoreSuccessToast(int count) {
     return 'Ripristinati $count elementi';
   }
+
+  @override
+  String get backupProviderNameDropbox => 'Dropbox';
+
+  @override
+  String get backupProviderNameGoogleDrive => 'Google Drive';
+
+  @override
+  String get backupProviderNameICloud => 'iCloud';
+
+  @override
+  String get backupProviderPickerTitle => 'Scegli un provider';
+
+  @override
+  String get backupConnectAction => 'Connetti';
+
+  @override
+  String get backupSwitchConfirmTitle => 'Cambiare provider?';
+
+  @override
+  String backupSwitchConfirmBody(String provider) {
+    return 'Passerai a $provider. La passphrase resta la stessa e i backup esistenti non vengono toccati; dovrai riconnetterti al nuovo provider.';
+  }
+
+  @override
+  String get backupSwitchConfirmSwitch => 'Cambia';
+
+  @override
+  String get backupProviderLabel => 'Provider';
+
+  @override
+  String get backupSwitchActionLabel => 'Cambia provider';
 }

@@ -25,11 +25,18 @@ class FakeICloudProvider implements CloudBackupProvider {
   /// When true, [authorize] throws a [SyncException].
   final bool authorizeThrows;
 
+  /// Number of times [authorize] has been called (spy counter for TASK-05).
+  int authorizeCalls = 0;
+
+  /// Number of times [disconnect] has been called (spy counter for TASK-05).
+  int disconnectCalls = 0;
+
   @override
   SyncProvider get id => SyncProvider.iCloud;
 
   @override
   Future<void> authorize() async {
+    authorizeCalls++;
     if (authorizeThrows) {
       throw const SyncException('iCloud authorization failed');
     }
@@ -39,7 +46,9 @@ class FakeICloudProvider implements CloudBackupProvider {
   Future<String?> currentEmail() async => null;
 
   @override
-  Future<void> disconnect() async {}
+  Future<void> disconnect() async {
+    disconnectCalls++;
+  }
 
   @override
   Future<void> upload(Uint8List blob, String filename) async {}

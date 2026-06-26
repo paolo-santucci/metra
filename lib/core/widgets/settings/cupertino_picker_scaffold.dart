@@ -32,7 +32,8 @@ import '../../../l10n/app_localizations.dart';
 ///
 /// Renders a toolbar row with two text buttons — [resetLabel] on the left
 /// (fires [onReset]) and [confirmLabel] on the right (fires [onConfirm]) —
-/// a 1 dp divider, and the picker [child] below.
+/// an optional non-tappable [title] in the center slot, a 1 dp divider,
+/// and the picker [child] below.
 ///
 /// Background colour: [MetraColors.bgPrimary] (sabbia / sand).
 /// Top corners: [MetraRadius.lg] (16 dp) rounded.
@@ -40,6 +41,14 @@ import '../../../l10n/app_localizations.dart';
 ///
 /// [resetLabel] and [confirmLabel] default to the l10n values
 /// `common_restore` ("Ripristina") and `common_ok` ("OK") when omitted.
+///
+/// [title]: optional center label (Inter 17 / w600 / textPrimary per §18.10.2).
+/// When `null` (default) the center slot is empty — existing callers are
+/// visually unchanged.
+///
+/// [confirmKey]: optional widget key applied to the confirm [Semantics] node.
+/// Used by `BackupProviderPickerSheet` to assert `find.byKey(confirm)` in
+/// tests (FR-17). Defaults to `null`.
 ///
 /// [useSafeArea]: when `true`, wraps [child] in a [SafeArea] to avoid
 /// home-indicator overlap. Pass `false` (default) for Settings call sites
@@ -55,6 +64,8 @@ class CupertinoPickerScaffold extends StatelessWidget {
     required this.onConfirm,
     this.resetLabel,
     this.confirmLabel,
+    this.title,
+    this.confirmKey,
     this.useSafeArea = false,
     super.key,
   });
@@ -73,6 +84,17 @@ class CupertinoPickerScaffold extends StatelessWidget {
 
   /// Label for the confirm button. Defaults to [AppLocalizations.common_ok].
   final String? confirmLabel;
+
+  /// Optional non-tappable center title rendered between the two toolbar
+  /// buttons. Style: Inter 17 / w600 / textPrimary (§18.10.2 CG-2).
+  /// Pass `null` (default) to leave the center slot empty — existing callers
+  /// are visually unchanged.
+  final String? title;
+
+  /// Optional widget key applied to the confirm [Semantics] node.
+  /// Used by pickers that need `find.byKey(...)` access to the confirm button
+  /// in widget tests (FR-17). Defaults to `null`.
+  final Key? confirmKey;
 
   /// When `true`, wraps [child] in a [SafeArea]. Default `false`.
   final bool useSafeArea;
@@ -99,9 +121,11 @@ class CupertinoPickerScaffold extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Toolbar row
+            // Toolbar row — 3-slot layout: [reset | center | confirm].
+            // When title is null the center slot is a Spacer() so the left
+            // and right buttons are pushed to the edges (same visual as the
+            // former spaceBetween layout — existing callers unchanged).
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Semantics(
                   button: true,
@@ -121,7 +145,26 @@ class CupertinoPickerScaffold extends StatelessWidget {
                     ),
                   ),
                 ),
+                // Center slot: optional non-tappable title (CG-2 / §18.10.2).
+                if (title != null)
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        title!, // ! safe: guarded by null check above
+                        style: GoogleFonts.inter(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                          color: colors.textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  )
+                else
+                  const Spacer(),
                 Semantics(
+                  key: confirmKey,
                   button: true,
                   label: confirmLabel ?? l10n.common_ok,
                   child: GestureDetector(

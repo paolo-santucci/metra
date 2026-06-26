@@ -60,6 +60,59 @@ final iCloudProviderProvider = Provider<IcloudProvider>(
   (ref) => IcloudProvider(gateway: ProductionIcloudGateway()),
 );
 
+/// Returns the list of backup providers available on [platform].
+///
+/// Single source of the iOS-only-iCloud rule (FR-02, CC-3.1).
+/// Pure and synchronous — callers pass [defaultTargetPlatform]; the rule
+/// lives here exactly once, consumed by both the picker UI and the
+/// [resolveBackupProvider] iCloud guard.
+///
+/// - Every platform: `[dropbox, googleDrive]`
+/// - iOS only:      `[dropbox, googleDrive, iCloud]` (iCloud appended last)
+List<SyncProvider> availableProviders(TargetPlatform platform) {
+  if (platform == TargetPlatform.iOS) {
+    return [
+      SyncProvider.dropbox,
+      SyncProvider.googleDrive,
+      SyncProvider.iCloud,
+    ];
+  }
+  return [SyncProvider.dropbox, SyncProvider.googleDrive];
+}
+
+/// Synchronous arbitrary-provider resolver (CC-3.2 / FR-03 / NFR-03).
+///
+/// Resolves ANY chosen [SyncProvider] — including a not-yet-active one —
+/// sharing the single iCloud platform guard. Must NOT be converted to a
+/// [FutureProvider] (13+ `overrideWithValue` sites; cascade of `await`
+/// through [BackupNotifier]).
+///
+/// Resolution rules:
+/// - dropbox      → [dropboxProviderProvider]
+/// - googleDrive  → [googleDriveProviderProvider]
+/// - iCloud       → [iCloudProviderProvider] iff `defaultTargetPlatform == iOS`,
+///                  else [dropboxProviderProvider] (off-iOS fallback, never
+///                  throws — EC-09). Defense-in-depth only: [availableProviders]
+///                  excludes iCloud on non-iOS, so the picker never returns it.
+final resolveBackupProvider =
+    Provider.family<CloudBackupProvider, SyncProvider>((ref, id) {
+  switch (id) {
+    case SyncProvider.dropbox:
+      return ref.watch(dropboxProviderProvider);
+    case SyncProvider.googleDrive:
+      return ref.watch(googleDriveProviderProvider);
+    case SyncProvider.iCloud:
+      // Platform-guarded: iCloud is iOS/iPadOS only. Off-iOS (Android, Linux
+      // CI runner) falls back to Dropbox without throwing (EC-09, FR-13).
+      // Guard uses [defaultTargetPlatform] (never dart:io Platform, which is
+      // always false on the Linux CI runner).
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        return ref.watch(iCloudProviderProvider);
+      }
+      return ref.watch(dropboxProviderProvider);
+  }
+});
+
 /// Resolves the active backup provider implementation from the persisted
 /// [AppSettingsData.activeProvider] setting.
 ///
@@ -67,35 +120,20 @@ final iCloudProviderProvider = Provider<IcloudProvider>(
 /// 13+ [overrideWithValue] test sites and cascade [await] through
 /// [backupFileListProvider] and [BackupNotifier] (NFR-03).
 ///
+/// Redefined (M4) to delegate to [resolveBackupProvider] so the iCloud guard
+/// lives in exactly one place. Behaviour for existing callers is identical.
+///
 /// Resolution rules:
 /// - Reads [appSettingsStreamProvider].valueOrNull?.activeProvider synchronously.
 /// - Defaults to [SyncProvider.dropbox] during the settings-loading frame
 ///   (when the stream has not yet emitted — EC-01).
-/// - M2: googleDrive → GoogleDriveProvider (ODQ-1 resolved).
-/// - M3: iCloud → [IcloudProvider] on iOS; Dropbox fallback off-iOS (FR-13).
-///   Guard uses [defaultTargetPlatform] (never dart:io Platform, which is
-///   always false on the Linux CI runner).
 final cloudBackupProvider = Provider<CloudBackupProvider>((ref) {
   // Read activeProvider synchronously; default to dropbox during the
   // settings-loading frame (stream has not yet emitted — EC-01).
   final activeProvider =
       ref.watch(appSettingsStreamProvider).valueOrNull?.activeProvider ??
           SyncProvider.dropbox;
-
-  switch (activeProvider) {
-    case SyncProvider.dropbox:
-      return ref.watch(dropboxProviderProvider);
-    case SyncProvider.googleDrive:
-      return ref.watch(googleDriveProviderProvider);
-    case SyncProvider.iCloud:
-      // Platform-guarded: iCloud is iOS/iPadOS only. Off-iOS (Android, Linux
-      // CI runner) falls back to Dropbox without throwing, keeping the switch
-      // total and the override seam intact (EC-10, FR-13).
-      if (defaultTargetPlatform == TargetPlatform.iOS) {
-        return ref.watch(iCloudProviderProvider);
-      }
-      return ref.watch(dropboxProviderProvider);
-  }
+  return ref.watch(resolveBackupProvider(activeProvider));
 });
 
 final backupServiceProvider = FutureProvider<BackupService>((ref) async {

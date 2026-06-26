@@ -176,5 +176,7 @@ class FakeAppSettingsRepository implements AppSettingsRepository {
   Future<void> setActiveProvider(SyncProvider provider) async {
     final current = storedSettings ?? AppSettingsData.defaults();
     storedSettings = _rebuild(current, activeProvider: provider);
+    // Record invocation for call-order assertions (TASK-05 switchProvider tests).
+    callLog.add('setActiveProvider');
   }
 }

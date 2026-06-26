@@ -43,6 +43,7 @@ import 'package:metra/core/theme/metra_theme.dart';
 import 'package:metra/core/widgets/settings/settings_card.dart';
 import 'package:metra/domain/entities/app_settings_data.dart';
 import 'package:metra/features/backup/state/backup_notifier.dart';
+import 'package:metra/domain/entities/sync_log_entity.dart';
 import 'package:metra/features/backup/state/backup_state.dart';
 import 'package:metra/features/settings/settings_screen.dart';
 import 'package:metra/features/settings/state/settings_notifier.dart';
@@ -211,6 +212,7 @@ void main() {
         await tester.pumpWidget(
           _wrapSettings(
             backupState: const BackupConnected(
+              provider: SyncProvider.dropbox,
               email: 'user@test.com',
               autoBackupActive: true,
               passphraseSet: true,

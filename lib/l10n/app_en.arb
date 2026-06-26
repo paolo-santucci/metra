@@ -752,11 +752,6 @@
     "description": "Body text of the empty-state view on the Backup screen; encourages the user to connect a cloud account"
   },
 
-  "backupConnectDropbox": "Connect Dropbox",
-  "@backupConnectDropbox": {
-    "description": "CTA button label on the Backup empty-state view; initiates Dropbox OAuth connection"
-  },
-
   "backupAccountConnesso": "Connected account",
   "@backupAccountConnesso": {
     "description": "Section heading on the connected-state Backup screen showing the authenticated provider account"
@@ -885,5 +880,61 @@
         "type": "int"
       }
     }
+  },
+
+  "backupProviderNameDropbox": "Dropbox",
+  "@backupProviderNameDropbox": {
+    "description": "Display name for the Dropbox cloud backup provider; shown in the picker and on the connected-view provider row"
+  },
+
+  "backupProviderNameGoogleDrive": "Google Drive",
+  "@backupProviderNameGoogleDrive": {
+    "description": "Display name for the Google Drive cloud backup provider; shown in the picker and on the connected-view provider row"
+  },
+
+  "backupProviderNameICloud": "iCloud",
+  "@backupProviderNameICloud": {
+    "description": "Display name for the iCloud cloud backup provider (iOS only); shown in the picker and on the connected-view provider row"
+  },
+
+  "backupProviderPickerTitle": "Choose a provider",
+  "@backupProviderPickerTitle": {
+    "description": "Title shown at the top of the BackupProviderPickerSheet bottom sheet (OQ-04 confirmed)"
+  },
+
+  "backupConnectAction": "Connect",
+  "@backupConnectAction": {
+    "description": "Confirm button label on the BackupProviderPickerSheet; initiates connection to the selected provider. Replaces the retired backupConnectDropbox key."
+  },
+
+  "backupSwitchConfirmTitle": "Switch provider?",
+  "@backupSwitchConfirmTitle": {
+    "description": "Title of the switch-provider MetraConfirmDialog shown before switching from one connected provider to another"
+  },
+
+  "backupSwitchConfirmBody": "You will switch to {provider}. Your passphrase stays the same and existing backups are not affected; you will need to reconnect to the new provider.",
+  "@backupSwitchConfirmBody": {
+    "description": "Body text of the switch-provider confirmation dialog; explains passphrase reuse and that old .enc backups are left intact",
+    "placeholders": {
+      "provider": {
+        "type": "String",
+        "example": "Google Drive"
+      }
+    }
+  },
+
+  "backupSwitchConfirmSwitch": "Switch",
+  "@backupSwitchConfirmSwitch": {
+    "description": "Confirm button label on the switch-provider confirmation dialog; proceeds with switching to the new provider"
+  },
+
+  "backupProviderLabel": "Provider",
+  "@backupProviderLabel": {
+    "description": "Row label for the active-provider name row in Section 1 (Account connesso) of the backup connected view (TASK-08 / FR-15)."
+  },
+
+  "backupSwitchActionLabel": "Switch provider",
+  "@backupSwitchActionLabel": {
+    "description": "Row label for the switch-provider action row in Section 3 (Azioni) of the backup connected view (TASK-08 / FR-08)."
   }
 }

@@ -76,6 +76,10 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     final passphraseSet = passphrase != null && passphrase.isNotEmpty;
     final autoBackupActive = !settings.backupSuspended && passphraseSet;
     return BackupConnected(
+      // TASK-04 (FR-15, OQ-06): populate provider from settings so the
+      // connected view can render the active provider's display name without
+      // re-reading settings (single source of truth, no stale-read hazard).
+      provider: settings.activeProvider,
       email: settings.dropboxEmail, // nullable — no `!` (FR-16)
       lastBackupAt: settings.lastBackupAt,
       autoBackupActive: autoBackupActive,
@@ -156,6 +160,123 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
         ),
       );
     }
+  }
+
+  /// Switches the active backup provider from the current one to [target].
+  ///
+  /// Ordered contract (spec §5.1):
+  ///   1. Re-entrancy guard: return immediately if [BackupRunning].
+  ///   2. Platform guard: assert [target] is in [availableProviders].
+  ///   3. Set state → [BackupRunning(BackupOperation.switching)].
+  ///   4. Read old provider via [resolveBackupProvider(settings.activeProvider)].
+  ///   5. **Abort gate**: [old.disconnect()]; on throw → [BackupErrorState], return;
+  ///      activeProvider unchanged, target never authorized (FR-11).
+  ///   6. [setActiveProvider(target)] — the flip.
+  ///   7. Clear identity: [updateBackupState(null, null)].
+  ///   8. Resolve new provider via [resolveBackupProvider(target)].
+  ///      MUST NOT use [cloudBackupProvider] here — it still points to the old
+  ///      provider until the Drift stream re-emits (CC-2 stale-read hazard).
+  ///   9. Authorize + currentEmail + best-effort listFiles.
+  ///  10. updateBackupState + clearBackupSuspended.
+  ///  11. On post-flip failure (steps 9–10 throw) → [BackupErrorState], return.
+  ///      No rollback — activeProvider stays [target] (OQ-01, architect decision).
+  ///      The next [build()] observes target with no email → [BackupNotConnected],
+  ///      giving the user a clean retry surface.
+  ///  12. [ref.invalidateSelf()].
+  ///
+  /// Security invariants (FR-13, CC-1):
+  ///   - Never reads, writes, or deletes [kPassphraseKey].
+  ///   - Never calls the notifier's own [connect()] / [disconnect()] — both
+  ///     delete the passphrase key.
+  ///   - Never calls [old.deleteFile] — old .enc files are left intact.
+  Future<void> switchProvider(SyncProvider target) async {
+    // Step 1: re-entrancy guard — a switch already in progress takes priority.
+    if (state.valueOrNull is BackupRunning) return;
+
+    // Step 2: platform guard — iCloud is iOS-only (availableProviders enforces it).
+    assert(availableProviders(defaultTargetPlatform).contains(target));
+
+    // Step 3: signal switch in progress.
+    state = const AsyncData(BackupRunning(BackupOperation.switching));
+
+    // Step 4: read the current (old) provider BEFORE flipping activeProvider.
+    final settingsRepo = await ref.read(appSettingsRepositoryProvider.future);
+    final settings = await settingsRepo.getOrCreate();
+    final old = ref.read(resolveBackupProvider(settings.activeProvider));
+
+    // Step 5: abort gate — if disconnect throws, leave activeProvider unchanged.
+    try {
+      await old.disconnect();
+    } catch (e) {
+      debugPrint(
+        '[BackupNotifier.switchProvider] abort gate — old.disconnect() '
+        'failed: $e; aborting switch, activeProvider unchanged',
+      );
+      state = AsyncData(
+        BackupErrorState(
+          e is MetraException
+              ? e.message
+              : 'Something went wrong. Please try again.',
+        ),
+      );
+      return;
+    }
+
+    // Step 6: flip — this is the point of no return (OQ-01).
+    await settingsRepo.setActiveProvider(target);
+
+    // Step 7: clear old identity fields.
+    await settingsRepo.updateBackupState(
+      dropboxEmail: null,
+      lastBackupAt: null,
+    );
+
+    // Step 8: resolve new provider via the family provider (CC-2: cloudBackupProvider
+    // still yields the old provider until the Drift stream re-emits after the flip).
+    final newProvider = ref.read(resolveBackupProvider(target));
+
+    // Steps 9–11: post-flip connect sequence.  Any exception here does NOT roll back
+    // activeProvider (OQ-01 architect decision) — the next build() will observe target
+    // with no email and yield BackupNotConnected, giving the user a clean retry surface.
+    try {
+      await newProvider.authorize();
+      final email = await newProvider.currentEmail();
+      // iCloud has no email — only fail on null for OAuth-based providers (EC-08).
+      if (email == null && target != SyncProvider.iCloud) {
+        throw const SyncException('Could not fetch account');
+      }
+      DateTime? discoveredLastBackupAt;
+      try {
+        final files = await newProvider.listFiles();
+        if (files.isNotEmpty) {
+          discoveredLastBackupAt =
+              BackupFilename.parseTimestamp(files.first.name);
+        }
+      } catch (_) {
+        // best-effort: list failure does not abort the switch flow
+      }
+      await settingsRepo.updateBackupState(
+        dropboxEmail: email,
+        lastBackupAt: discoveredLastBackupAt,
+      );
+      await settingsRepo.clearBackupSuspended();
+    } catch (e) {
+      debugPrint(
+        '[BackupNotifier.switchProvider] post-flip failure — $e; '
+        'activeProvider stays ${target.name} (OQ-01, no rollback)',
+      );
+      state = AsyncData(
+        BackupErrorState(
+          e is MetraException
+              ? e.message
+              : 'Something went wrong. Please try again.',
+        ),
+      );
+      return;
+    }
+
+    // Step 12: trigger build() with the new settings.
+    ref.invalidateSelf();
   }
 
   Future<void> backupWithPassphrase(String passphrase) async {

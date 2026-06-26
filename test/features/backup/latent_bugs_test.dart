@@ -54,6 +54,7 @@ import 'package:metra/domain/use_cases/backup_data.dart';
 import 'package:metra/domain/use_cases/restore_data.dart';
 import 'package:metra/features/backup/backup_screen.dart';
 import 'package:metra/features/backup/state/backup_notifier.dart';
+import 'package:metra/domain/entities/sync_log_entity.dart';
 import 'package:metra/features/backup/state/backup_state.dart';
 import 'package:metra/features/backup/widgets/backup_picker_sheet.dart';
 import 'package:metra/features/backup/widgets/metra_confirm_dialog.dart';
@@ -212,6 +213,7 @@ void main() {
         );
         final stub = _StubBackupNotifier(
           const BackupConnected(
+            provider: SyncProvider.dropbox,
             email: 'test@metra.app',
             autoBackupActive: true,
             passphraseSet: true,
@@ -221,6 +223,7 @@ void main() {
         await tester.pumpWidget(
           _wrap(
             const BackupConnected(
+              provider: SyncProvider.dropbox,
               email: 'test@metra.app',
               autoBackupActive: true,
               passphraseSet: true,
@@ -354,6 +357,7 @@ void main() {
         await assertNoCrash(
           tester,
           const BackupConnected(
+            provider: SyncProvider.dropbox,
             email: 'i2@metra.app',
             autoBackupActive: false,
             passphraseSet: true,

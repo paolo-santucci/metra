@@ -138,6 +138,9 @@ class _RunningBody extends StatelessWidget {
       BackupOperation.backingUp => l10n.backup_in_progress,
       BackupOperation.connecting => l10n.backup_in_progress,
       BackupOperation.disconnecting => l10n.backup_in_progress,
+      // switching added in TASK-04 (OQ-07); reuses the generic in-progress label
+      // until TASK-05 adds switch-specific l10n (backupSwitchConfirmSwitch).
+      BackupOperation.switching => l10n.backup_in_progress,
     };
     return Center(
       child: Column(

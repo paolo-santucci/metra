@@ -328,6 +328,7 @@ void main() {
       // The IgnorePointer in BackupConnectedView only gates on isRunning
       // (BackupRunning state), not on autoBackupActive=false.
       const suspendedState = BackupConnected(
+        provider: SyncProvider.dropbox,
         email: 'a@b.test',
         autoBackupActive: false,
         passphraseSet: true,
