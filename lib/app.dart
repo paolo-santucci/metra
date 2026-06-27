@@ -19,6 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/l10n/locale_resolver.dart';
 import 'core/theme/metra_theme.dart';
 import 'domain/entities/app_settings_data.dart';
 import 'domain/entities/cycle_prediction.dart';
@@ -59,6 +60,28 @@ final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 /// async gaps — i.e. when the original [BuildContext] may no longer be valid.
 /// One key instance for the lifetime of the app; no rebuild cost.
 final navigatorKey = GlobalKey<NavigatorState>();
+
+/// Resolves the stored Settings language preference to an effective [Locale],
+/// consuming the device's FULL ordered preferred-locale list.
+///
+/// This is the **single wiring seam** (C-01) used by both locale-resolution
+/// sites in [_MetraInnerState]:
+///   1. the notification-string path (two `AppLocalizations.delegate.load`
+///      call sites in the Riverpod listeners), and
+///   2. the [MaterialApp.router] `localeResolutionCallback`.
+///
+/// Delegates entirely to [resolveAppLocale] (the single source of truth,
+/// `lib/core/l10n/locale_resolver.dart`), passing
+/// `WidgetsBinding.instance.platformDispatcher.locales` — the FULL ordered
+/// preferred list (C-02), never the single primary `.locale`.
+///
+/// `@visibleForTesting`: exposed so `test/app_locale_resolution_widget_test.dart`
+/// can assert the wiring seam without mounting the full widget tree.
+@visibleForTesting
+Locale resolveLocaleFromPlatform(String stored) => resolveAppLocale(
+      stored: stored,
+      systemLocales: WidgetsBinding.instance.platformDispatcher.locales,
+    );
 
 /// Root widget — owns [ProviderScope] and accepts overrides for tests.
 class MetraApp extends StatelessWidget {
@@ -180,7 +203,7 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
         final currentSettings = ref.read(settingsNotifierProvider).valueOrNull;
         if (currentSettings == null) return;
         final l10n = await AppLocalizations.delegate
-            .load(Locale(_effectiveLangCode(currentSettings.languageCode)));
+            .load(resolveLocaleFromPlatform(currentSettings.languageCode));
         final scheduler =
             await ref.read(schedulePredictionNotificationProvider.future);
         try {
@@ -288,7 +311,7 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
 
         final prediction = ref.read(cyclePredictionProvider).valueOrNull;
         final l10n = await AppLocalizations.delegate
-            .load(Locale(_effectiveLangCode(currentSettings.languageCode)));
+            .load(resolveLocaleFromPlatform(currentSettings.languageCode));
         // FR-08: capture the localised failure message before await so the
         // locale is pinned to the user's current settings at scheduling time.
         final failureMessage = l10n.notificationScheduleFailedMessage;
@@ -346,20 +369,19 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
       darkTheme: MetraTheme.dark(),
       themeMode: themeMode,
       locale: locale,
+      // BUG-001/BUG-002 fix (FR-28/29/30): override Flutter's default
+      // first-supportedLocale fallback with the single shared resolver so
+      // the UI locale and the notification locale are always identical.
+      // The `deviceLocale` arg (single primary) is intentionally ignored in
+      // favour of the full `.locales` list via resolveLocaleFromPlatform (C-02).
+      // `locale: locale` (explicit Settings choice / null) still takes
+      // precedence when non-null (MaterialApp semantics are unchanged).
+      localeResolutionCallback: (deviceLocale, supportedLocales) =>
+          resolveLocaleFromPlatform(settings?.languageCode ?? ''),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: ref.watch(appRouterProvider),
       debugShowCheckedModeBanner: false,
     );
-  }
-
-  /// Resolves an empty [stored] code (= "follow system") to an actual
-  /// language code supported by the app.
-  static String _effectiveLangCode(String stored) {
-    if (stored.isNotEmpty) return stored;
-    final sys = WidgetsBinding.instance.platformDispatcher.locale.languageCode;
-    return AppLocalizations.supportedLocales.any((l) => l.languageCode == sys)
-        ? sys
-        : 'it';
   }
 }

@@ -1,7 +1,7 @@
 schema-version: 2
-last-updated: "2026-06-26T18:05:00+02:00"
+last-updated: "2026-06-27T12:10:00+02:00"
 active-plan: null
-last-plan: ".claude/docs/plans/archive/sp-20260625-m4-picker-switch-flow-plan.md"
+last-plan: ".claude/docs/plans/archive/qp-20260627-m5-locale-fallback-fix.md"
 
 # Owned by the short-plan skill. update-status preserves verbatim.
 short-plan:
@@ -81,8 +81,13 @@ pending-consolidation:
   - plan-id: sp-20260625-m4-picker-switch-flow-spec
     archived-date: "2026-06-26"
     has-spec-impact: true
+  - plan-id: qp-20260627-m5-locale-fallback-fix
+    archived-date: "2026-06-27"
+    has-spec-impact: true
 
 recently-completed:
+  - date: "2026-06-26"
+    summary: "M4 multi-provider picker + switch flow COMMITTED as ab02897 on metra-1.1.0 (45 files, +6710/-116). BackupProviderPickerSheet (CupertinoPicker bottom sheet both platforms); availableProviders(TargetPlatform) enumerator + resolveBackupProvider Provider.family (single iOS-only-iCloud rule, synchronous); BackupNotifier.switchProvider (token-only forget -> abort-before-connect -> setActiveProvider -> explicit-resolve connect; passphrase reused, old .enc intact, post-flip no-rollback per OQ-01; never routes through connect/disconnect); connected-view active-provider row (Account row omitted for null-email iCloud) + Cambia provider switch action gated by MetraConfirmDialog; empty-view CTA -> picker (no confirm); 10 l10n keys (backupConnectDropbox retired); CupertinoPickerScaffold optional center-title slot; ui-design-bible carve-out extended to BackupProviderPickerSheet (CG-1=16dp, CG-2=center-title); light+dark mockups under docs/design. Built via /short-plan implement m4 --auto (canonical: 4 assessments -> spec pipeline -> 9 tasks/4 waves -> close). Suite 1810 pass/4 skip/1 fail (1=save_daily_log midnight-DST flake, unrelated); M4 cluster 429 pass/0 fail; format+analyze clean. M5 (locale) + M6 (guide/hardening) remain."
   - date: "2026-06-25"
     summary: "M3 iCloud backup provider COMMITTED as 815a2c7 on metra-1.1.0 (23 files, +2915/-49). IcloudProvider implements CloudBackupProvider (iOS-only, injectable IcloudGateway seam over icloud_storage 2.2.0, in-provider bounded read-after-write poll over eventual consistency, quota->InsufficientStorageException via named kQuotaExceededCode, newest-first listFiles, sizeBytes=0); ProductionIcloudGateway (sole icloud_storage importer, lazy); platform-guarded cloudBackupProvider iCloud arm (defaultTargetPlatform==iOS, Dropbox fallback off-iOS); email-less connected predicate (BackupConnected.email->String?); net-new Runner.entitlements + CODE_SIGN_ENTITLEMENTS Debug/Release/Profile; no SyncOrchestrator change (DIP). Suite 1689 pass/4 skip/0 fail; format+analyze clean. Built via /short-plan implement M3 --auto (canonical: 3 assessments -> spec pipeline -> 10 tasks/4 waves -> close). Deferred to M6: Apple iCloud container + profile rotation + device verify; no v* tag on main."
   - date: "2026-06-24"
@@ -91,30 +96,26 @@ recently-completed:
     summary: "docs: authored internal credential-setup guide .claude/docs/guides/cloud-provider-setup.md (FR-33) — Dropbox recap, Google Drive GCP/OAuth/intent-filter/dart-define wiring, iCloud App ID/container/Runner.entitlements/profile-rotation; OQ-07 resolved as reuse metra://oauth-callback with distinct host"
   - date: "2026-06-14"
     summary: "docs(privacy): added data-retention and data-deletion sections to IT+EN privacy policies to fix Google Play rejection (84a8115, merged accecf8, on origin/main)"
-  - date: "2026-06-13"
-    summary: "fix(android): 16 KB page-size support for Play production — sqlcipher_flutter_libs 0.5.7->0.6.8, useLegacyPackaging=false, versionCode 11->12; readelf-verified libsqlcipher.so 0x1000->0x4000 all ABIs (396eb98, merged d702ab3, on origin/main)"
 
 in-progress:
-  - title: "M4 picker + switch flow — BUILD COMPLETE (all 9 tasks/4 waves); UNCOMMITTED in working tree"
-    state: "BackupProviderPickerSheet + switchProvider flow + availableProviders/resolveBackupProvider seams + connected-view active-provider row + l10n + bible carve-out (orchestrator-authored after ui-designer guardrail). format clean, analyze 0; full suite 1810 pass/4 skip/1 fail (the 1 fail is the documented save_daily_log midnight-DST flake, NOT M4); M4 cluster 429 pass/0 fail."
+  - title: "M5 locale fallback fix — BUILD COMPLETE & UNCOMMITTED on metra-1.1.0"
+    state: "Quick plan closed: resolveAppLocale helper + resolveLocaleFromPlatform seam drive both notification paths + new localeResolutionCallback over full platformDispatcher.locales (fixes it-default BUG-001 + single-primary divergence BUG-002); _effectiveLangCode deleted. 31 new tests; full suite 1842 pass/4 skip/0 fail; format+analyze clean. QP archived; spec-delta pushed (pending-consolidation now 5)."
+    touched:
+      - "lib/app.dart"
+      - "lib/core/l10n/locale_resolver.dart"
+      - "test/core/l10n/locale_resolver_test.dart"
+      - "test/app_locale_resolution_widget_test.dart"
+      - "test/integration/locale_resolution_agreement_test.dart"
+    next-step: "Commit M5 on metra-1.1.0 (fix: follow-system locale fallback). Only M6 (guide+hardening+E2E) remains in the long-plan."
+    blocker: null
+  - title: "metra-1.1.0 — M1+M2+M3+M4 committed & PUSHED to origin; awaiting PR into main; 4 spec-deltas pending"
+    state: "origin/metra-1.1.0 @ ab02897 (M1+M2 06311d7, M3 815a2c7, M4 ab02897 all pushed). Full suite 1810 pass/4 skip/1 fail (the 1 = save_daily_log midnight-DST flake). pending-consolidation has 4 entries (M1-M4) to drain into backup spec-canon once merged."
     touched:
       - "lib/features/backup/widgets/backup_provider_picker_sheet.dart"
-      - "lib/core/widgets/settings/cupertino_picker_scaffold.dart"
       - "lib/features/backup/state/backup_notifier.dart"
-      - "lib/features/backup/views/backup_connected_view.dart"
-      - "lib/features/backup/views/backup_empty_view.dart"
-      - "lib/providers/backup_providers.dart"
-      - ".claude/docs/canon/ui-design-bible.md"
-    next-step: "Commit M4 on metra-1.1.0 alongside M1+M2+M3 (user owns commit/branch decision). M5 (locale fix) is the last remaining LP milestone; M6 is the terminal guide+hardening."
-    blocker: null
-  - title: "metra-1.1.0 — M1+M2+M3 committed; M3 local-only, awaiting push + PR; 3 spec-deltas pending"
-    state: "06311d7 (M1+M2, on origin/metra-1.1.0) + 815a2c7 (M3 iCloud, LOCAL — not yet pushed). Suite 1689 pass/4 skip/0 fail. pending-consolidation has 3 entries (M1,M2,M3) to drain into backup spec-canon once merged."
-    touched:
-      - "lib/data/services/backup/icloud_provider.dart"
-      - "lib/data/services/backup/production_icloud_gateway.dart"
       - "lib/providers/backup_providers.dart"
       - "ios/Runner/Runner.entitlements"
-    next-step: "Push metra-1.1.0 (M3 commit) + open PR into main. NOTE: /finalize-plan STOPPED at M1 — all 3 milestones' spec-deltas use anchors/old-text that do not match the live canon/spec/backup.md headings; reconcile deltas or re-derive the backup slice before consolidation."
+    next-step: "Open the PR for metra-1.1.0 into main. NOTE: /finalize-plan STOPPED at M1 — the 4 spec-deltas use anchors/old-text not matching live canon/spec/backup.md headings; reconcile before consolidation."
     blocker: null
   - title: "iOS black screen on cold-start (backup configured) — pending device verification"
     state: "iOS rc20 TestFlight build 320 is the candidate. Android crash is FIXED."
@@ -126,10 +127,10 @@ in-progress:
 
 next-steps:
   - "Open a PR for branch metra-1.1.0 (M1+M2 multi-provider cloud backup) into main; CI quality.yml closes the NFR-07 80% coverage gate (OQ-QA-01)."
-  - "Reconcile the 3 pending spec-deltas (M1/M2/M3) before consolidation: /finalize-plan stopped at M1 because every delta's section-anchor (providers, active-provider, enumerated-providers-limits, oauth-api-mechanism, secure-storage-keys, backup#providers, backup#platform-dependencies) and several old: strings do not match the live canon/spec/backup.md headings (enumerated-providers--limits etc.). Either rewrite each delta to a real heading slug + verbatim old:, or re-derive the backup slice (canon-bootstrap), then /finalize-plan --resume."
+  - "Consolidate canon AFTER metra-1.1.0 merges (deferred 2026-06-27). /finalize-plan re-audited: the 4 M1-M4 backup spec-deltas need FULL re-authoring, not just anchor fixes. Concrete findings: (1) invalid anchors — real backup.md slugs are current-behaviour / public-contracts / enumerated-providers-limits (SINGLE dash) / cross-domain-dependencies / gaps; (2) M3 backup-icloud-provider uses operation:modify which spec-changelog rejects (only replace|add|remove); (3) every replace delta's old: stripped the canon's markdown (backticks, **bold**, code blocks) so strict verbatim validation refuses them all; (4) cross-plan conflict — M1 and M2 both replace the same 'dropbox is the only value' sentence, so applied oldest-first M2 fails after M1 removes its old:. RECOMMENDED path: re-derive the backup canon slice via canon-bootstrap (captures all M1-M4 multi-provider reality at once), then apply M5's CLEAN settings delta (locale-follow-system-fallback-rule, anchor current-behaviour, add) via spec-changelog, then mark M1-M4 backup entries consolidated. pending-consolidation has 5 entries (M1-M5); _finalize-plan-state.yaml still shows the old stopped batch (M1/M2/M3 only) — do a FRESH /finalize-plan, not --resume, once deltas/slice are reconciled."
   - "Provision the Google Cloud OAuth client (installed-app client id + metra://oauth-callback-google redirect) and add the GOOGLE_OAUTH_CLIENT_ID GitHub secret — required before Drive backup works end-to-end (empty client id ships an OAuth failure no unit test catches)."
   - "Run the manual E2E Drive round-trip pre-merge gate (OQ-QA-05): back up to Google Drive -> download .enc -> verify unreadable binary -> restore on a 2nd Android device -> data identical."
-  - "M4 (picker + switch flow) build COMPLETE & uncommitted — commit on metra-1.1.0 alongside M1+M2+M3. Only M5 (locale follow-system fallback fix) remains as an LP build milestone; M6 is the terminal guide+hardening+E2E milestone."
+  - "M5 (locale follow-system fallback fix) build COMPLETE & uncommitted on metra-1.1.0 — commit it (fix: follow-system locale fallback). M6 (terminal guide+hardening+E2E milestone) is now the only remaining LP build milestone."
   - "M3 external deps (user-owned, M6): create the Apple App-ID iCloud capability + container iCloud.com.paolosantucci.metra, regenerate the App Store provisioning profile, re-encode IOS_PROVISIONING_PROFILE_BASE64 — required before any iOS archive (MC-02). Confirm the icloud_storage kQuotaExceededCode PlatformException value on-device (OQ-01)."
   - "After GitHub Pages rebuilds, verify retention/deletion sections live at metra.paolosantucci.com/{it,en}/privacy/, then resubmit to Google Play to clear the privacy-policy rejection."
   - "Download the signed release-aab artifact from the Android CI run on main (d702ab3) and upload to Play Console (versionCode 12) to retry the production promotion (16 KB page-size fix)."
