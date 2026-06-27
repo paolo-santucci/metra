@@ -101,8 +101,13 @@ class IcloudProvider implements CloudBackupProvider {
   // CloudBackupProvider — upload (bounded read-after-write poll, FR-03/04)
   // ---------------------------------------------------------------------------
 
-  /// Writes [blob] to [filename] then polls [IcloudGateway.gather] until the
-  /// entry is visible, synthesising a synchronous contract for [SyncOrchestrator].
+  /// Writes [blob] to [filename], then runs a best-effort bounded poll via
+  /// [IcloudGateway.gather] to give the orchestrator a chance to see the file.
+  ///
+  /// **Success criterion for iCloud (eventually consistent):** a successful
+  /// gateway write is sufficient. The read-after-write poll is courtesy-only;
+  /// exhaustion without visibility is NOT an error — the OS owns sync timing
+  /// (§3.1 semantic contract).
   ///
   /// Error mapping:
   ///  - quota [PlatformException] (`code == kQuotaExceededCode`)
@@ -110,7 +115,7 @@ class IcloudProvider implements CloudBackupProvider {
   ///  - any other [PlatformException] on the write
   ///        → throws [SyncException] (FR-07-neg)
   ///  - poll exhausted without visibility
-  ///        → throws [SyncException] (FR-03-neg)
+  ///        → returns normally (iCloud eventual consistency — §3.1)
   @override
   Future<void> upload(Uint8List blob, String filename) async {
     try {
@@ -134,10 +139,10 @@ class IcloudProvider implements CloudBackupProvider {
       }
     }
 
-    throw SyncException(
-      'upload not visible after bounded poll ($kIcloudPollMaxAttempts attempts): '
-      '$filename',
-    );
+    // Poll exhausted without visibility — normal for iCloud's eventual
+    // consistency (§3.1 semantic contract). A successful gateway write is the
+    // success criterion; non-visibility within the poll window is not an error.
+    // The method returns implicitly (Future<void>).
   }
 
   // ---------------------------------------------------------------------------

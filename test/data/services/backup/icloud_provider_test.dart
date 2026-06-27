@@ -284,40 +284,53 @@ void main() {
     );
 
     test(
-      'never visible → throws SyncException (not InsufficientStorageException), '
-      'does not hang (EC-04)',
+      'upload_returns_normally_when_gateway_write_succeeds_but_poll_never_sees_file',
       () {
         fakeAsync((fake) {
-          // invisibleForGatherCalls >> kIcloudPollMaxAttempts: file stays
-          // invisible through all poll attempts.
+          // Gateway: upload() commits bytes but gather() never lists the file
+          // within kIcloudPollMaxAttempts (invisibleForGatherCalls > max).
+          // Injected delay so fake_async drives the loop deterministically.
           final gw = _CountingGateway(invisibleForGatherCalls: 1000);
           final provider = IcloudProvider(
             gateway: gw,
             delay: Future<void>.delayed,
           );
 
+          bool completed = false;
           Object? caught;
-          provider
-              .upload(_blob, _filename1)
-              .then((_) {})
-              .catchError((Object e) {
+          provider.upload(_blob, _filename1).then((_) {
+            completed = true;
+          }).catchError((Object e) {
             caught = e;
           });
 
           // 9 delays × 500 ms = 4 500 ms; after the 10th (final) gather() the
-          // loop breaks without a trailing delay and SyncException is thrown.
+          // poll exhausts. iCloud is eventually consistent — gateway-write
+          // success is the success criterion (§3.1 semantic contract): upload()
+          // returns normally instead of throwing.
           fake.elapse(const Duration(milliseconds: 4500));
 
           expect(
-            caught,
-            isA<SyncException>(),
-            reason: 'poll-exhausted path must throw SyncException',
+            completed,
+            isTrue,
+            reason: 'upload() must complete normally when the gateway write '
+                'succeeds, even if gather() never sees the file within the '
+                'poll window (iCloud eventual consistency — §3.1)',
           );
           expect(
             caught,
-            isNot(isA<InsufficientStorageException>()),
+            isNull,
             reason:
-                'poll-exhausted error must not be InsufficientStorageException',
+                'poll exhaustion must NOT throw for an eventually-consistent '
+                'provider',
+          );
+          // Courtesy poll must still run for all kIcloudPollMaxAttempts attempts.
+          expect(
+            gw.gatherCallCount,
+            IcloudProvider.kIcloudPollMaxAttempts,
+            reason:
+                'courtesy poll must run all kIcloudPollMaxAttempts gather() '
+                'calls',
           );
         });
       },

@@ -149,6 +149,16 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
         dropboxEmail: null,
         lastBackupAt: null,
       );
+      // BUG-2: reset the active provider to the default (dropbox) so that
+      // _isConnected evaluates the email-sentinel branch on the next build().
+      // Without this, iCloud stays "connected" because _isConnected probes the
+      // still-available container via authorize() — there is no disconnect
+      // sentinel for iCloud.  Resetting to dropbox + null dropboxEmail gives
+      // the null-email sentinel path, which correctly reports disconnected.
+      // This is identical to the idiom used by DeleteAllData (C-07: no new
+      // persisted field; harmless for Dropbox/Google Drive which are already
+      // governed by the email sentinel).
+      await settingsRepo.setActiveProvider(SyncProvider.dropbox);
       await ref.read(secureStorageProvider).delete(key: _passphraseKey);
       ref.invalidateSelf();
     } catch (e) {

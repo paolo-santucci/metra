@@ -46,7 +46,6 @@ import 'dart:typed_data';
 import 'package:cryptography/cryptography.dart';
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:metra/core/errors/metra_exception.dart';
 import 'package:metra/data/services/backup/backup_service.dart';
 import 'package:metra/data/services/backup/cloud_backup_provider.dart';
 import 'package:metra/data/services/backup/icloud_gateway.dart';
@@ -391,15 +390,22 @@ void main() {
       );
 
       // -----------------------------------------------------------------------
-      // A-4: Poll-exhausted — blob never visible; does not hang.
+      // A-4: Poll-exhausted but gateway write COMMITTED — eventual consistency.
+      //      For iCloud (an eventually-consistent provider) a successful gateway
+      //      write IS the success criterion: neither the provider's courtesy
+      //      poll nor the orchestrator's post-upload verification may fail the
+      //      backup on non-visibility (BUG-1 fix, qp-20260627-icloud-eventual-
+      //      consistency-fix). The backup must SUCCEED and log success; it must
+      //      also not hang.
       // -----------------------------------------------------------------------
       test(
-        'should_log_failed_backup_and_not_hang_when_poll_exhausted'
-        ' (EC-04/FR-03-neg)',
+        'should_complete_backup_and_log_success_when_poll_exhausted_for_icloud'
+        ' (EC-04/FR-03 eventual-consistency)',
         () {
           fakeAsync((fake) {
             // invisibleForGatherCalls >> kIcloudPollMaxAttempts (10) so the
-            // blob never becomes visible within the poll bound.
+            // blob never becomes visible within the poll bound — yet the
+            // gateway write succeeded, so the backup must still complete.
             final gw = FakeIcloudGateway(invisibleForGatherCalls: 9999);
             final provider = IcloudProvider(
               gateway: gw,
@@ -413,10 +419,11 @@ void main() {
               logRepo: logRepo,
             );
 
-            bool threw = false;
+            bool completed = false;
             Object? capturedError;
-            orch.backup().then((_) {}).catchError((Object e) {
-              threw = true;
+            orch.backup().then((_) {
+              completed = true;
+            }).catchError((Object e) {
               capturedError = e;
             });
 
@@ -424,43 +431,44 @@ void main() {
             //   kIcloudPollMaxAttempts (10) × kIcloudPollInterval (500 ms)
             //   = 5 000 ms total; 9 inter-attempt delays × 500 ms = 4 500 ms
             //   (no trailing delay on the final attempt — off-by-one guard).
-            // 10 seconds is comfortably beyond the 4 500 ms needed.
+            // 10 seconds is comfortably beyond the 4 500 ms needed (no hang).
             fake.elapse(const Duration(seconds: 10));
 
             expect(
-              threw,
+              completed,
               isTrue,
-              reason: 'backup() must throw once the poll bound is exhausted '
-                  '(EC-04 / FR-03-neg)',
+              reason: 'backup() must complete even when the poll bound is '
+                  'exhausted: the gateway write succeeded and iCloud is '
+                  'eventually consistent (BUG-1 fix)',
             );
             expect(
               capturedError,
-              isA<SyncException>(),
-              reason: 'SyncOrchestrator rethrows the SyncException from the '
-                  'exhausted IcloudProvider poll; the caller receives it '
-                  '(SyncOrchestrator.backup():156-166)',
+              isNull,
+              reason: 'no exception may escape a backup whose bytes were '
+                  'committed to the iCloud container',
             );
 
-            // The orchestrator catch block logs a failed-backup entry before
-            // rethrowing (sync_orchestrator.dart:156-166).
+            // The orchestrator logs a SUCCESS entry (the verification no longer
+            // fails the backup for iCloud — kEventuallyConsistentProviders).
             expect(
               syncLogRepo.appended,
               isNotEmpty,
-              reason: 'at least one SyncLogEntity must be appended on failure',
+              reason: 'at least one SyncLogEntity must be appended',
             );
-            final failedLog = syncLogRepo.appended.last;
+            final log = syncLogRepo.appended.last;
             expect(
-              failedLog.success,
-              isFalse,
-              reason: 'the final log entry must record a failed backup',
+              log.success,
+              isTrue,
+              reason: 'the final log entry must record a successful backup '
+                  '(gateway-write success is the iCloud success criterion)',
             );
             expect(
-              failedLog.provider,
+              log.provider,
               SyncProvider.iCloud,
-              reason: 'the failed log must stamp SyncProvider.iCloud (FR-04)',
+              reason: 'the success log must stamp SyncProvider.iCloud (FR-04)',
             );
             expect(
-              failedLog.operation,
+              log.operation,
               SyncOperation.backup,
               reason: 'the operation kind must be backup',
             );

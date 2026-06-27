@@ -2995,6 +2995,94 @@ void main() {
     );
   });
 
+  // ── BUG-2 T-03: disconnect() resets activeProvider → iCloud disconnects ──
+  //
+  // Root cause: _isConnected(iCloud) probes the container via authorize() —
+  // there is no disconnect sentinel.  disconnect() only cleared the email and
+  // passphrase, so the next build() re-probed the still-available container
+  // and reported BackupConnected.  Fix: reset activeProvider to dropbox inside
+  // disconnect() (the DeleteAllData idiom) so _isConnected evaluates the
+  // email-sentinel branch (null → BackupNotConnected).
+  group('BUG-2 T-03 — disconnect resets activeProvider for iCloud', () {
+    test(
+      'disconnect_resets_active_provider_to_dropbox_so_icloud_becomes_disconnected',
+      () async {
+        // Setup: real DriftAppSettingsRepository over an in-memory Drift DB.
+        // This is necessary to exercise the full Drift read-after-write path
+        // (same pattern as BUG-B01 and BUG-B04 tests).
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        final realRepo = DriftAppSettingsRepository(db.appSettingsDao);
+
+        // Pre-seed: create the settings row, then flip to iCloud.
+        await realRepo.getOrCreate();
+        await realRepo.setActiveProvider(SyncProvider.iCloud);
+
+        final testStorage = InMemorySecureStorage();
+        testStorage.values[BackupNotifier.kPassphraseKey] = 'my-pass';
+
+        final fakeICloud = FakeICloudProvider(authorizeThrows: false);
+        final testRunner = _FakeRunner();
+        final testSyncLog = FakeSyncLogRepository();
+
+        final container = ProviderContainer(
+          overrides: [
+            appSettingsRepositoryProvider.overrideWith(
+              (_) async => realRepo,
+            ),
+            secureStorageProvider.overrideWithValue(testStorage),
+            backupDataProvider.overrideWith(
+              (_) async => BackupData(testRunner),
+            ),
+            restoreDataProvider.overrideWith(
+              (_) async => RestoreData(testRunner),
+            ),
+            cloudBackupProvider.overrideWithValue(fakeICloud),
+            syncLogRepositoryProvider.overrideWith(
+              (_) async => testSyncLog,
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        // Precondition: iCloud authorize() succeeds → BackupConnected.
+        final initialState =
+            await container.read(backupNotifierProvider.future);
+        expect(
+          initialState,
+          isA<BackupConnected>(),
+          reason:
+              'precondition: iCloud container available (authorize succeeds) '
+              '→ _isConnected returns true → BackupConnected',
+        );
+
+        // Act.
+        await container.read(backupNotifierProvider.notifier).disconnect();
+
+        // Assert 1: activeProvider reset to dropbox in the real Drift repo.
+        final settings = await realRepo.getOrCreate();
+        expect(
+          settings.activeProvider,
+          SyncProvider.dropbox,
+          reason: 'BUG-2: disconnect() must call setActiveProvider(dropbox) '
+              'so _isConnected evaluates the email-sentinel branch on rebuild',
+        );
+
+        // Assert 2: the rebuilt state is BackupNotConnected.
+        // build() sees activeProvider=dropbox + dropboxEmail=null →
+        // _isConnected returns false → BackupNotConnected.
+        final rebuiltState =
+            await container.read(backupNotifierProvider.future);
+        expect(
+          rebuiltState,
+          isA<BackupNotConnected>(),
+          reason: 'BUG-2: after disconnect(), build() must emit '
+              'BackupNotConnected (dropbox branch, null email sentinel)',
+        );
+      },
+    );
+  });
+
   // ── TASK-04 TDD: build() populates BackupConnected.provider from settings ──
 
   group('TASK-04 — BackupConnected.provider populated from settings', () {
