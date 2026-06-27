@@ -475,22 +475,21 @@ void main() {
 
   // -------------------------------------------------------------------------
   // TASK-02 — availableProviders enumerator (FR-02, CC-3.1)
+  // Matrix: iOS → [dropbox, iCloud]; android → [dropbox, googleDrive];
+  //         other → [dropbox] (defensive).
   // -------------------------------------------------------------------------
   group('availableProviders', () {
     test(
-      'iOS → [dropbox, googleDrive, iCloud] (len 3, iCloud last)',
+      'iOS → [dropbox, iCloud] (len 2, iCloud last, no googleDrive)',
       () {
         final result = availableProviders(TargetPlatform.iOS);
         expect(
           result,
-          equals([
-            SyncProvider.dropbox,
-            SyncProvider.googleDrive,
-            SyncProvider.iCloud,
-          ]),
+          equals([SyncProvider.dropbox, SyncProvider.iCloud]),
         );
-        expect(result.length, 3);
+        expect(result.length, 2);
         expect(result.last, SyncProvider.iCloud);
+        expect(result, isNot(contains(SyncProvider.googleDrive)));
       },
     );
 
@@ -508,27 +507,23 @@ void main() {
     );
 
     test(
-      'linux → [dropbox, googleDrive] (len 2, defensive non-iOS)',
+      'linux → [dropbox] (len 1, defensive, no googleDrive, no iCloud)',
       () {
         final result = availableProviders(TargetPlatform.linux);
-        expect(
-          result,
-          equals([SyncProvider.dropbox, SyncProvider.googleDrive]),
-        );
-        expect(result.length, 2);
+        expect(result, equals([SyncProvider.dropbox]));
+        expect(result.length, 1);
+        expect(result, isNot(contains(SyncProvider.googleDrive)));
         expect(result, isNot(contains(SyncProvider.iCloud)));
       },
     );
 
     test(
-      'windows → [dropbox, googleDrive] (len 2, defensive non-iOS)',
+      'windows → [dropbox] (len 1, defensive, no googleDrive, no iCloud)',
       () {
         final result = availableProviders(TargetPlatform.windows);
-        expect(
-          result,
-          equals([SyncProvider.dropbox, SyncProvider.googleDrive]),
-        );
-        expect(result.length, 2);
+        expect(result, equals([SyncProvider.dropbox]));
+        expect(result.length, 1);
+        expect(result, isNot(contains(SyncProvider.googleDrive)));
         expect(result, isNot(contains(SyncProvider.iCloud)));
       },
     );

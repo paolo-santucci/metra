@@ -62,22 +62,26 @@ final iCloudProviderProvider = Provider<IcloudProvider>(
 
 /// Returns the list of backup providers available on [platform].
 ///
-/// Single source of the iOS-only-iCloud rule (FR-02, CC-3.1).
-/// Pure and synchronous — callers pass [defaultTargetPlatform]; the rule
-/// lives here exactly once, consumed by both the picker UI and the
-/// [resolveBackupProvider] iCloud guard.
+/// Single source of both the Android-only-Google-Drive rule and the
+/// iOS-only-iCloud rule (FR-02, CC-3.1).
+/// Pure and synchronous — callers pass [defaultTargetPlatform]; the rules
+/// live here exactly once, consumed by the picker UI.
 ///
-/// - Every platform: `[dropbox, googleDrive]`
-/// - iOS only:      `[dropbox, googleDrive, iCloud]` (iCloud appended last)
+/// Per-platform matrix:
+/// - Android: `[dropbox, googleDrive]`
+/// - iOS:     `[dropbox, iCloud]` (iCloud last; Google Drive is Android-only)
+/// - Other (linux, windows — non-shipping, defensive): `[dropbox]`
+///
+/// Note: [resolveBackupProvider]'s `googleDrive` arm is intentionally
+/// unguarded (asymmetric with the iCloud arm by design — user decision
+/// 2026-06-27). This function is the only picker-availability guard for
+/// Google Drive; [resolveBackupProvider] is not.
 List<SyncProvider> availableProviders(TargetPlatform platform) {
-  if (platform == TargetPlatform.iOS) {
-    return [
-      SyncProvider.dropbox,
-      SyncProvider.googleDrive,
-      SyncProvider.iCloud,
-    ];
-  }
-  return [SyncProvider.dropbox, SyncProvider.googleDrive];
+  return [
+    SyncProvider.dropbox,
+    if (platform == TargetPlatform.android) SyncProvider.googleDrive,
+    if (platform == TargetPlatform.iOS) SyncProvider.iCloud,
+  ];
 }
 
 /// Synchronous arbitrary-provider resolver (CC-3.2 / FR-03 / NFR-03).
