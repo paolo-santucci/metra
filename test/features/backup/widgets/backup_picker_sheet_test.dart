@@ -55,6 +55,7 @@ import 'package:metra/core/theme/metra_spacing.dart';
 import 'package:metra/core/theme/metra_theme.dart';
 import 'package:metra/data/services/backup/backup_file_entry.dart';
 import 'package:metra/features/backup/widgets/backup_picker_sheet.dart';
+import 'package:metra/features/backup/widgets/backup_size_format.dart';
 import 'package:metra/l10n/app_localizations.dart';
 
 // ---------------------------------------------------------------------------
@@ -366,9 +367,11 @@ void main() {
         );
 
         // Compute expected formatted text after locale data is initialised.
-        final expectedText = DateFormat.yMMMd('it')
+        final dateTime0 = DateFormat.yMMMd('it')
             .add_jm()
             .format(_entries[0].timestampUtc.toLocal());
+        final size0 = formatBackupSize(_entries[0].sizeBytes);
+        final expectedText = size0.isEmpty ? dateTime0 : '$dateTime0 $size0';
 
         await tester.tap(find.text('open'));
         await tester.pumpAndSettle();
@@ -436,9 +439,11 @@ void main() {
 
         // Compute expected formatted text after locale data is initialised.
         // Item 0 is at distance 1 from index 1.
-        final expectedText = DateFormat.yMMMd('it')
+        final dateTime1 = DateFormat.yMMMd('it')
             .add_jm()
             .format(_entries[0].timestampUtc.toLocal());
+        final size1 = formatBackupSize(_entries[0].sizeBytes);
+        final expectedText = size1.isEmpty ? dateTime1 : '$dateTime1 $size1';
 
         await tester.tap(find.text('open'));
         await tester.pumpAndSettle();
@@ -503,9 +508,11 @@ void main() {
 
         // Compute expected formatted text after locale data is initialised.
         // Item 2 is at distance 2 from index 0.
-        final expectedText = DateFormat.yMMMd('it')
+        final dateTime2 = DateFormat.yMMMd('it')
             .add_jm()
             .format(_entries[2].timestampUtc.toLocal());
+        final size2 = formatBackupSize(_entries[2].sizeBytes);
+        final expectedText = size2.isEmpty ? dateTime2 : '$dateTime2 $size2';
 
         await tester.tap(find.text('open'));
         await tester.pumpAndSettle();
@@ -979,9 +986,12 @@ void main() {
         );
 
         // Compute expected formatted text after locale data is initialised.
-        final expectedText = DateFormat.yMMMd('it')
+        final dateTimeSem = DateFormat.yMMMd('it')
             .add_jm()
             .format(_entries[0].timestampUtc.toLocal());
+        final sizeSem = formatBackupSize(_entries[0].sizeBytes);
+        final expectedText =
+            sizeSem.isEmpty ? dateTimeSem : '$dateTimeSem $sizeSem';
 
         await tester.tap(find.text('open'));
         await tester.pumpAndSettle();
@@ -1092,9 +1102,12 @@ void main() {
         );
 
         // Compute expected text after locale data is initialised by the pump.
-        final expectedText = DateFormat.yMMMd('en')
+        final dateTimeBugR01 = DateFormat.yMMMd('en')
             .add_jm()
             .format(entry.timestampUtc.toLocal());
+        final sizeBugR01 = formatBackupSize(entry.sizeBytes);
+        final expectedText =
+            sizeBugR01.isEmpty ? dateTimeBugR01 : '$dateTimeBugR01 $sizeBugR01';
 
         await tester.tap(find.text('open'));
         await tester.pumpAndSettle();
@@ -1112,11 +1125,11 @@ void main() {
           reason: 'Raw filename must not appear in the picker item',
         );
 
-        // Double-check: the full computed string is present.
+        // Double-check: the full computed string (date + time + size) is present.
         expect(
           find.text(expectedText),
           findsOneWidget,
-          reason: 'Full formatted date/time string must be present',
+          reason: 'Full formatted date/time + size string must be present',
         );
       } finally {
         debugDefaultTargetPlatformOverride = null;

@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -100,17 +101,61 @@ class ProductionIcloudGateway implements IcloudGateway {
   /// Returns the bytes at [relativePath].
   ///
   /// Bridges [ICloudStorage.download] → temp file → [Uint8List] → delete temp.
+  ///
+  /// **icloud_storage 2.2.0 eventual-consistency contract:**
+  /// The `ICloudStorage.download()` future completes immediately — it returns
+  /// `result(nil)` from the native side before the file exists at
+  /// `destinationFilePath`. The native plugin starts an `NSMetadataQuery`
+  /// asynchronously; only when the downloading status becomes `.current` does
+  /// it copy bytes to `destinationFilePath` via `moveCloudFile`, after which it
+  /// emits `FlutterEndOfEventStream` to close the Dart `onProgress` stream.
+  ///
+  /// Awaiting the `download()` future alone is therefore NOT sufficient —
+  /// `readAsBytes()` would run before the file exists, producing a
+  /// `PathNotFoundException`. The `onProgress` stream close (`onDone`) is the
+  /// only reliable completion signal. This method attaches a [Completer] to the
+  /// stream's `onDone` / `onError` callbacks and awaits it (with a bounded
+  /// [Duration] timeout that throws rather than reading a missing file) before
+  /// calling `readAsBytes()`. This mirrors the upload eventual-consistency
+  /// handling in [IcloudProvider.upload] — the difference is that upload polls
+  /// [IcloudGateway.gather], whereas download uses the plugin's native stream.
   @override
   Future<Uint8List> download(String relativePath) async {
     final dir = await getTemporaryDirectory();
     final tempPath = '${dir.path}/$relativePath';
     final tempFile = File(tempPath);
+
+    // Declared before the download call so the onProgress closure captures it.
+    // The native side invokes onProgress(stream) synchronously before
+    // result(nil), ensuring the listener is attached before any events fire.
+    final completer = Completer<void>();
+
     try {
       await ICloudStorage.download(
         containerId: _containerId,
         relativePath: relativePath,
         destinationFilePath: tempPath,
+        onProgress: (Stream<double> stream) {
+          stream.listen(
+            null, // progress percentages not needed
+            onDone: () {
+              if (!completer.isCompleted) completer.complete();
+            },
+            onError: (Object error) {
+              if (!completer.isCompleted) completer.completeError(error);
+            },
+            cancelOnError: true,
+          );
+        },
       );
+
+      // The download() future returns before the file is materialised. Wait for
+      // the onProgress stream to close — the native side emits
+      // FlutterEndOfEventStream after copying bytes to destinationFilePath.
+      // A bounded timeout throws (TimeoutException) rather than reading a
+      // missing file, surfacing a stuck download as a clear error.
+      await completer.future.timeout(const Duration(seconds: 60));
+
       return await tempFile.readAsBytes();
     } finally {
       if (await tempFile.exists()) {

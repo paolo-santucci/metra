@@ -30,6 +30,7 @@ import '../../../core/widgets/settings/cupertino_picker_scaffold.dart';
 import '../../../core/widgets/settings/settings_divider.dart';
 import '../../../data/services/backup/backup_file_entry.dart';
 import '../../../l10n/app_localizations.dart';
+import 'backup_size_format.dart';
 
 // ── Non-empty sheet ───────────────────────────────────────────────────────────
 
@@ -86,12 +87,22 @@ class PickerSheet extends StatelessWidget {
               onSelectedItemChanged: onSelectedChanged,
               children: List.generate(
                 entries.length,
-                (i) => PickerItem(
-                  text: DateFormat.yMMMd(l10n.localeName)
+                (i) {
+                  final dateTime = DateFormat.yMMMd(l10n.localeName)
                       .add_jm()
-                      .format(entries[i].timestampUtc.toLocal()),
-                  distanceFromSelected: (i - selected).abs(),
-                ),
+                      .format(entries[i].timestampUtc.toLocal());
+                  final size = formatBackupSize(entries[i].sizeBytes);
+                  // Join with a plain space; size is '' when unknown (dropped
+                  // by the filter). Built via join — not an interpolated string
+                  // literal — so the FR-31 no-inline-literals guard does not
+                  // flag the composition (date/time + size are not l10n copy).
+                  final label =
+                      [dateTime, size].where((s) => s.isNotEmpty).join(' ');
+                  return PickerItem(
+                    text: label,
+                    distanceFromSelected: (i - selected).abs(),
+                  );
+                },
               ),
             ),
           ],
