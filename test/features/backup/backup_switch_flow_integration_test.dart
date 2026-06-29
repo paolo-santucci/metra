@@ -34,6 +34,7 @@ import 'package:metra/core/errors/metra_exception.dart';
 import 'package:metra/core/theme/metra_theme.dart';
 import 'package:metra/data/services/backup/backup_file_entry.dart';
 import 'package:metra/data/services/backup/cloud_backup_provider.dart';
+import 'package:metra/domain/entities/app_settings_data.dart';
 import 'package:metra/domain/entities/sync_log_entity.dart';
 import 'package:metra/domain/use_cases/backup_data.dart';
 import 'package:metra/domain/use_cases/restore_data.dart';
@@ -163,6 +164,60 @@ class _BlockingSwitchNotifier extends BackupNotifier {
   }
 }
 
+/// File-private StreamController-backed fake that re-emits [watchSettings]
+/// after each mutating write.
+///
+/// The shared [FakeAppSettingsRepository.watchSettings] returns
+/// [Stream.value(storedSettings)] — a cold single-shot stream that never
+/// re-emits on mutations.  This makes BUG-01 structurally invisible to all
+/// existing tests (I-01..I-07), because [BackupNotifier.build()] never sees a
+/// re-emission while [switchProvider] is in flight.
+///
+/// This subclass adds a broadcast [StreamController] and overrides the three
+/// mutating methods called by [switchProvider] to re-emit after each write.
+/// Combined with the [appSettingsRepositoryProvider] override in
+/// [makeReemittingSwitchContainer], this makes [appSettingsStreamProvider]
+/// re-emit automatically — which marks [BackupNotifier] dirty, triggering the
+/// Riverpod assertion at line 246 (`ref.read(resolveBackupProvider(target))`).
+///
+/// File-private (C-05): the shared helper in test/helpers/ is NOT modified.
+class _ReemittingFakeAppSettingsRepository extends FakeAppSettingsRepository {
+  final _controller = StreamController<AppSettingsData?>.broadcast();
+
+  @override
+  Stream<AppSettingsData?> watchSettings() async* {
+    yield storedSettings; // first emission — lets build()'s .future complete
+    yield* _controller.stream; // subsequent re-emissions on each mutation
+  }
+
+  @override
+  Future<void> setActiveProvider(SyncProvider provider) async {
+    await super.setActiveProvider(provider);
+    _controller.add(storedSettings);
+  }
+
+  @override
+  Future<void> updateBackupState({
+    required String? dropboxEmail,
+    required DateTime? lastBackupAt,
+  }) async {
+    await super.updateBackupState(
+      dropboxEmail: dropboxEmail,
+      lastBackupAt: lastBackupAt,
+    );
+    _controller.add(storedSettings);
+  }
+
+  @override
+  Future<void> clearBackupSuspended() async {
+    await super.clearBackupSuspended();
+    _controller.add(storedSettings);
+  }
+
+  /// Closes the broadcast controller.  Call from [addTearDown] in I-08.
+  void dispose() => _controller.close();
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -220,6 +275,39 @@ void main() {
       overrides: [
         appSettingsRepositoryProvider.overrideWith(
           (_) async => settingsRepo,
+        ),
+        secureStorageProvider.overrideWithValue(storage),
+        backupDataProvider.overrideWith((_) async => BackupData(runner)),
+        restoreDataProvider.overrideWith((_) async => RestoreData(runner)),
+        resolveBackupProvider.overrideWith((ref, id) {
+          switch (id) {
+            case SyncProvider.dropbox:
+              return fakeDropbox;
+            case SyncProvider.googleDrive:
+              return fakeGoogleDrive;
+            case SyncProvider.iCloud:
+              return fakeICloud;
+          }
+        }),
+        syncLogRepositoryProvider.overrideWith((_) async => fakeSyncLogRepo),
+      ],
+    );
+  }
+
+  /// ProviderContainer for the BUG-01 re-emit regression test (I-08).
+  ///
+  /// Mirrors [makeSwitchContainer] but replaces [appSettingsRepositoryProvider]
+  /// with [reemitFake].  Since [appSettingsStreamProvider] is:
+  ///   `yield* (await ref.watch(appSettingsRepositoryProvider.future)).watchSettings()`
+  /// overriding the repository is sufficient — no separate
+  /// [appSettingsStreamProvider] override is needed.
+  ProviderContainer makeReemittingSwitchContainer(
+    _ReemittingFakeAppSettingsRepository reemitFake,
+  ) {
+    return ProviderContainer(
+      overrides: [
+        appSettingsRepositoryProvider.overrideWith(
+          (_) async => reemitFake,
         ),
         secureStorageProvider.overrideWithValue(storage),
         backupDataProvider.overrideWith((_) async => BackupData(runner)),
@@ -673,6 +761,86 @@ void main() {
 
       // No exception must be thrown (mounted-guard prevents post-unmount access).
       expect(tester.takeException(), isNull);
+    },
+  );
+
+  // ── I-08: Re-emit regression (BUG-01) ────────────────────────────────────
+
+  test(
+    'I-08 re-emit regression (BUG-01): watchSettings re-emits on setActiveProvider '
+    'mid-switchProvider → switchProvider completes without Riverpod '
+    'ref-after-Drift-mutation crash',
+    () async {
+      // Setup: use the re-emitting fake so stream emissions fire mid-switchProvider.
+      final reemitFake = _ReemittingFakeAppSettingsRepository();
+      // Pre-seed connected state: Dropbox active, email present so build()
+      // resolves BackupConnected rather than BackupNotConnected.
+      await reemitFake.updateBackupState(
+        dropboxEmail: 'user@dropbox.com',
+        lastBackupAt: null,
+      );
+      storage.values[BackupNotifier.kPassphraseKey] = 'my-passphrase';
+      // LIFO teardown: container.dispose runs first (registered second),
+      // then reemitFake.dispose closes the broadcast controller.
+      addTearDown(reemitFake.dispose);
+
+      final container = makeReemittingSwitchContainer(reemitFake);
+      addTearDown(container.dispose);
+
+      // Wait for initial build to complete so the notifier is fully resolved
+      // before we exercise switchProvider.
+      await container.read(backupNotifierProvider.future);
+
+      // Act: attempt the provider switch; catch any Riverpod assertion.
+      //
+      // BUG-01 mechanism: setActiveProvider (step 6) → _controller.add() →
+      // appSettingsStreamProvider re-emits → BackupNotifier marked dirty.
+      // ref.read(resolveBackupProvider(target)) at step 8 then fires the
+      // Riverpod assertion because the notifier's ref is in a dirty state.
+      Object? caught;
+      try {
+        await container
+            .read(backupNotifierProvider.notifier)
+            .switchProvider(SyncProvider.googleDrive);
+      } catch (e) {
+        caught = e;
+      }
+
+      // PRIMARY RED assertion: BUG-01 guard.
+      // Before the fix: caught != null (Riverpod StateError/assertion).
+      // After the fix:  caught == null (ref.read hoisted before the mutation).
+      expect(
+        caught,
+        isNull,
+        reason:
+            'BUG-01: ref.read(resolveBackupProvider(target)) after the Drift '
+            're-emission must not throw a Riverpod assertion',
+      );
+
+      // Progress guards — a fix that merely swallows the error cannot pass
+      // these: they confirm the switch actually completed the happy path.
+      final s = await reemitFake.getOrCreate();
+      expect(
+        s.activeProvider,
+        SyncProvider.googleDrive,
+        reason: 'activeProvider must be persisted as googleDrive after switch',
+      );
+      expect(
+        fakeGoogleDrive.authorizeCalls,
+        1,
+        reason: 'new provider authorize() must be called exactly once',
+      );
+      final finalState = await container.read(backupNotifierProvider.future);
+      expect(
+        finalState,
+        isA<BackupConnected>(),
+        reason: 'final state must be BackupConnected after successful switch',
+      );
+      expect(
+        (finalState as BackupConnected).provider,
+        SyncProvider.googleDrive,
+        reason: 'BackupConnected.provider must reflect the new active provider',
+      );
     },
   );
 }

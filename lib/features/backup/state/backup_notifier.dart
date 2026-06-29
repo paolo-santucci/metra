@@ -98,6 +98,10 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
         throw const SyncException('Could not fetch account');
       }
       final settingsRepo = await ref.read(appSettingsRepositoryProvider.future);
+      // BUG-02 (defensive): capture secureStorageProvider BEFORE any Drift write
+      // so ref.read cannot fire after the notifier is marked dirty by a
+      // stream re-emission (same structural hazard as BUG-01 in switchProvider).
+      final storage = ref.read(secureStorageProvider);
       DateTime? discoveredLastBackupAt;
       try {
         final files = await provider.listFiles(); // sorted desc, newest first
@@ -105,7 +109,10 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
           discoveredLastBackupAt =
               BackupFilename.parseTimestamp(files.first.name);
         }
-      } catch (_) {
+      } catch (e) {
+        debugPrint(
+          '[BackupNotifier.connect] listFiles() error (best-effort): $e',
+        );
         // best-effort: listing failure does not abort the connect flow
       }
       await settingsRepo.updateBackupState(
@@ -125,7 +132,7 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
       // Safe: disconnect() already deletes this key, so this is idempotent on a
       // fresh-install first-connect. backupSilent() guards on pass==null and will
       // not fire until the user enters a passphrase via backupWithPassphrase().
-      await ref.read(secureStorageProvider).delete(key: _passphraseKey);
+      await storage.delete(key: _passphraseKey);
       ref.invalidateSelf();
     } catch (e) {
       debugPrint('[BackupNotifier.connect] ${e.runtimeType}: $e');
@@ -145,6 +152,10 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
       final dropbox = ref.read(cloudBackupProvider);
       await dropbox.disconnect();
       final settingsRepo = await ref.read(appSettingsRepositoryProvider.future);
+      // BUG-02 (defensive): capture secureStorageProvider BEFORE any Drift write
+      // so ref.read cannot fire after the notifier is marked dirty by a
+      // stream re-emission (same structural hazard as BUG-01 in switchProvider).
+      final storage = ref.read(secureStorageProvider);
       await settingsRepo.updateBackupState(
         dropboxEmail: null,
         lastBackupAt: null,
@@ -159,7 +170,7 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
       // persisted field; harmless for Dropbox/Google Drive which are already
       // governed by the email sentinel).
       await settingsRepo.setActiveProvider(SyncProvider.dropbox);
-      await ref.read(secureStorageProvider).delete(key: _passphraseKey);
+      await storage.delete(key: _passphraseKey);
       ref.invalidateSelf();
     } catch (e) {
       state = AsyncData(
@@ -209,10 +220,20 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     // Step 3: signal switch in progress.
     state = const AsyncData(BackupRunning(BackupOperation.switching));
 
-    // Step 4: read the current (old) provider BEFORE flipping activeProvider.
+    // Step 4: read BOTH the old and new providers BEFORE any Drift mutation.
+    // BUG-01 fix: the previous code read resolveBackupProvider(target) at step 8,
+    // after settingsRepo.setActiveProvider() and settingsRepo.updateBackupState()
+    // had already written to Drift, causing the appSettingsStreamProvider to
+    // re-emit and mark BackupNotifier dirty — the subsequent ref.read then
+    // threw a Riverpod assertion (CC-2 stale-read hazard).
+    // Hoisting both reads here is safe: resolveBackupProvider resolves by its
+    // 'id' argument (not by reactive settings), so capturing newProvider before
+    // the flip returns the same instance that step-8 would have returned — the
+    // CC-2 invariant is preserved.
     final settingsRepo = await ref.read(appSettingsRepositoryProvider.future);
     final settings = await settingsRepo.getOrCreate();
     final old = ref.read(resolveBackupProvider(settings.activeProvider));
+    final newProvider = ref.read(resolveBackupProvider(target));
 
     // Step 5: abort gate — if disconnect throws, leave activeProvider unchanged.
     try {
@@ -241,9 +262,8 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
       lastBackupAt: null,
     );
 
-    // Step 8: resolve new provider via the family provider (CC-2: cloudBackupProvider
-    // still yields the old provider until the Drift stream re-emits after the flip).
-    final newProvider = ref.read(resolveBackupProvider(target));
+    // Step 8: newProvider already captured at step 4 (hoisted before any Drift
+    // mutation for CC-2 safety — see BUG-01 fix comment above).
 
     // Steps 9–11: post-flip connect sequence.  Any exception here does NOT roll back
     // activeProvider (OQ-01 architect decision) — the next build() will observe target
@@ -262,7 +282,10 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
           discoveredLastBackupAt =
               BackupFilename.parseTimestamp(files.first.name);
         }
-      } catch (_) {
+      } catch (e) {
+        debugPrint(
+          '[BackupNotifier.switchProvider] listFiles() error (best-effort): $e',
+        );
         // best-effort: list failure does not abort the switch flow
       }
       await settingsRepo.updateBackupState(
