@@ -262,7 +262,7 @@ void main() {
           webAuth: (String url, {required String callbackUrlScheme}) async {
             capturedUrl = url;
             final state = extractState(url);
-            return 'metra://oauth-callback-google?code=abc&state=$state';
+            return 'com.paolosantucci.metraapp:/oauth-callback-google?code=abc&state=$state';
           },
         );
         await provider.authorize();
@@ -303,7 +303,7 @@ void main() {
           webAuth: (String url, {required String callbackUrlScheme}) async {
             capturedUrl = url;
             final state = extractState(url);
-            return 'metra://oauth-callback-google?code=abc&state=$state';
+            return 'com.paolosantucci.metraapp:/oauth-callback-google?code=abc&state=$state';
           },
         );
         await provider.authorize();
@@ -341,7 +341,7 @@ void main() {
           webAuth: (String url, {required String callbackUrlScheme}) async {
             capturedUrl = url;
             final state = extractState(url);
-            return 'metra://oauth-callback-google?code=abc&state=$state';
+            return 'com.paolosantucci.metraapp:/oauth-callback-google?code=abc&state=$state';
           },
         );
         await provider.authorize();
@@ -380,7 +380,7 @@ void main() {
           webAuth: (String url, {required String callbackUrlScheme}) async {
             capturedUrl = url;
             final state = extractState(url);
-            return 'metra://oauth-callback-google?code=abc&state=$state';
+            return 'com.paolosantucci.metraapp:/oauth-callback-google?code=abc&state=$state';
           },
         );
         await provider.authorize();
@@ -412,7 +412,7 @@ void main() {
           client: client,
           webAuth: (String url, {required String callbackUrlScheme}) async {
             final state = extractState(url);
-            return 'metra://oauth-callback-google?code=abc&state=$state';
+            return 'com.paolosantucci.metraapp:/oauth-callback-google?code=abc&state=$state';
           },
         );
         await expectLater(providerOk.authorize(), completes);
@@ -424,7 +424,7 @@ void main() {
           storage: storage2,
           client: client,
           webAuth: (String url, {required String callbackUrlScheme}) async =>
-              'metra://oauth-callback-google?code=abc&state=WRONG_STATE',
+              'com.paolosantucci.metraapp:/oauth-callback-google?code=abc&state=WRONG_STATE',
         );
         await expectLater(
           providerBad.authorize(),
@@ -454,7 +454,7 @@ void main() {
           webAuth: (String url, {required String callbackUrlScheme}) async {
             final state = extractState(url);
             // Callback has state but no code.
-            return 'metra://oauth-callback-google?state=$state';
+            return 'com.paolosantucci.metraapp:/oauth-callback-google?state=$state';
           },
         );
         await expectLater(
@@ -525,7 +525,7 @@ void main() {
           client: client,
           webAuth: (String url, {required String callbackUrlScheme}) async {
             final state = extractState(url);
-            return 'metra://oauth-callback-google?code=auth-code&state=$state';
+            return 'com.paolosantucci.metraapp:/oauth-callback-google?code=auth-code&state=$state';
           },
         );
         await provider.authorize();
@@ -1467,7 +1467,7 @@ void main() {
           client: client,
           webAuth: (String url, {required String callbackUrlScheme}) async {
             final state = extractState(url);
-            return 'metra://oauth-callback-google?code=abc&state=$state';
+            return 'com.paolosantucci.metraapp:/oauth-callback-google?code=abc&state=$state';
           },
         );
         await provider.authorize();
@@ -1500,7 +1500,7 @@ void main() {
           client: client,
           webAuth: (String url, {required String callbackUrlScheme}) async {
             final state = extractState(url);
-            return 'metra://oauth-callback-google?code=abc&state=$state';
+            return 'com.paolosantucci.metraapp:/oauth-callback-google?code=abc&state=$state';
           },
         );
         await provider.authorize();
@@ -1627,17 +1627,17 @@ void main() {
 
   group('Group M — OAuth callback scheme invariant', () {
     test(
-      'google_drive_provider.dart uses callbackUrlScheme: metra '
-      '(not a Google-specific scheme) (EC-08, FR-15)',
+      'google_drive_provider.dart uses callbackUrlScheme: '
+      'com.paolosantucci.metraapp (reverse-domain, Google policy) (EC-08, FR-15)',
       () {
         final src = File('lib/data/services/backup/google_drive_provider.dart')
             .readAsStringSync();
         expect(
           src,
-          contains("callbackUrlScheme: 'metra'"),
+          contains("callbackUrlScheme: 'com.paolosantucci.metraapp'"),
           reason:
-              'Provider must use the shared metra scheme, not a Google-specific '
-              'one',
+              'Provider must use the reverse-domain scheme required by '
+              "Google's OAuth 2.0 policy",
         );
       },
     );
@@ -1712,7 +1712,7 @@ void main() {
     );
 
     test(
-      'AndroidManifest.xml has a second intent-filter with scheme=metra and '
+      'AndroidManifest.xml has a second intent-filter with '
       'host=oauth-callback-google (FR-15)',
       () {
         final src = File(
@@ -1728,8 +1728,9 @@ void main() {
     );
 
     test(
-      'AndroidManifest.xml has exactly one distinct android:scheme value '
-      '(metra) across all intent-filters — EC-08 invariant',
+      'AndroidManifest.xml uses exactly the expected two schemes across '
+      'OAuth intent-filters: metra (Dropbox) + com.paolosantucci.metraapp '
+      '(Google Drive, reverse-domain per Google policy) — EC-08 invariant',
       () {
         final src = File(
           'android/app/src/main/AndroidManifest.xml',
@@ -1740,16 +1741,16 @@ void main() {
         final intentFilters = RegExp(
           r'<intent-filter[\s\S]*?</intent-filter>',
         ).allMatches(src).map((m) => m.group(0)!).join('\n');
-        // All android:scheme= values inside intent-filters must be "metra".
         final schemes = RegExp(r'android:scheme="([^"]+)"')
             .allMatches(intentFilters)
             .map((m) => m.group(1))
             .toSet();
         expect(
           schemes,
-          equals({'metra'}),
-          reason: 'All intent-filter schemes must be "metra"; no second scheme '
-              '(EC-08)',
+          equals({'metra', 'com.paolosantucci.metraapp'}),
+          reason: 'OAuth intent-filters must use exactly two schemes: '
+              '"metra" (Dropbox) and "com.paolosantucci.metraapp" '
+              '(Google Drive reverse-domain); no others allowed (EC-08)',
         );
       },
     );

@@ -49,7 +49,9 @@ class GoogleDriveProvider implements CloudBackupProvider {
   static const _refreshTokenKey = 'metra_google_drive_refresh_token_v1';
   static const _filePrefix = 'metra_backup_';
   static const _fileSuffix = '.enc';
-  static const _redirectUri = 'metra://oauth-callback-google';
+  // Reverse-domain scheme required by Google's OAuth 2.0 policy (generic
+  // schemes like metra:// are rejected with 400 invalid_request).
+  static const _redirectUri = 'com.paolosantucci.metraapp:/oauth-callback-google';
 
   final String _clientId;
   final FlutterSecureStorage _storage;
@@ -99,7 +101,7 @@ class GoogleDriveProvider implements CloudBackupProvider {
 
     final result = await _webAuth(
       authUrl.toString(),
-      callbackUrlScheme: 'metra',
+      callbackUrlScheme: 'com.paolosantucci.metraapp',
     ).timeout(
       const Duration(minutes: 5),
       onTimeout: () =>
