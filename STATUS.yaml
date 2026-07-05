@@ -1,7 +1,7 @@
 schema-version: 2
-last-updated: "2026-06-27T12:10:00+02:00"
+last-updated: "2026-07-05T17:15:00+02:00"
 active-plan: null
-last-plan: ".claude/docs/plans/archive/qp-20260627-m5-locale-fallback-fix.md"
+last-plan: ".claude/docs/plans/archive/qp-20260629-gdrive-riverpod-ref-after-drift-mutation.md"
 
 # Owned by the short-plan skill. update-status preserves verbatim.
 short-plan:
@@ -84,77 +84,68 @@ pending-consolidation:
   - plan-id: qp-20260627-m5-locale-fallback-fix
     archived-date: "2026-06-27"
     has-spec-impact: true
+  - plan-id: qp-20260627-google-drive-android-only
+    archived-date: "2026-06-27"
+    has-spec-impact: true
+  - plan-id: qp-20260627-icloud-eventual-consistency-fix
+    archived-date: "2026-06-28"
+    has-spec-impact: true
+  - plan-id: qp-20260628-icloud-restore-fix-picker-size-label
+    archived-date: "2026-06-28"
+    has-spec-impact: true
 
 recently-completed:
-  - date: "2026-06-26"
-    summary: "M4 multi-provider picker + switch flow COMMITTED as ab02897 on metra-1.1.0 (45 files, +6710/-116). BackupProviderPickerSheet (CupertinoPicker bottom sheet both platforms); availableProviders(TargetPlatform) enumerator + resolveBackupProvider Provider.family (single iOS-only-iCloud rule, synchronous); BackupNotifier.switchProvider (token-only forget -> abort-before-connect -> setActiveProvider -> explicit-resolve connect; passphrase reused, old .enc intact, post-flip no-rollback per OQ-01; never routes through connect/disconnect); connected-view active-provider row (Account row omitted for null-email iCloud) + Cambia provider switch action gated by MetraConfirmDialog; empty-view CTA -> picker (no confirm); 10 l10n keys (backupConnectDropbox retired); CupertinoPickerScaffold optional center-title slot; ui-design-bible carve-out extended to BackupProviderPickerSheet (CG-1=16dp, CG-2=center-title); light+dark mockups under docs/design. Built via /short-plan implement m4 --auto (canonical: 4 assessments -> spec pipeline -> 9 tasks/4 waves -> close). Suite 1810 pass/4 skip/1 fail (1=save_daily_log midnight-DST flake, unrelated); M4 cluster 429 pass/0 fail; format+analyze clean. M5 (locale) + M6 (guide/hardening) remain."
-  - date: "2026-06-25"
-    summary: "M3 iCloud backup provider COMMITTED as 815a2c7 on metra-1.1.0 (23 files, +2915/-49). IcloudProvider implements CloudBackupProvider (iOS-only, injectable IcloudGateway seam over icloud_storage 2.2.0, in-provider bounded read-after-write poll over eventual consistency, quota->InsufficientStorageException via named kQuotaExceededCode, newest-first listFiles, sizeBytes=0); ProductionIcloudGateway (sole icloud_storage importer, lazy); platform-guarded cloudBackupProvider iCloud arm (defaultTargetPlatform==iOS, Dropbox fallback off-iOS); email-less connected predicate (BackupConnected.email->String?); net-new Runner.entitlements + CODE_SIGN_ENTITLEMENTS Debug/Release/Profile; no SyncOrchestrator change (DIP). Suite 1689 pass/4 skip/0 fail; format+analyze clean. Built via /short-plan implement M3 --auto (canonical: 3 assessments -> spec pipeline -> 10 tasks/4 waves -> close). Deferred to M6: Apple iCloud container + profile rotation + device verify; no v* tag on main."
-  - date: "2026-06-24"
-    summary: "M1+M2 multi-provider cloud backup COMMITTED as 06311d7 on new branch metra-1.1.0, pushed to origin/metra-1.1.0 (upstream tracking). 47 files (+5156/-271): CloudBackupProvider abstraction + Dropbox unification; GoogleDriveProvider (raw OAuth PKCE+CSRF, drive.file, memoized Metra folder, token refresh, 403 storageQuotaExceeded->InsufficientStorageException); Drift schemaVersion 10->11 activeProvider; CI GOOGLE_OAUTH_CLIENT_ID dart-defines; 2nd Android intent-filter; full test coverage. Suite 1611 pass/4 skip/0 fail; format+analyze clean. Two personal docs (COLLOQUIO-METRA.md, about-page.md) deliberately left untracked, excluded from the public repo."
-  - date: "2026-06-24"
-    summary: "docs: authored internal credential-setup guide .claude/docs/guides/cloud-provider-setup.md (FR-33) — Dropbox recap, Google Drive GCP/OAuth/intent-filter/dart-define wiring, iCloud App ID/container/Runner.entitlements/profile-rotation; OQ-07 resolved as reuse metra://oauth-callback with distinct host"
-  - date: "2026-06-14"
-    summary: "docs(privacy): added data-retention and data-deletion sections to IT+EN privacy policies to fix Google Play rejection (84a8115, merged accecf8, on origin/main)"
+  - date: "2026-07-05"
+    summary: "Google Drive OAuth E2E WORKING on Android emulator. 3 fixes COMMITTED+PUSHED on metra-1.1.0: 71bc55e redirect delivery (scheme-only intent-filter, path-style URI has no host + MainActivity dual-scheme kOAuthSchemes), d49a979 account email via GET /drive/v3/about (drive.file grants it; no identity scopes, OQ-05 intact), 171ea46 _switchInFlight guard (build() holds BackupRunning(switching) during mid-switch Drift re-emissions; I-09 test). Console-side: 'Enable custom URI scheme' REQUIRED on Android OAuth client."
+  - date: "2026-07-05"
+    summary: "v1.1.0-rc4 tagged+pushed (bump 1.1.0+19, 88387d0) -> TestFlight CI run 28738213676. Calendar 5th-of-month test flake fixed (17dda19). Suite 1858 pass/4 skip/0 fail."
+  - date: "2026-06-29"
+    summary: "BUG-01/02/03 fixes COMMITTED+PUSHED 13c5e96 on metra-1.1.0. BUG-01 (HIGH): ref.read(resolveBackupProvider) hoisted before Drift mutations in switchProvider(). Suite 1854 pass/4 skip/0 fail."
+  - date: "2026-06-28"
+    summary: "iCloud restore download-completion fix + restore-picker '<date> <time> <size>' label COMMITTED 861c327 + bump 1.1.0+18 (d1ea254) + v1.1.0-rc3 tagged/pushed (TestFlight CI run 28326882713)."
+  - date: "2026-06-28"
+    summary: "iCloud backup fixes COMMITTED 50e18d1 + v1.1.0-rc2 tagged/pushed. BUG-1: eventual-consistency false-failure fixed. BUG-2: Disconnect no-op fixed."
 
 in-progress:
-  - title: "M5 locale fallback fix — BUILD COMPLETE & UNCOMMITTED on metra-1.1.0"
-    state: "Quick plan closed: resolveAppLocale helper + resolveLocaleFromPlatform seam drive both notification paths + new localeResolutionCallback over full platformDispatcher.locales (fixes it-default BUG-001 + single-primary divergence BUG-002); _effectiveLangCode deleted. 31 new tests; full suite 1842 pass/4 skip/0 fail; format+analyze clean. QP archived; spec-delta pushed (pending-consolidation now 5)."
+  - title: "v1.1.0-rc4 iOS TestFlight (run 28738213676) — CI in progress"
+    state: "Tagged v1.1.0-rc4 on 88387d0 (1.1.0+19). Carries GDrive OAuth fixes + switch-flicker guard + prior rc3 iCloud fixes."
     touched:
-      - "lib/app.dart"
-      - "lib/core/l10n/locale_resolver.dart"
-      - "test/core/l10n/locale_resolver_test.dart"
-      - "test/app_locale_resolution_widget_test.dart"
-      - "test/integration/locale_resolution_agreement_test.dart"
-    next-step: "Commit M5 on metra-1.1.0 (fix: follow-system locale fallback). Only M6 (guide+hardening+E2E) remains in the long-plan."
-    blocker: null
-  - title: "metra-1.1.0 — M1+M2+M3+M4 committed & PUSHED to origin; awaiting PR into main; 4 spec-deltas pending"
-    state: "origin/metra-1.1.0 @ ab02897 (M1+M2 06311d7, M3 815a2c7, M4 ab02897 all pushed). Full suite 1810 pass/4 skip/1 fail (the 1 = save_daily_log midnight-DST flake). pending-consolidation has 4 entries (M1-M4) to drain into backup spec-canon once merged."
-    touched:
-      - "lib/features/backup/widgets/backup_provider_picker_sheet.dart"
+      - "android/app/src/main/AndroidManifest.xml"
+      - "lib/data/services/backup/google_drive_provider.dart"
       - "lib/features/backup/state/backup_notifier.dart"
-      - "lib/providers/backup_providers.dart"
-      - "ios/Runner/Runner.entitlements"
-    next-step: "Open the PR for metra-1.1.0 into main. NOTE: /finalize-plan STOPPED at M1 — the 4 spec-deltas use anchors/old-text not matching live canon/spec/backup.md headings; reconcile before consolidation."
+    next-step: "Confirm CI deploy_testflight green; then on-device verify rc4 (iCloud restore + picker labels, carried from rc3)."
     blocker: null
-  - title: "iOS black screen on cold-start (backup configured) — pending device verification"
-    state: "iOS rc20 TestFlight build 320 is the candidate. Android crash is FIXED."
+  - title: "metra-1.1.0 — all LP milestones done; awaiting PR into main"
+    state: "M1–M5 + platform matrix + iCloud/GDrive fixes all pushed. Tags rc1..rc4. pending-consolidation 8 entries."
     touched:
-      - "android/app/build.gradle.kts"
-      - ".github/workflows/android.yml"
-    next-step: "Verify iOS rc20 TestFlight 1.0.2 (320) cold-start black screen (backup configured) is GONE."
-    blocker: "Awaiting iOS black-screen verification on physical device"
+      - "lib/features/backup/state/backup_notifier.dart"
+      - "lib/core/l10n/locale_resolver.dart"
+    next-step: "Open metra-1.1.0 -> main PR after rc4 on-device verify + E2E Drive round-trip gate."
+    blocker: null
 
 next-steps:
-  - "Open a PR for branch metra-1.1.0 (M1+M2 multi-provider cloud backup) into main; CI quality.yml closes the NFR-07 80% coverage gate (OQ-QA-01)."
-  - "Consolidate canon AFTER metra-1.1.0 merges (deferred 2026-06-27). /finalize-plan re-audited: the 4 M1-M4 backup spec-deltas need FULL re-authoring, not just anchor fixes. Concrete findings: (1) invalid anchors — real backup.md slugs are current-behaviour / public-contracts / enumerated-providers-limits (SINGLE dash) / cross-domain-dependencies / gaps; (2) M3 backup-icloud-provider uses operation:modify which spec-changelog rejects (only replace|add|remove); (3) every replace delta's old: stripped the canon's markdown (backticks, **bold**, code blocks) so strict verbatim validation refuses them all; (4) cross-plan conflict — M1 and M2 both replace the same 'dropbox is the only value' sentence, so applied oldest-first M2 fails after M1 removes its old:. RECOMMENDED path: re-derive the backup canon slice via canon-bootstrap (captures all M1-M4 multi-provider reality at once), then apply M5's CLEAN settings delta (locale-follow-system-fallback-rule, anchor current-behaviour, add) via spec-changelog, then mark M1-M4 backup entries consolidated. pending-consolidation has 5 entries (M1-M5); _finalize-plan-state.yaml still shows the old stopped batch (M1/M2/M3 only) — do a FRESH /finalize-plan, not --resume, once deltas/slice are reconciled."
-  - "Provision the Google Cloud OAuth client (installed-app client id + metra://oauth-callback-google redirect) and add the GOOGLE_OAUTH_CLIENT_ID GitHub secret — required before Drive backup works end-to-end (empty client id ships an OAuth failure no unit test catches)."
-  - "Run the manual E2E Drive round-trip pre-merge gate (OQ-QA-05): back up to Google Drive -> download .enc -> verify unreadable binary -> restore on a 2nd Android device -> data identical."
-  - "M5 (locale follow-system fallback fix) build COMPLETE & uncommitted on metra-1.1.0 — commit it (fix: follow-system locale fallback). M6 (terminal guide+hardening+E2E milestone) is now the only remaining LP build milestone."
-  - "M3 external deps (user-owned, M6): create the Apple App-ID iCloud capability + container iCloud.com.paolosantucci.metra, regenerate the App Store provisioning profile, re-encode IOS_PROVISIONING_PROFILE_BASE64 — required before any iOS archive (MC-02). Confirm the icloud_storage kQuotaExceededCode PlatformException value on-device (OQ-01)."
-  - "After GitHub Pages rebuilds, verify retention/deletion sections live at metra.paolosantucci.com/{it,en}/privacy/, then resubmit to Google Play to clear the privacy-policy rejection."
-  - "Download the signed release-aab artifact from the Android CI run on main (d702ab3) and upload to Play Console (versionCode 12) to retry the production promotion (16 KB page-size fix)."
-  - "iOS release stays on rollback/rc10 track — do NOT push a v* tag on main (would auto-upload the unverified iOS black-screen build to TestFlight via ios.yml deploy_testflight)."
-  - "When iOS black screen verified gone: reconcile iOS onto main, then tag v1.0.2 for the full iOS TestFlight + Android release."
+  - "Run manual E2E Drive round-trip pre-merge gate (OQ-QA-05): back up to Google Drive -> download .enc -> verify unreadable binary -> restore on a 2nd Android device -> data identical."
+  - "Add GOOGLE_OAUTH_CLIENT_ID GitHub secret if not yet set (CI builds pass it via --dart-define on 5 build commands); local client now works with custom-URI-scheme enabled."
+  - "Consolidate canon AFTER metra-1.1.0 merges: re-derive backup slice via canon-bootstrap (M1-M4), apply M5 settings delta via spec-changelog, fresh /finalize-plan. pending-consolidation has 8 entries."
+  - "After GitHub Pages rebuilds verify privacy policy live at metra.paolosantucci.com/{it,en}/privacy/, then resubmit to Google Play to clear privacy-policy rejection."
+  - "Download signed release-aab from Android CI run on main (d702ab3) and upload to Play Console (versionCode 12) to retry production promotion (16 KB page-size fix)."
+  - "GitHub issue #33 (notification cancel-then-reschedule has no atomicity test against the Doze mid-window alarm race) is a genuine unimplemented gap -- canon notifications.md Gap 3 still open. Needs an actual fix/test, unlike #20/21/22/28/29/32 which were verified already-fixed in code and closed 2026-07-05."
+  - "settings.md (Gaps 9-11) and onboarding.md (Gaps 5, 7) were manually edited 2026-07-05 to drop stale gap entries after confirming code fixes for closed issues #20/21/22/28/29 -- still needs a formal canon-bootstrap re-derivation, same as the pending M1-M5 backup consolidation above."
 
 known-issues:
-  - severity: critical
-    description: "iOS cold-start black screen (backup configured) — open. rollback/rc10 (now == main) reverts the KGP-2 dep upgrade as candidate fix; still pending TestFlight device verification (rc20 build 320). Android ClassNotFoundException crash is FIXED."
-    impact: high
-    workaround: "Confirm iOS black screen gone on device before tagging v1.0.2 final."
   - severity: warning
-    description: "Drift DB/SQLCipher tests need a native sqlite3 lib absent in the local distrobox; without the workaround they fail locally (CI ubuntu has the lib). The workaround DOES run them green locally."
+    description: "iCloud eventual-consistency family (FIXED IN CODE, pending on-device re-verify via rc3/rc4 TestFlight): backup false-failure + Disconnect no-op fixed in 50e18d1/rc2; Restore PathNotFoundException fixed in 861c327/rc3."
+    impact: medium
+    workaround: "Pre-fix builds: backup succeeded despite false error; restore required re-triggering after file materialized."
+  - severity: warning
+    description: "Drift DB/SQLCipher tests need native sqlite3 lib absent in local distrobox; CI ubuntu has the lib."
     impact: low
-    workaround: "mkdir -p /tmp/sqlitelib && ln -sf /usr/lib/x86_64-linux-gnu/libsqlite3.so.0 /tmp/sqlitelib/libsqlite3.so then run flutter test with LD_LIBRARY_PATH=/tmp/sqlitelib"
+    workaround: "mkdir -p /tmp/sqlitelib && ln -sf /usr/lib/x86_64-linux-gnu/libsqlite3.so.0 /tmp/sqlitelib/libsqlite3.so then LD_LIBRARY_PATH=/tmp/sqlitelib flutter test"
   - severity: warning
-    description: "share_plus and package_info_plus still bundle KGP; share_plus 12.x has Kotlin K2 compilation bug; unblocks when file_picker 12.x is stable"
+    description: "share_plus and package_info_plus still bundle KGP; share_plus 12.x has Kotlin K2 compilation bug; unblocks when file_picker 12.x is stable."
     impact: low
-    workaround: "Accept KGP warnings on every build; auto-resolves when file_picker 12.x is stable"
+    workaround: "Accept KGP warnings on every build; auto-resolves when file_picker 12.x is stable."
   - severity: warning
-    description: "save_daily_log_test.dart future date rejection — intermittent failure near Italian midnight UTC (timezone/DST boundary)"
+    description: "save_daily_log_test.dart future date rejection — intermittent failure near Italian midnight UTC (timezone/DST boundary)."
     impact: medium
     workaround: null
-  - severity: warning
-    description: "iOS PermissionDenied vs PermissionBlocked indistinguishable via flutter_local_notifications v17 — both return PermissionBlocked"
-    impact: low
-    workaround: "Conservative UX: settings dialog always offered on iOS denial; slightly over-eager on first-time denials"
