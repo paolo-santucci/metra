@@ -1521,6 +1521,85 @@ void main() {
         expect(email, isNull);
       },
     );
+
+    test(
+      'currentEmail fetches email via about.get when no id_token was issued '
+      '(drive.file-only scope, FR-09)',
+      () async {
+        storage.values[accessTokenKey] = 'tok';
+        Uri? aboutUrl;
+        final client = MockClient((req) async {
+          aboutUrl = req.url;
+          return http.Response(
+            jsonEncode({
+              'user': {'emailAddress': 'user@gmail.com'},
+            }),
+            200,
+          );
+        });
+        final provider = GoogleDriveProvider(
+          clientId: 'cid',
+          storage: storage,
+          client: client,
+        );
+
+        final email = await provider.currentEmail();
+
+        expect(email, 'user@gmail.com');
+        expect(aboutUrl?.host, 'www.googleapis.com');
+        expect(aboutUrl?.path, '/drive/v3/about');
+        expect(aboutUrl?.queryParameters['fields'], 'user(emailAddress)');
+      },
+    );
+
+    test(
+      'currentEmail memoizes the about.get result — second call makes no '
+      'network request (FR-09)',
+      () async {
+        storage.values[accessTokenKey] = 'tok';
+        var calls = 0;
+        final client = MockClient((req) async {
+          calls++;
+          return http.Response(
+            jsonEncode({
+              'user': {'emailAddress': 'user@gmail.com'},
+            }),
+            200,
+          );
+        });
+        final provider = GoogleDriveProvider(
+          clientId: 'cid',
+          storage: storage,
+          client: client,
+        );
+
+        await provider.currentEmail();
+        final second = await provider.currentEmail();
+
+        expect(second, 'user@gmail.com');
+        expect(calls, 1);
+      },
+    );
+
+    test(
+      'currentEmail falls back to provider label when about.get fails '
+      '(EC-11)',
+      () async {
+        storage.values[accessTokenKey] = 'tok';
+        final client = MockClient(
+          (_) async => http.Response('boom', 500),
+        );
+        final provider = GoogleDriveProvider(
+          clientId: 'cid',
+          storage: storage,
+          client: client,
+        );
+
+        final email = await provider.currentEmail();
+
+        expect(email, 'Google Drive');
+      },
+    );
   });
 
   // =========================================================================
@@ -1635,8 +1714,7 @@ void main() {
         expect(
           src,
           contains("callbackUrlScheme: 'com.paolosantucci.metraapp'"),
-          reason:
-              'Provider must use the reverse-domain scheme required by '
+          reason: 'Provider must use the reverse-domain scheme required by '
               "Google's OAuth 2.0 policy",
         );
       },

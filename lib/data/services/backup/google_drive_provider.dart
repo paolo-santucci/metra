@@ -18,6 +18,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -51,7 +52,8 @@ class GoogleDriveProvider implements CloudBackupProvider {
   static const _fileSuffix = '.enc';
   // Reverse-domain scheme required by Google's OAuth 2.0 policy (generic
   // schemes like metra:// are rejected with 400 invalid_request).
-  static const _redirectUri = 'com.paolosantucci.metraapp:/oauth-callback-google';
+  static const _redirectUri =
+      'com.paolosantucci.metraapp:/oauth-callback-google';
 
   final String _clientId;
   final FlutterSecureStorage _storage;
@@ -158,6 +160,42 @@ class GoogleDriveProvider implements CloudBackupProvider {
     final token = await _storage.read(key: _accessTokenKey);
     if (token == null) return null;
     if (_cachedEmail != null) return _cachedEmail;
+
+    // The drive.file scope alone never yields an id_token, but it does grant
+    // about.get — the account email is reachable without widening the consent
+    // screen with identity scopes (OQ-05).
+    try {
+      final res = await _authenticatedRequest(
+        () async {
+          final access = await _storage.read(key: _accessTokenKey);
+          if (access == null) throw const SyncException('Not connected');
+          return _client.get(
+            Uri.https('www.googleapis.com', '/drive/v3/about', {
+              'fields': 'user(emailAddress)',
+            }),
+            headers: {'Authorization': 'Bearer $access'},
+          );
+        },
+      );
+      if (res.statusCode == 200) {
+        final body = jsonDecode(res.body) as Map<String, dynamic>;
+        final user = body['user'];
+        final email = user is Map<String, dynamic>
+            ? user['emailAddress'] as String?
+            : null;
+        if (email != null) {
+          _cachedEmail = email;
+          return email;
+        }
+      }
+    } on Exception catch (e) {
+      developer.log(
+        'currentEmail: about.get failed: $e',
+        name: 'GoogleDriveProvider',
+      );
+    }
+    // Offline / lookup failure: a provider label is better than an empty
+    // Account row, and the next call retries the lookup.
     return 'Google Drive';
   }
 
