@@ -112,9 +112,13 @@ class MainActivity : FlutterActivity() {
         super.onNewIntent(intent)
     }
 
+    // One entry per OAuth provider: Dropbox uses metra://, Google Drive uses
+    // the reverse-domain package-name scheme required by Google's OAuth policy.
+    private val kOAuthSchemes = setOf("metra", "com.paolosantucci.metraapp")
+
     private fun consumeOAuthCallback(intent: Intent?) {
         val url = intent?.data ?: return
-        if (url.scheme == "metra") {
+        if (url.scheme in kOAuthSchemes) {
             // Resolve the pending Future (no-op if process-death wiped the
             // static callbacks map; user just retries).
             FlutterWebAuth2Plugin.callbacks.remove(url.scheme)?.success(url.toString())
