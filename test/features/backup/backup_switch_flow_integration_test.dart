@@ -843,4 +843,93 @@ void main() {
       );
     },
   );
+
+  // ── I-09: Mid-switch flicker guard ───────────────────────────────────────
+
+  test(
+    'I-09 flicker guard: settings re-emissions mid-switchProvider rebuild '
+    'to BackupRunning(switching) — BackupNotConnected never surfaces',
+    () async {
+      // Re-emitting fake: each Drift write (steps 6–7) re-emits watchSettings,
+      // re-triggering build() while switchProvider is still in flight.
+      final reemitFake = _ReemittingFakeAppSettingsRepository();
+      await reemitFake.updateBackupState(
+        dropboxEmail: 'user@dropbox.com',
+        lastBackupAt: null,
+      );
+      addTearDown(reemitFake.dispose);
+
+      // Gate authorize() so the half-written window (activeProvider flipped,
+      // email null) stays open long enough for the rebuilds to run.
+      final gate = Completer<void>();
+      final blockingGoogle = _BlockingAuthGoogleDriveProvider(gate);
+
+      final container = ProviderContainer(
+        overrides: [
+          appSettingsRepositoryProvider.overrideWith((_) async => reemitFake),
+          secureStorageProvider.overrideWithValue(storage),
+          backupDataProvider.overrideWith((_) async => BackupData(runner)),
+          restoreDataProvider.overrideWith((_) async => RestoreData(runner)),
+          resolveBackupProvider.overrideWith((ref, id) {
+            switch (id) {
+              case SyncProvider.dropbox:
+                return fakeDropbox;
+              case SyncProvider.googleDrive:
+                return blockingGoogle;
+              case SyncProvider.iCloud:
+                return fakeICloud;
+            }
+          }),
+          syncLogRepositoryProvider.overrideWith((_) async => fakeSyncLogRepo),
+        ],
+      );
+      addTearDown(container.dispose);
+      await container.read(backupNotifierProvider.future);
+
+      // Record every data state the UI would observe during the switch.
+      final observed = <BackupState>[];
+      final sub = container.listen(backupNotifierProvider, (_, next) {
+        final value = next.valueOrNull;
+        if (value != null) observed.add(value);
+      });
+      addTearDown(sub.close);
+
+      final switching = container
+          .read(backupNotifierProvider.notifier)
+          .switchProvider(SyncProvider.googleDrive);
+
+      // Let the step-6/7 writes, stream re-emissions, and the resulting
+      // rebuilds settle while authorize() is still gated.
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      expect(
+        observed.whereType<BackupNotConnected>(),
+        isEmpty,
+        reason: 'mid-switch rebuilds must hold the switching overlay, not '
+            'flash the connect view (half-written settings)',
+      );
+      expect(
+        container.read(backupNotifierProvider).valueOrNull,
+        isA<BackupRunning>(),
+        reason: 'the switching overlay must persist while authorize() runs',
+      );
+
+      // Release the gate and let the switch complete.
+      gate.complete();
+      await switching;
+      final finalState = await container.read(backupNotifierProvider.future);
+
+      expect(
+        finalState,
+        isA<BackupConnected>(),
+        reason: 'final state must be BackupConnected after the gated switch',
+      );
+      expect(
+        observed.whereType<BackupNotConnected>(),
+        isEmpty,
+        reason: 'BackupNotConnected must never surface across the whole switch',
+      );
+    },
+    timeout: const Timeout(Duration(seconds: 10)),
+  );
 }
