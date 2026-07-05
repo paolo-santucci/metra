@@ -59,8 +59,11 @@ class _StubCalendarWithFlowNotifier extends CalendarMonthNotifier {
   @override
   Future<CalendarMonthState> build() async {
     final now = DateTime.now();
-    // Provide a flow log on day 5 of the current month.
-    final logDate = DateTime.utc(now.year, now.month, 5);
+    // Provide a flow log on day 5 of the current month — but never on today:
+    // the today cell prepends "Oggi, " to its semantics label, which would
+    // break the '^Flusso moderato,' anchor whenever the 5th is today.
+    final day = now.day == 5 ? 6 : 5;
+    final logDate = DateTime.utc(now.year, now.month, day);
     final log = DailyLogEntity(
       date: logDate,
       flowType: FlowType.mestruazioni,
