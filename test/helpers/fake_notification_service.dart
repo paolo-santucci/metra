@@ -33,6 +33,15 @@ class FakeNotificationService implements NotificationService {
   /// simulated cold-start + later settings/language change).
   int initializeCallCount = 0;
 
+  /// Records the order of cancel and schedule calls for order-regression testing.
+  ///
+  /// Per the `fake_cycle_entry_repository.dart` idiom, each call to
+  /// [cancelPredictionNotifications] appends `'cancel'`, and each call to
+  /// [schedulePredictionNotification] appends `'schedule'`. This log is used
+  /// by Group K, L, and Scenario G (#33, FR-09) to assert that the use case
+  /// always cancels existing notifications before scheduling new ones.
+  final List<String> callLog = [];
+
   final List<({DateTime notifyAt, String title, String body})> scheduled = [];
   int cancelCount = 0;
 
@@ -191,6 +200,10 @@ class FakeNotificationService implements NotificationService {
       );
     }
 
+    callLog.add(
+      'schedule',
+    ); // TASK-12 (#33): record call order for regression tests
+
     final local = notifyAt.toLocal();
     final notifyDay = DateTime(local.year, local.month, local.day);
     final nowTime = _now();
@@ -219,6 +232,8 @@ class FakeNotificationService implements NotificationService {
         message: 'FakeNotificationService.throwOnNextCancel injected failure',
       );
     }
+    callLog
+        .add('cancel'); // TASK-12 (#33): record call order for regression tests
     cancelCount++;
     cancelCallCount++;
     scheduled.clear();
