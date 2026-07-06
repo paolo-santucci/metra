@@ -28,6 +28,37 @@ import 'package:metra/features/timeline/state/timeline_controller.dart';
 import 'package:metra/features/timeline/timeline_screen.dart';
 import 'package:metra/features/timeline/widgets/timeline_card.dart';
 import 'package:metra/l10n/app_localizations.dart';
+import 'package:metra/providers/calendar_focus_provider.dart';
+
+// TASK-15 (sp-20260705-gh-issues-batch-onboard-notif-calendar): tapping a
+// Timeline card must record a calendarFocusRequestProvider request BEFORE
+// navigating to /calendar (reversed order would let CalendarScreen build —
+// and consume/clear the request — before it lands, silently dropping it).
+// Traces to ui-design-bible §10.3 (card anatomy) + §5 (no-ripple tap
+// affordance); the Table/"Tabella" view stays non-interactive (guarded by a
+// later task, not here).
+
+/// Spy [CalendarFocusRequest] that records the router's current location at
+/// the moment `request()` is invoked. `GoRouteInformationProvider.value` is
+/// updated synchronously inside `context.go(...)`, before any frame/rebuild
+/// — so if a future change reordered `onCardTap` to call `context.go(...)`
+/// first, the recorded location would already read '/calendar' instead of
+/// '/timeline', failing the order assertion below.
+class _SpyCalendarFocusRequest extends CalendarFocusRequest {
+  _SpyCalendarFocusRequest(this._router);
+
+  final GoRouter _router;
+
+  /// Router location captured on each `request()` call, in call order.
+  final List<String> locationsAtRequestTime = [];
+
+  @override
+  void request(DateTime date) {
+    locationsAtRequestTime
+        .add(_router.routeInformationProvider.value.uri.toString());
+    super.request(date);
+  }
+}
 
 // Fake notifiers — extend TimelineNotifier and override build().
 // Do NOT call super.build() — these are pure stubs.
@@ -49,8 +80,14 @@ class _DataNotifier extends TimelineNotifier {
   Future<List<CycleSummary>> build() async => _data;
 }
 
-// Helper: wrap TimelineScreen with GoRouter + ProviderScope + MaterialApp
-Widget _wrap(List<Override> overrides) {
+// Helper: wrap TimelineScreen with GoRouter + ProviderScope + MaterialApp.
+// `routerAwareOverrides` receives the constructed [GoRouter] so a test can
+// spy on a provider that needs to inspect the router's live location (the
+// #3 focus-before-navigate order assertion below).
+Widget _wrap(
+  List<Override> overrides, {
+  List<Override> Function(GoRouter router)? routerAwareOverrides,
+}) {
   final router = GoRouter(
     initialLocation: '/timeline',
     routes: [
@@ -60,10 +97,18 @@ Widget _wrap(List<Override> overrides) {
         builder: (_, __) =>
             const Scaffold(body: Center(child: Text('entry-stub'))),
       ),
+      GoRoute(
+        path: '/calendar',
+        builder: (_, __) =>
+            const Scaffold(body: Center(child: Text('calendar-stub'))),
+      ),
     ],
   );
   return ProviderScope(
-    overrides: overrides,
+    overrides: [
+      ...overrides,
+      ...?routerAwareOverrides?.call(router),
+    ],
     child: MaterialApp.router(
       theme: MetraTheme.light(),
       locale: const Locale('it'),
@@ -177,14 +222,59 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('—'), findsOneWidget);
     });
+  });
 
-    testWidgets('TimelineCard has no tap affordance (display-only)',
+  group('TimelineScreen — onCardTap navigation (#3)', () {
+    final kSummary = _makeSummary(
+      start: DateTime.utc(2026, 1, 15),
+      end: DateTime.utc(2026, 1, 20),
+      cycleLength: 28,
+      periodLength: 6,
+    );
+
+    testWidgets(
+        'tapping a card requests calendar focus with the card startDate '
+        'BEFORE navigating to /calendar (order regression guard)',
         (tester) async {
+      late _SpyCalendarFocusRequest spy;
       await tester.pumpWidget(
-        _wrap([timelineProvider.overrideWith(() => _DataNotifier(kSummaries))]),
+        _wrap(
+          [
+            timelineProvider.overrideWith(() => _DataNotifier([kSummary])),
+          ],
+          routerAwareOverrides: (router) {
+            spy = _SpyCalendarFocusRequest(router);
+            return [calendarFocusRequestProvider.overrideWith(() => spy)];
+          },
+        ),
       );
       await tester.pumpAndSettle();
-      expect(find.byType(InkWell), findsNothing);
+
+      await tester.tap(find.byType(TimelineCard));
+
+      // request() ran while the router was still on '/timeline' — proves
+      // it fired strictly before context.go('/calendar') took effect.
+      expect(spy.locationsAtRequestTime, ['/timeline']);
+      expect(spy.state, kSummary.cycle.startDate);
+
+      await tester.pumpAndSettle();
+      expect(find.text('calendar-stub'), findsOneWidget);
+    });
+
+    testWidgets('tapping a card in Timeline mode navigates to /calendar',
+        (tester) async {
+      await tester.pumpWidget(
+        _wrap([
+          timelineProvider.overrideWith(() => _DataNotifier([kSummary])),
+        ]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(TimelineCard));
+      await tester.pumpAndSettle();
+
+      expect(find.text('calendar-stub'), findsOneWidget);
+      expect(find.byType(TimelineScreen), findsNothing);
     });
   });
 }

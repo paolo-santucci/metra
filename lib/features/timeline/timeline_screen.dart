@@ -17,11 +17,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/theme/metra_colors.dart';
 import '../../core/theme/metra_typography.dart';
 import '../../core/widgets/segmented_control_metra.dart';
 import '../../l10n/app_localizations.dart';
+import '../../providers/calendar_focus_provider.dart';
 import 'state/timeline_controller.dart';
 import 'widgets/table_view.dart';
 import 'widgets/timeline_view.dart';
@@ -84,7 +86,19 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                   ),
                 ),
                 data: (summaries) => _mode == _ViewMode.timeline
-                    ? TimelineView(summaries: summaries)
+                    ? TimelineView(
+                        summaries: summaries,
+                        onCardTap: (summary) {
+                          // Order matters (#3, FR-01/FR-02): the focus
+                          // request must land BEFORE navigation, otherwise
+                          // the router could build CalendarScreen first and
+                          // silently drop the request.
+                          ref
+                              .read(calendarFocusRequestProvider.notifier)
+                              .request(summary.cycle.startDate);
+                          context.go('/calendar');
+                        },
+                      )
                     : TableView(summaries: summaries),
               ),
             ),

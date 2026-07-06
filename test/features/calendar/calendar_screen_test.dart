@@ -35,6 +35,7 @@ import 'package:metra/features/calendar/state/prediction_controller.dart';
 import 'package:metra/features/calendar/widgets/calendar_day.dart';
 import 'package:metra/features/settings/state/settings_notifier.dart';
 import 'package:metra/l10n/app_localizations.dart';
+import 'package:metra/providers/calendar_focus_provider.dart';
 import 'package:metra/providers/repository_providers.dart';
 
 // ---------------------------------------------------------------------------
@@ -146,6 +147,88 @@ class _NavigableCalendarMonthNotifier extends CalendarMonthNotifier {
   }
 }
 
+/// Stub notifier for TASK-10 focus-consumption tests (#3): `goToMonth` sets
+/// `AsyncData` directly (mirrors production `CalendarMonthNotifier.goToMonth`'s
+/// synchronous-first shape without touching real repositories/DB).
+/// `goToPrevMonth`/`goToNextMonth` are also functional (mirrors
+/// [_NavigableCalendarMonthNotifier]) so EC-04 can prove a manual nav
+/// performed after focus-consumption survives an unrelated rebuild.
+///
+/// `build()` deliberately never completes (like
+/// [_LoadingThenFocusableCalendarMonthNotifier]) rather than using an
+/// `async => value` shorthand: `_applyFocus()` runs from a post-frame
+/// callback fired in the *same* initial frame as this notifier's own
+/// `build()`, so an `async`-shorthand build() — which Dart still defers to a
+/// microtask even with no real `await` — can resolve *after* `goToMonth()`
+/// and silently clobber the state back to the pre-focus value. Production
+/// `CalendarMonthNotifier` avoids this because `goToMonth`/relative-nav
+/// methods always cancel the previous subscription first, so the original
+/// `build()` future can never complete once a jump has happened; a
+/// never-completing stub reproduces that same guarantee without touching
+/// real repositories.
+class _FocusableCalendarMonthNotifier extends CalendarMonthNotifier {
+  @override
+  Future<CalendarMonthState> build() => Completer<CalendarMonthState>().future;
+
+  @override
+  void goToMonth(int year, int month) {
+    state = AsyncData(CalendarMonthState(year: year, month: month));
+  }
+
+  @override
+  void goToPrevMonth() {
+    final current = state.requireValue;
+    final prevMonth = current.month == 1 ? 12 : current.month - 1;
+    final prevYear = current.month == 1 ? current.year - 1 : current.year;
+    state = AsyncData(CalendarMonthState(year: prevYear, month: prevMonth));
+  }
+
+  @override
+  void goToNextMonth() {
+    final current = state.requireValue;
+    final nextMonth = current.month == 12 ? 1 : current.month + 1;
+    final nextYear = current.month == 12 ? current.year + 1 : current.year;
+    state = AsyncData(CalendarMonthState(year: nextYear, month: nextMonth));
+  }
+}
+
+/// Stub notifier for EC-02: `build()` never completes (stays `AsyncLoading`)
+/// until `goToMonth` is called — mirrors production `goToMonth`'s contract of
+/// NOT early-returning on unloaded state, without touching real repositories.
+class _LoadingThenFocusableCalendarMonthNotifier extends CalendarMonthNotifier {
+  @override
+  Future<CalendarMonthState> build() {
+    return Completer<CalendarMonthState>().future;
+  }
+
+  @override
+  void goToMonth(int year, int month) {
+    state = AsyncData(CalendarMonthState(year: year, month: month));
+  }
+}
+
+/// Stub notifier for EC-05: `goToMonth` sets `AsyncData` synchronously (like
+/// production), then asynchronously resolves to `AsyncError` — simulating a
+/// subscription failure that arrives after the jump. Because `_applyFocus`
+/// clears the pending request synchronously before this error arrives, the
+/// error must not trigger a retry / re-consumption. `build()` never completes
+/// — same rationale as [_FocusableCalendarMonthNotifier] above.
+class _ErrorAfterGoToMonthNotifier extends CalendarMonthNotifier {
+  @override
+  Future<CalendarMonthState> build() => Completer<CalendarMonthState>().future;
+
+  @override
+  void goToMonth(int year, int month) {
+    state = AsyncData(CalendarMonthState(year: year, month: month));
+    Future<void>.delayed(Duration.zero, () {
+      state = AsyncError(
+        Exception('test subscription error'),
+        StackTrace.current,
+      );
+    });
+  }
+}
+
 class _StubSettingsNotifier extends SettingsNotifier {
   _StubSettingsNotifier(this._initial);
 
@@ -207,6 +290,67 @@ Widget _wrapWithRouter(
       routerConfig: testRouter,
     ),
   );
+}
+
+/// Wraps [CalendarScreen] with a caller-supplied [ProviderContainer] instead
+/// of letting `ProviderScope` build its own — needed by the TASK-10 focus
+/// tests so they can pre-seed `calendarFocusRequestProvider` (via
+/// `container.read(...).notifier.request(...)`) BEFORE the first pump.
+/// Mirrors [_wrapWithRouter]'s router/MaterialApp shape.
+Widget _wrapWithContainer(ProviderContainer container) {
+  final testRouter = GoRouter(
+    initialLocation: '/calendar',
+    routes: [
+      GoRoute(
+        path: '/calendar',
+        builder: (_, __) => const CalendarScreen(),
+      ),
+      GoRoute(
+        path: '/daily-entry/:date',
+        builder: (_, __) => const Scaffold(
+          body: Center(child: Text('daily-entry-stub')),
+        ),
+      ),
+    ],
+  );
+
+  return UncontrolledProviderScope(
+    container: container,
+    child: MaterialApp.router(
+      theme: MetraTheme.light(),
+      locale: const Locale('it'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      routerConfig: testRouter,
+    ),
+  );
+}
+
+/// Common non-DB-touching overrides shared by every TASK-10 focus test.
+/// [settings] lets EC-04 supply a settings-notifier factory whose instance
+/// it can capture (to force an unrelated rebuild later).
+List<Override> _focusTestBaseOverrides({
+  SettingsNotifier Function()? settings,
+}) =>
+    [
+      cyclePredictionProvider.overrideWith((ref) => Stream.value(null)),
+      painSymptomsProvider.overrideWith((ref, date) async => []),
+      settingsNotifierProvider.overrideWith(
+        settings ?? () => _StubSettingsNotifier(AppSettingsData.defaults()),
+      ),
+    ];
+
+/// Two months before "now", pinned to day 12 (exists in every month) — always
+/// distinct from the notifier's initial month, immune to calendar drift.
+DateTime _targetFocusDate() {
+  final now = DateTime.now();
+  var year = now.year;
+  var month = now.month - 2;
+  if (month < 1) {
+    month += 12;
+    year -= 1;
+  }
+  return DateTime.utc(year, month, 12);
 }
 
 // ---------------------------------------------------------------------------
@@ -949,6 +1093,184 @@ void main() {
         reason:
             'Current month must not appear in detail card after navigating back',
       );
+    });
+  });
+
+  group('CalendarScreen — pending focus request (#3, TASK-10)', () {
+    testWidgets(
+        'jumps to target month and selects target day; clears the request',
+        (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final target = _targetFocusDate();
+
+      final container = ProviderContainer(
+        overrides: [
+          ..._focusTestBaseOverrides(),
+          calendarMonthProvider
+              .overrideWith(_FocusableCalendarMonthNotifier.new),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      // Seed the pending request BEFORE the widget is pumped — mirrors a
+      // Timeline card tap that happened before navigating to /calendar.
+      container.read(calendarFocusRequestProvider.notifier).request(target);
+
+      await tester.pumpWidget(_wrapWithContainer(container));
+      await tester.pumpAndSettle();
+
+      // Month header shows the target month/year (Bible § 8.1: "Month Year").
+      final rawMonth = intl.DateFormat.MMMM('it')
+          .format(DateTime(target.year, target.month));
+      final title =
+          '${rawMonth.substring(0, 1).toUpperCase()}${rawMonth.substring(1)} ${target.year}';
+      expect(find.text(title), findsOneWidget);
+
+      // The target day cell is rendered and in the Selected state
+      // (ui-design-bible § 8.3.1).
+      final targetDay = find.byWidgetPredicate(
+        (w) => w is CalendarDay && w.date == target,
+      );
+      expect(targetDay, findsOneWidget);
+      expect(tester.widget<CalendarDay>(targetDay).isSelected, isTrue);
+
+      // The request is consumed — reading it again yields null.
+      expect(container.read(calendarFocusRequestProvider), isNull);
+    });
+
+    testWidgets(
+        'EC-02: applies focus even while calendarMonthProvider is AsyncLoading',
+        (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final target = _targetFocusDate();
+
+      final container = ProviderContainer(
+        overrides: [
+          ..._focusTestBaseOverrides(),
+          calendarMonthProvider.overrideWith(
+            _LoadingThenFocusableCalendarMonthNotifier.new,
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      container.read(calendarFocusRequestProvider.notifier).request(target);
+
+      await tester.pumpWidget(_wrapWithContainer(container));
+      // First frame: calendarMonthProvider is still AsyncLoading (spinner).
+      // Settle to let the post-frame callbacks apply the focus and flip the
+      // provider to AsyncData — this must NOT no-op just because the
+      // provider was loading (unlike goToPrevMonth/goToNextMonth).
+      await tester.pumpAndSettle();
+
+      final monthState = container.read(calendarMonthProvider).valueOrNull;
+      expect(monthState?.year, equals(target.year));
+      expect(monthState?.month, equals(target.month));
+
+      // The grid replaced the loading spinner.
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(container.read(calendarFocusRequestProvider), isNull);
+    });
+
+    testWidgets(
+        'EC-04: after consume+clear, a forced rebuild does not re-apply '
+        'focus; a manual month nav in between is preserved', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final target = _targetFocusDate();
+      late _StubSettingsNotifier settingsStub;
+
+      final container = ProviderContainer(
+        overrides: [
+          ..._focusTestBaseOverrides(
+            settings: () {
+              settingsStub = _StubSettingsNotifier(AppSettingsData.defaults());
+              return settingsStub;
+            },
+          ),
+          calendarMonthProvider
+              .overrideWith(_FocusableCalendarMonthNotifier.new),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      container.read(calendarFocusRequestProvider.notifier).request(target);
+
+      await tester.pumpWidget(_wrapWithContainer(container));
+      await tester.pumpAndSettle();
+
+      // Sanity: focus applied, request cleared.
+      expect(container.read(calendarFocusRequestProvider), isNull);
+      final monthAfterFocus = container.read(calendarMonthProvider).valueOrNull;
+      expect(monthAfterFocus?.year, equals(target.year));
+      expect(monthAfterFocus?.month, equals(target.month));
+
+      // Manual nav away from the focused month.
+      await tester.tap(find.byIcon(Icons.chevron_right));
+      await tester.pumpAndSettle();
+
+      final expectedNextMonth = target.month == 12 ? 1 : target.month + 1;
+      final expectedNextYear =
+          target.month == 12 ? target.year + 1 : target.year;
+      final monthAfterNav = container.read(calendarMonthProvider).valueOrNull;
+      expect(monthAfterNav?.year, equals(expectedNextYear));
+      expect(monthAfterNav?.month, equals(expectedNextMonth));
+
+      // Force a CalendarScreen rebuild unrelated to the focus request:
+      // mutating an unrelated watched provider re-runs build() (and
+      // re-registers ref.listen) WITHOUT re-running initState — the same
+      // State object survives, mirroring a StatefulShellRoute-style rebuild.
+      settingsStub.state = AsyncData(
+        AppSettingsData.defaults()
+            .copyWith(firstDayOfWeek: FirstDayOfWeekSetting.sunday),
+      );
+      await tester.pumpAndSettle();
+
+      // No second goToMonth: the manually-navigated month must be preserved,
+      // NOT reverted back to `target`.
+      final monthAfterRebuild =
+          container.read(calendarMonthProvider).valueOrNull;
+      expect(monthAfterRebuild?.year, equals(expectedNextYear));
+      expect(monthAfterRebuild?.month, equals(expectedNextMonth));
+      expect(container.read(calendarFocusRequestProvider), isNull);
+    });
+
+    testWidgets(
+        'EC-05: subscription error after the jump renders the generic error '
+        'state; request stays cleared (no retry storm)', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final target = _targetFocusDate();
+
+      final container = ProviderContainer(
+        overrides: [
+          ..._focusTestBaseOverrides(),
+          calendarMonthProvider.overrideWith(_ErrorAfterGoToMonthNotifier.new),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      container.read(calendarFocusRequestProvider.notifier).request(target);
+
+      await tester.pumpWidget(_wrapWithContainer(container));
+      await tester.pumpAndSettle();
+
+      // The generic error state is shown once the subscription resolves to
+      // AsyncError.
+      expect(
+        find.text('Qualcosa è andato storto. Riprova.'),
+        findsOneWidget,
+      );
+
+      // The request was already cleared by _applyFocus before the error
+      // arrived — no stuck pending focus, no retry storm.
+      expect(container.read(calendarFocusRequestProvider), isNull);
     });
   });
 }

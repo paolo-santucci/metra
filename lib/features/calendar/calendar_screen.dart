@@ -33,6 +33,7 @@ import '../../domain/entities/flow_type.dart';
 import '../../domain/entities/pain_symptom_data.dart';
 import '../../domain/entities/pain_symptom_type.dart';
 import '../../l10n/app_localizations.dart';
+import '../../providers/calendar_focus_provider.dart';
 import '../../providers/repository_providers.dart';
 import '../../providers/use_case_providers.dart';
 import '../settings/state/settings_notifier.dart';
@@ -61,6 +62,28 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     super.initState();
     final now = DateTime.now();
     _selectedDate = DateTime.utc(now.year, now.month, now.day);
+
+    // Real consumption path today: each navigation to /calendar creates a
+    // fresh CalendarScreen (plain GoRoute, not yet a StatefulShellRoute), so
+    // initState always re-runs and this callback always fires (#3, TASK-10).
+    WidgetsBinding.instance.addPostFrameCallback((_) => _applyFocus());
+  }
+
+  /// Consumes a pending Timeline → Calendar focus request, if any (#3).
+  ///
+  /// Idempotent and safe to call from multiple deferred call sites: re-reads
+  /// [calendarFocusRequestProvider] itself rather than taking a stale
+  /// parameter, so whichever deferred callback runs first (initState's
+  /// post-frame callback or build()'s ref.listen post-frame callback)
+  /// consumes and clears the request; the other sees `null` and no-ops.
+  void _applyFocus() {
+    final target = ref.read(calendarFocusRequestProvider);
+    if (target == null) return;
+    ref
+        .read(calendarMonthProvider.notifier)
+        .goToMonth(target.year, target.month);
+    setState(() => _selectedDate = target);
+    ref.read(calendarFocusRequestProvider.notifier).clear();
   }
 
   // Monday-anchored reference date used to generate locale-aware day initials.
@@ -87,6 +110,27 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Belt-and-suspenders focus consumption (#3, TASK-10): guards against a
+    // future StatefulShellRoute where this widget subtree would persist
+    // across tab switches instead of being recreated — initState wouldn't
+    // re-run then, but this listener still catches a *fresh* request set
+    // while the subtree stays alive. Deliberately no `fireImmediately`: the
+    // pinned riverpod version's `WidgetRef.listen` (used inside `build()`)
+    // does not expose that parameter — only `ref.listenManual`/
+    // `ProviderContainer.listen` do, because a build()-scoped listener has
+    // no reliable notion of "first ever registration" across rebuilds. That
+    // gap is harmless here: an *already*-pending request at this widget's
+    // very first build is redundantly handled by initState's post-frame
+    // callback above (the real consumption path today); this listener only
+    // needs to catch a request that arrives *after* the widget is mounted.
+    // Must NOT call _applyFocus synchronously here either way: setState()
+    // during build() throws.
+    ref.listen<DateTime?>(calendarFocusRequestProvider, (previous, next) {
+      if (next != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _applyFocus());
+      }
+    });
+
     // safe: delegates registered in MetraApp
     final l10n = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).toString();
