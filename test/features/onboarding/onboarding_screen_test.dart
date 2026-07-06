@@ -34,12 +34,52 @@ import 'package:metra/providers/use_case_providers.dart';
 // ---------------------------------------------------------------------------
 
 class _StubOnboardingNotifier extends OnboardingNotifier {
-  _StubOnboardingNotifier({required DateTime seedDate}) : _seedDate = seedDate;
+  _StubOnboardingNotifier({
+    DateTime? seedDate,
+    bool isHydrated = false,
+    this.clearDraftError,
+    Completer<void>? clearDraftGate,
+    Future<void>? hydrateAfter,
+  })  : _seedDate = seedDate,
+        _initialIsHydrated = isHydrated,
+        _clearDraftGate = clearDraftGate,
+        _hydrateAfter = hydrateAfter;
 
-  final DateTime _seedDate;
+  final DateTime? _seedDate;
+  final bool _initialIsHydrated;
+  final Completer<void>? _clearDraftGate;
+  final Future<void>? _hydrateAfter;
+
+  /// Error to throw from [clearDraft], if set — lets tests exercise the
+  /// widget's own defensive swallow-and-log wrapper even though the real
+  /// [OnboardingNotifier.clearDraft] is documented to never rethrow.
+  final Object? clearDraftError;
+
+  /// Number of times [clearDraft] has been invoked.
+  int clearDraftCallCount = 0;
 
   @override
-  OnboardingState build() => OnboardingState(lastPeriodDate: _seedDate);
+  OnboardingState build() {
+    final hydrateAfter = _hydrateAfter;
+    if (hydrateAfter != null) {
+      hydrateAfter.then((_) {
+        state = OnboardingState(lastPeriodDate: _seedDate, isHydrated: true);
+      });
+    }
+    return OnboardingState(
+      lastPeriodDate: _seedDate,
+      isHydrated: _initialIsHydrated,
+    );
+  }
+
+  @override
+  Future<void> clearDraft() async {
+    clearDraftCallCount++;
+    final gate = _clearDraftGate;
+    if (gate != null) await gate.future;
+    final error = clearDraftError;
+    if (error != null) throw error;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -425,6 +465,244 @@ void main() {
         find.widgetWithText(FilledButton, 'All set →'),
       );
       expect(button.onPressed, isNotNull);
+    });
+  });
+
+  // ── #26: draft auto-advance on hydration ───────────────────────────────────
+
+  group('OnboardingScreen — draft auto-advance on hydration', () {
+    testWidgets(
+        'EC-08: hydrated draft with lastPeriodDate auto-advances to data '
+        'page with fields pre-filled', (tester) async {
+      tester.view.physicalSize = const Size(800, 1800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final seedDate = DateTime.utc(2026, 5, 1);
+
+      await tester.pumpWidget(
+        _wrap(
+          overrides: [
+            onboardingNotifierProvider.overrideWith(
+              () => _StubOnboardingNotifier(
+                seedDate: seedDate,
+                isHydrated: true,
+              ),
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Auto-advanced to page 2 without tapping "Get started".
+      expect(find.textContaining('Tell me'), findsOneWidget);
+      // Date field pre-filled with the restored draft date.
+      expect(find.text('1 May 2026'), findsOneWidget);
+    });
+
+    testWidgets(
+        'EC-09: hydrated with no draft stays on welcome page '
+        '(no auto-advance)', (tester) async {
+      tester.view.physicalSize = const Size(800, 1800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(
+        _wrap(
+          overrides: [
+            onboardingNotifierProvider.overrideWith(
+              () => _StubOnboardingNotifier(isHydrated: true),
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Get started'), findsOneWidget);
+      expect(find.textContaining('Tell me'), findsNothing);
+    });
+  });
+
+  // ── EC-11: hydration-timing race vs. ref.listen registration ──────────────
+
+  group('OnboardingScreen — EC-11 auto-advance race (guard)', () {
+    testWidgets(
+        'ordering A: hydration already resolved before first build — '
+        'advances exactly once', (tester) async {
+      tester.view.physicalSize = const Size(800, 1800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final seedDate = DateTime.utc(2026, 5, 1);
+      final notifier = _StubOnboardingNotifier(
+        seedDate: seedDate,
+        isHydrated: true,
+      );
+
+      await tester.pumpWidget(
+        _wrap(
+          overrides: [
+            onboardingNotifierProvider.overrideWith(() => notifier),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Tell me'), findsOneWidget);
+
+      // A further harmless state mutation after auto-advance already fired
+      // must not trigger a second jump attempt or throw — proves the
+      // `_didAutoAdvance` guard, not just idempotent re-navigation.
+      notifier.state = notifier.state.copyWith(
+        cycleLength: notifier.state.cycleLength + 1,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Tell me'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets(
+        'ordering B: hydration resolves after listener registration — '
+        'advances exactly once', (tester) async {
+      tester.view.physicalSize = const Size(800, 1800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final seedDate = DateTime.utc(2026, 5, 1);
+      final hydrateSignal = Completer<void>();
+      final notifier = _StubOnboardingNotifier(
+        seedDate: seedDate,
+        hydrateAfter: hydrateSignal.future,
+      );
+
+      await tester.pumpWidget(
+        _wrap(
+          overrides: [
+            onboardingNotifierProvider.overrideWith(() => notifier),
+          ],
+        ),
+      );
+      await tester.pump();
+
+      // Hydration hasn't resolved yet — the ref.listen callback registered
+      // at build() time only, with nothing to react to. Still on page 1.
+      expect(find.text('Get started'), findsOneWidget);
+
+      // Hydration resolves in a later event-loop turn (as the real
+      // secure-storage read would).
+      hydrateSignal.complete();
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Tell me'), findsOneWidget);
+
+      // Harmless post-advance mutation must not trigger a second jump.
+      notifier.state = notifier.state.copyWith(
+        cycleLength: notifier.state.cycleLength + 1,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Tell me'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  // ── #26: clear draft on successful submit ──────────────────────────────────
+
+  group('OnboardingScreen — draft cleared on submit', () {
+    final seedDate = DateTime.utc(2026, 5, 1);
+
+    testWidgets(
+        '_onSubmit success: clearDraft is awaited before navigating to '
+        '/calendar', (tester) async {
+      tester.view.physicalSize = const Size(800, 1800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final executeCompleter = Completer<void>()..complete();
+      final stub = _StubCompleteOnboarding(completer: executeCompleter);
+      final clearDraftGate = Completer<void>();
+      final notifier = _StubOnboardingNotifier(
+        seedDate: seedDate,
+        clearDraftGate: clearDraftGate,
+      );
+
+      await tester.pumpWidget(
+        _wrapWithRouter(
+          overrides: [
+            onboardingNotifierProvider.overrideWith(() => notifier),
+            completeOnboardingProvider.overrideWith((_) async => stub),
+          ],
+        ),
+      );
+      await _goToDataPage(tester);
+
+      await tester.tap(find.widgetWithText(FilledButton, 'All set →'));
+      await tester.pump(); // execute() resolves; clearDraft() invoked & gated
+
+      // clearDraft has been invoked but is still pending on its gate —
+      // navigation must not have happened yet.
+      expect(notifier.clearDraftCallCount, equals(1));
+      expect(find.text('calendar'), findsNothing);
+
+      // Release clearDraft — only now should context.go('/calendar') fire.
+      clearDraftGate.complete();
+      await tester.pumpAndSettle();
+
+      expect(find.text('calendar'), findsOneWidget);
+    });
+
+    testWidgets(
+        '_onSubmit: clearDraft failure is swallowed and navigation still '
+        'proceeds', (tester) async {
+      tester.view.physicalSize = const Size(800, 1800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final executeCompleter = Completer<void>()..complete();
+      final stub = _StubCompleteOnboarding(completer: executeCompleter);
+      final notifier = _StubOnboardingNotifier(
+        seedDate: seedDate,
+        clearDraftError: StateError('secure storage unavailable'),
+      );
+
+      await tester.pumpWidget(
+        _wrapWithRouter(
+          overrides: [
+            onboardingNotifierProvider.overrideWith(() => notifier),
+            completeOnboardingProvider.overrideWith((_) async => stub),
+          ],
+        ),
+      );
+      await _goToDataPage(tester);
+
+      await tester.tap(find.widgetWithText(FilledButton, 'All set →'));
+      await tester.pumpAndSettle();
+
+      // clearDraft was attempted (and threw) but the failure must not
+      // prevent navigation — defense in depth, matching
+      // OnboardingNotifier.clearDraft's own never-rethrow contract.
+      expect(notifier.clearDraftCallCount, equals(1));
+      expect(find.text('calendar'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 }

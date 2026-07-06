@@ -29,15 +29,21 @@ import '../../l10n/app_localizations.dart';
 import '../../providers/use_case_providers.dart';
 import 'state/onboarding_notifier.dart';
 
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _controller = PageController();
+
+  /// Guards against a duplicate `jumpToPage` when the hydrated-draft check
+  /// fires more than once — e.g. the synchronous `ref.read` snapshot in
+  /// `build()` below followed by the `ref.listen` callback firing again for
+  /// an unrelated later state mutation (spec § 4.3, OQ-06).
+  bool _didAutoAdvance = false;
 
   @override
   void dispose() {
@@ -52,8 +58,41 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
+  /// Jumps to page 2 exactly once, the first time [state] reports a
+  /// hydrated draft with a restorable date.
+  void _maybeAutoAdvance(OnboardingState state) {
+    if (!state.isHydrated || state.lastPeriodDate == null || _didAutoAdvance) {
+      return;
+    }
+    _didAutoAdvance = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_controller.hasClients) {
+        _controller.jumpToPage(1);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    // #26: auto-advance to page 2 when a restored draft has a date. Must be
+    // driven by `ref.read`/`ref.listen`, never `initState` — secure-storage
+    // hydration is a platform channel and always resolves in a LATER
+    // event-loop turn than `initState()`, so an `initState`-driven check
+    // would never observe the hydrated draft (spec OQ-06).
+    //
+    // `flutter_riverpod`'s `WidgetRef.listen` has no `fireImmediately`
+    // parameter (that only exists on `listenManual`, which isn't build()-safe
+    // — see riverpod 2.6.1 API), so the "already hydrated before this
+    // widget's first build" ordering is covered by a one-time `ref.read`
+    // snapshot here; the "hydrates later" ordering is covered by `ref.listen`
+    // below. `ref.read` (not `ref.watch`) is used so this ancestor widget
+    // does not rebuild on every downstream draft mutation (cycle length,
+    // period length) — only the one-shot auto-advance check is needed here.
+    _maybeAutoAdvance(ref.read(onboardingNotifierProvider));
+    ref.listen<OnboardingState>(onboardingNotifierProvider, (previous, next) {
+      _maybeAutoAdvance(next);
+    });
+
     return Scaffold(
       body: PageView(
         controller: _controller,
@@ -407,6 +446,16 @@ class _DataPage extends ConsumerWidget {
         cycleLength: state.cycleLength,
         periodLength: state.periodLength,
       );
+      // #26: drop the persisted page-2 draft now that onboarding is
+      // complete. `clearDraft()` is documented to never rethrow, but this
+      // catch is defense in depth (matches OnboardingNotifier.setDate's own
+      // belt-and-braces guard style) — a swallowed failure here must never
+      // block navigation to the calendar.
+      try {
+        await notifier.clearDraft();
+      } catch (e) {
+        debugPrint('[_DataPage._onSubmit] clearDraft failed: $e');
+      }
       if (context.mounted) {
         context.go('/calendar');
       }
