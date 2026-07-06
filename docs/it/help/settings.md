@@ -106,5 +106,5 @@ In fondo alla schermata trovi il numero di versione dell'app e un collegamento a
 
 > ⚠️ Questa operazione non può essere annullata. Se non è stato effettuato un export CSV o un backup cloud, non esiste un server che possa recuperare i dati. Dopo la conferma, le registrazioni sono andate.
 >
-> Il backup cloud **non viene eliminato** automaticamente: se hai un backup su Dropbox, devi rimuoverlo manualmente dallo spazio di archiviazione cloud.
+> Il backup cloud **non viene eliminato** automaticamente: se hai un backup su Dropbox, Google Drive o iCloud, devi rimuoverlo manualmente dall'app o dal sito del rispettivo provider.
 

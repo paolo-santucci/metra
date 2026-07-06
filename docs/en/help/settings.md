@@ -106,4 +106,4 @@ At the bottom of the screen you will find the app version number and a link to t
 
 > ⚠️ This action cannot be undone. If no CSV export or cloud backup has been made, there is no server that could recover the data. Once confirmed, the entries are gone.
 >
-> The cloud backup is **not deleted** automatically. If you have a backup on Dropbox, you must remove it manually from your cloud storage.
+> The cloud backup is **not deleted** automatically. If you have a backup on Dropbox, Google Drive, or iCloud, you must remove it manually from that provider's app or website.

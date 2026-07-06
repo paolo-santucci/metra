@@ -28,7 +28,7 @@ La vista Timeline raggruppa le tue registrazioni per **ciclo**, mostrando un cic
 	- ocra con una stella, per i **sintomi**, per tutti i sintomi registrati durante quel ciclo;
 	- grigie con una penna, a indicare le **note**.
 
-Scorri verso l'alto per risalire nel tempo.
+Scorri verso l'alto per risalire nel tempo. Tocca una card per aprire il Calendario sul mese in cui è iniziato quel ciclo.
 
 ---
 
