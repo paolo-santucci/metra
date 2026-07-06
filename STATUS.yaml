@@ -1,7 +1,7 @@
 schema-version: 2
-last-updated: "2026-07-05T17:15:00+02:00"
+last-updated: "2026-07-06T14:56:00+02:00"
 active-plan: null
-last-plan: ".claude/docs/plans/archive/qp-20260629-gdrive-riverpod-ref-after-drift-mutation.md"
+last-plan: ".claude/docs/plans/archive/sp-20260705-gh-issues-batch-onboard-notif-calendar-plan.md"
 
 # Owned by the short-plan skill. update-status preserves verbatim.
 short-plan:
@@ -93,6 +93,9 @@ pending-consolidation:
   - plan-id: qp-20260628-icloud-restore-fix-picker-size-label
     archived-date: "2026-06-28"
     has-spec-impact: true
+  - plan-id: sp-20260705-gh-issues-batch-onboard-notif-calendar-spec
+    archived-date: "2026-07-06"
+    has-spec-impact: true
 
 recently-completed:
   - date: "2026-07-05"
@@ -122,11 +125,20 @@ in-progress:
       - "lib/core/l10n/locale_resolver.dart"
     next-step: "Open metra-1.1.0 -> main PR after rc4 on-device verify + E2E Drive round-trip gate."
     blocker: null
+  - title: "GH issues batch (#3,26,27,33,34,36) — SP CLOSED, uncommitted"
+    state: "19/21 tasks done, plan archived, pending-consolidation +1 (9 total). Full suite 1974 pass/4 skip/0 fail; nothing committed yet."
+    touched:
+      - "lib/providers/calendar_focus_provider.dart"
+      - "lib/features/timeline/timeline_screen.dart"
+      - "lib/features/onboarding/onboarding_screen.dart"
+    next-step: "Commit all Wave1-6 files (single commit or per-module), open PR on metra-1.1.0. TASK-18/19 screenshots still owed (need device)."
+    blocker: null
 
 next-steps:
   - "Run manual E2E Drive round-trip pre-merge gate (OQ-QA-05): back up to Google Drive -> download .enc -> verify unreadable binary -> restore on a 2nd Android device -> data identical."
   - "Add GOOGLE_OAUTH_CLIENT_ID GitHub secret if not yet set (CI builds pass it via --dart-define on 5 build commands); local client now works with custom-URI-scheme enabled."
-  - "Consolidate canon AFTER metra-1.1.0 merges: re-derive backup slice via canon-bootstrap (M1-M4), apply M5 settings delta via spec-changelog, fresh /finalize-plan. pending-consolidation has 8 entries."
+  - "Consolidate canon AFTER metra-1.1.0 merges: re-derive backup slice via canon-bootstrap (M1-M4), apply M5 settings delta via spec-changelog, fresh /finalize-plan. pending-consolidation has 9 entries (8 backup + 1 gh-issues-batch)."
+  - "TASK-18/19 (help-doc screenshots for #27 language toggle) deferred — no Android emulator/device in this session. Capture on-device: docs/it/help/assets/onboarding-welcome-it.png and docs/en/help/assets/onboarding-welcome-en.png."
   - "After GitHub Pages rebuilds verify privacy policy live at metra.paolosantucci.com/{it,en}/privacy/, then resubmit to Google Play to clear privacy-policy rejection."
   - "Download signed release-aab from Android CI run on main (d702ab3) and upload to Play Console (versionCode 12) to retry production promotion (16 KB page-size fix)."
   - "GitHub issue #33 (notification cancel-then-reschedule has no atomicity test against the Doze mid-window alarm race) is a genuine unimplemented gap -- canon notifications.md Gap 3 still open. Needs an actual fix/test, unlike #20/21/22/28/29/32 which were verified already-fixed in code and closed 2026-07-05."
