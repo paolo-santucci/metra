@@ -250,6 +250,11 @@
     "description": "Accessibility label for the floating action button on the calendar screen"
   },
 
+  "notification_channel_name": "Mētra — Ciclo",
+  "@notification_channel_name": {
+    "description": "Android notification channel display name shown in system settings; resolved from AppLocalizations and passed to NotificationService.initialize() at cold-start"
+  },
+
   "notification_prediction_title": "Il tuo ciclo si avvicina",
   "@notification_prediction_title": {
     "description": "Title for the prediction notification"

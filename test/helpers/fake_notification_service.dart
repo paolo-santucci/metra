@@ -20,6 +20,19 @@ import 'package:metra/domain/services/notification_service.dart';
 
 class FakeNotificationService implements NotificationService {
   bool initialized = false;
+
+  /// The channel-name argument passed to the most recent [initialize] call.
+  ///
+  /// Used by TASK-07 (#34) tests to assert the locale-derived Android
+  /// notification channel display name reaches the service correctly.
+  String? channelName;
+
+  /// Number of times [initialize] has been called.
+  ///
+  /// Used by TASK-07 (#34) tests (e.g. EC-21: exactly one call across a
+  /// simulated cold-start + later settings/language change).
+  int initializeCallCount = 0;
+
   final List<({DateTime notifyAt, String title, String body})> scheduled = [];
   int cancelCount = 0;
 
@@ -151,7 +164,11 @@ class FakeNotificationService implements NotificationService {
   DateTime _now() => _nowFn?.call() ?? _nowOverride ?? DateTime.now();
 
   @override
-  Future<void> initialize() async => initialized = true;
+  Future<void> initialize(String channelName) async {
+    initializeCallCount++;
+    this.channelName = channelName;
+    initialized = true;
+  }
 
   @override
   Future<NotificationScheduleResult> schedulePredictionNotification(

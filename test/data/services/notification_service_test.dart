@@ -45,7 +45,7 @@ void main() {
     test('initialize() sets the initialized flag', () async {
       final fake = FakeNotificationService();
       expect(fake.initialized, isFalse);
-      await fake.initialize();
+      await fake.initialize('Mētra — Ciclo');
       expect(fake.initialized, isTrue);
     });
 
@@ -860,6 +860,204 @@ void main() {
           isTrue,
           reason: 'BUG-006: PlatformException must be surfaced via debugPrint',
         );
+      },
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // Group I — TASK-07 (#34): initialize(channelName) — locale-derived Android
+  // notification channel display name (FR-10, NFR-06, EC-18..EC-21, OQ-08).
+  // ---------------------------------------------------------------------------
+
+  group(
+      'Group I — TASK-07 (#34): FlutterNotificationService.initialize(channelName)',
+      () {
+    const kNotifChannel = 'dexterous.com/flutter/local_notifications';
+
+    void mockNotifChannel(List<MethodCall> calls) {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+        const MethodChannel(kNotifChannel),
+        (call) async {
+          calls.add(call);
+          if (call.method == 'initialize') return true;
+          return null;
+        },
+      );
+      addTearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(
+          const MethodChannel(kNotifChannel),
+          null,
+        );
+      });
+    }
+
+    test(
+      'initialize(channelName) creates the Android channel with id=metra_cycle '
+      'and the supplied Italian display name',
+      () async {
+        final calls = <MethodCall>[];
+        mockNotifChannel(calls);
+
+        final service = FlutterNotificationService();
+        await service.initialize('Mētra — Ciclo');
+
+        final createCall = calls.singleWhere(
+          (c) => c.method == 'createNotificationChannel',
+        );
+        final args = createCall.arguments as Map;
+        expect(args['id'], equals('metra_cycle'));
+        expect(args['name'], equals('Mētra — Ciclo'));
+      },
+    );
+
+    test(
+      'initialize(channelName) creates the Android channel with the supplied '
+      'English display name — proves the name is a genuine parameter, not '
+      'hard-coded',
+      () async {
+        final calls = <MethodCall>[];
+        mockNotifChannel(calls);
+
+        final service = FlutterNotificationService();
+        await service.initialize('Mētra — Cycle');
+
+        final createCall = calls.singleWhere(
+          (c) => c.method == 'createNotificationChannel',
+        );
+        final args = createCall.arguments as Map;
+        expect(args['id'], equals('metra_cycle'));
+        expect(args['name'], equals('Mētra — Cycle'));
+      },
+    );
+
+    test(
+      'schedulePredictionNotification reuses the initialized channel name in '
+      'BOTH the immediate-show path and the zonedSchedule path',
+      () async {
+        // Force tz.local to UTC so the same-day-past branch is deterministic
+        // regardless of the host machine's real system timezone: midnight
+        // UTC "today" is always <= the real UTC "now" captured a few
+        // microseconds later inside schedulePredictionNotification.
+        tz_data.initializeTimeZones();
+        tz.setLocalLocation(tz.UTC);
+
+        // -- immediate-show branch (same-day-past) --
+        final showCalls = <MethodCall>[];
+        mockNotifChannel(showCalls);
+
+        final showService = FlutterNotificationService();
+        await showService.initialize('Mētra — Ciclo');
+        final nowUtc = DateTime.now().toUtc();
+        final sameDayPast =
+            DateTime.utc(nowUtc.year, nowUtc.month, nowUtc.day, 0, 0);
+        await showService.schedulePredictionNotification(
+          sameDayPast,
+          'T',
+          'B',
+        );
+
+        final showCall = showCalls.singleWhere((c) => c.method == 'show');
+        final showPlatformSpecifics =
+            (showCall.arguments as Map)['platformSpecifics'] as Map;
+        expect(
+          showPlatformSpecifics['channelName'],
+          equals('Mētra — Ciclo'),
+          reason: 'the immediate-show AndroidNotificationDetails must use '
+              'the channel name supplied to initialize()',
+        );
+
+        // -- normal path (zonedSchedule), fresh service + fresh mock list --
+        final scheduleCalls = <MethodCall>[];
+        mockNotifChannel(scheduleCalls);
+
+        final scheduleService = FlutterNotificationService();
+        await scheduleService.initialize('Mētra — Ciclo');
+        final farFuture = DateTime(2099, 6, 10, 9, 0);
+        await scheduleService.schedulePredictionNotification(
+          farFuture,
+          'T',
+          'B',
+        );
+
+        final scheduleCall =
+            scheduleCalls.singleWhere((c) => c.method == 'zonedSchedule');
+        final schedulePlatformSpecifics =
+            (scheduleCall.arguments as Map)['platformSpecifics'] as Map;
+        expect(
+          schedulePlatformSpecifics['channelName'],
+          equals('Mētra — Ciclo'),
+          reason: 'the zonedSchedule AndroidNotificationDetails must use the '
+              'same channel name as the immediate-show path',
+        );
+      },
+    );
+
+    test(
+      'deleted-contract grep: _kChannelName and the hard-coded Italian '
+      'literal are fully removed from production source',
+      () async {
+        final src = await File(
+          'lib/data/services/notification_service.dart',
+        ).readAsString();
+        expect(
+          src,
+          isNot(contains('_kChannelName')),
+          reason: 'TASK-07: _kChannelName must be fully removed — the '
+              'channel display name is now supplied by the caller via '
+              'initialize(channelName)',
+        );
+        expect(
+          src,
+          isNot(contains('Mētra — Ciclo')),
+          reason: 'TASK-07: the hard-coded Italian channel-name literal must '
+              'be removed from production code (FR-10)',
+        );
+      },
+    );
+
+    test(
+      'initialize() unconditionally re-creates the channel on every call — '
+      'no dedup/rename branching (NFR-06, EC-19)',
+      () async {
+        final calls = <MethodCall>[];
+        mockNotifChannel(calls);
+
+        final service = FlutterNotificationService();
+        await service.initialize('A');
+        await service.initialize('B');
+
+        final createCalls = calls.where(
+          (c) => c.method == 'createNotificationChannel',
+        );
+        expect(
+          createCalls.length,
+          equals(2),
+          reason: 'NFR-06/EC-19: each initialize() call unconditionally '
+              're-creates the channel — Android itself silently no-ops the '
+              'rename; production code must not special-case this',
+        );
+        expect(
+          calls.any(
+            (c) =>
+                c.method.toLowerCase().contains('delete') ||
+                c.method.toLowerCase().contains('rename'),
+          ),
+          isFalse,
+          reason: 'no channel-deletion or -rename method must ever be invoked',
+        );
+      },
+    );
+
+    test(
+      'initialize() never throws, even with the timezone channel unmocked',
+      () async {
+        final calls = <MethodCall>[];
+        mockNotifChannel(calls);
+
+        final service = FlutterNotificationService();
+        await expectLater(service.initialize('Anything'), completes);
       },
     );
   });

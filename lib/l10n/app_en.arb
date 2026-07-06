@@ -76,6 +76,11 @@
   "calendar_prediction_label": "Next predicted cycle:",
   "calendar_fab_label": "Add or edit today's log",
 
+  "notification_channel_name": "Mētra — Cycle",
+  "@notification_channel_name": {
+    "description": "Android notification channel display name shown in system settings; resolved from AppLocalizations and passed to NotificationService.initialize() at cold-start"
+  },
+
   "notification_prediction_title": "Your cycle is approaching",
   "@notification_prediction_title": {
     "description": "Title for the prediction notification"

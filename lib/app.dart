@@ -114,17 +114,37 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
     super.initState();
     // Best-effort: initialize notification channels. Failures are non-fatal
     // (e.g. test environments without a platform channel).
-    // FR-07 / BUG-B03: chain the cold-start POST_NOTIFICATIONS re-check
-    // immediately after initialize() completes so we verify OS permission
-    // reality before the first scheduling call fires.
-    ref
-        .read(notificationServiceProvider)
-        .initialize()
-        .then((_) => _verifyNotificationPermissionOnColdStart())
-        .catchError((Object _) {});
+    _initNotificationsAndVerifyPermission().catchError((Object _) {});
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _autoSyncIfConfigured();
     });
+  }
+
+  // FR-10 (#34): resolve the locale-derived Android notification channel
+  // display name BEFORE creating the channel via initialize(). Reuses the
+  // resolveLocaleFromPlatform + AppLocalizations.delegate.load seam (C-01)
+  // already used by the two ref.listen locale sites in build(). Falls back
+  // to the brand-neutral 'Mētra' literal if settings or l10n are unavailable
+  // (EC-20).
+  //
+  // FR-07 / BUG-B03: chain the cold-start POST_NOTIFICATIONS re-check
+  // immediately after initialize() completes so we verify OS permission
+  // reality before the first scheduling call fires. initialize() never
+  // throws (domain contract), so _verifyNotificationPermissionOnColdStart()
+  // always still runs afterward — even when the locale resolution above
+  // fails (EC-20 fallback keeps the chain unbroken).
+  Future<void> _initNotificationsAndVerifyPermission() async {
+    var channelName = 'Mētra';
+    try {
+      final settings = await ref.read(settingsNotifierProvider.future);
+      final locale = resolveLocaleFromPlatform(settings.languageCode);
+      final l10n = await AppLocalizations.delegate.load(locale);
+      channelName = l10n.notification_channel_name;
+    } catch (_) {
+      // Settings/l10n unavailable at cold-start — brand-neutral fallback (EC-20).
+    }
+    await ref.read(notificationServiceProvider).initialize(channelName);
+    await _verifyNotificationPermissionOnColdStart();
   }
 
   // FR-07 / BUG-B03 / Fix #2: verify OS POST_NOTIFICATIONS permission at cold-start.

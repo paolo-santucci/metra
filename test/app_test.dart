@@ -30,10 +30,12 @@
 
 import 'dart:io';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/domain/entities/app_settings_data.dart';
 import 'package:metra/domain/entities/cycle_prediction.dart';
+import 'package:metra/l10n/app_localizations.dart';
 
 import 'helpers/fake_notification_service.dart';
 
@@ -199,6 +201,33 @@ Future<void> _simulateAutoSyncIfConfigured({
   } catch (e) {
     debugPrintCapture.add('[autoSync] ${e.runtimeType}: $e');
   }
+}
+
+// ---------------------------------------------------------------------------
+// Simulator: _initNotificationsAndVerifyPermission (TASK-07, FR-10, #34).
+//
+// Mirrors the real method added to _MetraInnerState in lib/app.dart: resolve
+// the locale-derived Android channel display name BEFORE calling
+// notificationService.initialize(channelName), falling back to the
+// brand-neutral 'Mētra' literal on any settings/l10n failure (EC-20), then
+// always run the permission recheck afterward regardless of which branch
+// supplied the channel name.
+// ---------------------------------------------------------------------------
+Future<void> _simulateInitNotificationsAndVerifyPermission({
+  required FakeNotificationService notificationService,
+  required Future<String> Function() loadLanguageCode,
+  required Future<String> Function(String languageCode) loadChannelName,
+  required Future<void> Function() verifyPermission,
+}) async {
+  var channelName = 'Mētra';
+  try {
+    final languageCode = await loadLanguageCode();
+    channelName = await loadChannelName(languageCode);
+  } catch (_) {
+    // Settings/l10n unavailable at cold-start — brand-neutral fallback (EC-20).
+  }
+  await notificationService.initialize(channelName);
+  await verifyPermission();
 }
 
 // ---------------------------------------------------------------------------
@@ -768,6 +797,177 @@ void main() {
           completes,
           reason: 'FR-18: exception in backupSilent must be caught; '
               '_autoSyncIfConfigured must not propagate it',
+        );
+      },
+    );
+  });
+
+  // ===========================================================================
+  // Group J — TASK-07 (#34): locale-derived Android notification channel name
+  // (FR-10, EC-20, EC-21, OQ-08)
+  // ===========================================================================
+
+  group('Group J: locale-derived notification channel name (TASK-07, #34)', () {
+    Future<String> loadChannelNameFor(String languageCode) async {
+      final l10n = await AppLocalizations.delegate.load(Locale(languageCode));
+      return l10n.notification_channel_name;
+    }
+
+    test(
+      'IT locale → initialize() is called with the Italian notification_channel_name',
+      () async {
+        final service = FakeNotificationService();
+
+        await _simulateInitNotificationsAndVerifyPermission(
+          notificationService: service,
+          loadLanguageCode: () async => 'it',
+          loadChannelName: loadChannelNameFor,
+          verifyPermission: service.hasNotificationPermission,
+        );
+
+        final expected = await loadChannelNameFor('it');
+        expect(service.channelName, equals(expected));
+        expect(service.initializeCallCount, equals(1));
+      },
+    );
+
+    test(
+      'EN locale → initialize() is called with the English notification_channel_name',
+      () async {
+        final service = FakeNotificationService();
+
+        await _simulateInitNotificationsAndVerifyPermission(
+          notificationService: service,
+          loadLanguageCode: () async => 'en',
+          loadChannelName: loadChannelNameFor,
+          verifyPermission: service.hasNotificationPermission,
+        );
+
+        final expected = await loadChannelNameFor('en');
+        expect(service.channelName, equals(expected));
+        expect(service.initializeCallCount, equals(1));
+      },
+    );
+
+    test(
+      'EC-20: settings/l10n load failure → falls back to the brand-neutral '
+      '"Mētra" literal AND the permission recheck still runs afterward',
+      () async {
+        final service = FakeNotificationService();
+
+        await _simulateInitNotificationsAndVerifyPermission(
+          notificationService: service,
+          loadLanguageCode: () async => throw Exception('settings unavailable'),
+          loadChannelName: loadChannelNameFor,
+          verifyPermission: service.hasNotificationPermission,
+        );
+
+        expect(
+          service.channelName,
+          equals('Mētra'),
+          reason: 'EC-20: brand-neutral fallback must be used when '
+              'settings/l10n resolution fails',
+        );
+        expect(
+          service.hasNotificationPermissionCallCount,
+          equals(1),
+          reason: 'the permission recheck must still run unconditionally after '
+              'initialize(), even when locale resolution failed (EC-20) — '
+              'the sequence must not be short-circuited',
+        );
+      },
+    );
+
+    test(
+      'EC-21: .initialize( appears exactly once in lib/app.dart — a later '
+      'settings/language change must not re-invoke it',
+      () {
+        final source = _appDartSource();
+        final count = '.initialize('.allMatches(source).length;
+        expect(
+          count,
+          equals(1),
+          reason: 'EC-21: there must be exactly one production call site '
+              'that invokes .initialize(...) — a later in-app language '
+              'change (SettingsNotifier.save(languageCode:)) must not '
+              're-invoke it, since initState() runs exactly once',
+        );
+      },
+    );
+
+    test(
+      'Deleted-contract grep guard: no zero-argument initialize call site '
+      'remains in any non-comment line under lib/ or test/',
+      () {
+        // Built via concatenation (not a single literal) so this guard's own
+        // source line is not itself a false positive when this same test
+        // scans test/app_test.dart.
+        const noArgCallPattern = '.initialize' '()';
+        final offenders = <String>[];
+        for (final dirName in ['lib', 'test']) {
+          final dir = Directory(dirName);
+          if (!dir.existsSync()) continue;
+          for (final entity in dir.listSync(recursive: true)) {
+            if (entity is! File || !entity.path.endsWith('.dart')) continue;
+            final lines = entity.readAsLinesSync();
+            for (final line in lines) {
+              if (line.trimLeft().startsWith('//')) {
+                continue; // skip comments/doc-comments (e.g. prose mentions)
+              }
+              if (line.contains(noArgCallPattern)) {
+                offenders.add(entity.path);
+                break;
+              }
+            }
+          }
+        }
+        expect(
+          offenders,
+          isEmpty,
+          reason: 'TASK-07 (#34): the zero-argument initialize call must be '
+              'fully migrated to initialize(channelName) everywhere; '
+              'offending files: $offenders',
+        );
+      },
+    );
+
+    test(
+      'Source-substring safety net: settingsNotifierProvider.future precedes '
+      'notification_channel_name, which precedes the .initialize( call site, '
+      'and _verifyNotificationPermissionOnColdStart() still runs '
+      'unconditionally afterward',
+      () {
+        final source = _appDartSource();
+        final settingsIdx = source.indexOf('settingsNotifierProvider.future');
+        final channelNameIdx = source.indexOf('notification_channel_name');
+        final initIdx = source.indexOf('.initialize(');
+        final verifyCallIdx =
+            source.indexOf('_verifyNotificationPermissionOnColdStart();');
+
+        expect(
+          settingsIdx,
+          greaterThanOrEqualTo(0),
+          reason: 'settingsNotifierProvider.future must be read before '
+              'resolving the channel name',
+        );
+        expect(
+          channelNameIdx,
+          greaterThan(settingsIdx),
+          reason: 'notification_channel_name must be resolved after '
+              'settingsNotifierProvider.future',
+        );
+        expect(
+          initIdx,
+          greaterThan(channelNameIdx),
+          reason: 'the .initialize( call must come after the '
+              'notification_channel_name resolution',
+        );
+        expect(
+          verifyCallIdx,
+          greaterThan(initIdx),
+          reason: 'FR-10: _verifyNotificationPermissionOnColdStart() must '
+              'still be invoked unconditionally after initialize(), '
+              'preserving the FR-07/BUG-B03 cold-start recheck ordering',
         );
       },
     );

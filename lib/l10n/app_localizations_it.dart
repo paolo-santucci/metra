@@ -158,6 +158,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get calendar_fab_label => 'Aggiungi o modifica il registro di oggi';
 
   @override
+  String get notification_channel_name => 'Mētra — Ciclo';
+
+  @override
   String get notification_prediction_title => 'Il tuo ciclo si avvicina';
 
   @override
