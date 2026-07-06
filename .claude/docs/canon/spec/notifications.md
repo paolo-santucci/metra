@@ -1,7 +1,7 @@
 ---
 domain: notifications
-last-updated: 2026-05-18
-last-verified: 2026-05-15
+last-updated: 2026-07-06
+last-verified: 2026-07-06
 applied-deltas:
   - 75d5afec8c20be7cfc1b9a6a34e4acb9637079bfd7f45b056f5b0bae4a330547
   - e792ddd990ee9093cdb5145a81ad0b3098d8ee4827806b22246f0eece0747401
@@ -11,12 +11,14 @@ applied-deltas:
   - ab02121783b5f3f74b1990770cb8eb560a1e6fd90c82291f75b411932c7ce2bf
   - 5b375f1ea5ace9d7e748a8155abdb24568f44f4a1952c57724a97c4274eb3302
   - 4755431575b843ad412cd04bc800f65ac9227ecc3c415fef12f58a29ae7a3556
+  - 4dc48b366825db47ad6cd17dc0f8951a6887186d5006f7c97f817651781a7860
 applied-feature-ids:
   - notifications-failure-surfaced-to-user
   - notifications-ios-permission-honest
   - notifications-structured-result-consumed
   - notifications-open-settings-method
   - notifications-permission-result-type
+  - notifications-localised-channel-name
 ---
 
 ## Overview
@@ -27,7 +29,7 @@ The notifications domain delivers a single, configurable local reminder ahead of
 
 1. `FlutterNotificationService.initialize()` initialises the `timezone` package's IANA DB, queries the device's local IANA name via `FlutterTimezone.getLocalTimezone()`, and calls `tz.setLocalLocation(...)`. If detection throws an `Exception` (unsupported platform, unknown name, no method-channel binding in tests), it falls back to `tz.UTC` and emits a `debugPrint` line — non-fatal (`notification_service.dart:60-73`).
 2. `initialize()` then registers the Android `AndroidInitializationSettings('@mipmap/ic_launcher')` and iOS `DarwinInitializationSettings` with `requestAlertPermission: true`, `requestBadgePermission: true`, `requestSoundPermission: true` — iOS permission is therefore requested transitively at init time, not via `requestPermission()` (`notification_service.dart:75-86`).
-3. `initialize()` creates the Android notification channel `metra_cycle` ("Mētra — Ciclo", `Importance.high`) via `createNotificationChannel`; re-creates are no-ops (`notification_service.dart:88-97`).
+3. **`initialize(String channelName)`** (localised since 2026-07-06, #34) creates the Android notification channel `metra_cycle` (`Importance.high`) via `createNotificationChannel`, using the caller-supplied `channelName` as the channel's display name — the channel ID (`_kChannelId = 'metra_cycle'`) stays fixed, only the display NAME varies. `FlutterNotificationService` holds an instance field `_channelName` (default `'Mētra'`, the brand-neutral fallback) that's overwritten on every `initialize()` call and reused by both `AndroidNotificationDetails` sites (immediate-show and `zonedSchedule`). `initialize()` **unconditionally re-creates the channel on every call** — no dedup/rename branching — because Android cannot rename an already-created channel post-creation (a display-name change on an existing install is silently a no-op at the OS level; this is intentional, not a bug).
 4. `schedulePredictionNotification(notifyAt, title, body)` always computes the scheduled instant via `computeScheduledTz(notifyAt)` — a `TZDateTime` whose calendar day is taken after converting `notifyAt` to `tz.local`, and whose hour/minute are taken **directly from the supplied `notifyAt`** (not from the converted-local value) (`notification_service.dart:109-136`).
 5. If the computed `scheduledDate.isBefore(now)`, the service consults `shouldShowImmediately(scheduledDate, now)`. When `scheduledDate` is on the same calendar day as `now` and `now` is at or after `scheduledDate`, the service calls `_plugin.show(...)` (immediate notification) with `kPredictionNotificationId` and the same channel/importance; otherwise it silently returns without scheduling — this is the BUG-005 cold-start guard (`notification_service.dart:144-183`).
 6. The normal path calls `_plugin.zonedSchedule(kPredictionNotificationId, title, body, scheduledDate, details, androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle, uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime, matchDateTimeComponents: null)`. The inexact mode means the alarm may fire within Doze's ~15-minute window on Android — accepted to avoid the policy-gated `SCHEDULE_EXACT_ALARM` permission on Android 14+ (`notification_service.dart:185-215`).
@@ -37,7 +39,8 @@ The notifications domain delivers a single, configurable local reminder ahead of
 10. `hasNotificationPermission()` is the read-only counterpart: on Android, it queries `areNotificationsEnabled()` and returns `true` on null plugin result (fail-open). On iOS, it queries `IOSFlutterLocalNotificationsPlugin.checkPermissions()` and returns `options.isEnabled`, treating a null option or null `isEnabled` as `true` (fail-open). Never shows a system dialog on either platform (`notification_service.dart:236-247`).
 11. `isIgnoringBatteryOptimizations()` calls `MethodChannel('metra/battery_optimization').invokeMethod<bool>('isIgnoring')`. `null` (Android < 23 — no Doze) is treated as whitelisted (`true`). A `PlatformException` is swallowed and returns `false` (Settings row remains actionable) (`notification_service.dart:249-261`).
 12. `openBatteryOptimizationSettings()` calls `invokeMethod<void>('openSettings')`; a `PlatformException` is `debugPrint`-logged with prefix `[NotificationService.openBatteryOpt]` and swallowed (`notification_service.dart:263-270`).
-13. The domain use-case `SchedulePredictionNotification.execute(...)` is the **only** caller from app/UI code (`schedule_prediction_notification.dart:23-79`). It unconditionally calls `cancelPredictionNotifications()` first — including when notifications are disabled or `prediction == null` — and then short-circuits (`schedule_prediction_notification.dart:36-37`, verified by tests `EC-08 negative: notificationsEnabled=false → no schedule, cancel called` and `EC-08 negative: null prediction → no schedule, cancel called`).
+12a. **Cold-start channel-name resolution (`app.dart`, `_initNotificationsAndVerifyPermission`, #34)**. Before calling `initialize()`, `app.dart` resolves the caller-supplied channel name: reads `settingsNotifierProvider.future` → `resolveLocaleFromPlatform(settings.languageCode)` (the same shared resolver the UI locale and the notification-string locale both use — see `settings.md`) → `AppLocalizations.delegate.load(locale)` → `l10n.notification_channel_name` (ARB key, IT "Mētra — Ciclo" / EN "Mētra — Cycle"). If settings or l10n loading throws for any reason, the brand-neutral literal `'Mētra'` is used instead (EC-20) — the whole resolution is wrapped in a try/catch so `initialize()` and the subsequent cold-start permission re-check (item 21) always still run. A later in-session language change does **not** re-invoke `initialize()` — the channel name is resolved exactly once, at cold-start (fresh-installs-only, since Android can't rename an existing channel anyway).
+13. The domain use-case `SchedulePredictionNotification.execute(...)` is the **only** caller from app/UI code (`schedule_prediction_notification.dart:23-79`). It unconditionally calls `cancelPredictionNotifications()` first — including when notifications are disabled or `prediction == null` — and then short-circuits (`schedule_prediction_notification.dart:36-37`, verified by tests `EC-08 negative: notificationsEnabled=false → no schedule, cancel called` and `EC-08 negative: null prediction → no schedule, cancel called`). **Cancel-then-schedule order is now regression-tested** (2026-07-06, #33): `FakeNotificationService.callLog` records `'cancel'`/`'schedule'` in invocation order; unit and integration tests assert the exact sequence `['cancel']` (early-return branches) or `['cancel', 'schedule']` (happy path), plus a meta-test proving the assertion actually catches a schedule-before-cancel regression (previously this was verified only by call *counts*, not order).
 14. `execute(...)` throws `ArgumentError.value` when `settings.notificationDaysBefore < 1` or `> AppConstants.kMaxAdvanceDays` (= `7`); same for `settings.notificationTimeMinutes` outside `[0, 1439]` (`schedule_prediction_notification.dart:39-54`).
 15. The composed `notifyAt` is `DateTime(base.year, base.month, base.day, settings.notificationTimeMinutes ~/ 60, settings.notificationTimeMinutes % 60)` where `base = prediction.windowStart - notificationDaysBefore days`. The result is a **local** `DateTime` (no `.toUtc()`) (`schedule_prediction_notification.dart:56-64`).
 16. `execute(...)` accepts a `skipIfPast` flag and an injectable `clock`. When `skipIfPast == true` and `notifyAt.isBefore(now)`, the method returns silently without scheduling — used by the settings-change listener to avoid the service's `shouldShowImmediately` firing a spurious notification after the user adjusts advance days or time. The prediction-data-change listener uses the default `skipIfPast: false` to preserve BUG-005 cold-start immediate-show (`schedule_prediction_notification.dart:65-77`, comment block in same file).
@@ -63,7 +66,11 @@ The notifications domain delivers a single, configurable local reminder ahead of
 
 ```dart
 abstract class NotificationService {
-  Future<void> initialize();
+  Future<void> initialize(String channelName);   // BREAKING (2026-07-06, #34):
+                                                  // was initialize() — caller
+                                                  // resolves the localised
+                                                  // Android channel display
+                                                  // name and passes it in.
 
   Future<NotificationScheduleResult> schedulePredictionNotification(
     DateTime notifyAt,
@@ -88,7 +95,7 @@ abstract class NotificationService {
 }
 ```
 
-- `initialize()` — must be called once before any other method. Idempotent on Android channel creation. Never throws (timezone-detection failure is logged + UTC fallback).
+- `initialize(channelName)` — must be called once before any other method, with the caller-resolved localised Android channel display name (see Current behaviour item 12a for the resolution chain; `app.dart` is the sole caller). Idempotent in the sense of never throwing, but **not** idempotent on channel identity — every call unconditionally re-creates the channel with whatever name is passed (Android silently no-ops a rename on an already-installed channel; this is fresh-installs-only behaviour, by design, not a partial idempotency bug). Never throws (timezone-detection failure is logged + UTC fallback; the caller's own locale-resolution failure is handled by the caller, not this method — see item 12a).
 - `schedulePredictionNotification(notifyAt, title, body)` — `notifyAt` may be a local or UTC `DateTime`; the service converts to `tz.local` before extracting the calendar day. Hour/minute are taken from `notifyAt` directly. Replaces any previously scheduled prediction notification (single stable ID). `PlatformException` from the platform scheduler is logged and swallowed; other exceptions propagate.
 - `cancelPredictionNotifications()` — cancels exactly the prediction notification (`kPredictionNotificationId = 1001`). No-op if none scheduled.
 - `requestPermission()` — only call when the user explicitly enables notifications. Returns `true` if granted/pre-granted (iOS, Android < 13, or null plugin response). Does **not** re-open the system dialog after denial — Android persists the decision.
@@ -142,7 +149,7 @@ iOS: opens `UIApplication.openSettingsURLString` via the iOS plugin where availa
 ## Enumerated providers / limits
 
 - **Android channel ID** — `_kChannelId = 'metra_cycle'` (`notification_service.dart:50`). Must never change post-release (orphans scheduled alarms on un-updated devices).
-- **Android channel name** — `_kChannelName = 'Mētra — Ciclo'` (`notification_service.dart:51`).
+- **Android channel name** — an instance field `_channelName` (default `'Mētra'`, brand-neutral fallback), set on every `initialize(channelName)` call. Localised via the `notification_channel_name` ARB key (IT `'Mētra — Ciclo'`, EN `'Mētra — Cycle'`), resolved once at cold-start by `app.dart` (item 12a). No longer a hard-coded static constant.
 - **Android channel importance** — `Importance.high` (`notification_service.dart:92`). Notification per-call `priority: Priority.high` (`notification_service.dart:189`).
 - **Battery-opt method channel** — `MethodChannel('metra/battery_optimization')` (`notification_service.dart:41-42`).
 - **Stable notification ID** — `kPredictionNotificationId = 1001` (`notification_service.dart:48`). Single ID for the one prediction reminder; explicitly documented as never-change.
@@ -165,7 +172,7 @@ iOS: opens `UIApplication.openSettingsURLString` via the iOS plugin where availa
 
 - `← cycle-analytics` — the listener in `app.dart` reads `cyclePredictionProvider`; the use case takes a `CyclePrediction?` (its `windowStart` is the anchor for `notifyAt`). When `prediction == null`, the use case cancels and no-ops.
 - `← app-settings (preferences)` — reads `settings.notificationsEnabled`, `settings.notificationDaysBefore`, `settings.notificationTimeMinutes`, `settings.languageCode`. The settings-change listener also writes back `notificationsEnabled: false` on permission-denied (revert-toggle path).
-- `← i18n (l10n)` — `AppLocalizations.notification_prediction_title` and `notification_prediction_body(daysBefore)` are loaded per emit via `AppLocalizations.delegate.load(Locale(...))`. Body is `''` when `prediction == null`.
+- `← i18n (l10n)` — `AppLocalizations.notification_prediction_title` and `notification_prediction_body(daysBefore)` are loaded per emit via `AppLocalizations.delegate.load(Locale(...))`. Body is `''` when `prediction == null`. Since 2026-07-06, `app.dart` also resolves `notification_channel_name` once at cold-start (item 12a) through the same `resolveLocaleFromPlatform` + `delegate.load` seam used for the UI locale (see `settings.md`'s follow-system resolution rule) — one shared resolver, so the channel name and the UI locale can never disagree on which language a given system locale maps to.
 - `→ android-platform` — `MethodChannel('metra/battery_optimization')` is implemented in `MainActivity` Kotlin (PowerManager + `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`); the Flutter side only invokes `isIgnoring` and `openSettings`.
 - `→ settings UI` — exposes battery-opt status and "enable notifications" toggle; the toggle is the only legitimate trigger for `requestPermission()`.
 
@@ -173,8 +180,7 @@ iOS: opens `UIApplication.openSettingsURLString` via the iOS plugin where availa
 
 
 
-3. **Prediction changes after a notification is already scheduled** — the listener re-runs `execute()` on every `AsyncData → AsyncData` transition, which cancels then re-schedules under the same stable ID. There is no test in scope verifying the cancel-then-reschedule sequencing is atomic with respect to a near-fire alarm; the `inexactAllowWhileIdle` mode could in principle let the old alarm fire mid-rebuild.
-4. **Channel-name localisation** — `_kChannelName = 'Mētra — Ciclo'` is hard-coded Italian. There is no per-locale channel name (Android channel names are visible in OS Settings → App notifications). No test asserts this.
+3. **Prediction changes after a notification is already scheduled — logical order now tested, OS-level race still open**. The listener re-runs `execute()` on every `AsyncData → AsyncData` transition, which cancels then re-schedules under the same stable ID. As of 2026-07-06 (#33), `execute()`'s cancel-before-schedule call order is regression-tested (`FakeNotificationService.callLog`, unit + integration coverage) — a schedule-before-cancel logic regression would now be caught. What remains untested/unaddressed is the **OS-level timing race**: `inexactAllowWhileIdle` gives no atomicity guarantee against a near-fire alarm on the Android side, so the old alarm could in principle still fire mid-rebuild between the app's `cancel` and `schedule` calls reaching the OS. Closing this fully would need a different Android scheduling mechanism or an OS-side transactional primitive, neither of which is in scope of the current fix.
 5. **Timezone-change while a notification is scheduled** — `computeScheduledTz` runs only at schedule time; if the device crosses a timezone after scheduling but before fire, the alarm's wall-clock instant is fixed (`absoluteTime` interpretation). No test in scope exercises this.
-6. **`kPredictionNotificationId = 1001` collision** — the single fixed ID is documented as never-change, but there is no enumeration in scope ensuring no future feature reuses it. Soft gap.
+6. **`kPredictionNotificationId = 1001` collision — partially mitigated**. A guardrail test (2026-07-06, #36) now enumerates all notification-ID constants used in the codebase (currently just the one) into a `const` list and asserts uniqueness, with a failure-path proof confirming the assertion isn't vacuously true. This catches a *future* accidental duplicate the moment a second ID constant is added and appended to the list — it does not (and cannot) enforce that contributors remember to append new IDs; that discipline is documented in a doc-comment on the list, not mechanically enforced.
 7. **Battery-optimisation status freshness** — `isIgnoringBatteryOptimizations()` is called on demand by the Settings UI (out of this slice's scope). There is no listener wiring it to permission re-checks; if the user removes the whitelist exemption externally, Métra learns about it only on the next manual Settings open.
