@@ -568,6 +568,11 @@
   "onboarding_all_set": "All set →",
   "onboarding_date_placeholder": "Select date",
 
+  "onboarding_language_selector_label": "Language",
+  "@onboarding_language_selector_label": {
+    "description": "Accessibility label for the top-corner IT/EN language selector on the onboarding welcome page (SegmentedControlMetra semanticsLabel)"
+  },
+
   "settings_section_about": "About",
   "@settings_section_about": {
     "description": "Settings group header: about section"

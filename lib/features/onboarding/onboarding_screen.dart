@@ -25,8 +25,10 @@ import '../../core/theme/metra_colors.dart';
 import '../../core/theme/metra_spacing.dart';
 import '../../core/theme/metra_typography.dart';
 import '../../core/widgets/metra_wordmark.dart';
+import '../../core/widgets/segmented_control_metra.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/use_case_providers.dart';
+import '../settings/state/settings_notifier.dart';
 import 'state/onboarding_notifier.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
@@ -108,113 +110,160 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
 // ── Page 1: Welcome ──────────────────────────────────────────────────────────
 
-class _WelcomePage extends StatelessWidget {
+class _WelcomePage extends ConsumerWidget {
   const _WelcomePage({required this.onGetStarted});
 
   final VoidCallback onGetStarted;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final colors = MetraColors.of(context);
     final accentFlow = colors.accentFlow;
     final textPrimary = colors.textPrimary;
     final textSecondary = colors.textSecondary;
 
+    // #27 (FR-07/FR-08): current settings, read once per build so the
+    // selector and its onChanged handler agree on the same snapshot.
+    // `.valueOrNull` before the notifier resolves (or on AsyncError) simply
+    // defaults the selector to IT and makes `onChanged` a no-op below — the
+    // welcome page must never crash or block on the settings load.
+    final settings = ref.watch(settingsNotifierProvider).valueOrNull;
+    // languageCode == '' means "follow system" (no explicit choice yet);
+    // IT is Métra's primary locale (CLAUDE.md §5), so it is the default.
+    final selectedLanguageIndex = settings?.languageCode == 'en' ? 1 : 0;
+
     return SafeArea(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Stack(
         children: [
-          // Hero zone: wordmark + terracotta radial halos (spec § 12.1).
-          // Fixed at 340dp per DESIGN-BIBLE § 12.1 flex 0 0 340.
-          SizedBox(
-            height: 340,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Outer elliptical glow: rgba(200,116,86,0.05) → transparent 80%
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: RadialGradient(
-                      center: const Alignment(0, -0.4),
-                      radius: 0.85,
-                      colors: [
-                        accentFlow.withValues(alpha: 0.05),
-                        Colors.transparent,
-                      ],
-                      stops: const [0.0, 0.80],
-                    ),
-                  ),
-                ),
-                // Centered halo 220×220: rgba(200,116,86,0.12) → transparent 70%
-                Center(
-                  child: SizedBox(
-                    width: 220,
-                    height: 220,
-                    child: DecoratedBox(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Hero zone: wordmark + terracotta radial halos (spec § 12.1).
+              // Fixed at 340dp per DESIGN-BIBLE § 12.1 flex 0 0 340.
+              SizedBox(
+                height: 340,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Outer elliptical glow: rgba(200,116,86,0.05) → transparent 80%
+                    DecoratedBox(
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
                         gradient: RadialGradient(
+                          center: const Alignment(0, -0.4),
+                          radius: 0.85,
                           colors: [
-                            accentFlow.withValues(alpha: 0.12),
+                            accentFlow.withValues(alpha: 0.05),
                             Colors.transparent,
                           ],
-                          stops: const [0.0, 0.70],
+                          stops: const [0.0, 0.80],
                         ),
                       ),
                     ),
-                  ),
-                ),
-                // Wordmark
-                Center(
-                  child: Semantics(
-                    header: true,
-                    child: MetraWordmark(color: textPrimary),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Content zone: text scrolls; CTA is pinned at bottom.
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(36, 0, 36, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Manifesto headline: DM Serif Display 34 / lh 1.2 per § 12.1.
-                        Text(
-                          l10n.onboarding_tagline,
-                          style: MetraTypography.headlineLg
-                              .copyWith(color: textPrimary),
-                        ),
-                        const SizedBox(height: 14),
-                        Text(
-                          l10n.onboarding_privacy_line,
-                          style: MetraTypography.body.copyWith(
-                            color: textSecondary,
-                            height: 1.6,
+                    // Centered halo 220×220: rgba(200,116,86,0.12) → transparent 70%
+                    Center(
+                      child: SizedBox(
+                        width: 220,
+                        height: 220,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              colors: [
+                                accentFlow.withValues(alpha: 0.12),
+                                Colors.transparent,
+                              ],
+                              stops: const [0.0, 0.70],
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 40),
-                        Center(child: _MacronDots(color: accentFlow)),
-                      ],
+                      ),
                     ),
-                  ),
+                    // Wordmark
+                    Center(
+                      child: Semantics(
+                        header: true,
+                        child: MetraWordmark(color: textPrimary),
+                      ),
+                    ),
+                  ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(36, 0, 36, 28),
-                  child: FilledButton(
-                    style: _inchiostroCtaStyle(context),
-                    onPressed: onGetStarted,
-                    child: Text(l10n.onboarding_get_started),
-                  ),
+              ),
+              // Content zone: text scrolls; CTA is pinned at bottom.
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(36, 0, 36, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Manifesto headline: DM Serif Display 34 / lh 1.2 per § 12.1.
+                            Text(
+                              l10n.onboarding_tagline,
+                              style: MetraTypography.headlineLg
+                                  .copyWith(color: textPrimary),
+                            ),
+                            const SizedBox(height: 14),
+                            Text(
+                              l10n.onboarding_privacy_line,
+                              style: MetraTypography.body.copyWith(
+                                color: textSecondary,
+                                height: 1.6,
+                              ),
+                            ),
+                            const SizedBox(height: 40),
+                            Center(child: _MacronDots(color: accentFlow)),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(36, 0, 36, 28),
+                      child: FilledButton(
+                        style: _inchiostroCtaStyle(context),
+                        onPressed: onGetStarted,
+                        child: Text(l10n.onboarding_get_started),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
+            ],
+          ),
+          // #27 (FR-07/FR-08): compact top-corner IT·EN selector, clear of
+          // the hero wordmark/headline/subhead and the bottom-pinned CTA
+          // above (§12.1 geometry untouched — no new PageView page, no
+          // reuse of Settings' bottom-sheet picker).
+          Positioned(
+            top: 8,
+            right: 12,
+            // `container: true` gives the selector its own semantics
+            // boundary — without it, SegmentedControlMetra's ungrouped
+            // label bubbles up and merges with the hero wordmark's
+            // `Semantics(header: true)` node (both share the same
+            // nearest-boundary ancestor: the PageView's per-page semantics
+            // node), producing a compound "Mētra\nLanguage" label instead
+            // of the selector's own.
+            child: Semantics(
+              container: true,
+              child: SegmentedControlMetra(
+                segments: const ['IT', 'EN'],
+                selectedIndex: selectedLanguageIndex,
+                semanticsLabel: l10n.onboarding_language_selector_label,
+                onChanged: (index) {
+                  final current = settings;
+                  if (current == null) return;
+                  final newCode = index == 1 ? 'en' : 'it';
+                  // EC-15: selecting the already-active language is a no-op.
+                  if (current.languageCode == newCode) return;
+                  ref
+                      .read(settingsNotifierProvider.notifier)
+                      .save(current.copyWith(languageCode: newCode));
+                },
+              ),
             ),
           ),
         ],

@@ -980,6 +980,11 @@
   "onboarding_date_placeholder": "Seleziona data",
   "@onboarding_date_placeholder": { "description": "Placeholder text in the date input when no date is selected" },
 
+  "onboarding_language_selector_label": "Lingua",
+  "@onboarding_language_selector_label": {
+    "description": "Accessibility label for the top-corner IT/EN language selector on the onboarding welcome page (SegmentedControlMetra semanticsLabel)"
+  },
+
   "settings_section_about": "Informazioni",
   "@settings_section_about": {
     "description": "Settings group header: about section"

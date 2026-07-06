@@ -1232,6 +1232,12 @@ abstract class AppLocalizations {
   /// **'Seleziona data'**
   String get onboarding_date_placeholder;
 
+  /// Accessibility label for the top-corner IT/EN language selector on the onboarding welcome page (SegmentedControlMetra semanticsLabel)
+  ///
+  /// In it, this message translates to:
+  /// **'Lingua'**
+  String get onboarding_language_selector_label;
+
   /// Settings group header: about section
   ///
   /// In it, this message translates to:

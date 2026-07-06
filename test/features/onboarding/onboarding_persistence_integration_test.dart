@@ -15,20 +15,30 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
-// TASK-16 — Onboarding cross-component integration (spec §7.2 Scenarios C/D).
+// TASK-16 — Onboarding cross-component integration (spec §7.2 Scenarios C/D/E).
 //
 // This is a NEW file, deliberately separate from the unit test files
 // `test/features/onboarding/state/onboarding_notifier_test.dart` and
 // `test/features/onboarding/onboarding_screen_test.dart` (both out of scope
 // here — not modified). Those files stub the collaborators
-// (`_StubOnboardingNotifier`) to isolate `OnboardingScreen` from
-// `OnboardingNotifier`. This file does the opposite: it wires the REAL
-// `OnboardingNotifier` (backed by fakes only at the outermost repository/
-// platform-service boundary) through a `ProviderContainer` kill-and-relaunch
-// cycle against a SHARED `InMemorySecureStorage` instance, to prove the
-// cross-component contract end-to-end (spec §7.2 preamble: no REST endpoints
-// in this app, so integration scenarios map onto Dart provider/notifier
-// contracts rather than HTTP fixtures).
+// (`_StubOnboardingNotifier`, `_StubSettingsNotifier`) to isolate
+// `OnboardingScreen` from `OnboardingNotifier`/`SettingsNotifier`. This file
+// does the opposite: it wires the REAL `OnboardingNotifier` and the REAL
+// `SettingsNotifier` (backed by fakes only at the outermost repository/
+// platform-service boundary) through a `ProviderContainer`
+// kill-and-relaunch cycle against a SHARED `InMemorySecureStorage` instance,
+// to prove the cross-component contract end-to-end (spec §7.2 preamble: no
+// REST endpoints in this app, so integration scenarios map onto Dart
+// provider/notifier contracts rather than HTTP fixtures).
+//
+// Scenario E's "global settings listener" is `lib/app.dart`'s
+// `ref.listen<AsyncValue<AppSettingsData>>(settingsNotifierProvider, ...)`.
+// Mounting the full `Metra` app widget is out of scope for an onboarding-only
+// integration test, so `_simulateGlobalSettingsListener` below mirrors its
+// dedup/permission/scheduler guards using the REAL
+// `SchedulePredictionNotification` domain use case — only the
+// `NotificationService` platform boundary is faked. This mirrors the
+// simulator-function idiom already used in `test/app_test.dart`.
 //
 // Platform matrix: this file is platform-agnostic (pure Dart/Riverpod state
 // + widget tests, no platform channels beyond the already-faked
@@ -45,15 +55,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:metra/core/constants/app_constants.dart';
 import 'package:metra/core/theme/metra_theme.dart';
+import 'package:metra/domain/entities/app_settings_data.dart';
+import 'package:metra/domain/entities/cycle_prediction.dart';
 import 'package:metra/domain/use_cases/complete_onboarding.dart';
+import 'package:metra/domain/use_cases/schedule_prediction_notification.dart';
 import 'package:metra/features/onboarding/onboarding_screen.dart';
 import 'package:metra/features/onboarding/state/onboarding_notifier.dart';
+import 'package:metra/features/settings/state/settings_notifier.dart';
 import 'package:metra/l10n/app_localizations.dart';
 import 'package:metra/providers/encryption_provider.dart';
 import 'package:metra/providers/repository_providers.dart';
 import 'package:metra/providers/use_case_providers.dart';
 
 import '../../helpers/fake_app_settings_repository.dart';
+import '../../helpers/fake_notification_service.dart';
 import '../../helpers/in_memory_secure_storage.dart';
 
 // ---------------------------------------------------------------------------
@@ -151,6 +166,77 @@ class _GatedCompleteOnboarding implements CompleteOnboarding {
   }
 }
 
+/// [FakeAppSettingsRepository] subclass that counts [updateSettings] calls —
+/// Scenario E's EC-15 idempotency proof (the shared fake's `callLog` does
+/// not track `updateSettings`, only the dedicated-writer methods).
+class _CountingAppSettingsRepository extends FakeAppSettingsRepository {
+  int updateSettingsCallCount = 0;
+
+  @override
+  Future<void> updateSettings(AppSettingsData settings) async {
+    updateSettingsCallCount++;
+    await super.updateSettings(settings);
+  }
+}
+
+/// Mirrors the relevant guards of `lib/app.dart`'s
+/// `ref.listen<AsyncValue<AppSettingsData>>(settingsNotifierProvider, ...)`
+/// listener — dedup guard, false→true permission-request guard, and the
+/// cold-start (non-`AsyncData` `prev`) skip — using the REAL
+/// [SchedulePredictionNotification] domain use case. Only the
+/// [NotificationService] platform boundary is faked. See the file-level
+/// doc comment for why this integration test does not mount the full
+/// `Metra` app widget.
+Future<void> _simulateGlobalSettingsListener({
+  required AsyncValue<AppSettingsData>? prev,
+  required AsyncValue<AppSettingsData> next,
+  required FakeNotificationService notificationService,
+}) async {
+  final currentSettings = next.valueOrNull;
+  if (currentSettings == null) return;
+
+  // Dedup guard (lib/app.dart): an identical re-emission collapses into a
+  // single scheduling attempt.
+  if (prev is AsyncData<AppSettingsData> &&
+      prev.requireValue == currentSettings) {
+    return;
+  }
+
+  // BUG-002 guard: only request OS permission on a false→true user-driven
+  // edge. EC-16 keeps notificationsEnabled false throughout onboarding, so
+  // this branch must never fire requestPermission().
+  if (prev is AsyncData<AppSettingsData>) {
+    final wasEnabled = prev.value.notificationsEnabled;
+    if (currentSettings.notificationsEnabled && !wasEnabled) {
+      await notificationService.requestPermission();
+    }
+  }
+
+  // Cold-start guard: only a legitimate AsyncData → AsyncData transition
+  // reschedules.
+  if (prev is! AsyncData<AppSettingsData>) return;
+
+  // A REAL (non-null) prediction is passed deliberately — the use case's
+  // early-return guard is `prediction == null || !settings.notificationsEnabled`.
+  // Passing a non-null prediction here means the ONLY thing short-circuiting
+  // `execute()` in EC-16 is `notificationsEnabled == false`, not a null
+  // prediction — otherwise the assertion would be vacuously true regardless
+  // of the notificationsEnabled guard under test.
+  final scheduler = SchedulePredictionNotification(notificationService);
+  await scheduler.execute(
+    prediction: CyclePrediction(
+      windowStart: DateTime(2099, 3, 1),
+      windowEnd: DateTime(2099, 3, 5),
+      expectedStart: DateTime(2099, 3, 3),
+      cyclesUsed: 3,
+    ),
+    settings: currentSettings,
+    title: 'Mētra',
+    body: '',
+    skipIfPast: true,
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Container / widget-harness builders.
 // ---------------------------------------------------------------------------
@@ -214,6 +300,91 @@ Widget _wrapOnboardingWithRouter(ProviderContainer container) {
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: router,
     ),
+  );
+}
+
+/// Locale-aware harness for Scenario E — mirrors `lib/app.dart`'s own
+/// `settings.languageCode` → `MaterialApp.locale` resolution (build(), circa
+/// lines 199-209) so a language change made on the welcome page is actually
+/// reflected by page 2's rendered strings, exactly as it is in the shipped
+/// app.
+class _LocaleAwareOnboardingHarness extends ConsumerWidget {
+  const _LocaleAwareOnboardingHarness();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsNotifierProvider).valueOrNull;
+    final locale = (settings == null || settings.languageCode.isEmpty)
+        ? null
+        : Locale(settings.languageCode);
+    return MaterialApp(
+      theme: MetraTheme.light(),
+      locale: locale,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: const OnboardingScreen(),
+    );
+  }
+}
+
+Widget _wrapLocaleAware(ProviderContainer container) =>
+    UncontrolledProviderScope(
+      container: container,
+      child: const _LocaleAwareOnboardingHarness(),
+    );
+
+class _ScenarioEHarness {
+  _ScenarioEHarness({
+    required this.container,
+    required this.repo,
+    required this.notificationService,
+  });
+
+  final ProviderContainer container;
+  final _CountingAppSettingsRepository repo;
+  final FakeNotificationService notificationService;
+}
+
+/// Builds Scenario E's container: a REAL `settingsNotifierProvider` backed
+/// by a [_CountingAppSettingsRepository] (mirrors `settings_notifier_test.
+/// dart`'s override idiom — `appSettingsRepositoryProvider.overrideWith`,
+/// never `settingsNotifierProvider.overrideWith`, so the notifier under
+/// test is the production `SettingsNotifier`), a fake `NotificationService`,
+/// and the `_simulateGlobalSettingsListener` mirror attached exactly as
+/// `lib/app.dart` attaches its own listener.
+_ScenarioEHarness _buildScenarioEHarness() {
+  final repo = _CountingAppSettingsRepository()
+    ..storedSettings = AppSettingsData(
+      languageCode: 'it',
+      painEnabled: true,
+      notesEnabled: true,
+      notificationDaysBefore: 2,
+      notificationsEnabled: false,
+      onboardingCompleted: false,
+    );
+  final notificationService = FakeNotificationService();
+  final container = ProviderContainer(
+    overrides: [
+      secureStorageProvider.overrideWithValue(InMemorySecureStorage()),
+      appSettingsRepositoryProvider.overrideWith((_) async => repo),
+      completeOnboardingProvider.overrideWith(
+        (_) async => _NoOpCompleteOnboarding(),
+      ),
+      notificationServiceProvider.overrideWithValue(notificationService),
+    ],
+  );
+  container.listen<AsyncValue<AppSettingsData>>(
+    settingsNotifierProvider,
+    (prev, next) => _simulateGlobalSettingsListener(
+      prev: prev,
+      next: next,
+      notificationService: notificationService,
+    ),
+  );
+  return _ScenarioEHarness(
+    container: container,
+    repo: repo,
+    notificationService: notificationService,
   );
 }
 
@@ -496,6 +667,94 @@ void main() {
 
         expect(find.text('calendar-stub'), findsOneWidget);
         expect(tester.takeException(), isNull);
+      },
+    );
+  });
+
+  group(
+      'Scenario E — welcome-page language selector → SettingsNotifier.save '
+      '→ global settings listener (FR-07/FR-08)', () {
+    testWidgets(
+      'selecting the non-active language persists via SettingsNotifier.save '
+      'and page 2 subsequently renders in that language',
+      (tester) async {
+        _useTallViewport(tester);
+        final harness = _buildScenarioEHarness();
+        addTearDown(harness.container.dispose);
+        await harness.container.read(settingsNotifierProvider.future);
+
+        await tester.pumpWidget(_wrapLocaleAware(harness.container));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Inizia'), findsOneWidget); // IT baseline
+
+        await tester.tap(find.text('EN'), warnIfMissed: false);
+        await tester.pumpAndSettle();
+
+        expect(harness.repo.updateSettingsCallCount, 1);
+        expect(harness.repo.storedSettings?.languageCode, 'en');
+        expect(find.text('Get started'), findsOneWidget);
+
+        await tester.tap(find.text('Get started'));
+        await tester.pumpAndSettle();
+
+        expect(find.textContaining('Tell me'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'EC-16: selecting a language during onboarding does not trigger a '
+      "permission dialog and the scheduler short-circuits after a no-op "
+      'cancel',
+      (tester) async {
+        _useTallViewport(tester);
+        final harness = _buildScenarioEHarness();
+        addTearDown(harness.container.dispose);
+        await harness.container.read(settingsNotifierProvider.future);
+
+        await tester.pumpWidget(_wrapLocaleAware(harness.container));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('EN'), warnIfMissed: false);
+        await tester.pumpAndSettle();
+
+        expect(
+          harness.notificationService.requestPermissionCallCount,
+          0,
+          reason: 'notificationsEnabled stays false throughout — no '
+              'permission dialog must ever appear during onboarding',
+        );
+        expect(
+          harness.notificationService.cancelCallCount,
+          1,
+          reason: 'SchedulePredictionNotification.execute() always cancels '
+              'first',
+        );
+        expect(
+          harness.notificationService.scheduleCallCount,
+          0,
+          reason: 'the early-return branch (notificationsEnabled == false) '
+              'must short-circuit BEFORE scheduling anything new',
+        );
+      },
+    );
+
+    testWidgets(
+      'EC-15: selecting the already-active language calls '
+      'SettingsNotifier.save zero times',
+      (tester) async {
+        _useTallViewport(tester);
+        final harness = _buildScenarioEHarness();
+        addTearDown(harness.container.dispose);
+        await harness.container.read(settingsNotifierProvider.future);
+
+        await tester.pumpWidget(_wrapLocaleAware(harness.container));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('IT'), warnIfMissed: false);
+        await tester.pumpAndSettle();
+
+        expect(harness.repo.updateSettingsCallCount, 0);
       },
     );
   });

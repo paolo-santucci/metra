@@ -23,9 +23,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:metra/core/theme/metra_theme.dart';
+import 'package:metra/core/widgets/metra_wordmark.dart';
+import 'package:metra/core/widgets/segmented_control_metra.dart';
+import 'package:metra/domain/entities/app_settings_data.dart';
 import 'package:metra/domain/use_cases/complete_onboarding.dart';
 import 'package:metra/features/onboarding/onboarding_screen.dart';
 import 'package:metra/features/onboarding/state/onboarding_notifier.dart';
+import 'package:metra/features/settings/state/settings_notifier.dart';
 import 'package:metra/l10n/app_localizations.dart';
 import 'package:metra/providers/use_case_providers.dart';
 
@@ -83,6 +87,48 @@ class _StubOnboardingNotifier extends OnboardingNotifier {
 }
 
 // ---------------------------------------------------------------------------
+// Stub: SettingsNotifier — TASK-14 (#27 welcome-page language selector).
+//
+// _WelcomePage now watches settingsNotifierProvider (to derive the
+// selector's selectedIndex and to call save() on selection), so every test
+// in this file that mounts OnboardingScreen must override it — the real
+// SettingsNotifier.build() reaches the Drift database, which is not wired
+// in a bare widget-test ProviderScope (same convention as
+// calendar_screen_test.dart / settings_screen_test.dart).
+// ---------------------------------------------------------------------------
+
+class _StubSettingsNotifier extends SettingsNotifier {
+  _StubSettingsNotifier(this._initial);
+
+  final AppSettingsData _initial;
+  AppSettingsData? savedSettings;
+  int saveCallCount = 0;
+
+  @override
+  Future<AppSettingsData> build() async => _initial;
+
+  @override
+  Future<void> save(AppSettingsData settings) async {
+    savedSettings = settings;
+    saveCallCount++;
+    state = AsyncData(settings);
+  }
+}
+
+/// Minimal valid [AppSettingsData] with the given [languageCode] — the only
+/// field this test file's assertions care about.
+AppSettingsData _settingsWith({required String languageCode}) =>
+    AppSettingsData(
+      languageCode: languageCode,
+      darkMode: null,
+      painEnabled: true,
+      notesEnabled: true,
+      notificationDaysBefore: 2,
+      notificationsEnabled: false,
+      onboardingCompleted: false,
+    );
+
+// ---------------------------------------------------------------------------
 // Stub: CompleteOnboarding backed by a Completer so tests control timing.
 // ---------------------------------------------------------------------------
 
@@ -109,8 +155,24 @@ class _StubCompleteOnboarding implements CompleteOnboarding {
 // ---------------------------------------------------------------------------
 
 /// Plain MaterialApp wrapper — used for tests that do NOT tap "All set →".
-Widget _wrap({List<Override> overrides = const []}) => ProviderScope(
-      overrides: overrides,
+///
+/// [settings] seeds the default `settingsNotifierProvider` stub consumed by
+/// `_WelcomePage`'s language selector (TASK-14); pass an explicit override
+/// for that provider via [overrides] to replace it (e.g. to capture
+/// `save()` calls) — a later entry in the combined overrides list wins.
+Widget _wrap({
+  List<Override> overrides = const [],
+  AppSettingsData? settings,
+}) =>
+    ProviderScope(
+      overrides: [
+        settingsNotifierProvider.overrideWith(
+          () => _StubSettingsNotifier(
+            settings ?? _settingsWith(languageCode: 'en'),
+          ),
+        ),
+        ...overrides,
+      ],
       child: MaterialApp(
         theme: MetraTheme.light(),
         locale: const Locale('en'),
@@ -122,7 +184,12 @@ Widget _wrap({List<Override> overrides = const []}) => ProviderScope(
 
 /// GoRouter wrapper — used for tests that complete the submit flow so that
 /// `context.go('/calendar')` does not throw (no GoRouter in scope).
-Widget _wrapWithRouter({required List<Override> overrides}) {
+///
+/// See [_wrap] for the [settings] / [overrides] precedence note.
+Widget _wrapWithRouter({
+  required List<Override> overrides,
+  AppSettingsData? settings,
+}) {
   final router = GoRouter(
     initialLocation: '/onboarding',
     routes: [
@@ -137,7 +204,14 @@ Widget _wrapWithRouter({required List<Override> overrides}) {
     ],
   );
   return ProviderScope(
-    overrides: overrides,
+    overrides: [
+      settingsNotifierProvider.overrideWith(
+        () => _StubSettingsNotifier(
+          settings ?? _settingsWith(languageCode: 'en'),
+        ),
+      ),
+      ...overrides,
+    ],
     child: MaterialApp.router(
       routerConfig: router,
       theme: MetraTheme.light(),
@@ -703,6 +777,141 @@ void main() {
       expect(notifier.clearDraftCallCount, equals(1));
       expect(find.text('calendar'), findsOneWidget);
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  // ── #27: _WelcomePage IT·EN language selector (Group H) ────────────────────
+
+  group('OnboardingScreen — _WelcomePage language selector (Group H)', () {
+    testWidgets(
+        'renders SegmentedControlMetra(["IT","EN"]) via '
+        'Positioned(top:8,right:12) in a Stack; hero Column is unchanged '
+        'and does not overlap the selector', (tester) async {
+      tester.view.physicalSize = const Size(800, 1800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(_wrap());
+      await tester.pumpAndSettle();
+
+      // Structural: SafeArea's direct child is a Stack; its first entry is
+      // the (verbatim, unchanged) hero Column, and a Positioned(top:8,
+      // right:12) entry wraps the selector.
+      final safeArea = tester.widget<SafeArea>(find.byType(SafeArea));
+      final stack = safeArea.child as Stack;
+      expect(stack.children.first, isA<Column>());
+      final positioned = stack.children.whereType<Positioned>().single;
+      expect(positioned.top, 8);
+      expect(positioned.right, 12);
+
+      final segmented = tester.widget<SegmentedControlMetra>(
+        find.byType(SegmentedControlMetra),
+      );
+      expect(segmented.segments, ['IT', 'EN']);
+
+      // Geometric: the selector must not visually collide with the actual
+      // hero content — the wordmark or the bottom-pinned CTA. (The
+      // surrounding hero Column's own bounding box trivially fills the
+      // entire page, because its content zone is `Expanded` — that rect is
+      // not a meaningful non-overlap signal on its own.)
+      final selectorRect = tester.getRect(find.byType(SegmentedControlMetra));
+      final wordmarkRect = tester.getRect(find.byType(MetraWordmark));
+      final ctaRect = tester.getRect(
+        find.widgetWithText(FilledButton, 'Get started'),
+      );
+      expect(selectorRect.overlaps(wordmarkRect), isFalse);
+      expect(selectorRect.overlaps(ctaRect), isFalse);
+    });
+
+    testWidgets("selectedIndex derives from settings.languageCode: 'it'→0",
+        (tester) async {
+      await tester.pumpWidget(
+        _wrap(settings: _settingsWith(languageCode: 'it')),
+      );
+      await tester.pumpAndSettle();
+
+      final segmented = tester.widget<SegmentedControlMetra>(
+        find.byType(SegmentedControlMetra),
+      );
+      expect(segmented.selectedIndex, 0);
+    });
+
+    testWidgets("selectedIndex derives from settings.languageCode: 'en'→1",
+        (tester) async {
+      await tester.pumpWidget(
+        _wrap(settings: _settingsWith(languageCode: 'en')),
+      );
+      await tester.pumpAndSettle();
+
+      final segmented = tester.widget<SegmentedControlMetra>(
+        find.byType(SegmentedControlMetra),
+      );
+      expect(segmented.selectedIndex, 1);
+    });
+
+    testWidgets(
+        'selecting the OTHER language calls SettingsNotifier.save exactly '
+        'once', (tester) async {
+      final stub = _StubSettingsNotifier(_settingsWith(languageCode: 'it'));
+
+      await tester.pumpWidget(
+        _wrap(overrides: [settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      // FR-12 stacks an invisible, opaque hit-region over the visible pill
+      // text by design — silence the benign "obscured" warning (see
+      // SegmentedControlMetra's class doc-comment).
+      await tester.tap(find.text('EN'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+
+      expect(stub.saveCallCount, 1);
+      expect(stub.savedSettings?.languageCode, 'en');
+    });
+
+    testWidgets(
+        'EC-15: selecting the ALREADY-ACTIVE language does not call save',
+        (tester) async {
+      final stub = _StubSettingsNotifier(_settingsWith(languageCode: 'it'));
+
+      await tester.pumpWidget(
+        _wrap(overrides: [settingsNotifierProvider.overrideWith(() => stub)]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('IT'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+
+      expect(stub.saveCallCount, 0);
+    });
+
+    testWidgets(
+        "container Semantics(label) reads the localized 'Language' label "
+        '(not the SegmentedControlMetra default "Vista")', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pumpAndSettle();
+
+      final semantics = tester.getSemantics(find.byType(SegmentedControlMetra));
+      expect(semantics.label, 'Language');
+    });
+
+    testWidgets('each segment hit-region is >= 44x44 dp', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pumpAndSettle();
+
+      final hitRegions = find.descendant(
+        of: find.byType(SegmentedControlMetra),
+        matching: find.byType(GestureDetector),
+      );
+      expect(hitRegions, findsNWidgets(2));
+      for (var i = 0; i < 2; i++) {
+        final size = tester.getSize(hitRegions.at(i));
+        expect(size.width, greaterThanOrEqualTo(44));
+        expect(size.height, greaterThanOrEqualTo(44));
+      }
     });
   });
 }

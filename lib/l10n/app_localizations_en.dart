@@ -658,6 +658,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboarding_date_placeholder => 'Select date';
 
   @override
+  String get onboarding_language_selector_label => 'Language';
+
+  @override
   String get settings_section_about => 'About';
 
   @override
