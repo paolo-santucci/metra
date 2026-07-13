@@ -179,6 +179,83 @@ void main() {
         );
       },
     );
+
+    test(
+      'google_drive_provider.dart imports no package:crypto — PKCE is '
+      'delegated to oauth_pkce.dart (FR-18)',
+      () {
+        final src = File('lib/data/services/backup/google_drive_provider.dart')
+            .readAsStringSync();
+        expect(
+          src,
+          isNot(contains("import 'package:crypto/crypto.dart';")),
+          reason: 'google_drive_provider.dart must not import package:crypto '
+              'directly — PKCE generation is delegated to oauth_pkce.dart',
+        );
+      },
+    );
+
+    test(
+      'google_drive_provider.dart contains no stale '
+      "'// ignore: empty_catches' suppression comments (FR-11)",
+      () {
+        final src = File('lib/data/services/backup/google_drive_provider.dart')
+            .readAsStringSync();
+        expect(
+          src,
+          isNot(contains('// ignore: empty_catches')),
+          reason: 'best-effort catches must log via developer.log instead of '
+              'silently suppressing (FR-11)',
+        );
+      },
+    );
+
+    test(
+      'google_drive_provider.dart imports oauth_pkce.dart and delegates PKCE '
+      'generation — no local _generateOauthState/_generateCodeVerifier/'
+      '_codeChallenge private methods remain (FR-18)',
+      () {
+        final src = File('lib/data/services/backup/google_drive_provider.dart')
+            .readAsStringSync();
+        expect(
+          src,
+          contains("import 'oauth_pkce.dart';"),
+          reason: 'authorize() must consume the shared PKCE trio',
+        );
+        expect(
+          src,
+          isNot(contains('String _generateOauthState(')),
+          reason:
+              '_generateOauthState is replaced by oauth_pkce.generateOauthState',
+        );
+        expect(
+          src,
+          isNot(contains('String _generateCodeVerifier(')),
+          reason: '_generateCodeVerifier is replaced by '
+              'oauth_pkce.generateCodeVerifier',
+        );
+        expect(
+          src,
+          isNot(contains('String _codeChallenge(')),
+          reason: '_codeChallenge is replaced by oauth_pkce.codeChallenge',
+        );
+      },
+    );
+
+    test(
+      'google_drive_provider.dart currentEmail() keeps its Future<String?> '
+      'signature (grep, FR-13)',
+      () {
+        final src = File('lib/data/services/backup/google_drive_provider.dart')
+            .readAsStringSync();
+        expect(
+          src,
+          contains('Future<String?> currentEmail()'),
+          reason: 'currentEmail() must keep its Future<String?> signature — '
+              'null is the sole failure sentinel (FR-13)',
+        );
+      },
+    );
   });
 
   // =========================================================================
@@ -862,6 +939,37 @@ void main() {
         );
       },
     );
+
+    test(
+      '403 with malformed JSON body → _isStorageQuotaExceeded fails closed '
+      '(logs, returns false); upload throws the generic SyncException(403) '
+      'path, not InsufficientStorageException (FR-11)',
+      () async {
+        final client = MockClient((req) async {
+          if (req.method == 'GET') {
+            return http.Response(jsonEncode(folderListResponse(folderId)), 200);
+          }
+          return http.Response('not valid json {{{', 403);
+        });
+        final provider = GoogleDriveProvider(
+          clientId: 'cid',
+          storage: storage,
+          client: client,
+        );
+        await expectLater(
+          () => provider.upload(
+            Uint8List.fromList([1]),
+            'metra_backup_x.enc',
+          ),
+          throwsA(
+            allOf(
+              isA<SyncException>(),
+              isNot(isA<InsufficientStorageException>()),
+            ),
+          ),
+        );
+      },
+    );
   });
 
   // =========================================================================
@@ -1375,6 +1483,30 @@ void main() {
     );
 
     test(
+      'disconnect: revoke endpoint throws (transport failure, not just a bad '
+      'status) → disconnect still completes without rethrowing; both Google '
+      'keys still deleted (FR-11)',
+      () async {
+        storage.values[accessTokenKey] = 'tok';
+        storage.values[refreshTokenKey] = 'r';
+
+        final client = MockClient(
+          (_) async => throw const SocketException('no route to host'),
+        );
+        final provider = GoogleDriveProvider(
+          clientId: 'cid',
+          storage: storage,
+          client: client,
+        );
+        // Must NOT throw.
+        await expectLater(provider.disconnect(), completes);
+
+        expect(storage.values.containsKey(accessTokenKey), isFalse);
+        expect(storage.values.containsKey(refreshTokenKey), isFalse);
+      },
+    );
+
+    test(
       'disconnect does NOT delete metra_backup_passphrase_v1 '
       '(NFR-02 key isolation)',
       () async {
@@ -1478,8 +1610,8 @@ void main() {
     );
 
     test(
-      'currentEmail returns non-null label when no id_token in token response '
-      '(EC-11, FR-09)',
+      'currentEmail returns null when no id_token in token response and '
+      "about.get's 200 response is missing the emailAddress field (FR-13)",
       () async {
         final client = MockClient((req) async {
           if (req.url.host == 'oauth2.googleapis.com') {
@@ -1492,6 +1624,7 @@ void main() {
               200,
             );
           }
+          // about.get: 200 status but no 'user' field — missing emailAddress.
           return http.Response('{}', 200);
         });
         final provider = GoogleDriveProvider(
@@ -1506,9 +1639,8 @@ void main() {
         await provider.authorize();
 
         final email = await provider.currentEmail();
-        // Must be non-null and not throw.
-        expect(email, isNotNull);
-        expect(email, isA<String>());
+        // Must be null — not the removed 'Google Drive' fallback literal.
+        expect(email, isNull);
       },
     );
 
@@ -1582,8 +1714,8 @@ void main() {
     );
 
     test(
-      'currentEmail falls back to provider label when about.get fails '
-      '(EC-11)',
+      'currentEmail returns null when about.get fails with a non-200 status '
+      '(EC-11, FR-13)',
       () async {
         storage.values[accessTokenKey] = 'tok';
         final client = MockClient(
@@ -1597,7 +1729,220 @@ void main() {
 
         final email = await provider.currentEmail();
 
-        expect(email, 'Google Drive');
+        expect(email, isNull);
+      },
+    );
+
+    test(
+      'currentEmail returns null when about.get throws (transport failure, '
+      'not just a bad status) (FR-13)',
+      () async {
+        storage.values[accessTokenKey] = 'tok';
+        final client = MockClient(
+          (_) async => throw const SocketException('no route to host'),
+        );
+        final provider = GoogleDriveProvider(
+          clientId: 'cid',
+          storage: storage,
+          client: client,
+        );
+
+        final email = await provider.currentEmail();
+
+        expect(email, isNull);
+      },
+    );
+
+    test(
+      'currentEmail returns null when about.get returns 404 (non-200, no '
+      'exception thrown) (FR-13)',
+      () async {
+        storage.values[accessTokenKey] = 'tok';
+        final client = MockClient(
+          (_) async => http.Response('Not Found', 404),
+        );
+        final provider = GoogleDriveProvider(
+          clientId: 'cid',
+          storage: storage,
+          client: client,
+        );
+
+        final email = await provider.currentEmail();
+
+        expect(email, isNull);
+      },
+    );
+
+    test(
+      'currentEmail: a failed about.get does NOT memoize null — a '
+      'subsequent successful call still performs a fresh about.get '
+      'round-trip and returns the real email (FR-13)',
+      () async {
+        storage.values[accessTokenKey] = 'tok';
+        var callCount = 0;
+        final client = MockClient((req) async {
+          callCount++;
+          if (callCount == 1) {
+            return http.Response('boom', 500);
+          }
+          return http.Response(
+            jsonEncode({
+              'user': {'emailAddress': 'user@gmail.com'},
+            }),
+            200,
+          );
+        });
+        final provider = GoogleDriveProvider(
+          clientId: 'cid',
+          storage: storage,
+          client: client,
+        );
+
+        final first = await provider.currentEmail();
+        expect(first, isNull);
+
+        final second = await provider.currentEmail();
+        expect(second, 'user@gmail.com');
+        expect(
+          callCount,
+          2,
+          reason: 'the second call must round-trip about.get again — a '
+              'failed lookup must never be cached',
+        );
+      },
+    );
+  });
+
+  // =========================================================================
+  // Group N — GDrive session-cache reset on disconnect/reauthorize (FR-22,
+  // L3 / SVC-BUG-102)
+  // =========================================================================
+
+  group('Group N — session-cache reset (FR-22)', () {
+    test(
+      'FR-22: authorize() defensively resets _cachedEmail so a same-session '
+      'account switch (no id_token, drive.file-only scope) re-fetches via '
+      'about.get instead of returning the stale memoized email',
+      () async {
+        var aboutCallCount = 0;
+        final client = MockClient((req) async {
+          if (req.url.host == 'oauth2.googleapis.com' &&
+              req.url.path == '/token') {
+            // No id_token — drive.file-only scope never issues one.
+            return http.Response(
+              jsonEncode({'access_token': 'at', 'refresh_token': 'rt'}),
+              200,
+            );
+          }
+          if (req.url.host == 'oauth2.googleapis.com' &&
+              req.url.path == '/revoke') {
+            return http.Response('{}', 200);
+          }
+          if (req.url.path == '/drive/v3/about') {
+            aboutCallCount++;
+            final email = aboutCallCount == 1 ? 'a@gmail.com' : 'b@gmail.com';
+            return http.Response(
+              jsonEncode({
+                'user': {'emailAddress': email},
+              }),
+              200,
+            );
+          }
+          return http.Response('{}', 200);
+        });
+        final provider = GoogleDriveProvider(
+          clientId: 'cid',
+          storage: storage,
+          client: client,
+          webAuth: (String url, {required String callbackUrlScheme}) async {
+            final state = extractState(url);
+            return 'com.paolosantucci.metraapp:/oauth-callback-google?code=abc&state=$state';
+          },
+        );
+
+        // Account A.
+        await provider.authorize();
+        expect(await provider.currentEmail(), 'a@gmail.com');
+
+        await provider.disconnect();
+
+        // Account B — same provider instance (same session).
+        await provider.authorize();
+        expect(await provider.currentEmail(), 'b@gmail.com');
+        expect(
+          aboutCallCount,
+          2,
+          reason: 'account B must trigger a fresh about.get, not reuse the '
+              "stale memoized email cached for account A",
+        );
+      },
+    );
+
+    test(
+      'Scenario F1 (FR-22): authorize(A) -> upload() memoizes folder A -> '
+      'disconnect() -> authorize(B) -> upload() triggers a fresh files.list '
+      "round-trip targeting B's folder, not a stale reference to A's",
+      () async {
+        var folderQueryCount = 0;
+        http.Request? lastUploadRequest;
+        final client = MockClient((req) async {
+          if (req.url.host == 'oauth2.googleapis.com' &&
+              req.url.path == '/token') {
+            return http.Response(
+              jsonEncode({'access_token': 'at', 'refresh_token': 'rt'}),
+              200,
+            );
+          }
+          if (req.url.host == 'oauth2.googleapis.com' &&
+              req.url.path == '/revoke') {
+            return http.Response('{}', 200);
+          }
+          if (req.method == 'GET' && req.url.queryParameters.containsKey('q')) {
+            folderQueryCount++;
+            final id = folderQueryCount == 1 ? 'folder-A' : 'folder-B';
+            return http.Response(jsonEncode(folderListResponse(id)), 200);
+          }
+          if (req.method == 'POST' &&
+              req.url.path == '/upload/drive/v3/files') {
+            lastUploadRequest = req;
+            return http.Response(
+              jsonEncode(createResponse('file-x', 'metra_backup_x.enc')),
+              200,
+            );
+          }
+          return http.Response('{}', 200);
+        });
+        final provider = GoogleDriveProvider(
+          clientId: 'cid',
+          storage: storage,
+          client: client,
+          webAuth: (String url, {required String callbackUrlScheme}) async {
+            final state = extractState(url);
+            return 'com.paolosantucci.metraapp:/oauth-callback-google?code=abc&state=$state';
+          },
+        );
+
+        // Account A.
+        await provider.authorize();
+        await provider.upload(Uint8List.fromList([1]), 'metra_backup_a.enc');
+        expect(folderQueryCount, 1);
+        expect(utf8.decode(lastUploadRequest!.bodyBytes), contains('folder-A'));
+
+        await provider.disconnect();
+
+        // Account B — same provider instance (same session).
+        await provider.authorize();
+        await provider.upload(Uint8List.fromList([2]), 'metra_backup_b.enc');
+
+        expect(
+          folderQueryCount,
+          2,
+          reason: "authorize(B) must trigger a fresh folder lookup, not "
+              "reuse A's memoized folder id",
+        );
+        final secondBody = utf8.decode(lastUploadRequest!.bodyBytes);
+        expect(secondBody, contains('folder-B'));
+        expect(secondBody, isNot(contains('folder-A')));
       },
     );
   });
