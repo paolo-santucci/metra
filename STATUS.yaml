@@ -1,7 +1,7 @@
 schema-version: 2
-last-updated: "2026-07-06T21:35:00+02:00"
+last-updated: "2026-07-13T02:15:00+02:00"
 active-plan: null
-last-plan: ".claude/docs/plans/archive/sp-20260705-gh-issues-batch-onboard-notif-calendar-plan.md"
+last-plan: ".claude/docs/plans/archive/sp-20260712-fix-code-review-10-findings-plan.md"
 
 # Owned by the short-plan skill. update-status preserves verbatim.
 short-plan:
@@ -68,21 +68,39 @@ long-plan:
   approvals:
     spec: approved
 
-pending-consolidation: []
+pending-consolidation:
+  - plan-id: sp-20260712-fix-code-review-10-findings-spec
+    archived-date: "2026-07-13"
+    has-spec-impact: true
 
 recently-completed:
+  - date: "2026-07-13"
+    summary: "short-plan fix-code-review-10-findings CLOSED: all 6 waves / 12 tasks landed (BUG-B06 passphrase-wipe regression fixed via firstConnect/_completeProviderHandshake; unified in-flight guard; rollback TOCTOU closed; iCloud-probe memoization; cold-start guard ordering; PKCE + PickerItem extraction). Full repo suite 2051 passed/0 failed. Spec archived with 1 spec-delta pushed to pending-consolidation (gdrive-currentemail-null-on-failure). Still uncommitted."
+  - date: "2026-07-12"
+    summary: "code-review (high) of metra-1.1.0 vs main: 10 findings reported; headline = CONFIRMED regression: BackupNotifier.connect() (only path wiping stale reinstall passphrase, BUG-B06) is dead — empty-view CTA now routes to switchProvider which never touches the passphrase key. No commits; review only."
   - date: "2026-07-06"
     summary: "docs(help) 2ea598b: aligned it/en backup.md, settings.md, archive-stats.md with the shipped multi-provider backup (Google Drive/iCloud) and #3 Timeline->Calendar tap nav; had drifted since the feature shipped."
   - date: "2026-07-06"
     summary: "docs(canon) bde102a: re-derived backup.md and notifications.md canon specs against actual code (multi-provider switch flow; initialize(channelName) signature + #33 regression coverage)."
   - date: "2026-07-06"
-    summary: "Manual reconciliation of the 4 feature-ids /finalize-plan refused (non-mechanical): onboarding-draft-persistence + onboarding-language-selector fingerprints stamped into onboarding.md, notifications-localised-channel-name stamped into notifications.md (all 3 content-verified already correct from earlier same-session rewrites); segmented-control-idle-contrast-fix documented via ADR only (ui-design-bible.md has no fingerprint frontmatter, outside canon/spec/ scheme). Minted D-019..D-022. gh-issues-batch entry now 6/6 resolved -> popped from pending-consolidation (now empty)."
-  - date: "2026-07-06"
-    summary: "/finalize-plan fresh run (state file reset per user choice, prior stale M1-era run discarded): applied 2/6 feature-ids of the gh-issues-batch pending-consolidation entry (timeline-card-tap-to-calendar -> D-017 on timeline.md, calendar-goto-month-focus -> D-018 on calendar.md). 4 REFUSED as non-mechanical (canon-drift x3, invalid domain path x1) -- see next entry for resolution."
-  - date: "2026-07-06"
-    summary: "GH issues batch (#3,26,27,33,34,36) COMMITTED+PUSHED as 7 commits (ff09ef5..dafe020) on metra-1.1.0, one per issue via patch-level split of shared files. v1.1.0-rc5 tagged (b9a6388, bump 1.1.0+20) -> TestFlight CI run 28795580375 GREEN (deploy_testflight + build_ios)."
+    summary: "Manual reconciliation of the 4 feature-ids /finalize-plan refused (non-mechanical): onboarding-draft-persistence + onboarding-language-selector fingerprints stamped into onboarding.md, notifications-localised-channel-name stamped into notifications.md; segmented-control-idle-contrast-fix documented via ADR only. Minted D-019..D-022. pending-consolidation drained to empty."
 
 in-progress:
+  - title: "code-review-10-findings fix — plan CLOSED, work UNCOMMITTED"
+    state: "Spec+plan archived (.claude/docs/{specs,plans}/archive/sp-20260712-fix-code-review-10-findings-*.md). All 12 tasks implemented and fully verified (2051 tests green). 1 spec-delta pending in pending-consolidation (gdrive-currentemail-null-on-failure)."
+    touched:
+      - "lib/app.dart"
+      - "lib/features/backup/state/backup_notifier.dart"
+      - "lib/features/backup/views/backup_empty_view.dart"
+      - "lib/features/backup/widgets/backup_picker_sheet_internals.dart"
+      - "lib/features/backup/widgets/backup_provider_picker_sheet.dart"
+      - "lib/features/backup/widgets/picker_item.dart"
+      - "lib/providers/backup_providers.dart"
+      - "lib/data/services/backup/oauth_pkce.dart"
+      - "lib/data/services/backup/google_drive_provider.dart"
+      - "lib/data/services/backup/dropbox_provider.dart"
+    next-step: "Ask user how to commit (per-task commits per plan §4 vs one squashed commit), then open the metra-1.1.0 -> main PR."
+    blocker: null
   - title: "v1.1.0-rc5 iOS TestFlight (run 28795580375) — deployed"
     state: "Tagged v1.1.0-rc5 on b9a6388 (1.1.0+20). Carries gh-issues-batch (#3,26,27,33,34,36). CI green: deploy_testflight + build_ios."
     touched:
@@ -90,21 +108,22 @@ in-progress:
     next-step: "On-device verify rc5: Timeline->Calendar tap, onboarding draft persist, language selector, plus rc1-4 regressions."
     blocker: null
   - title: "metra-1.1.0 — all LP milestones + gh-issues-batch pushed; awaiting PR into main"
-    state: "Tags rc1..rc5, all pushed to origin. pending-consolidation drained 9->2 (backup.md manually re-derived)."
+    state: "Tags rc1..rc5 pushed. 2026-07-12 code-review: 10 findings, 1 CONFIRMED regression (stale-passphrase wipe dead path) to fix pre-merge."
     touched:
       - "lib/features/backup/state/backup_notifier.dart"
-      - "lib/core/l10n/locale_resolver.dart"
-    next-step: "Open metra-1.1.0 -> main PR after rc5 on-device verify + E2E Drive round-trip gate."
+      - "lib/features/backup/views/backup_empty_view.dart"
+      - "lib/app.dart"
+    next-step: "Fix review finding #1 (first-connect passphrase wipe) before opening the metra-1.1.0 -> main PR."
     blocker: null
 
 next-steps:
   - "Run manual E2E Drive round-trip pre-merge gate (OQ-QA-05): back up to Google Drive -> download .enc -> verify unreadable binary -> restore on a 2nd Android device -> data identical."
   - "Add GOOGLE_OAUTH_CLIENT_ID GitHub secret if not yet set (CI builds pass it via --dart-define on 5 build commands); local client now works with custom-URI-scheme enabled."
-  - "TASK-18/19 (help-doc screenshots for #27 language toggle) deferred — no Android emulator/device in this session. Capture on-device: docs/it/help/assets/onboarding-welcome-it.png and docs/en/help/assets/onboarding-welcome-en.png."
+  - "TASK-18/19 (help-doc screenshots for #27 language toggle) deferred — capture on-device: docs/it/help/assets/onboarding-welcome-it.png and docs/en/help/assets/onboarding-welcome-en.png."
   - "After GitHub Pages rebuilds verify privacy policy live at metra.paolosantucci.com/{it,en}/privacy/, then resubmit to Google Play to clear privacy-policy rejection."
   - "Download signed release-aab from Android CI run on main (d702ab3) and upload to Play Console (versionCode 12) to retry production promotion (16 KB page-size fix)."
-  - "Surprising finding: .gitignore excludes all of .claude/ except backup.md and notifications.md (force-added earlier). Every other canon slice, decisions/, specs/, and plans/ under .claude/docs/ is untracked by git -- confirm this is intentional before relying on git history for canon provenance."
-  - "backup-connect-{it,en}.png help screenshots still depict the pre-multi-provider Dropbox-only empty state (captioned as an example); no provider-picker screenshot exists yet."
+  - "Surprising finding: .gitignore excludes all of .claude/ except backup.md and notifications.md (force-added earlier). Confirm intentional before relying on git history for canon provenance."
+  - "backup-connect-{it,en}.png help screenshots still depict the pre-multi-provider Dropbox-only empty state; no provider-picker screenshot exists yet."
 
 known-issues:
   - severity: warning
