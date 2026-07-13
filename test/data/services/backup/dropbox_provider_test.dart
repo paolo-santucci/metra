@@ -392,4 +392,162 @@ void main() {
       },
     );
   });
+
+  // ---------------------------------------------------------------------------
+  // TASK-08 — Group E: disconnect() revoke-catch diagnostic log (FR-12)
+  // ---------------------------------------------------------------------------
+
+  group('TASK-08 Group E — disconnect() revoke-catch logging (FR-12)', () {
+    test(
+      'revoke POST throws → disconnect() still completes and deletes both '
+      'tokens (best-effort revoke, behaviour unchanged)',
+      () async {
+        storage.values['metra_dropbox_access_token_v1'] = 't';
+        storage.values['metra_dropbox_refresh_token_v1'] = 'r';
+        final client = MockClient((req) async {
+          throw Exception('network down');
+        });
+        final p =
+            DropboxProvider(appKey: 'key', storage: storage, client: client);
+
+        // The best-effort catch must swallow the throw — no exception escapes.
+        await expectLater(p.disconnect(), completes);
+
+        expect(
+          storage.values.containsKey('metra_dropbox_access_token_v1'),
+          isFalse,
+        );
+        expect(
+          storage.values.containsKey('metra_dropbox_refresh_token_v1'),
+          isFalse,
+        );
+      },
+    );
+
+    test(
+        'source: revoke-catch site imports dart:developer and calls '
+        'developer.log; the stale // ignore: empty_catches comment is gone',
+        () {
+      final src = File(
+        'lib/data/services/backup/dropbox_provider.dart',
+      ).readAsStringSync();
+      expect(
+        src,
+        contains("import 'dart:developer' as developer;"),
+        reason: 'DropboxProvider must log via dart:developer, not '
+            'package:flutter/foundation.dart (keeps the provider Flutter-free)',
+      );
+      expect(
+        src,
+        contains('developer.log('),
+        reason: 'the revoke best-effort catch must emit a one-line '
+            'diagnostic log (FR-12, parity with the GoogleDriveProvider '
+            'FR-11 fix)',
+      );
+      expect(
+        src,
+        isNot(contains('// ignore: empty_catches')),
+        reason: 'the stale empty_catches suppression comment must be '
+            'removed now that the catch body is no longer empty',
+      );
+      // Security baseline: no secret material (tokens, passphrase) is
+      // interpolated into the new log call site.
+      expect(
+        src,
+        isNot(contains('_accessTokenKey]')),
+      );
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // TASK-08 — Group I: PKCE extraction consumption (FR-18)
+  // ---------------------------------------------------------------------------
+
+  group('TASK-08 Group I — oauth_pkce.dart consumption (FR-18)', () {
+    test('dropbox_provider.dart no longer imports package:crypto directly', () {
+      final src = File(
+        'lib/data/services/backup/dropbox_provider.dart',
+      ).readAsStringSync();
+      expect(
+        src,
+        isNot(contains("import 'package:crypto/crypto.dart';")),
+        reason: 'PKCE generation is delegated to oauth_pkce.dart (FR-18); '
+            'the direct crypto import must be removed',
+      );
+      expect(
+        src,
+        contains("import 'oauth_pkce.dart'"),
+        reason: 'DropboxProvider must import the shared PKCE helpers',
+      );
+    });
+
+    test(
+        'authorize() delegates to oauth_pkce top-level functions passing '
+        '_random (no private _generateOauthState/_generateCodeVerifier/'
+        '_codeChallenge duplicates left behind)', () {
+      final src = File(
+        'lib/data/services/backup/dropbox_provider.dart',
+      ).readAsStringSync();
+      expect(src, contains('generateCodeVerifier(_random)'));
+      expect(src, contains('codeChallenge(verifier)'));
+      expect(src, contains('generateOauthState(_random)'));
+      expect(
+        src,
+        isNot(contains('String _generateOauthState(')),
+        reason: 'the private duplicate must be removed once oauth_pkce.dart '
+            'is consumed',
+      );
+      expect(
+        src,
+        isNot(contains('String _generateCodeVerifier(')),
+      );
+      expect(
+        src,
+        isNot(contains('String _codeChallenge(')),
+      );
+    });
+
+    test(
+      'regression (NFR-06): authorize() PKCE/state output is unchanged after '
+      'delegating to oauth_pkce.dart — state round-trips through the OAuth '
+      'callback exactly as before',
+      () async {
+        final client = MockClient((req) async {
+          if (req.url.path == '/oauth2/token') {
+            return http.Response(
+              jsonEncode({
+                'access_token': 'access-tok-2',
+                'refresh_token': 'refresh-tok-2',
+              }),
+              200,
+            );
+          }
+          return http.Response('{}', 200);
+        });
+        String? capturedChallenge;
+        final p = DropboxProvider(
+          appKey: 'key',
+          storage: storage,
+          client: client,
+          webAuth: (url, {required callbackUrlScheme}) async {
+            final params = Uri.parse(url).queryParameters;
+            capturedChallenge = params['code_challenge'];
+            final state = params['state']!;
+            expect(state, hasLength(32));
+            expect(RegExp(r'^[0-9a-f]{32}$').hasMatch(state), isTrue);
+            return 'metra://oauth-callback?code=abc&state=$state';
+          },
+        );
+
+        await expectLater(p.authorize(), completes);
+        expect(capturedChallenge, isNotNull);
+        // Base64url, no padding — matches oauth_pkce.dart's codeChallenge.
+        expect(capturedChallenge, isNot(contains('=')));
+        expect(
+          storage.values['metra_dropbox_access_token_v1'],
+          'access-tok-2',
+        );
+      },
+    );
+  });
 }
