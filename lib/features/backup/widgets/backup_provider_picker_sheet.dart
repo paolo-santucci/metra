@@ -43,7 +43,6 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/metra_colors.dart';
 import '../../../core/theme/metra_spacing.dart';
@@ -51,6 +50,7 @@ import '../../../core/widgets/settings/cupertino_picker_scaffold.dart';
 import '../../../domain/entities/sync_log_entity.dart';
 import '../../../l10n/app_localizations.dart';
 import 'backup_provider_labels.dart';
+import 'picker_item.dart';
 
 /// Modal bottom sheet for selecting a [SyncProvider] from [providers].
 ///
@@ -183,7 +183,7 @@ class _BackupProviderPickerSheetState extends State<BackupProviderPickerSheet> {
                     button: true,
                     label: displayName,
                     child: ExcludeSemantics(
-                      child: _ProviderPickerItem(
+                      child: PickerItem(
                         text: displayName,
                         distanceFromSelected: distance,
                       ),
@@ -193,55 +193,6 @@ class _BackupProviderPickerSheetState extends State<BackupProviderPickerSheet> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Provider picker item with distance-based typography ───────────────────────
-// Mirrors PickerItem from backup_picker_sheet_internals.dart but lives here
-// to avoid importing the data-layer BackupFileEntry transitively (NFR-07).
-
-class _ProviderPickerItem extends StatelessWidget {
-  const _ProviderPickerItem({
-    required this.text,
-    required this.distanceFromSelected,
-  });
-
-  final String text;
-  final int distanceFromSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final double fontSize;
-    final FontWeight fontWeight;
-    final double opacity;
-
-    if (distanceFromSelected == 0) {
-      fontSize = 16;
-      fontWeight = FontWeight.w500;
-      opacity = 1.0;
-    } else if (distanceFromSelected == 1) {
-      fontSize = 15;
-      fontWeight = FontWeight.w400;
-      opacity = 0.35;
-    } else {
-      fontSize = 15;
-      fontWeight = FontWeight.w400;
-      opacity = 0.18;
-    }
-
-    return Center(
-      child: Opacity(
-        opacity: opacity,
-        child: Text(
-          text,
-          style: GoogleFonts.inter(
-            fontSize: fontSize,
-            fontWeight: fontWeight,
-          ),
-          overflow: TextOverflow.ellipsis,
         ),
       ),
     );

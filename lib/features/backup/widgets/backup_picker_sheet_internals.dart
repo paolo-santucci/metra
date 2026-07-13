@@ -31,6 +31,7 @@ import '../../../core/widgets/settings/settings_divider.dart';
 import '../../../data/services/backup/backup_file_entry.dart';
 import '../../../l10n/app_localizations.dart';
 import 'backup_size_format.dart';
+import 'picker_item.dart';
 
 // ── Non-empty sheet ───────────────────────────────────────────────────────────
 
@@ -192,51 +193,6 @@ class EmptySheet extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Picker item with distance-based typography ────────────────────────────────
-
-class PickerItem extends StatelessWidget {
-  const PickerItem({
-    required this.text,
-    required this.distanceFromSelected,
-    super.key,
-  });
-
-  final String text;
-  final int distanceFromSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final double fontSize;
-    final FontWeight fontWeight;
-    final double opacity;
-
-    if (distanceFromSelected == 0) {
-      fontSize = 16;
-      fontWeight = FontWeight.w500;
-      opacity = 1.0;
-    } else if (distanceFromSelected == 1) {
-      fontSize = 15;
-      fontWeight = FontWeight.w400;
-      opacity = 0.35;
-    } else {
-      fontSize = 15;
-      fontWeight = FontWeight.w400;
-      opacity = 0.18;
-    }
-
-    return Center(
-      child: Opacity(
-        opacity: opacity,
-        child: Text(
-          text,
-          style: GoogleFonts.inter(fontSize: fontSize, fontWeight: fontWeight),
-          overflow: TextOverflow.ellipsis,
         ),
       ),
     );

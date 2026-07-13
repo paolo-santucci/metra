@@ -43,6 +43,8 @@
 //
 // No sqlite dependency — pure widget tests.
 
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -52,6 +54,7 @@ import 'package:metra/core/theme/metra_spacing.dart';
 import 'package:metra/core/theme/metra_theme.dart';
 import 'package:metra/domain/entities/sync_log_entity.dart';
 import 'package:metra/features/backup/widgets/backup_provider_picker_sheet.dart';
+import 'package:metra/features/backup/widgets/picker_item.dart';
 import 'package:metra/l10n/app_localizations.dart';
 
 // ---------------------------------------------------------------------------
@@ -696,4 +699,154 @@ void main() {
       );
     },
   );
+
+  // ── PickerItem extraction — FR-19 ─────────────────────────────────────────
+  //
+  // TASK-03: PickerItem moves from backup_picker_sheet_internals.dart to a
+  // shared lib/features/backup/widgets/picker_item.dart, and the former
+  // per-file private duplicate row widget in backup_provider_picker_sheet.dart
+  // is deleted in favour of the shared widget. Rendering is byte-identical.
+
+  testWidgets(
+    'should_render_provider_rows_using_the_shared_PickerItem_widget',
+    (tester) async {
+      await tester.pumpWidget(
+        _harness(
+          builder: (ctx) => Scaffold(
+            body: Builder(
+              builder: (innerCtx) => ElevatedButton(
+                onPressed: () => BackupProviderPickerSheet.show(
+                  innerCtx,
+                  providers: _allProviders,
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      // Every provider row is rendered via the shared PickerItem widget
+      // (deleted-contract for the former private _ProviderPickerItem).
+      expect(
+        find.byType(PickerItem),
+        findsNWidgets(_allProviders.length),
+        reason:
+            'Provider rows must render via the shared PickerItem widget — FR-19',
+      );
+
+      // Byte-identical render parity: selected row (distance 0) keeps the
+      // Inter 16 / w500 / opacity 1.0 styling the deleted
+      // _ProviderPickerItem used to produce.
+      final selectedPickerItem = tester.widget<PickerItem>(
+        find.byType(PickerItem).first,
+      );
+      expect(selectedPickerItem.distanceFromSelected, 0);
+
+      final selectedText = tester.widget<Text>(
+        find.descendant(
+          of: find.byType(PickerItem).first,
+          matching: find.byType(Text),
+        ),
+      );
+      expect(selectedText.style?.fontSize, 16.0);
+      expect(selectedText.style?.fontWeight, FontWeight.w500);
+
+      final selectedOpacity = tester.widget<Opacity>(
+        find.descendant(
+          of: find.byType(PickerItem).first,
+          matching: find.byType(Opacity),
+        ),
+      );
+      expect(selectedOpacity.opacity, 1.0);
+    },
+  );
+
+  group('PickerItem extraction — source-grep guards (FR-19)', () {
+    late String pickerItemSource;
+    late String providerPickerSheetSource;
+    late String thisTestFileSource;
+
+    setUpAll(() {
+      pickerItemSource = File(
+        'lib/features/backup/widgets/picker_item.dart',
+      ).readAsStringSync();
+      providerPickerSheetSource = File(
+        'lib/features/backup/widgets/backup_provider_picker_sheet.dart',
+      ).readAsStringSync();
+      thisTestFileSource = File(
+        'test/features/backup/backup_provider_picker_sheet_test.dart',
+      ).readAsStringSync();
+    });
+
+    test('picker_item.dart begins with the GPL-3.0 header block', () {
+      expect(
+        pickerItemSource.trimLeft(),
+        startsWith('// Copyright (C) 2026'),
+      );
+      expect(pickerItemSource, contains('GNU General Public License'));
+    });
+
+    test(
+      'picker_item.dart imports only package:flutter/* and '
+      'package:google_fonts (NFR-05) — no data/services, data/database, '
+      'drift, http, or plugin imports (G-05 auto-covers)',
+      () {
+        final importLines = pickerItemSource
+            .split('\n')
+            .where((line) => line.trim().startsWith('import '))
+            .map((line) => line.trim())
+            .toList();
+
+        expect(importLines, isNotEmpty);
+        for (final line in importLines) {
+          final isFlutterImport = line.startsWith("import 'package:flutter/");
+          final isGoogleFontsImport =
+              line == "import 'package:google_fonts/google_fonts.dart';";
+          expect(
+            isFlutterImport || isGoogleFontsImport,
+            isTrue,
+            reason: 'Unexpected import in picker_item.dart: $line',
+          );
+        }
+
+        expect(pickerItemSource.contains('data/database'), isFalse);
+        expect(pickerItemSource.contains('data/services'), isFalse);
+        expect(pickerItemSource.contains('package:drift/'), isFalse);
+        expect(pickerItemSource.contains('package:http/'), isFalse);
+      },
+    );
+
+    test(
+      'the deleted private per-file duplicate row widget is fully removed '
+      'from backup_provider_picker_sheet.dart',
+      () {
+        // Built via adjacent-literal concatenation so the contiguous
+        // identifier never appears verbatim in this test's own source (self-
+        // match avoidance) — matches the class-declaration and constructor-
+        // invocation forms, not incidental prose mentions.
+        const deletedClassDecl = '${'class _ProviderPicker'}Item';
+        const deletedConstructorCall = '${'_ProviderPicker'}Item(';
+        expect(providerPickerSheetSource.contains(deletedClassDecl), isFalse);
+        expect(
+          providerPickerSheetSource.contains(deletedConstructorCall),
+          isFalse,
+        );
+      },
+    );
+
+    test(
+      'this test file makes no code-level reference to the deleted private '
+      'per-file duplicate row widget (deleted-contract guard)',
+      () {
+        const deletedClassDecl = '${'class _ProviderPicker'}Item';
+        const deletedConstructorCall = '${'_ProviderPicker'}Item(';
+        expect(thisTestFileSource.contains(deletedClassDecl), isFalse);
+        expect(thisTestFileSource.contains(deletedConstructorCall), isFalse);
+      },
+    );
+  });
 }
