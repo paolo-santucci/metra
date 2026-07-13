@@ -628,6 +628,80 @@ void main() {
         expect(occurrences, equals(1));
       },
     );
+
+    // TASK-05 / FR-14: off-iOS iCloud fallback logs a debugPrint before returning Dropbox.
+    // Never throws (EC-09 preserved).
+    test(
+      'FR-14: iCloud off-iOS → debugPrint logs fallback message; returns Dropbox, never throws',
+      () {
+        // Capture debugPrint output by overriding it locally.
+        final logs = <String>[];
+        final originalDebugPrint = debugPrint;
+        debugPrint = (String? message, {int? wrapWidth}) {
+          if (message != null) {
+            logs.add(message);
+          }
+        };
+        addTearDown(() {
+          debugPrint = originalDebugPrint;
+        });
+
+        // debugDefaultTargetPlatformOverride intentionally NOT set →
+        // Linux default → defaultTargetPlatform != iOS.
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+
+        // Must not throw; must fall back to Dropbox and log the message.
+        final result =
+            container.read(resolveBackupProvider(SyncProvider.iCloud));
+
+        // Verify the debugPrint was called with a message containing the literal.
+        expect(
+          logs.any((msg) => msg.contains('falling back to Dropbox')),
+          true,
+          reason:
+              'Expected debugPrint to contain "falling back to Dropbox", but got: $logs',
+        );
+
+        // Verify it returns Dropbox, not iCloud.
+        expect(result, isA<CloudBackupProvider>());
+        expect(result.id, SyncProvider.dropbox);
+      },
+    );
+
+    // TASK-05 / FR-14: source-grep guards for the fallback logging implementation.
+    test(
+      'FR-14 source grep: no default: substring; single defaultTargetPlatform check; no dart:io import',
+      () async {
+        const filePath = 'lib/providers/backup_providers.dart';
+        final source = await readSourceFile(filePath);
+
+        // No 'default:' substring anywhere in the file.
+        expect(
+          source,
+          isNot(contains('default:')),
+          reason: 'File must not contain "default:" substring',
+        );
+
+        // 'defaultTargetPlatform == TargetPlatform.iOS' exactly once (line 113).
+        final platformCheckCount = 'defaultTargetPlatform == TargetPlatform.iOS'
+            .allMatches(source)
+            .length;
+        expect(
+          platformCheckCount,
+          equals(1),
+          reason:
+              'defaultTargetPlatform == TargetPlatform.iOS must appear exactly once',
+        );
+
+        // No 'dart:io' import added.
+        expect(
+          source,
+          isNot(contains("import 'dart:io'")),
+          reason: 'No dart:io import should be added',
+        );
+      },
+    );
   });
 
   // -------------------------------------------------------------------------

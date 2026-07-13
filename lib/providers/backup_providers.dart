@@ -113,6 +113,9 @@ final resolveBackupProvider =
       if (defaultTargetPlatform == TargetPlatform.iOS) {
         return ref.watch(iCloudProviderProvider);
       }
+      debugPrint(
+        '[BackupProvider] iCloud unavailable off-iOS: falling back to Dropbox',
+      );
       return ref.watch(dropboxProviderProvider);
   }
 });
