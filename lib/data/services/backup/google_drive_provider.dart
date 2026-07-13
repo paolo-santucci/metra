@@ -22,7 +22,6 @@ import 'dart:developer' as developer;
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:http/http.dart' as http;
@@ -31,6 +30,7 @@ import '../../../core/errors/metra_exception.dart';
 import '../../../domain/entities/sync_log_entity.dart';
 import 'backup_file_entry.dart';
 import 'cloud_backup_provider.dart';
+import 'oauth_pkce.dart';
 
 class GoogleDriveProvider implements CloudBackupProvider {
   GoogleDriveProvider({
@@ -85,9 +85,16 @@ class GoogleDriveProvider implements CloudBackupProvider {
 
   @override
   Future<void> authorize() async {
-    final verifier = _generateCodeVerifier();
-    final challenge = _codeChallenge(verifier);
-    _oauthState = _generateOauthState();
+    // Defensively reset the session-lived memo fields before starting a new
+    // OAuth round-trip — guards against a caller re-authorizing (e.g.
+    // switching Google accounts) without a clean disconnect() having run
+    // first (FR-22 / L3, SVC-BUG-102).
+    _cachedEmail = null;
+    _folderId = null;
+
+    final verifier = generateCodeVerifier(_random);
+    final challenge = codeChallenge(verifier);
+    _oauthState = generateOauthState(_random);
 
     final authUrl = Uri.https('accounts.google.com', '/o/oauth2/v2/auth', {
       'client_id': _clientId,
@@ -194,9 +201,11 @@ class GoogleDriveProvider implements CloudBackupProvider {
         name: 'GoogleDriveProvider',
       );
     }
-    // Offline / lookup failure: a provider label is better than an empty
-    // Account row, and the next call retries the lookup.
-    return 'Google Drive';
+    // Offline / lookup failure / missing-email / non-200: null is the sole
+    // failure sentinel (FR-13) — the caller maps it to a retryable
+    // SyncException('Could not fetch account'). Never memoized: the next
+    // call retries the lookup.
+    return null;
   }
 
   @override
@@ -207,11 +216,21 @@ class GoogleDriveProvider implements CloudBackupProvider {
         await _client.post(
           Uri.https('oauth2.googleapis.com', '/revoke', {'token': token}),
         );
-        // ignore: empty_catches — revoke is best-effort; tokens are wiped below
-      } catch (_) {}
+      } catch (e) {
+        // Best-effort: revoke failure never blocks the local token wipe
+        // below.
+        developer.log(
+          'disconnect: revoke failed: ${e.runtimeType}',
+          name: 'GoogleDriveProvider',
+        );
+      }
     }
     await _storage.delete(key: _accessTokenKey);
     await _storage.delete(key: _refreshTokenKey);
+    // Session-lived memo fields are only valid for the connection that just
+    // ended (FR-22 / L3, SVC-BUG-102).
+    _cachedEmail = null;
+    _folderId = null;
   }
 
   @override
@@ -529,7 +548,14 @@ class GoogleDriveProvider implements CloudBackupProvider {
         final map = e as Map<String, dynamic>;
         if (map['reason'] == 'storageQuotaExceeded') return true;
       }
-    } catch (_) {}
+    } catch (e) {
+      // Malformed JSON body: fail closed (not a quota error) rather than
+      // letting the parse error escape the 403-handling path in upload().
+      developer.log(
+        '_isStorageQuotaExceeded: malformed response body: $e',
+        name: 'GoogleDriveProvider',
+      );
+    }
     return false;
   }
 
@@ -591,26 +617,5 @@ class GoogleDriveProvider implements CloudBackupProvider {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
     return List.generate(24, (_) => chars[_random.nextInt(chars.length)])
         .join();
-  }
-
-  String _generateOauthState() {
-    final bytes = List<int>.generate(16, (_) => _random.nextInt(256));
-    return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-  }
-
-  String _generateCodeVerifier() {
-    const chars =
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
-    return List.generate(64, (_) => chars[_random.nextInt(chars.length)])
-        .join();
-  }
-
-  String _codeChallenge(String verifier) {
-    final digest = sha256.convert(utf8.encode(verifier)).bytes;
-    return base64Url
-        .encode(digest)
-        .replaceAll('=', '')
-        .replaceAll('+', '-')
-        .replaceAll('/', '_');
   }
 }
