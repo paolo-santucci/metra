@@ -113,8 +113,13 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
   void initState() {
     super.initState();
     // Best-effort: initialize notification channels. Failures are non-fatal
-    // (e.g. test environments without a platform channel).
-    _initNotificationsAndVerifyPermission().catchError((Object _) {});
+    // (e.g. test environments without a platform channel). FR-10
+    // (code-review-10-findings SP): log a diagnostic so real-device
+    // regressions are visible in device logs; the handler stays
+    // Object-typed, never rethrows, and returns void (HC-8).
+    _initNotificationsAndVerifyPermission().catchError((Object e) {
+      debugPrint('[initNotifications] catchError: $e');
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _autoSyncIfConfigured();
     });
@@ -140,8 +145,11 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
       final locale = resolveLocaleFromPlatform(settings.languageCode);
       final l10n = await AppLocalizations.delegate.load(locale);
       channelName = l10n.notification_channel_name;
-    } catch (_) {
-      // Settings/l10n unavailable at cold-start — brand-neutral fallback (EC-20).
+    } catch (e) {
+      // Settings/l10n unavailable at cold-start — brand-neutral fallback
+      // (EC-20). FR-10 (code-review-10-findings SP): log a diagnostic so
+      // this silent path is visible in device logs.
+      debugPrint('[initNotifications] fallback: $e');
     }
     await ref.read(notificationServiceProvider).initialize(channelName);
     await _verifyNotificationPermissionOnColdStart();
