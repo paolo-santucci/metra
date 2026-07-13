@@ -10,8 +10,10 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/errors/metra_exception.dart';
 import '../../../core/utils/result.dart';
 import '../../../data/services/backup/backup_filename.dart';
+import '../../../data/services/backup/cloud_backup_provider.dart';
 import '../../../domain/entities/app_settings_data.dart';
 import '../../../domain/entities/sync_log_entity.dart';
+import '../../../domain/repositories/app_settings_repository.dart';
 import '../../../providers/backup_providers.dart';
 import '../../../providers/encryption_provider.dart';
 import '../../../providers/repository_providers.dart';
@@ -30,14 +32,52 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
   // Keep the private alias to avoid changing every internal call-site.
   static const _passphraseKey = kPassphraseKey;
 
-  /// True while [switchProvider] is mid-flight.
+  /// The [BackupOperation] currently mid-flight, or `null` when idle
+  /// (TASK-06, FR-08/FR-09).
   ///
-  /// The Drift writes at switch steps 6–7 re-emit [appSettingsStreamProvider]
-  /// and re-trigger [build] before the new provider is authorized; deriving
-  /// state from those half-written settings (activeProvider flipped, email
-  /// null) would flash [BackupNotConnected] over the switching overlay.
-  /// While set, [build] returns [BackupRunning] instead.
-  bool _switchInFlight = false;
+  /// Unifies the re-entrancy/overlay guard across [firstConnect],
+  /// [disconnect], and [switchProvider] — previously only [switchProvider]
+  /// tracked this (as a `bool`), which meant (a) [build] always reported a
+  /// hardcoded [BackupOperation.switching] regardless of which operation was
+  /// actually running, and (b) [firstConnect]/[disconnect] had no
+  /// re-entrancy guard at all.
+  ///
+  /// The Drift writes each of these three flows performs re-emit
+  /// [appSettingsStreamProvider] and re-trigger [build] before the flow
+  /// itself has finished (e.g. before the terminal passphrase-key wipe or
+  /// `ref.invalidateSelf()`); deriving state from those half-written
+  /// settings would flash the wrong state over the running overlay. While
+  /// set, [build] returns `BackupRunning(_inFlightOperation!)` instead — the
+  /// ACTUAL operation, not a hardcoded value.
+  ///
+  /// Set in a `try` and cleared to `null` in `finally` on every exit path of
+  /// all three methods (FR-09) — never left non-null after a method returns,
+  /// so the UI can never wedge in [BackupRunning] indefinitely (D4).
+  BackupOperation? _inFlightOperation;
+
+  /// Memoization key/value pair for the iCloud container probe (FR-15).
+  ///
+  /// `_iCloudProbeKey` records the `activeProvider` the memo was computed
+  /// for; `_iCloudProbeMemo` holds the last probe result. A `false`
+  /// (signed-out/unavailable) result is deliberately NEVER memoized — only
+  /// `true` is ever stored — so a user who re-signs into iCloud mid-session
+  /// is picked up on the very next call rather than waiting for an explicit
+  /// connect/disconnect/switch (EC-07).
+  ///
+  /// Invalidated (both set to `null`) at first-connect / disconnect / switch
+  /// (FR-16, [_invalidateICloudProbeMemo]) and on backup/restore failure
+  /// (FR-23) — see the `Err` branches of [_runBackup] and [restore]. A
+  /// successful backup/restore does NOT invalidate the memo (FR-23 negative
+  /// case): only failure signals the container may have become unreachable.
+  SyncProvider? _iCloudProbeKey;
+  bool? _iCloudProbeMemo;
+
+  /// Clears the iCloud probe memo (FR-16/FR-23) so the next [_isConnected]
+  /// call re-probes the container instead of returning a stale cached value.
+  void _invalidateICloudProbeMemo() {
+    _iCloudProbeKey = null;
+    _iCloudProbeMemo = null;
+  }
 
   /// Single derivation point for the "is a backup provider connected?"
   /// predicate (FR-15).
@@ -47,7 +87,9 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
   ///     preserving the pre-M3 behaviour exactly (zero regression).
   ///   - iCloud → idempotent container probe via [CloudBackupProvider.authorize];
   ///     a [SyncException] means signed-out/unavailable (NFR-06); the catch is
-  ///     LOCAL — no exception may escape [build()] (EC-07).
+  ///     LOCAL — no exception may escape [build()] (EC-07). The probe is
+  ///     memoized keyed on `activeProvider` (FR-15) — see [_iCloudProbeKey] /
+  ///     [_iCloudProbeMemo]; a `false` result is never memoized (EC-07).
   ///
   /// Not `activeProvider != null` — that defaults to dropbox and is never null.
   Future<bool> _isConnected(AppSettingsData settings) async {
@@ -56,10 +98,24 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
       case SyncProvider.googleDrive:
         return settings.dropboxEmail != null; // unchanged sentinel (FR-19)
       case SyncProvider.iCloud:
+        // FR-15: return the memoized result when it was computed for the
+        // SAME activeProvider — repeated settings emissions that leave
+        // activeProvider unchanged (e.g. a daily-log save bumping
+        // lastLogOrSymptomWriteAt) must not re-run the probe (NFR-07).
+        if (_iCloudProbeKey == settings.activeProvider &&
+            _iCloudProbeMemo != null) {
+          return _iCloudProbeMemo!;
+        }
         try {
           await ref.read(cloudBackupProvider).authorize(); // container probe
+          _iCloudProbeKey = settings.activeProvider;
+          _iCloudProbeMemo = true;
           return true;
         } on SyncException {
+          // EC-07: a probe failure is NEVER memoized as connected — leave
+          // the memo cleared so the very next call re-probes.
+          _iCloudProbeKey = null;
+          _iCloudProbeMemo = null;
           return false; // signed-out → not connected (NFR-06)
         }
     }
@@ -75,11 +131,13 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     // getOrCreate(), which always returns the current DB/in-memory state and
     // is not subject to stream-lag between the emission and the read.
     await ref.watch(appSettingsStreamProvider.future);
-    // Mid-switch rebuilds must not read the half-written settings produced by
-    // switchProvider steps 6–7 — hold the switching overlay until the switch
-    // finishes (its finally clears the flag before the final invalidateSelf).
-    if (_switchInFlight) {
-      return const BackupRunning(BackupOperation.switching);
+    // Mid-operation rebuilds must not read the half-written settings any of
+    // firstConnect/disconnect/switchProvider's Drift writes produce — hold
+    // the running overlay, reporting the ACTUAL in-flight operation (FR-08),
+    // until the flow finishes (its finally clears the flag before the final
+    // invalidateSelf / return).
+    if (_inFlightOperation != null) {
+      return BackupRunning(_inFlightOperation!);
     }
     final settingsRepo = await ref.read(appSettingsRepositoryProvider.future);
     final settings = await settingsRepo.getOrCreate();
@@ -102,43 +160,105 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     );
   }
 
-  Future<void> connect() async {
+  /// Shared handshake for both [firstConnect] and [switchProvider]'s
+  /// post-flip step (FR-01): authorize → currentEmail → best-effort
+  /// `listFiles` → `updateBackupState` → `clearBackupSuspended`.
+  ///
+  /// Takes an already-resolved [provider] and [settingsRepo] rather than
+  /// resolving [target] / reading the repository itself. BOTH callers
+  /// resolve exclusively via [resolveBackupProvider] (CC-2) — NEVER
+  /// [cloudBackupProvider], which is keyed off the (possibly stale)
+  /// persisted `activeProvider` and would race the Drift stream mid-switch —
+  /// so CC-2 holds end-to-end even though the resolution call itself lives
+  /// at the call site, not in this method.
+  ///
+  /// This split is deliberate (BUG-01 ref-hoist): [switchProvider] must
+  /// resolve the new provider AND the settings repository BEFORE its steps
+  /// 6–7 Drift writes, exactly like the pre-refactor code did — calling
+  /// `ref.read` for EITHER one AFTER those writes throws a Riverpod "ref
+  /// used after dependency changed but before rebuild" assertion once
+  /// `appSettingsStreamProvider` re-emits (regression-guarded by
+  /// `backup_switch_flow_integration_test.dart` I-08/I-09). Folding either
+  /// read into this shared method would silently reintroduce that crash for
+  /// the switchProvider caller, so both callers hoist both reads themselves
+  /// and pass the resolved instances in.
+  ///
+  /// Never reads, writes, or deletes [kPassphraseKey] — the G-02/G-04
+  /// source-grep guards enforce that invariant and also require this method
+  /// to be defined outside the [switchProvider]→[backupWithPassphrase]
+  /// marker span.
+  ///
+  /// Failure contract: [CloudBackupProvider.authorize] throwing, or the
+  /// null-email guard throwing, propagates to the caller with NO Drift
+  /// write performed — the caller ([firstConnect] / [switchProvider])
+  /// converts the exception to [BackupErrorState]. A `listFiles()` failure
+  /// is best-effort only: it is swallowed and does not block
+  /// `updateBackupState` / `clearBackupSuspended` (EC-04).
+  Future<void> _completeProviderHandshake(
+    SyncProvider target,
+    CloudBackupProvider provider,
+    AppSettingsRepository settingsRepo,
+  ) async {
+    await provider.authorize();
+    final email = await provider.currentEmail();
+    // iCloud has no email; only fail on null for OAuth-based providers (FR-16).
+    if (email == null && target != SyncProvider.iCloud) {
+      throw const SyncException('Could not fetch account');
+    }
+    DateTime? discoveredLastBackupAt;
+    try {
+      final files = await provider.listFiles(); // sorted desc, newest first
+      if (files.isNotEmpty) {
+        discoveredLastBackupAt =
+            BackupFilename.parseTimestamp(files.first.name);
+      }
+    } catch (e) {
+      debugPrint(
+        '[BackupNotifier._completeProviderHandshake] listFiles() error '
+        '(best-effort): $e',
+      );
+      // best-effort: listing failure does not abort the handshake
+    }
+    await settingsRepo.updateBackupState(
+      dropboxEmail: email,
+      lastBackupAt: discoveredLastBackupAt,
+    );
+    // BUG-B04: clear the post-wipe suspended sentinel before invalidating.
+    // Without this, a delete-all → reconnect sequence leaves backupSuspended=true,
+    // which would make the Stato label show "non attivo" after reconnect even
+    // when the user enters a passphrase.
+    await settingsRepo.clearBackupSuspended();
+  }
+
+  /// Dedicated first-connect entry point (BUG-B06 restoration, FR-02/FR-03).
+  ///
+  /// Invoked ONLY by the empty-view CTA — never by [switchProvider], which
+  /// must stay passphrase-free (FR-13/CC-1). Runs [_completeProviderHandshake]
+  /// then performs the BUG-B06 stale-passphrase wipe as its terminal
+  /// secure-storage op, strictly AFTER `clearBackupSuspended` (HC-2
+  /// ordering), then invalidates self so [build] re-derives the connected
+  /// state. Defined outside the [switchProvider]→[backupWithPassphrase]
+  /// marker span (G-02/G-04).
+  Future<void> firstConnect(SyncProvider target) async {
+    // TASK-06 re-entrancy guard (FR-09): reject if ANY operation
+    // (connect/disconnect/switch) is already in flight.
+    if (_inFlightOperation != null) return;
+    // FR-16: unconditionally clear the iCloud probe memo — a first-connect
+    // attempt must never be answered from a stale cached probe result, even
+    // when target already equals the current activeProvider.
+    _invalidateICloudProbeMemo();
+    _inFlightOperation = BackupOperation.connecting;
     state = const AsyncData(BackupRunning(BackupOperation.connecting));
     try {
-      final provider = ref.read(cloudBackupProvider);
-      await provider.authorize();
-      final email = await provider.currentEmail();
-      // iCloud has no email; only fail on null for OAuth-based providers (FR-16).
-      if (email == null && provider.id != SyncProvider.iCloud) {
-        throw const SyncException('Could not fetch account');
-      }
-      final settingsRepo = await ref.read(appSettingsRepositoryProvider.future);
-      // BUG-02 (defensive): capture secureStorageProvider BEFORE any Drift write
-      // so ref.read cannot fire after the notifier is marked dirty by a
-      // stream re-emission (same structural hazard as BUG-01 in switchProvider).
+      // BUG-01/02: hoist the SecureStorage handle, the resolved provider,
+      // AND the settings repository via ref.read BEFORE the handshake's
+      // first Drift write, so ref.read cannot fire after the notifier is
+      // marked dirty by a stream re-emission (same structural hazard as
+      // BUG-01 in switchProvider).
       final storage = ref.read(secureStorageProvider);
-      DateTime? discoveredLastBackupAt;
-      try {
-        final files = await provider.listFiles(); // sorted desc, newest first
-        if (files.isNotEmpty) {
-          discoveredLastBackupAt =
-              BackupFilename.parseTimestamp(files.first.name);
-        }
-      } catch (e) {
-        debugPrint(
-          '[BackupNotifier.connect] listFiles() error (best-effort): $e',
-        );
-        // best-effort: listing failure does not abort the connect flow
-      }
-      await settingsRepo.updateBackupState(
-        dropboxEmail: email,
-        lastBackupAt: discoveredLastBackupAt,
-      );
-      // BUG-B04: clear the post-wipe suspended sentinel before invalidating.
-      // Without this, a delete-all → reconnect sequence leaves backupSuspended=true,
-      // which would make the Stato label show "non attivo" after reconnect even
-      // when the user enters a passphrase.
-      await settingsRepo.clearBackupSuspended();
+      final provider = ref.read(resolveBackupProvider(target));
+      final settingsRepo = await ref.read(appSettingsRepositoryProvider.future);
+      await _completeProviderHandshake(target, provider, settingsRepo);
       // BUG-B06: wipe any passphrase left in iOS Keychain / Android EncryptedSharedPrefs
       // from a prior install. KeychainAccessibility.first_unlock items survive app
       // uninstall on iOS; EncryptedSharedPreferences survive on Android API 23+.
@@ -150,7 +270,7 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
       await storage.delete(key: _passphraseKey);
       ref.invalidateSelf();
     } catch (e) {
-      debugPrint('[BackupNotifier.connect] ${e.runtimeType}: $e');
+      debugPrint('[BackupNotifier.firstConnect] ${e.runtimeType}: $e');
       state = AsyncData(
         BackupErrorState(
           e is MetraException
@@ -158,10 +278,20 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
               : 'Something went wrong. Please try again.',
         ),
       );
+    } finally {
+      _inFlightOperation = null;
     }
   }
 
   Future<void> disconnect() async {
+    // TASK-06 re-entrancy guard (FR-09): reject if ANY operation
+    // (connect/disconnect/switch) is already in flight.
+    if (_inFlightOperation != null) return;
+    // FR-16: clear the iCloud probe memo — otherwise a later reconnect to
+    // iCloud (activeProvider flips back to iCloud) could observe a stale
+    // memoized value instead of re-probing the container.
+    _invalidateICloudProbeMemo();
+    _inFlightOperation = BackupOperation.disconnecting;
     state = const AsyncData(BackupRunning(BackupOperation.disconnecting));
     try {
       final dropbox = ref.read(cloudBackupProvider);
@@ -195,26 +325,38 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
               : 'Something went wrong. Please try again.',
         ),
       );
+    } finally {
+      _inFlightOperation = null;
     }
   }
 
   /// Switches the active backup provider from the current one to [target].
   ///
   /// Ordered contract (spec §5.1):
-  ///   1. Re-entrancy guard: return immediately if [BackupRunning].
+  ///   1. Re-entrancy guard: return immediately if any operation
+  ///      (connect/disconnect/switch) is already in flight (TASK-06,
+  ///      FR-09) — i.e. [_inFlightOperation] is non-null.
   ///   2. Platform guard: assert [target] is in [availableProviders].
   ///   3. Set state → [BackupRunning(BackupOperation.switching)].
-  ///   4. Read old provider via [resolveBackupProvider(settings.activeProvider)].
+  ///   4. Read the settings repository, old AND new provider (via
+  ///      [resolveBackupProvider]) — all BEFORE any Drift mutation (BUG-01
+  ///      ref-hoist — see step 8 note).
   ///   5. **Abort gate**: [old.disconnect()]; on throw → [BackupErrorState], return;
   ///      activeProvider unchanged, target never authorized (FR-11).
   ///   6. [setActiveProvider(target)] — the flip.
   ///   7. Clear identity: [updateBackupState(null, null)].
-  ///   8. Resolve new provider via [resolveBackupProvider(target)].
-  ///      MUST NOT use [cloudBackupProvider] here — it still points to the old
-  ///      provider until the Drift stream re-emits (CC-2 stale-read hazard).
-  ///   9. Authorize + currentEmail + best-effort listFiles.
-  ///  10. updateBackupState + clearBackupSuspended.
-  ///  11. On post-flip failure (steps 9–10 throw) → [BackupErrorState], return.
+  ///   8. New provider and settings repository already resolved at step 4 —
+  ///      MUST NOT be re-resolved/re-read here. [cloudBackupProvider] must
+  ///      never be used (CC-2 stale-read — it still points to the old
+  ///      provider until the Drift stream re-emits) — but re-reading even
+  ///      [resolveBackupProvider] or [appSettingsRepositoryProvider] at this
+  ///      point throws a Riverpod ref-after-dependency-changed assertion once
+  ///      the steps 6–7 writes have re-emitted `appSettingsStreamProvider`
+  ///      (BUG-01). Hoisting at step 4 sidesteps both hazards.
+  ///   9–10. Authorize + currentEmail + best-effort listFiles + updateBackupState
+  ///      + clearBackupSuspended — delegated to [_completeProviderHandshake]
+  ///      (FR-01), the same helper [firstConnect] uses.
+  ///  11. On post-flip failure ([_completeProviderHandshake] throws) → [BackupErrorState], return.
   ///      No rollback — activeProvider stays [target] (OQ-01, architect decision).
   ///      The next [build()] observes target with no email → [BackupNotConnected],
   ///      giving the user a clean retry surface.
@@ -222,12 +364,19 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
   ///
   /// Security invariants (FR-13, CC-1):
   ///   - Never reads, writes, or deletes [kPassphraseKey].
-  ///   - Never calls the notifier's own [connect()] / [disconnect()] — both
+  ///   - Never calls the notifier's own [firstConnect] / [disconnect] — both
   ///     delete the passphrase key.
   ///   - Never calls [old.deleteFile] — old .enc files are left intact.
   Future<void> switchProvider(SyncProvider target) async {
-    // Step 1: re-entrancy guard — a switch already in progress takes priority.
-    if (state.valueOrNull is BackupRunning) return;
+    // Step 1: re-entrancy guard (TASK-06, FR-09) — reject if ANY operation
+    // (connect/disconnect/switch) is already in flight, not just a same-type
+    // switch.
+    if (_inFlightOperation != null) return;
+
+    // FR-16: clear the iCloud probe memo — otherwise a later switch back to
+    // iCloud (activeProvider flips back to iCloud) could observe a stale
+    // memoized value instead of re-probing the container.
+    _invalidateICloudProbeMemo();
 
     // Step 2: platform guard — iCloud is iOS-only (availableProviders enforces it).
     assert(availableProviders(defaultTargetPlatform).contains(target));
@@ -241,18 +390,17 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     // BackupNotConnected from the half-written settings and the connect view
     // flashes over the switching overlay.  Error paths return from inside the
     // try, so the finally clears the flag on every exit.
-    _switchInFlight = true;
+    _inFlightOperation = BackupOperation.switching;
     try {
       // Step 4: read BOTH the old and new providers BEFORE any Drift mutation.
-      // BUG-01 fix: the previous code read resolveBackupProvider(target) at step 8,
-      // after settingsRepo.setActiveProvider() and settingsRepo.updateBackupState()
-      // had already written to Drift, causing the appSettingsStreamProvider to
-      // re-emit and mark BackupNotifier dirty — the subsequent ref.read then
-      // threw a Riverpod assertion (CC-2 stale-read hazard).
-      // Hoisting both reads here is safe: resolveBackupProvider resolves by its
-      // 'id' argument (not by reactive settings), so capturing newProvider before
-      // the flip returns the same instance that step-8 would have returned — the
-      // CC-2 invariant is preserved.
+      // BUG-01: resolving resolveBackupProvider(target) AFTER the steps 6–7
+      // Drift writes throws a Riverpod assertion once appSettingsStreamProvider
+      // re-emits and marks BackupNotifier dirty (regression-guarded by
+      // backup_switch_flow_integration_test.dart I-08/I-09). Hoisting both
+      // reads here is safe: resolveBackupProvider resolves by its 'id'
+      // argument (not by reactive settings), so capturing newProvider before
+      // the flip returns the same instance a post-flip read would have
+      // returned — the CC-2 invariant is preserved.
       final settingsRepo = await ref.read(appSettingsRepositoryProvider.future);
       final settings = await settingsRepo.getOrCreate();
       final old = ref.read(resolveBackupProvider(settings.activeProvider));
@@ -285,37 +433,14 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
         lastBackupAt: null,
       );
 
-      // Step 8: newProvider already captured at step 4 (hoisted before any Drift
-      // mutation for CC-2 safety — see BUG-01 fix comment above).
-
-      // Steps 9–11: post-flip connect sequence.  Any exception here does NOT roll back
-      // activeProvider (OQ-01 architect decision) — the next build() will observe target
-      // with no email and yield BackupNotConnected, giving the user a clean retry surface.
+      // Steps 8–11: post-flip connect sequence delegates to the same handshake
+      // firstConnect uses (FR-01), fed with the provider hoisted at step 4
+      // (BUG-01) — never touches the passphrase key (FR-13/G-02/G-04). Any
+      // exception here does NOT roll back activeProvider (OQ-01 architect
+      // decision) — the next build() will observe target with no email and
+      // yield BackupNotConnected, giving the user a clean retry surface.
       try {
-        await newProvider.authorize();
-        final email = await newProvider.currentEmail();
-        // iCloud has no email — only fail on null for OAuth-based providers (EC-08).
-        if (email == null && target != SyncProvider.iCloud) {
-          throw const SyncException('Could not fetch account');
-        }
-        DateTime? discoveredLastBackupAt;
-        try {
-          final files = await newProvider.listFiles();
-          if (files.isNotEmpty) {
-            discoveredLastBackupAt =
-                BackupFilename.parseTimestamp(files.first.name);
-          }
-        } catch (e) {
-          debugPrint(
-            '[BackupNotifier.switchProvider] listFiles() error (best-effort): $e',
-          );
-          // best-effort: list failure does not abort the switch flow
-        }
-        await settingsRepo.updateBackupState(
-          dropboxEmail: email,
-          lastBackupAt: discoveredLastBackupAt,
-        );
-        await settingsRepo.clearBackupSuspended();
+        await _completeProviderHandshake(target, newProvider, settingsRepo);
       } catch (e) {
         debugPrint(
           '[BackupNotifier.switchProvider] post-flip failure — $e; '
@@ -331,7 +456,7 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
         return;
       }
     } finally {
-      _switchInFlight = false;
+      _inFlightOperation = null;
     }
 
     // Step 12: trigger build() with the new settings (the guard is already
@@ -364,12 +489,14 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     // Write the new passphrase so the orchestrator picks it up during backup.
     await storage.write(key: _passphraseKey, value: passphrase);
 
-    await _runBackup();
+    final succeeded = await _runBackup();
 
-    // If the backup failed, _runBackup sets an error state but does not throw.
-    // We must detect the failure by inspecting state and restore the old value.
-    final currentState = state.valueOrNull;
-    if (currentState is BackupErrorState) {
+    // FR-20 (L1/FEAT-BUG-003 TOCTOU fix): key the rollback decision off the
+    // bool _runBackup() returned, not a post-hoc `state.valueOrNull is
+    // BackupErrorState` inspection — the latter races against any concurrent
+    // rebuild that mutates `state` between the call above returning and this
+    // check running (e.g. a concurrent appSettingsStreamProvider emission).
+    if (!succeeded) {
       if (oldPassphrase != null) {
         await storage.write(key: _passphraseKey, value: oldPassphrase);
       } else {
@@ -379,6 +506,19 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
   }
 
   Future<void> backupSilent() async {
+    // FR-21 (L2/FEAT-BUG-004 cold-start fix): resolve build() BEFORE
+    // evaluating the guards below. Without this, a cold-start invocation
+    // racing ahead of the first build() (state still AsyncLoading,
+    // valueOrNull == null) sees neither guard match — null is not
+    // BackupRunning, null is not BackupNotConnected — so both guards are
+    // vacuous and execution falls through into the write-recency check
+    // using data read directly off the repository, bypassing whatever
+    // build() would have derived. Concretely this let backupSilent() run
+    // (and, per FR-06, misattribute a backupSkipped entry to the dropbox
+    // sentinel) right after an iCloud disconnect, before the very first
+    // build() had resolved BackupNotConnected. Awaiting `future` blocks
+    // until build() completes, making the guards non-vacuous.
+    await future;
     if (state.valueOrNull is BackupRunning) return;
     // Not configured: no account is connected, so there is nowhere to back up.
     // Without this guard, a passphrase left in secure storage after Dropbox
@@ -453,12 +593,18 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
   /// - Never writes to secure storage (FR-19 invariant).
   ///
   /// Guard order:
+  ///   0. Resolve `future` (FR-21) — makes guards 1/2 non-vacuous during a
+  ///      cold-start `AsyncLoading` race.
   ///   1. BackupRunning  → no-op (re-entrancy guard)
   ///   2. BackupNotConnected → no-op (no account)
   ///   3. backupSuspended → log skip entry, return
   ///   4. null passphrase → silent return
   ///   5. → _runBackup()
   Future<void> backupNow() async {
+    // FR-21 (L2/FEAT-BUG-004 cold-start fix): resolve build() BEFORE
+    // evaluating the guards below — same rationale as backupSilent() above.
+    await future;
+
     // Guard 1: already running.
     if (state.valueOrNull is BackupRunning) return;
 
@@ -486,7 +632,25 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     await _runBackup();
   }
 
-  Future<void> _runBackup() async {
+  /// Runs the backup orchestrator and returns whether it succeeded.
+  ///
+  /// Returns `true` on the [Ok] branch, `false` on the [Err] branch (state is
+  /// still set to [BackupErrorState] on `Err`, unchanged) or if the
+  /// orchestrator throws.
+  ///
+  /// FR-20 (L1/FEAT-BUG-003 TOCTOU fix): callers that need to know whether
+  /// the backup succeeded — [backupWithPassphrase]'s rollback decision — MUST
+  /// use this returned bool, never `state.valueOrNull is BackupErrorState`.
+  /// Inspecting `state` after the fact is racy: a concurrent rebuild (e.g.
+  /// triggered by an unrelated `appSettingsStreamProvider` emission) can
+  /// mutate `state` between this method returning and the caller's
+  /// inspection, making a genuine success look like a failure (or vice
+  /// versa). The returned bool is captured at the one point that is
+  /// guaranteed to reflect this specific call's outcome.
+  ///
+  /// Stays private — [_runBackup] must have zero call sites outside this
+  /// file (G3 source-grep guard).
+  Future<bool> _runBackup() async {
     state = const AsyncData(BackupRunning(BackupOperation.backingUp));
     try {
       final uc = await ref.read(backupDataProvider.future);
@@ -494,8 +658,15 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
       switch (result) {
         case Ok():
           ref.invalidateSelf();
+          return true;
         case Err(:final error):
           state = AsyncData(BackupErrorState(error.message));
+          // FR-23: a backup failure is the only remaining signal (once the
+          // probe is memoized) that the iCloud container may have become
+          // unreachable mid-session — invalidate so the next _isConnected
+          // call re-probes instead of keeping a stale `true`.
+          _invalidateICloudProbeMemo();
+          return false;
       }
     } catch (e) {
       state = AsyncData(
@@ -505,6 +676,7 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
               : 'Something went wrong. Please try again.',
         ),
       );
+      return false;
     }
   }
 
@@ -528,6 +700,9 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
           return value; // propagate count to caller
         case Err(:final error):
           state = AsyncData(BackupErrorState(error.message));
+          // FR-23: same rationale as _runBackup's Err branch — a restore
+          // failure invalidates the iCloud probe memo.
+          _invalidateICloudProbeMemo();
           return null;
       }
     } catch (e) {
