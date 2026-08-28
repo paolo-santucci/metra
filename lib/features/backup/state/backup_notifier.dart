@@ -439,12 +439,14 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     // Write the new passphrase so the orchestrator picks it up during backup.
     await storage.write(key: _passphraseKey, value: passphrase);
 
-    await _runBackup();
+    final succeeded = await _runBackup();
 
-    // If the backup failed, _runBackup sets an error state but does not throw.
-    // We must detect the failure by inspecting state and restore the old value.
-    final currentState = state.valueOrNull;
-    if (currentState is BackupErrorState) {
+    // FR-20 (L1/FEAT-BUG-003 TOCTOU fix): key the rollback decision off the
+    // bool _runBackup() returned, not a post-hoc `state.valueOrNull is
+    // BackupErrorState` inspection — the latter races against any concurrent
+    // rebuild that mutates `state` between the call above returning and this
+    // check running (e.g. a concurrent appSettingsStreamProvider emission).
+    if (!succeeded) {
       if (oldPassphrase != null) {
         await storage.write(key: _passphraseKey, value: oldPassphrase);
       } else {
@@ -563,7 +565,25 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     await _runBackup();
   }
 
-  Future<void> _runBackup() async {
+  /// Runs the backup orchestrator and returns whether it succeeded.
+  ///
+  /// Returns `true` on the [Ok] branch, `false` on the [Err] branch (state is
+  /// still set to [BackupErrorState] on `Err`, unchanged) or if the
+  /// orchestrator throws.
+  ///
+  /// FR-20 (L1/FEAT-BUG-003 TOCTOU fix): callers that need to know whether
+  /// the backup succeeded — [backupWithPassphrase]'s rollback decision — MUST
+  /// use this returned bool, never `state.valueOrNull is BackupErrorState`.
+  /// Inspecting `state` after the fact is racy: a concurrent rebuild (e.g.
+  /// triggered by an unrelated `appSettingsStreamProvider` emission) can
+  /// mutate `state` between this method returning and the caller's
+  /// inspection, making a genuine success look like a failure (or vice
+  /// versa). The returned bool is captured at the one point that is
+  /// guaranteed to reflect this specific call's outcome.
+  ///
+  /// Stays private — [_runBackup] must have zero call sites outside this
+  /// file (G3 source-grep guard).
+  Future<bool> _runBackup() async {
     state = const AsyncData(BackupRunning(BackupOperation.backingUp));
     try {
       final uc = await ref.read(backupDataProvider.future);
@@ -571,8 +591,10 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
       switch (result) {
         case Ok():
           ref.invalidateSelf();
+          return true;
         case Err(:final error):
           state = AsyncData(BackupErrorState(error.message));
+          return false;
       }
     } catch (e) {
       state = AsyncData(
@@ -582,6 +604,7 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
               : 'Something went wrong. Please try again.',
         ),
       );
+      return false;
     }
   }
 

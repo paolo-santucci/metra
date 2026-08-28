@@ -40,6 +40,7 @@
 //
 // Platform matrix: all (Linux CI — no device required).
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -79,6 +80,24 @@ import '../../helpers/in_memory_secure_storage.dart';
 class _OkRunner implements BackupRunner {
   @override
   Future<void> backup() async {}
+
+  @override
+  Future<int> restore({String? filename}) async => 0;
+}
+
+/// A [BackupRunner] whose [backup] does not resolve until [_completer]
+/// completes — lets Group K (TASK-09) stage a state mutation while
+/// `_runBackup()`'s underlying orchestrator call is still pending, then
+/// release it to resolve `Ok()`.
+class _CompleterGatedRunner implements BackupRunner {
+  _CompleterGatedRunner(this._completer);
+
+  final Completer<void> _completer;
+
+  @override
+  Future<void> backup() async {
+    await _completer.future;
+  }
 
   @override
   Future<int> restore({String? filename}) async => 0;
@@ -180,10 +199,7 @@ List<String> _grepDartFiles(List<String> dirs, RegExp pattern) {
   return hits;
 }
 
-const _backupAndSettings = [
-  'lib/features/backup',
-  'lib/core/widgets/settings',
-];
+const _backupAndSettings = ['lib/features/backup', 'lib/core/widgets/settings'];
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -334,73 +350,68 @@ void main() {
       );
     }
 
-    testWidgets(
-      'should_not_crash_when_state_is_BackupNotConnected',
-      (tester) async {
-        tester.view.physicalSize = const Size(800, 4000);
-        addTearDown(() => tester.view.resetPhysicalSize());
+    testWidgets('should_not_crash_when_state_is_BackupNotConnected', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      addTearDown(() => tester.view.resetPhysicalSize());
 
-        await assertNoCrash(tester, const BackupNotConnected(), settle: true);
-      },
-    );
+      await assertNoCrash(tester, const BackupNotConnected(), settle: true);
+    });
 
-    testWidgets(
-      'should_not_crash_when_state_is_BackupConnected',
-      (tester) async {
-        tester.view.physicalSize = const Size(2400, 6000);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(() {
-          tester.view.resetPhysicalSize();
-          tester.view.resetDevicePixelRatio();
-        });
+    testWidgets('should_not_crash_when_state_is_BackupConnected', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(2400, 6000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
 
-        await assertNoCrash(
-          tester,
-          const BackupConnected(
-            provider: SyncProvider.dropbox,
-            email: 'i2@metra.app',
-            autoBackupActive: false,
-            passphraseSet: true,
-            lastBackupAt: null,
-          ),
-          settle: true,
-        );
-      },
-    );
+      await assertNoCrash(
+        tester,
+        const BackupConnected(
+          provider: SyncProvider.dropbox,
+          email: 'i2@metra.app',
+          autoBackupActive: false,
+          passphraseSet: true,
+          lastBackupAt: null,
+        ),
+        settle: true,
+      );
+    });
 
-    testWidgets(
-      'should_not_crash_when_state_is_BackupRunning_restoring',
-      (tester) async {
-        await assertNoCrash(
-          tester,
-          const BackupRunning(BackupOperation.restoring),
-        );
-      },
-    );
+    testWidgets('should_not_crash_when_state_is_BackupRunning_restoring', (
+      tester,
+    ) async {
+      await assertNoCrash(
+        tester,
+        const BackupRunning(BackupOperation.restoring),
+      );
+    });
 
-    testWidgets(
-      'should_not_crash_when_state_is_BackupRunning_backingUp',
-      (tester) async {
-        await assertNoCrash(
-          tester,
-          const BackupRunning(BackupOperation.backingUp),
-        );
-      },
-    );
+    testWidgets('should_not_crash_when_state_is_BackupRunning_backingUp', (
+      tester,
+    ) async {
+      await assertNoCrash(
+        tester,
+        const BackupRunning(BackupOperation.backingUp),
+      );
+    });
 
-    testWidgets(
-      'should_not_crash_when_state_is_BackupErrorState',
-      (tester) async {
-        tester.view.physicalSize = const Size(800, 4000);
-        addTearDown(() => tester.view.resetPhysicalSize());
+    testWidgets('should_not_crash_when_state_is_BackupErrorState', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      addTearDown(() => tester.view.resetPhysicalSize());
 
-        await assertNoCrash(
-          tester,
-          const BackupErrorState('i2 error message'),
-          settle: true,
-        );
-      },
-    );
+      await assertNoCrash(
+        tester,
+        const BackupErrorState('i2 error message'),
+        settle: true,
+      );
+    });
   });
 
   // =========================================================================
@@ -409,52 +420,46 @@ void main() {
   // =========================================================================
 
   group(
-      'I-3 — token-discipline regression guard (lib/features/backup/ + lib/core/widgets/settings/)',
-      () {
-    // I-3a
-    test(
-      'I-3a zero Color(0x…) hex literals in backup and settings source',
-      () {
-        final hits = _grepDartFiles(
-          _backupAndSettings,
-          RegExp(r'Color\(0x'),
-        );
+    'I-3 — token-discipline regression guard (lib/features/backup/ + lib/core/widgets/settings/)',
+    () {
+      // I-3a
+      test('I-3a zero Color(0x…) hex literals in backup and settings source', () {
+        final hits = _grepDartFiles(_backupAndSettings, RegExp(r'Color\(0x'));
         expect(
           hits,
           isEmpty,
-          reason: 'Hardcoded Color(0x…) literals found. '
+          reason:
+              'Hardcoded Color(0x…) literals found. '
               'Use MetraColors.of(context).<token> or withAlpha(0xNN) on a token '
               'getter instead.\nHits:\n${hits.join('\n')}',
         );
-      },
-    );
+      });
 
-    // I-3b
-    test(
-      'I-3b zero fontFamily: string literals in backup and settings source',
-      () {
-        final hits = _grepDartFiles(
-          _backupAndSettings,
-          RegExp(r"""fontFamily:\s*['"]"""),
-        );
-        expect(
-          hits,
-          isEmpty,
-          reason: 'fontFamily: string literals found. '
-              'Use MetraTypography.<style> or GoogleFonts.inter(…) instead.\n'
-              'Hits:\n${hits.join('\n')}',
-        );
-      },
-    );
+      // I-3b
+      test(
+        'I-3b zero fontFamily: string literals in backup and settings source',
+        () {
+          final hits = _grepDartFiles(
+            _backupAndSettings,
+            RegExp(r"""fontFamily:\s*['"]"""),
+          );
+          expect(
+            hits,
+            isEmpty,
+            reason:
+                'fontFamily: string literals found. '
+                'Use MetraTypography.<style> or GoogleFonts.inter(…) instead.\n'
+                'Hits:\n${hits.join('\n')}',
+          );
+        },
+      );
 
-    // I-3c  — MetraColors.light / MetraColors.dark direct access
-    // MetraColors.of(context) is the correct pattern (uses lowercase 'of').
-    // MetraColors.light and MetraColors.dark are private-palette direct access,
-    // which bypasses theme switching (documented anti-pattern in metra_colors.dart).
-    test(
-      'I-3c zero MetraColors.light / MetraColors.dark direct access '
-      'in backup and settings source',
-      () {
+      // I-3c  — MetraColors.light / MetraColors.dark direct access
+      // MetraColors.of(context) is the correct pattern (uses lowercase 'of').
+      // MetraColors.light and MetraColors.dark are private-palette direct access,
+      // which bypasses theme switching (documented anti-pattern in metra_colors.dart).
+      test('I-3c zero MetraColors.light / MetraColors.dark direct access '
+          'in backup and settings source', () {
         final hits = _grepDartFiles(
           _backupAndSettings,
           RegExp(r'MetraColors\.(light|dark)\b'),
@@ -462,13 +467,14 @@ void main() {
         expect(
           hits,
           isEmpty,
-          reason: 'MetraColors.light or MetraColors.dark used directly. '
+          reason:
+              'MetraColors.light or MetraColors.dark used directly. '
               'Use MetraColors.of(context) to respect theme switching.\n'
               'Hits:\n${hits.join('\n')}',
         );
-      },
-    );
-  });
+      });
+    },
+  );
 
   // =========================================================================
   // I-4 — Cross-reference: keepAlive covered in TASK-35
@@ -505,129 +511,122 @@ void main() {
 
   // ── N-1 … N-3: BUG-01 state derivation ────────────────────────────────────
 
-  group(
-    'N-1..3 — BUG-01: BackupConnected.passphraseSet derivation',
-    () {
-      late FakeAppSettingsRepository settingsRepo;
-      late InMemorySecureStorage storage;
-      late FakeSyncLogRepository syncLogRepo;
+  group('N-1..3 — BUG-01: BackupConnected.passphraseSet derivation', () {
+    late FakeAppSettingsRepository settingsRepo;
+    late InMemorySecureStorage storage;
+    late FakeSyncLogRepository syncLogRepo;
 
-      setUp(() {
-        settingsRepo = FakeAppSettingsRepository();
-        storage = InMemorySecureStorage();
-        syncLogRepo = FakeSyncLogRepository();
-      });
+    setUp(() {
+      settingsRepo = FakeAppSettingsRepository();
+      storage = InMemorySecureStorage();
+      syncLogRepo = FakeSyncLogRepository();
+    });
 
-      ProviderContainer makeContainer() => ProviderContainer(
-            overrides: [
-              appSettingsRepositoryProvider.overrideWith(
-                (_) async => settingsRepo,
-              ),
-              secureStorageProvider.overrideWithValue(storage),
-              // restoreDataProvider / backupDataProvider not exercised by build()
-              restoreDataProvider.overrideWith(
-                (_) async => RestoreData(_OkRunner()),
-              ),
-              backupDataProvider.overrideWith(
-                (_) async => BackupData(_OkRunner()),
-              ),
-              cloudBackupProvider.overrideWithValue(FakeDropboxProvider()),
-              syncLogRepositoryProvider.overrideWith((_) async => syncLogRepo),
-            ],
-          );
+    ProviderContainer makeContainer() => ProviderContainer(
+      overrides: [
+        appSettingsRepositoryProvider.overrideWith((_) async => settingsRepo),
+        secureStorageProvider.overrideWithValue(storage),
+        // restoreDataProvider / backupDataProvider not exercised by build()
+        restoreDataProvider.overrideWith((_) async => RestoreData(_OkRunner())),
+        backupDataProvider.overrideWith((_) async => BackupData(_OkRunner())),
+        cloudBackupProvider.overrideWithValue(FakeDropboxProvider()),
+        syncLogRepositoryProvider.overrideWith((_) async => syncLogRepo),
+      ],
+    );
 
-      // N-1: no passphrase key in storage → passphraseSet: false, autoBackupActive: false
-      test(
-        'backup_connected_state_reports_passphraseSet_false_until_first_backup',
-        () async {
-          // Seed settings with a connected email; backupSuspended defaults to false.
-          settingsRepo.storedSettings = AppSettingsData.defaults().copyWith(
-            dropboxEmail: const Nullable('a@b.test'),
-          );
-          // Storage intentionally empty — no passphrase key present.
+    // N-1: no passphrase key in storage → passphraseSet: false, autoBackupActive: false
+    test(
+      'backup_connected_state_reports_passphraseSet_false_until_first_backup',
+      () async {
+        // Seed settings with a connected email; backupSuspended defaults to false.
+        settingsRepo.storedSettings = AppSettingsData.defaults().copyWith(
+          dropboxEmail: const Nullable('a@b.test'),
+        );
+        // Storage intentionally empty — no passphrase key present.
 
-          final container = makeContainer();
-          addTearDown(container.dispose);
+        final container = makeContainer();
+        addTearDown(container.dispose);
 
-          final state = await container.read(backupNotifierProvider.future);
-          expect(state, isA<BackupConnected>());
-          final connected = state as BackupConnected;
-          expect(
-            connected.passphraseSet,
-            isFalse,
-            reason: 'passphraseSet must be false when no passphrase in storage',
-          );
-          expect(
-            connected.autoBackupActive,
-            isFalse,
-            reason: 'autoBackupActive must be false when passphrase absent '
-                '(conjunctive condition: !backupSuspended && passphraseSet)',
-          );
-        },
-      );
+        final state = await container.read(backupNotifierProvider.future);
+        expect(state, isA<BackupConnected>());
+        final connected = state as BackupConnected;
+        expect(
+          connected.passphraseSet,
+          isFalse,
+          reason: 'passphraseSet must be false when no passphrase in storage',
+        );
+        expect(
+          connected.autoBackupActive,
+          isFalse,
+          reason:
+              'autoBackupActive must be false when passphrase absent '
+              '(conjunctive condition: !backupSuspended && passphraseSet)',
+        );
+      },
+    );
 
-      // N-2: passphrase key present in storage → passphraseSet: true, autoBackupActive: true
-      test(
-        'backup_connected_state_reports_passphraseSet_true_when_storage_has_value',
-        () async {
-          settingsRepo.storedSettings = AppSettingsData.defaults().copyWith(
-            dropboxEmail: const Nullable('a@b.test'),
-          );
-          storage.values[BackupNotifier.kPassphraseKey] = 'pw';
+    // N-2: passphrase key present in storage → passphraseSet: true, autoBackupActive: true
+    test(
+      'backup_connected_state_reports_passphraseSet_true_when_storage_has_value',
+      () async {
+        settingsRepo.storedSettings = AppSettingsData.defaults().copyWith(
+          dropboxEmail: const Nullable('a@b.test'),
+        );
+        storage.values[BackupNotifier.kPassphraseKey] = 'pw';
 
-          final container = makeContainer();
-          addTearDown(container.dispose);
+        final container = makeContainer();
+        addTearDown(container.dispose);
 
-          final state = await container.read(backupNotifierProvider.future);
-          expect(state, isA<BackupConnected>());
-          final connected = state as BackupConnected;
-          expect(
-            connected.passphraseSet,
-            isTrue,
-            reason: 'passphraseSet must be true when storage contains value',
-          );
-          expect(
-            connected.autoBackupActive,
-            isTrue,
-            reason: 'autoBackupActive must be true when passphrase set and '
-                'backupSuspended = false',
-          );
-        },
-      );
+        final state = await container.read(backupNotifierProvider.future);
+        expect(state, isA<BackupConnected>());
+        final connected = state as BackupConnected;
+        expect(
+          connected.passphraseSet,
+          isTrue,
+          reason: 'passphraseSet must be true when storage contains value',
+        );
+        expect(
+          connected.autoBackupActive,
+          isTrue,
+          reason:
+              'autoBackupActive must be true when passphrase set and '
+              'backupSuspended = false',
+        );
+      },
+    );
 
-      // N-3: backupSuspended=true + passphrase set → autoBackupActive: false
-      test(
-        'backup_connected_state_autoBackupActive_false_when_suspended_even_if_passphrase_set',
-        () async {
-          settingsRepo.storedSettings = AppSettingsData.defaults().copyWith(
-            dropboxEmail: const Nullable('a@b.test'),
-          );
-          // Force backupSuspended = true via the dedicated writer.
-          await settingsRepo.updateBackupSuspended(true);
-          storage.values[BackupNotifier.kPassphraseKey] = 'pw';
+    // N-3: backupSuspended=true + passphrase set → autoBackupActive: false
+    test(
+      'backup_connected_state_autoBackupActive_false_when_suspended_even_if_passphrase_set',
+      () async {
+        settingsRepo.storedSettings = AppSettingsData.defaults().copyWith(
+          dropboxEmail: const Nullable('a@b.test'),
+        );
+        // Force backupSuspended = true via the dedicated writer.
+        await settingsRepo.updateBackupSuspended(true);
+        storage.values[BackupNotifier.kPassphraseKey] = 'pw';
 
-          final container = makeContainer();
-          addTearDown(container.dispose);
+        final container = makeContainer();
+        addTearDown(container.dispose);
 
-          final state = await container.read(backupNotifierProvider.future);
-          expect(state, isA<BackupConnected>());
-          final connected = state as BackupConnected;
-          expect(
-            connected.passphraseSet,
-            isTrue,
-            reason: 'passphraseSet must still reflect storage truthfully',
-          );
-          expect(
-            connected.autoBackupActive,
-            isFalse,
-            reason:
-                'autoBackupActive must be false when backupSuspended = true, '
-                'even though passphrase is set',
-          );
-        },
-      );
-    },
-  );
+        final state = await container.read(backupNotifierProvider.future);
+        expect(state, isA<BackupConnected>());
+        final connected = state as BackupConnected;
+        expect(
+          connected.passphraseSet,
+          isTrue,
+          reason: 'passphraseSet must still reflect storage truthfully',
+        );
+        expect(
+          connected.autoBackupActive,
+          isFalse,
+          reason:
+              'autoBackupActive must be false when backupSuspended = true, '
+              'even though passphrase is set',
+        );
+      },
+    );
+  });
 
   // =========================================================================
   // O — sp-20260524: BUG-RT01 BackupNotifier count propagation
@@ -644,69 +643,60 @@ void main() {
       ProviderContainer makeContainer({
         required FakeBackupRunner fakeRunner,
         InMemorySecureStorage? storage,
-      }) =>
-          ProviderContainer(
-            overrides: [
-              appSettingsRepositoryProvider.overrideWith(
-                (_) async => settingsRepo(),
-              ),
-              secureStorageProvider.overrideWithValue(
-                storage ??
-                    (InMemorySecureStorage()
-                      ..values[BackupNotifier.kPassphraseKey] = 'pw'),
-              ),
-              restoreDataProvider.overrideWith(
-                (_) async => RestoreData(fakeRunner),
-              ),
-              backupDataProvider.overrideWith(
-                (_) async => BackupData(fakeRunner),
-              ),
-              cloudBackupProvider.overrideWithValue(FakeDropboxProvider()),
-              syncLogRepositoryProvider.overrideWith(
-                (_) async => FakeSyncLogRepository(),
-              ),
-            ],
-          );
+      }) => ProviderContainer(
+        overrides: [
+          appSettingsRepositoryProvider.overrideWith(
+            (_) async => settingsRepo(),
+          ),
+          secureStorageProvider.overrideWithValue(
+            storage ??
+                (InMemorySecureStorage()
+                  ..values[BackupNotifier.kPassphraseKey] = 'pw'),
+          ),
+          restoreDataProvider.overrideWith(
+            (_) async => RestoreData(fakeRunner),
+          ),
+          backupDataProvider.overrideWith((_) async => BackupData(fakeRunner)),
+          cloudBackupProvider.overrideWithValue(FakeDropboxProvider()),
+          syncLogRepositoryProvider.overrideWith(
+            (_) async => FakeSyncLogRepository(),
+          ),
+        ],
+      );
 
       // O-1: restore() returns the int count from the Ok branch.
-      test(
-        'backupNotifier_restore_returns_count_from_okBranch',
-        () async {
-          final fakeRunner = FakeBackupRunner()..restoreReturnValue = 5;
-          final container = makeContainer(fakeRunner: fakeRunner);
-          addTearDown(container.dispose);
+      test('backupNotifier_restore_returns_count_from_okBranch', () async {
+        final fakeRunner = FakeBackupRunner()..restoreReturnValue = 5;
+        final container = makeContainer(fakeRunner: fakeRunner);
+        addTearDown(container.dispose);
 
-          await container.read(backupNotifierProvider.future);
+        await container.read(backupNotifierProvider.future);
 
-          final count = await container
-              .read(backupNotifierProvider.notifier)
-              .restore(filename: 'metra_backup_test.enc');
+        final count = await container
+            .read(backupNotifierProvider.notifier)
+            .restore(filename: 'metra_backup_test.enc');
 
-          expect(count, equals(5));
-        },
-      );
+        expect(count, equals(5));
+      });
 
       // O-2: restore() returns null on the Err branch + sets BackupErrorState.
-      test(
-        'backupNotifier_restore_returns_null_on_errBranch',
-        () async {
-          final fakeRunner = FakeBackupRunner()
-            ..restoreError = const SyncException('boom');
-          final container = makeContainer(fakeRunner: fakeRunner);
-          addTearDown(container.dispose);
+      test('backupNotifier_restore_returns_null_on_errBranch', () async {
+        final fakeRunner = FakeBackupRunner()
+          ..restoreError = const SyncException('boom');
+        final container = makeContainer(fakeRunner: fakeRunner);
+        addTearDown(container.dispose);
 
-          await container.read(backupNotifierProvider.future);
-          final notifier = container.read(backupNotifierProvider.notifier);
+        await container.read(backupNotifierProvider.future);
+        final notifier = container.read(backupNotifierProvider.notifier);
 
-          final count = await notifier.restore();
+        final count = await notifier.restore();
 
-          expect(count, isNull);
-          expect(
-            container.read(backupNotifierProvider).valueOrNull,
-            isA<BackupErrorState>(),
-          );
-        },
-      );
+        expect(count, isNull);
+        expect(
+          container.read(backupNotifierProvider).valueOrNull,
+          isA<BackupErrorState>(),
+        );
+      });
 
       // O-3: restoreWithPassphrase() propagates the count from restore().
       test(
@@ -738,82 +728,247 @@ void main() {
   group(
     'N-4 — BUG-R1: restore() Ok-branch invalidates currentCycleDayProvider + cycleDayForDateProvider',
     () {
+      test('restore_ok_invalidates_currentCycleDay_and_cycleDayForDate', () async {
+        // Counters track how many times each provider's create fn is called.
+        var cycleDayCount = 0;
+        var cycleDayForDateCount = 0;
+        final testDate = DateTime.utc(2026, 5, 24);
+
+        final settingsRepo = FakeAppSettingsRepository()
+          ..storedSettings = AppSettingsData.defaults().copyWith(
+            dropboxEmail: const Nullable('a@b.test'),
+          );
+        final storage = InMemorySecureStorage()
+          ..values[BackupNotifier.kPassphraseKey] = 'pw';
+
+        final container = ProviderContainer(
+          overrides: [
+            appSettingsRepositoryProvider.overrideWith(
+              (_) async => settingsRepo,
+            ),
+            secureStorageProvider.overrideWithValue(storage),
+            restoreDataProvider.overrideWith(
+              (_) async => RestoreData(_OkRunner()),
+            ),
+            backupDataProvider.overrideWith(
+              (_) async => BackupData(_OkRunner()),
+            ),
+            cloudBackupProvider.overrideWithValue(FakeDropboxProvider()),
+            syncLogRepositoryProvider.overrideWith(
+              (_) async => FakeSyncLogRepository(),
+            ),
+            // Counter providers — increment on every create() call.
+            currentCycleDayProvider.overrideWith((_) async {
+              cycleDayCount++;
+              return null;
+            }),
+            cycleDayForDateProvider.overrideWith((ref, date) async {
+              cycleDayForDateCount++;
+              return null;
+            }),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        // Prime both providers once (count goes to 1).
+        await container.read(currentCycleDayProvider.future);
+        await container.read(cycleDayForDateProvider(testDate).future);
+        expect(cycleDayCount, 1, reason: 'primed once before restore');
+        expect(cycleDayForDateCount, 1, reason: 'primed once before restore');
+
+        // Ensure notifier is built before calling restore.
+        await container.read(backupNotifierProvider.future);
+
+        // Act: trigger restore — should land in Ok() branch.
+        await container
+            .read(backupNotifierProvider.notifier)
+            .restore(filename: 'test.enc');
+
+        // Re-read to trigger recreation (invalidate + read = count++).
+        await container.read(currentCycleDayProvider.future);
+        await container.read(cycleDayForDateProvider(testDate).future);
+
+        expect(
+          cycleDayCount,
+          2,
+          reason:
+              'currentCycleDayProvider must be invalidated by restore Ok branch',
+        );
+        expect(
+          cycleDayForDateCount,
+          2,
+          reason:
+              'cycleDayForDateProvider must be invalidated by restore Ok branch',
+        );
+      });
+    },
+  );
+
+  // =========================================================================
+  // K — TASK-09 / L1 (FEAT-BUG-003): passphrase-rollback TOCTOU fix (FR-20)
+  // =========================================================================
+  //
+  // `_runBackup()` changes `Future<void>` → `Future<bool>` (true on Ok(),
+  // false on Err()). `backupWithPassphrase` must key the rollback decision
+  // off that returned bool, not a post-hoc `state.valueOrNull is
+  // BackupErrorState` inspection — the latter is racy: anything that mutates
+  // `state` between the orchestrator call resolving and the inspection (e.g.
+  // a concurrent settings-stream rebuild) can make a genuinely successful
+  // backup look like a failure (or vice versa) at inspection time.
+  //
+  // G1 stages exactly that race with a completer-gated orchestrator: while
+  // `_runBackup()`'s `uc()` call is still pending, `state` is mutated to
+  // `BackupErrorState` (standing in for "whatever a concurrent rebuild left
+  // behind") — then the orchestrator resolves `Ok()`. A state-inspection
+  // implementation would misread the leftover `BackupErrorState` and roll
+  // back the passphrase despite the real success; the fix must not.
+  //
+  // G2 is the non-race control: a genuine `Err()` still rolls back.
+  // G3 is a source-grep guard: `_runBackup()` stays a private implementation
+  // detail with zero call sites outside `backup_notifier.dart`.
+
+  group(
+    'K — TASK-09 / L1 (FEAT-BUG-003): passphrase-rollback TOCTOU fix (FR-20)',
+    () {
+      FakeAppSettingsRepository settingsRepo() => FakeAppSettingsRepository()
+        ..storedSettings = AppSettingsData.defaults().copyWith(
+          dropboxEmail: const Nullable('a@b.test'),
+        );
+
+      ProviderContainer makeContainer({
+        required BackupRunner runner,
+        required InMemorySecureStorage storage,
+      }) => ProviderContainer(
+        overrides: [
+          appSettingsRepositoryProvider.overrideWith(
+            (_) async => settingsRepo(),
+          ),
+          secureStorageProvider.overrideWithValue(storage),
+          backupDataProvider.overrideWith((_) async => BackupData(runner)),
+          restoreDataProvider.overrideWith((_) async => RestoreData(runner)),
+          cloudBackupProvider.overrideWithValue(FakeDropboxProvider()),
+          syncLogRepositoryProvider.overrideWith(
+            (_) async => FakeSyncLogRepository(),
+          ),
+        ],
+      );
+
+      // G1: TOCTOU race closed — Ok() completes AFTER a concurrent state
+      // mutation (standing in for a concurrent stream rebuild) has already
+      // set state to BackupErrorState. The rollback decision must use the
+      // bool _runBackup() returns, not the racy state snapshot.
       test(
-        'restore_ok_invalidates_currentCycleDay_and_cycleDayForDate',
+        'G1_backupWithPassphrase_does_not_roll_back_when_a_concurrent_state_'
+        'mutation_leaves_BackupErrorState_but_runBackup_actually_succeeds',
         () async {
-          // Counters track how many times each provider's create fn is called.
-          var cycleDayCount = 0;
-          var cycleDayForDateCount = 0;
-          final testDate = DateTime.utc(2026, 5, 24);
-
-          final settingsRepo = FakeAppSettingsRepository()
-            ..storedSettings = AppSettingsData.defaults().copyWith(
-              dropboxEmail: const Nullable('a@b.test'),
-            );
+          final completer = Completer<void>();
+          final runner = _CompleterGatedRunner(completer);
           final storage = InMemorySecureStorage()
-            ..values[BackupNotifier.kPassphraseKey] = 'pw';
-
-          final container = ProviderContainer(
-            overrides: [
-              appSettingsRepositoryProvider.overrideWith(
-                (_) async => settingsRepo,
-              ),
-              secureStorageProvider.overrideWithValue(storage),
-              restoreDataProvider.overrideWith(
-                (_) async => RestoreData(_OkRunner()),
-              ),
-              backupDataProvider.overrideWith(
-                (_) async => BackupData(_OkRunner()),
-              ),
-              cloudBackupProvider.overrideWithValue(FakeDropboxProvider()),
-              syncLogRepositoryProvider.overrideWith(
-                (_) async => FakeSyncLogRepository(),
-              ),
-              // Counter providers — increment on every create() call.
-              currentCycleDayProvider.overrideWith((_) async {
-                cycleDayCount++;
-                return null;
-              }),
-              cycleDayForDateProvider.overrideWith((ref, date) async {
-                cycleDayForDateCount++;
-                return null;
-              }),
-            ],
-          );
+            ..values[BackupNotifier.kPassphraseKey] = 'old-pass';
+          final container = makeContainer(runner: runner, storage: storage);
           addTearDown(container.dispose);
+          addTearDown(() {
+            if (!completer.isCompleted) completer.complete();
+          });
 
-          // Prime both providers once (count goes to 1).
-          await container.read(currentCycleDayProvider.future);
-          await container.read(cycleDayForDateProvider(testDate).future);
-          expect(cycleDayCount, 1, reason: 'primed once before restore');
-          expect(cycleDayForDateCount, 1, reason: 'primed once before restore');
-
-          // Ensure notifier is built before calling restore.
           await container.read(backupNotifierProvider.future);
+          final notifier = container.read(backupNotifierProvider.notifier);
 
-          // Act: trigger restore — should land in Ok() branch.
-          await container
-              .read(backupNotifierProvider.notifier)
-              .restore(filename: 'test.enc');
-
-          // Re-read to trigger recreation (invalidate + read = count++).
-          await container.read(currentCycleDayProvider.future);
-          await container.read(cycleDayForDateProvider(testDate).future);
+          // Act (part 1): start the manual backup — it will block inside
+          // _runBackup() awaiting the gated orchestrator call.
+          unawaited(notifier.backupWithPassphrase('new-pass'));
+          await Future<void>.delayed(Duration.zero);
 
           expect(
-            cycleDayCount,
-            2,
+            container.read(backupNotifierProvider).valueOrNull,
+            isA<BackupRunning>(),
             reason:
-                'currentCycleDayProvider must be invalidated by restore Ok branch',
+                'orchestrator call must be pending before the race is '
+                'staged',
           );
+
+          // Stage the race: something concurrent (e.g. a settings-stream
+          // rebuild) leaves BackupErrorState in `state` WHILE the real
+          // orchestrator call is still in flight and has not yet resolved.
+          notifier.state = const AsyncData(
+            BackupErrorState('concurrent-rebuild-noise'),
+          );
+
+          // Act (part 2): the orchestrator now genuinely succeeds.
+          completer.complete();
+          await Future<void>.delayed(Duration.zero);
+          await Future<void>.delayed(Duration.zero);
+
           expect(
-            cycleDayForDateCount,
-            2,
+            storage.values[BackupNotifier.kPassphraseKey],
+            equals('new-pass'),
             reason:
-                'cycleDayForDateProvider must be invalidated by restore Ok branch',
+                '_runBackup() returned true (Ok()) — the rollback '
+                'decision must key off that, not the racy BackupErrorState '
+                'left in state by the concurrent mutation. A '
+                'state-inspection implementation wrongly rolls back here.',
           );
         },
       );
+
+      // G2: regression — a genuine Err() (no race) still rolls back, exactly
+      // as the existing groups at test/features/backup/state/backup_notifier_test.dart
+      // already assert; kept here too since it is the direct control case for G1.
+      test(
+        'G2_backupWithPassphrase_rolls_back_when_runBackup_genuinely_fails',
+        () async {
+          final runner = FakeBackupRunner()
+            ..backupError = const SyncException('network error');
+          final storage = InMemorySecureStorage()
+            ..values[BackupNotifier.kPassphraseKey] = 'old-pass';
+          final container = makeContainer(runner: runner, storage: storage);
+          addTearDown(container.dispose);
+
+          await container.read(backupNotifierProvider.future);
+          await container
+              .read(backupNotifierProvider.notifier)
+              .backupWithPassphrase('new-pass');
+
+          expect(
+            storage.values[BackupNotifier.kPassphraseKey],
+            equals('old-pass'),
+            reason:
+                'a genuine Err() (no race) must still roll back the '
+                'passphrase — unchanged regression behaviour',
+          );
+          expect(
+            container.read(backupNotifierProvider).valueOrNull,
+            isA<BackupErrorState>(),
+          );
+        },
+      );
+
+      // G3: _runBackup stays a private implementation detail — zero call
+      // sites outside backup_notifier.dart. Scoped to lib/: Dart's leading-
+      // underscore privacy already forbids any other *library* from calling
+      // it (a cross-file call site would not compile), so this is a
+      // source-grep sanity guard against the method ever being renamed away
+      // from that privacy or duplicated/re-exported elsewhere in lib/.
+      // Comments/prose mentioning "_runBackup(" (in this very file, or in
+      // other test files' doc comments) are not call sites and are excluded
+      // by scoping the scan to lib/ only.
+      test('G3_runBackup_has_zero_call_sites_outside_backup_notifier_dart', () {
+        final hits = _grepDartFiles(['lib'], RegExp(r'_runBackup\('))
+            .where(
+              (hit) => !hit.startsWith(
+                'lib/features/backup/state/backup_notifier.dart:',
+              ),
+            )
+            .toList();
+        expect(
+          hits,
+          isEmpty,
+          reason:
+              '_runBackup( must have zero call sites outside '
+              'backup_notifier.dart (it stays private).\nHits:\n'
+              '${hits.join('\n')}',
+        );
+      });
     },
   );
 }
