@@ -55,6 +55,30 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
   /// so the UI can never wedge in [BackupRunning] indefinitely (D4).
   BackupOperation? _inFlightOperation;
 
+  /// Memoization key/value pair for the iCloud container probe (FR-15).
+  ///
+  /// `_iCloudProbeKey` records the `activeProvider` the memo was computed
+  /// for; `_iCloudProbeMemo` holds the last probe result. A `false`
+  /// (signed-out/unavailable) result is deliberately NEVER memoized — only
+  /// `true` is ever stored — so a user who re-signs into iCloud mid-session
+  /// is picked up on the very next call rather than waiting for an explicit
+  /// connect/disconnect/switch (EC-07).
+  ///
+  /// Invalidated (both set to `null`) at first-connect / disconnect / switch
+  /// (FR-16, [_invalidateICloudProbeMemo]) and on backup/restore failure
+  /// (FR-23) — see the `Err` branches of [_runBackup] and [restore]. A
+  /// successful backup/restore does NOT invalidate the memo (FR-23 negative
+  /// case): only failure signals the container may have become unreachable.
+  SyncProvider? _iCloudProbeKey;
+  bool? _iCloudProbeMemo;
+
+  /// Clears the iCloud probe memo (FR-16/FR-23) so the next [_isConnected]
+  /// call re-probes the container instead of returning a stale cached value.
+  void _invalidateICloudProbeMemo() {
+    _iCloudProbeKey = null;
+    _iCloudProbeMemo = null;
+  }
+
   /// Single derivation point for the "is a backup provider connected?"
   /// predicate (FR-15).
   ///
@@ -72,10 +96,24 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
       case SyncProvider.googleDrive:
         return settings.dropboxEmail != null; // unchanged sentinel (FR-19)
       case SyncProvider.iCloud:
+        // FR-15: return the memoized result when it was computed for the
+        // SAME activeProvider — repeated settings emissions that leave
+        // activeProvider unchanged (e.g. a daily-log save bumping
+        // lastLogOrSymptomWriteAt) must not re-run the probe (NFR-07).
+        if (_iCloudProbeKey == settings.activeProvider &&
+            _iCloudProbeMemo != null) {
+          return _iCloudProbeMemo!;
+        }
         try {
           await ref.read(cloudBackupProvider).authorize(); // container probe
+          _iCloudProbeKey = settings.activeProvider;
+          _iCloudProbeMemo = true;
           return true;
         } on SyncException {
+          // EC-07: a probe failure is NEVER memoized as connected — leave
+          // the memo cleared so the very next call re-probes.
+          _iCloudProbeKey = null;
+          _iCloudProbeMemo = null;
           return false; // signed-out → not connected (NFR-06)
         }
     }
@@ -205,6 +243,10 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     // TASK-06 re-entrancy guard (FR-09): reject if ANY operation
     // (connect/disconnect/switch) is already in flight.
     if (_inFlightOperation != null) return;
+    // FR-16: unconditionally clear the iCloud probe memo — a first-connect
+    // attempt must never be answered from a stale cached probe result, even
+    // when target already equals the current activeProvider.
+    _invalidateICloudProbeMemo();
     _inFlightOperation = BackupOperation.connecting;
     state = const AsyncData(BackupRunning(BackupOperation.connecting));
     try {
@@ -245,6 +287,10 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     // TASK-06 re-entrancy guard (FR-09): reject if ANY operation
     // (connect/disconnect/switch) is already in flight.
     if (_inFlightOperation != null) return;
+    // FR-16: clear the iCloud probe memo — otherwise a later reconnect to
+    // iCloud (activeProvider flips back to iCloud) could observe a stale
+    // memoized value instead of re-probing the container.
+    _invalidateICloudProbeMemo();
     _inFlightOperation = BackupOperation.disconnecting;
     state = const AsyncData(BackupRunning(BackupOperation.disconnecting));
     try {
@@ -326,6 +372,11 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     // (connect/disconnect/switch) is already in flight, not just a same-type
     // switch.
     if (_inFlightOperation != null) return;
+
+    // FR-16: clear the iCloud probe memo — otherwise a later switch back to
+    // iCloud (activeProvider flips back to iCloud) could observe a stale
+    // memoized value instead of re-probing the container.
+    _invalidateICloudProbeMemo();
 
     // Step 2: platform guard — iCloud is iOS-only (availableProviders enforces it).
     assert(availableProviders(defaultTargetPlatform).contains(target));
@@ -594,6 +645,11 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
           return true;
         case Err(:final error):
           state = AsyncData(BackupErrorState(error.message));
+          // FR-23: a backup failure is the only remaining signal (once the
+          // probe is memoized) that the iCloud container may have become
+          // unreachable mid-session — invalidate so the next _isConnected
+          // call re-probes instead of keeping a stale `true`.
+          _invalidateICloudProbeMemo();
           return false;
       }
     } catch (e) {
@@ -628,6 +684,9 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
           return value; // propagate count to caller
         case Err(:final error):
           state = AsyncData(BackupErrorState(error.message));
+          // FR-23: same rationale as _runBackup's Err branch — a restore
+          // failure invalidates the iCloud probe memo.
+          _invalidateICloudProbeMemo();
           return null;
       }
     } catch (e) {

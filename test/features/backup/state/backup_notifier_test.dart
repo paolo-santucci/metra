@@ -2878,6 +2878,549 @@ void main() {
     );
   });
 
+  // -----------------------------------------------------------------------
+  // TASK-10 — Group H: _isConnected iCloud-probe memoization + invalidation
+  // (FR-15, FR-16, FR-23).
+  //
+  // All tests use a real DriftAppSettingsRepository over an in-memory DB
+  // (same pattern as BUG-B01/BUG-B04/BUG-2 T-03) because the memo lives on
+  // the BackupNotifier instance and must survive rebuilds triggered by real
+  // Drift-stream emissions — the Fake repo's watchSettings() is a
+  // single-value stream and cannot re-emit for "unrelated settings
+  // emissions" scenarios (NFR-07).
+  // -----------------------------------------------------------------------
+  group('TASK-10 Group H — _isConnected iCloud-probe memoization', () {
+    /// Pumps the microtask queue twice so a real Drift stream emission (and
+    /// the downstream Riverpod rebuild it triggers) has a chance to
+    /// propagate before the test inspects notifier state — same idiom as
+    /// BUG-B01/BUG-B04/BUG-2 T-03.
+    Future<void> pump() async {
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+    }
+
+    // ── NFR-07: probe invoked exactly once across 5 unrelated emissions ────
+    test(
+      'NFR-07: activeProvider==iCloud, 5 unrelated settings emissions → '
+      'probe invoked exactly once',
+      () async {
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        final realRepo = DriftAppSettingsRepository(db.appSettingsDao);
+        await realRepo.getOrCreate();
+        await realRepo.setActiveProvider(SyncProvider.iCloud);
+
+        final fakeICloud = FakeICloudProvider(authorizeThrows: false);
+        final testStorage = InMemorySecureStorage();
+        final testRunner = _FakeRunner();
+        final testSyncLog = FakeSyncLogRepository();
+
+        final container = ProviderContainer(
+          overrides: [
+            appSettingsRepositoryProvider.overrideWith((_) async => realRepo),
+            secureStorageProvider.overrideWithValue(testStorage),
+            backupDataProvider
+                .overrideWith((_) async => BackupData(testRunner)),
+            restoreDataProvider
+                .overrideWith((_) async => RestoreData(testRunner)),
+            cloudBackupProvider.overrideWithValue(fakeICloud),
+            syncLogRepositoryProvider.overrideWith((_) async => testSyncLog),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final initial = await container.read(backupNotifierProvider.future);
+        expect(initial, isA<BackupConnected>());
+        expect(
+          fakeICloud.authorizeCalls,
+          1,
+          reason: 'the first build() must probe the container once',
+        );
+
+        for (var i = 0; i < 5; i++) {
+          await realRepo.updateLastDataWriteAt(DateTime.utc(2026, 5, i + 1));
+          await pump();
+          await container.read(backupNotifierProvider.future);
+        }
+
+        expect(
+          fakeICloud.authorizeCalls,
+          1,
+          reason: 'NFR-07: activeProvider stayed iCloud across 5 unrelated '
+              'settings emissions (lastLogOrSymptomWriteAt bumps) — the '
+              'iCloud probe must not be re-run',
+        );
+      },
+    );
+
+    // ── EC-07: probe throws → false, not memoized, next build re-probes ────
+    test(
+      'EC-07: probe SyncException → false, nothing escapes build(), '
+      'NOT memoized — next build re-probes',
+      () async {
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        final realRepo = DriftAppSettingsRepository(db.appSettingsDao);
+        await realRepo.getOrCreate();
+        await realRepo.setActiveProvider(SyncProvider.iCloud);
+
+        final fakeICloud = FakeICloudProvider(authorizeThrows: true);
+        final testStorage = InMemorySecureStorage();
+        final testRunner = _FakeRunner();
+        final testSyncLog = FakeSyncLogRepository();
+
+        final container = ProviderContainer(
+          overrides: [
+            appSettingsRepositoryProvider.overrideWith((_) async => realRepo),
+            secureStorageProvider.overrideWithValue(testStorage),
+            backupDataProvider
+                .overrideWith((_) async => BackupData(testRunner)),
+            restoreDataProvider
+                .overrideWith((_) async => RestoreData(testRunner)),
+            cloudBackupProvider.overrideWithValue(fakeICloud),
+            syncLogRepositoryProvider.overrideWith((_) async => testSyncLog),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final s1 = await container.read(backupNotifierProvider.future);
+        expect(
+          s1,
+          isA<BackupNotConnected>(),
+          reason: 'EC-07: SyncException must be caught locally; nothing '
+              'escapes build()',
+        );
+        expect(fakeICloud.authorizeCalls, 1);
+
+        // Unrelated emission — activeProvider stays iCloud.
+        await realRepo.updateLastDataWriteAt(DateTime.utc(2026, 5, 2));
+        await pump();
+        final s2 = await container.read(backupNotifierProvider.future);
+        expect(s2, isA<BackupNotConnected>());
+
+        expect(
+          fakeICloud.authorizeCalls,
+          2,
+          reason: 'EC-07: a false probe result must never be memoized as '
+              'connected — the very next build() must re-probe',
+        );
+      },
+    );
+
+    // ── FR-16: memo invalidation on firstConnect ────────────────────────────
+    test(
+      'FR-16: memo invalidation on firstConnect — memo cleared so the next '
+      '_isConnected call re-probes even though activeProvider already '
+      'equalled the target',
+      () async {
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        final realRepo = DriftAppSettingsRepository(db.appSettingsDao);
+        await realRepo.getOrCreate();
+        await realRepo.setActiveProvider(SyncProvider.iCloud);
+
+        final fakeICloud = FakeICloudProvider(authorizeThrows: false);
+        final testStorage = InMemorySecureStorage();
+        final testRunner = _FakeRunner();
+        final testSyncLog = FakeSyncLogRepository();
+
+        final container = ProviderContainer(
+          overrides: [
+            appSettingsRepositoryProvider.overrideWith((_) async => realRepo),
+            secureStorageProvider.overrideWithValue(testStorage),
+            backupDataProvider
+                .overrideWith((_) async => BackupData(testRunner)),
+            restoreDataProvider
+                .overrideWith((_) async => RestoreData(testRunner)),
+            cloudBackupProvider.overrideWithValue(fakeICloud),
+            resolveBackupProvider.overrideWith((ref, id) => fakeICloud),
+            syncLogRepositoryProvider.overrideWith((_) async => testSyncLog),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        // Prime the memo: activeProvider==iCloud, probe succeeds → memoized true.
+        final initial = await container.read(backupNotifierProvider.future);
+        expect(initial, isA<BackupConnected>());
+        expect(fakeICloud.authorizeCalls, 1);
+
+        // firstConnect(iCloud) — target already equals the active provider;
+        // FR-16 requires the memo to be cleared unconditionally.
+        await container
+            .read(backupNotifierProvider.notifier)
+            .firstConnect(SyncProvider.iCloud);
+        await pump();
+        final rebuilt = await container.read(backupNotifierProvider.future);
+        expect(rebuilt, isA<BackupConnected>());
+
+        expect(
+          fakeICloud.authorizeCalls,
+          3,
+          reason: 'FR-16: expected 1 (initial build probe) + 1 (handshake '
+              'authorize) + 1 (memo re-probe on the post-firstConnect '
+              'build) = 3 total authorize() calls — if the memo were not '
+              'invalidated the re-probe would be skipped and the count '
+              'would stay at 2',
+        );
+      },
+    );
+
+    // ── FR-16: memo invalidation on disconnect ──────────────────────────────
+    test(
+      'FR-16: memo invalidation on disconnect — memo cleared so a later '
+      'iCloud re-check re-probes instead of returning a stale value',
+      () async {
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        final realRepo = DriftAppSettingsRepository(db.appSettingsDao);
+        await realRepo.getOrCreate();
+        await realRepo.setActiveProvider(SyncProvider.iCloud);
+
+        final fakeICloud = FakeICloudProvider(authorizeThrows: false);
+        final testStorage = InMemorySecureStorage();
+        final testRunner = _FakeRunner();
+        final testSyncLog = FakeSyncLogRepository();
+
+        final container = ProviderContainer(
+          overrides: [
+            appSettingsRepositoryProvider.overrideWith((_) async => realRepo),
+            secureStorageProvider.overrideWithValue(testStorage),
+            backupDataProvider
+                .overrideWith((_) async => BackupData(testRunner)),
+            restoreDataProvider
+                .overrideWith((_) async => RestoreData(testRunner)),
+            cloudBackupProvider.overrideWithValue(fakeICloud),
+            syncLogRepositoryProvider.overrideWith((_) async => testSyncLog),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final initial = await container.read(backupNotifierProvider.future);
+        expect(initial, isA<BackupConnected>());
+        expect(fakeICloud.authorizeCalls, 1);
+
+        await container.read(backupNotifierProvider.notifier).disconnect();
+        await pump();
+
+        final afterDisconnect =
+            await container.read(backupNotifierProvider.future);
+        expect(
+          afterDisconnect,
+          isA<BackupNotConnected>(),
+          reason: 'disconnect() resets activeProvider to dropbox with a '
+              'null email sentinel',
+        );
+        expect(
+          fakeICloud.authorizeCalls,
+          1,
+          reason: 'disconnect() itself calls provider.disconnect(), never '
+              'authorize() — the count must not move yet',
+        );
+
+        // Simulate the sentinel flipping back to iCloud directly (bypassing
+        // firstConnect/switchProvider) — isolates disconnect()'s OWN memo
+        // invalidation responsibility from FR-16's other two triggers.
+        await realRepo.setActiveProvider(SyncProvider.iCloud);
+        await pump();
+        final afterReactivate =
+            await container.read(backupNotifierProvider.future);
+        expect(afterReactivate, isA<BackupConnected>());
+
+        expect(
+          fakeICloud.authorizeCalls,
+          2,
+          reason: 'FR-16: disconnect() must have cleared the iCloud memo — '
+              'otherwise this rebuild would return the stale memoized '
+              '`true` without calling authorize() again, and the count '
+              'would stay at 1',
+        );
+      },
+    );
+
+    // ── FR-16: memo invalidation on switchProvider ──────────────────────────
+    test(
+      'FR-16: memo invalidation on switchProvider — memo cleared so a '
+      'later iCloud re-check re-probes instead of returning a stale value',
+      () async {
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        final realRepo = DriftAppSettingsRepository(db.appSettingsDao);
+        await realRepo.getOrCreate();
+        await realRepo.setActiveProvider(SyncProvider.iCloud);
+
+        final fakeICloud = FakeICloudProvider(authorizeThrows: false);
+        final fakeDropboxLocal = FakeDropboxProvider();
+        final testStorage = InMemorySecureStorage();
+        final testRunner = _FakeRunner();
+        final testSyncLog = FakeSyncLogRepository();
+
+        final container = ProviderContainer(
+          overrides: [
+            appSettingsRepositoryProvider.overrideWith((_) async => realRepo),
+            secureStorageProvider.overrideWithValue(testStorage),
+            backupDataProvider
+                .overrideWith((_) async => BackupData(testRunner)),
+            restoreDataProvider
+                .overrideWith((_) async => RestoreData(testRunner)),
+            cloudBackupProvider.overrideWithValue(fakeICloud),
+            resolveBackupProvider.overrideWith((ref, id) {
+              return id == SyncProvider.iCloud ? fakeICloud : fakeDropboxLocal;
+            }),
+            syncLogRepositoryProvider.overrideWith((_) async => testSyncLog),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final initial = await container.read(backupNotifierProvider.future);
+        expect(initial, isA<BackupConnected>());
+        expect(fakeICloud.authorizeCalls, 1);
+
+        await container
+            .read(backupNotifierProvider.notifier)
+            .switchProvider(SyncProvider.dropbox);
+        await pump();
+
+        final afterSwitch = await container.read(backupNotifierProvider.future);
+        expect(afterSwitch, isA<BackupConnected>());
+        expect(
+          fakeICloud.authorizeCalls,
+          1,
+          reason: 'switching away from iCloud must not call the iCloud '
+              'authorize() again via _isConnected (email-sentinel branch is '
+              'now used); old.disconnect() targets the iCloud fake but that '
+              'is a different call',
+        );
+
+        // Simulate the sentinel flipping back to iCloud directly (bypassing
+        // firstConnect/disconnect) — isolates switchProvider()'s OWN memo
+        // invalidation responsibility from FR-16's other two triggers.
+        await realRepo.setActiveProvider(SyncProvider.iCloud);
+        await pump();
+        final afterReactivate =
+            await container.read(backupNotifierProvider.future);
+        expect(afterReactivate, isA<BackupConnected>());
+
+        expect(
+          fakeICloud.authorizeCalls,
+          2,
+          reason: 'FR-16: switchProvider() must have cleared the iCloud '
+              'memo — otherwise this rebuild would return the stale '
+              'memoized `true` without calling authorize() again, and the '
+              'count would stay at 1',
+        );
+      },
+    );
+
+    // ── FR-23: memo invalidation on backup failure ──────────────────────────
+    test(
+      'FR-23: memo invalidation on backup failure — _runBackup() Err → memo '
+      'cleared, next _isConnected re-probes',
+      () async {
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        final realRepo = DriftAppSettingsRepository(db.appSettingsDao);
+        await realRepo.getOrCreate();
+        await realRepo.setActiveProvider(SyncProvider.iCloud);
+
+        final fakeICloud = FakeICloudProvider(authorizeThrows: false);
+        final testStorage = InMemorySecureStorage();
+        testStorage.values[BackupNotifier.kPassphraseKey] = 'pw';
+        final failingRunner = _FakeRunner()
+          ..backupResult = const Err(SyncException('disk full'));
+        final testSyncLog = FakeSyncLogRepository();
+
+        final container = ProviderContainer(
+          overrides: [
+            appSettingsRepositoryProvider.overrideWith((_) async => realRepo),
+            secureStorageProvider.overrideWithValue(testStorage),
+            backupDataProvider
+                .overrideWith((_) async => BackupData(failingRunner)),
+            restoreDataProvider
+                .overrideWith((_) async => RestoreData(failingRunner)),
+            cloudBackupProvider.overrideWithValue(fakeICloud),
+            syncLogRepositoryProvider.overrideWith((_) async => testSyncLog),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final initial = await container.read(backupNotifierProvider.future);
+        expect(initial, isA<BackupConnected>());
+        expect(fakeICloud.authorizeCalls, 1);
+
+        await container.read(backupNotifierProvider.notifier).backupNow();
+        final errState = container.read(backupNotifierProvider).valueOrNull;
+        expect(errState, isA<BackupErrorState>());
+
+        // _runBackup's Err branch does not call invalidateSelf() — force a
+        // rebuild via an unrelated settings emission (activeProvider stays
+        // iCloud) so the memo state can be observed.
+        await realRepo.updateLastDataWriteAt(DateTime.utc(2026, 5, 3));
+        await pump();
+        final rebuilt = await container.read(backupNotifierProvider.future);
+        expect(rebuilt, isA<BackupConnected>());
+
+        expect(
+          fakeICloud.authorizeCalls,
+          2,
+          reason: 'FR-23: _runBackup Err branch must clear the iCloud memo '
+              'so the next _isConnected call re-probes instead of '
+              'returning the stale memoized true',
+        );
+      },
+    );
+
+    // ── FR-23: memo invalidation on restore failure ─────────────────────────
+    test(
+      'FR-23: memo invalidation on restore failure — restore() Err → memo '
+      'cleared, next _isConnected re-probes',
+      () async {
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        final realRepo = DriftAppSettingsRepository(db.appSettingsDao);
+        await realRepo.getOrCreate();
+        await realRepo.setActiveProvider(SyncProvider.iCloud);
+
+        final fakeICloud = FakeICloudProvider(authorizeThrows: false);
+        final testStorage = InMemorySecureStorage();
+        testStorage.values[BackupNotifier.kPassphraseKey] = 'pw';
+        final failingRunner = _FakeRunner()
+          ..restoreResult = const Err(SyncException('wrong passphrase'));
+        final testSyncLog = FakeSyncLogRepository();
+
+        final container = ProviderContainer(
+          overrides: [
+            appSettingsRepositoryProvider.overrideWith((_) async => realRepo),
+            secureStorageProvider.overrideWithValue(testStorage),
+            backupDataProvider
+                .overrideWith((_) async => BackupData(failingRunner)),
+            restoreDataProvider
+                .overrideWith((_) async => RestoreData(failingRunner)),
+            cloudBackupProvider.overrideWithValue(fakeICloud),
+            syncLogRepositoryProvider.overrideWith((_) async => testSyncLog),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final initial = await container.read(backupNotifierProvider.future);
+        expect(initial, isA<BackupConnected>());
+        expect(fakeICloud.authorizeCalls, 1);
+
+        await container.read(backupNotifierProvider.notifier).restore();
+        final errState = container.read(backupNotifierProvider).valueOrNull;
+        expect(errState, isA<BackupErrorState>());
+
+        // restore()'s Err branch does not call invalidateSelf() — force a
+        // rebuild via an unrelated settings emission (activeProvider stays
+        // iCloud) so the memo state can be observed.
+        await realRepo.updateLastDataWriteAt(DateTime.utc(2026, 5, 4));
+        await pump();
+        final rebuilt = await container.read(backupNotifierProvider.future);
+        expect(rebuilt, isA<BackupConnected>());
+
+        expect(
+          fakeICloud.authorizeCalls,
+          2,
+          reason: 'FR-23: restore() Err branch must clear the iCloud memo '
+              'so the next _isConnected call re-probes instead of '
+              'returning the stale memoized true',
+        );
+      },
+    );
+
+    // ── FR-23 negative: a successful backup must NOT invalidate the memo ───
+    test(
+      'FR-23 negative: memo is NOT invalidated on backup success (Ok) — no '
+      'unnecessary re-probe cost',
+      () async {
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        final realRepo = DriftAppSettingsRepository(db.appSettingsDao);
+        await realRepo.getOrCreate();
+        await realRepo.setActiveProvider(SyncProvider.iCloud);
+
+        final fakeICloud = FakeICloudProvider(authorizeThrows: false);
+        final testStorage = InMemorySecureStorage();
+        testStorage.values[BackupNotifier.kPassphraseKey] = 'pw';
+        final okRunner = _FakeRunner(); // default backupResult == Ok(null)
+        final testSyncLog = FakeSyncLogRepository();
+
+        final container = ProviderContainer(
+          overrides: [
+            appSettingsRepositoryProvider.overrideWith((_) async => realRepo),
+            secureStorageProvider.overrideWithValue(testStorage),
+            backupDataProvider.overrideWith((_) async => BackupData(okRunner)),
+            restoreDataProvider
+                .overrideWith((_) async => RestoreData(okRunner)),
+            cloudBackupProvider.overrideWithValue(fakeICloud),
+            syncLogRepositoryProvider.overrideWith((_) async => testSyncLog),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final initial = await container.read(backupNotifierProvider.future);
+        expect(initial, isA<BackupConnected>());
+        expect(fakeICloud.authorizeCalls, 1);
+
+        // _runBackup's Ok branch DOES call ref.invalidateSelf() — build()
+        // reruns regardless of the memo. The point of this test is that the
+        // memo itself stays intact, so that rebuild must NOT re-probe.
+        await container.read(backupNotifierProvider.notifier).backupNow();
+        await pump();
+        final rebuilt = await container.read(backupNotifierProvider.future);
+        expect(rebuilt, isA<BackupConnected>());
+
+        expect(
+          fakeICloud.authorizeCalls,
+          1,
+          reason: 'FR-23 negative: a successful backup must not invalidate '
+              'the iCloud probe memo — the post-success rebuild (triggered '
+              "by _runBackup's own invalidateSelf()) must reuse the "
+              'memoized value, not re-probe',
+        );
+      },
+    );
+
+    // ── Regression: non-iCloud branch is untouched by the memo ─────────────
+    test(
+      'regression: dropbox/googleDrive email-sentinel branch involves no '
+      'probe / no memo key',
+      () async {
+        await settingsRepo.updateBackupState(
+          dropboxEmail: 'a@b.com',
+          lastBackupAt: null,
+        );
+        // Pin cloudBackupProvider to an iCloud spy — if the dropbox branch
+        // ever touched the memo/probe seam it would call authorize() on
+        // this fake, which must never happen for a non-iCloud activeProvider.
+        final fakeICloudSpy = FakeICloudProvider(authorizeThrows: false);
+
+        final container = ProviderContainer(
+          overrides: [
+            appSettingsRepositoryProvider
+                .overrideWith((_) async => settingsRepo),
+            secureStorageProvider.overrideWithValue(storage),
+            backupDataProvider.overrideWith((_) async => BackupData(runner)),
+            restoreDataProvider.overrideWith((_) async => RestoreData(runner)),
+            cloudBackupProvider.overrideWithValue(fakeICloudSpy),
+            syncLogRepositoryProvider
+                .overrideWith((_) async => fakeSyncLogRepo),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final s = await container.read(backupNotifierProvider.future);
+        expect(s, isA<BackupConnected>());
+        expect(
+          fakeICloudSpy.authorizeCalls,
+          0,
+          reason: 'regression: the dropbox/googleDrive email-sentinel '
+              'branch must never call the container probe — no memo key '
+              'involved for a non-iCloud activeProvider',
+        );
+      },
+    );
+  });
+
   // ── TASK-05 TDD: BackupNotifier.switchProvider ordered flow ──
   //
   // These tests are written BEFORE the implementation (TDD red phase).
