@@ -32,14 +32,28 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
   // Keep the private alias to avoid changing every internal call-site.
   static const _passphraseKey = kPassphraseKey;
 
-  /// True while [switchProvider] is mid-flight.
+  /// The [BackupOperation] currently mid-flight, or `null` when idle
+  /// (TASK-06, FR-08/FR-09).
   ///
-  /// The Drift writes at switch steps 6–7 re-emit [appSettingsStreamProvider]
-  /// and re-trigger [build] before the new provider is authorized; deriving
-  /// state from those half-written settings (activeProvider flipped, email
-  /// null) would flash [BackupNotConnected] over the switching overlay.
-  /// While set, [build] returns [BackupRunning] instead.
-  bool _switchInFlight = false;
+  /// Unifies the re-entrancy/overlay guard across [firstConnect],
+  /// [disconnect], and [switchProvider] — previously only [switchProvider]
+  /// tracked this (as a `bool`), which meant (a) [build] always reported a
+  /// hardcoded [BackupOperation.switching] regardless of which operation was
+  /// actually running, and (b) [firstConnect]/[disconnect] had no
+  /// re-entrancy guard at all.
+  ///
+  /// The Drift writes each of these three flows performs re-emit
+  /// [appSettingsStreamProvider] and re-trigger [build] before the flow
+  /// itself has finished (e.g. before the terminal passphrase-key wipe or
+  /// `ref.invalidateSelf()`); deriving state from those half-written
+  /// settings would flash the wrong state over the running overlay. While
+  /// set, [build] returns `BackupRunning(_inFlightOperation!)` instead — the
+  /// ACTUAL operation, not a hardcoded value.
+  ///
+  /// Set in a `try` and cleared to `null` in `finally` on every exit path of
+  /// all three methods (FR-09) — never left non-null after a method returns,
+  /// so the UI can never wedge in [BackupRunning] indefinitely (D4).
+  BackupOperation? _inFlightOperation;
 
   /// Single derivation point for the "is a backup provider connected?"
   /// predicate (FR-15).
@@ -77,19 +91,22 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     // getOrCreate(), which always returns the current DB/in-memory state and
     // is not subject to stream-lag between the emission and the read.
     await ref.watch(appSettingsStreamProvider.future);
-    // Mid-switch rebuilds must not read the half-written settings produced by
-    // switchProvider steps 6–7 — hold the switching overlay until the switch
-    // finishes (its finally clears the flag before the final invalidateSelf).
-    if (_switchInFlight) {
-      return const BackupRunning(BackupOperation.switching);
+    // Mid-operation rebuilds must not read the half-written settings any of
+    // firstConnect/disconnect/switchProvider's Drift writes produce — hold
+    // the running overlay, reporting the ACTUAL in-flight operation (FR-08),
+    // until the flow finishes (its finally clears the flag before the final
+    // invalidateSelf / return).
+    if (_inFlightOperation != null) {
+      return BackupRunning(_inFlightOperation!);
     }
     final settingsRepo = await ref.read(appSettingsRepositoryProvider.future);
     final settings = await settingsRepo.getOrCreate();
     if (!await _isConnected(settings)) {
       return const BackupNotConnected();
     }
-    final passphrase =
-        await ref.read(secureStorageProvider).read(key: _passphraseKey);
+    final passphrase = await ref
+        .read(secureStorageProvider)
+        .read(key: _passphraseKey);
     final passphraseSet = passphrase != null && passphrase.isNotEmpty;
     final autoBackupActive = !settings.backupSuspended && passphraseSet;
     return BackupConnected(
@@ -153,8 +170,9 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     try {
       final files = await provider.listFiles(); // sorted desc, newest first
       if (files.isNotEmpty) {
-        discoveredLastBackupAt =
-            BackupFilename.parseTimestamp(files.first.name);
+        discoveredLastBackupAt = BackupFilename.parseTimestamp(
+          files.first.name,
+        );
       }
     } catch (e) {
       debugPrint(
@@ -184,6 +202,10 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
   /// state. Defined outside the [switchProvider]→[backupWithPassphrase]
   /// marker span (G-02/G-04).
   Future<void> firstConnect(SyncProvider target) async {
+    // TASK-06 re-entrancy guard (FR-09): reject if ANY operation
+    // (connect/disconnect/switch) is already in flight.
+    if (_inFlightOperation != null) return;
+    _inFlightOperation = BackupOperation.connecting;
     state = const AsyncData(BackupRunning(BackupOperation.connecting));
     try {
       // BUG-01/02: hoist the SecureStorage handle, the resolved provider,
@@ -214,10 +236,16 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
               : 'Something went wrong. Please try again.',
         ),
       );
+    } finally {
+      _inFlightOperation = null;
     }
   }
 
   Future<void> disconnect() async {
+    // TASK-06 re-entrancy guard (FR-09): reject if ANY operation
+    // (connect/disconnect/switch) is already in flight.
+    if (_inFlightOperation != null) return;
+    _inFlightOperation = BackupOperation.disconnecting;
     state = const AsyncData(BackupRunning(BackupOperation.disconnecting));
     try {
       final dropbox = ref.read(cloudBackupProvider);
@@ -251,13 +279,17 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
               : 'Something went wrong. Please try again.',
         ),
       );
+    } finally {
+      _inFlightOperation = null;
     }
   }
 
   /// Switches the active backup provider from the current one to [target].
   ///
   /// Ordered contract (spec §5.1):
-  ///   1. Re-entrancy guard: return immediately if [BackupRunning].
+  ///   1. Re-entrancy guard: return immediately if any operation
+  ///      (connect/disconnect/switch) is already in flight (TASK-06,
+  ///      FR-09) — i.e. [_inFlightOperation] is non-null.
   ///   2. Platform guard: assert [target] is in [availableProviders].
   ///   3. Set state → [BackupRunning(BackupOperation.switching)].
   ///   4. Read the settings repository, old AND new provider (via
@@ -290,8 +322,10 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
   ///     delete the passphrase key.
   ///   - Never calls [old.deleteFile] — old .enc files are left intact.
   Future<void> switchProvider(SyncProvider target) async {
-    // Step 1: re-entrancy guard — a switch already in progress takes priority.
-    if (state.valueOrNull is BackupRunning) return;
+    // Step 1: re-entrancy guard (TASK-06, FR-09) — reject if ANY operation
+    // (connect/disconnect/switch) is already in flight, not just a same-type
+    // switch.
+    if (_inFlightOperation != null) return;
 
     // Step 2: platform guard — iCloud is iOS-only (availableProviders enforces it).
     assert(availableProviders(defaultTargetPlatform).contains(target));
@@ -305,7 +339,7 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     // BackupNotConnected from the half-written settings and the connect view
     // flashes over the switching overlay.  Error paths return from inside the
     // try, so the finally clears the flag on every exit.
-    _switchInFlight = true;
+    _inFlightOperation = BackupOperation.switching;
     try {
       // Step 4: read BOTH the old and new providers BEFORE any Drift mutation.
       // BUG-01: resolving resolveBackupProvider(target) AFTER the steps 6–7
@@ -371,7 +405,7 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
         return;
       }
     } finally {
-      _switchInFlight = false;
+      _inFlightOperation = null;
     }
 
     // Step 12: trigger build() with the new settings (the guard is already
@@ -384,8 +418,9 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     // HC-2: sentinel read PRECEDES any secure-storage operation.
     // If backupSuspended = true (set by DeleteAllData on wipe), skip silently
     // and log a diagnostic entry — no passphrase is read or written.
-    final settingsForSentinel =
-        await ref.read(appSettingsRepositoryProvider.future);
+    final settingsForSentinel = await ref.read(
+      appSettingsRepositoryProvider.future,
+    );
     final sentinelSettings = await settingsForSentinel.getOrCreate();
     if (sentinelSettings.backupSuspended) {
       // BUG-B02: manual backup IS the resume path. Clear sentinel BEFORE
@@ -480,8 +515,9 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     }
     // Cases: (c) first-ever backup, or (d) new data exists → proceed.
 
-    final pass =
-        await ref.read(secureStorageProvider).read(key: _passphraseKey);
+    final pass = await ref
+        .read(secureStorageProvider)
+        .read(key: _passphraseKey);
     if (pass == null) return;
     await _runBackup();
   }
@@ -518,8 +554,9 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     }
 
     // Guard 4: no passphrase — nothing to encrypt with.
-    final pass =
-        await ref.read(secureStorageProvider).read(key: _passphraseKey);
+    final pass = await ref
+        .read(secureStorageProvider)
+        .read(key: _passphraseKey);
     if (pass == null) return;
 
     // Guard 5 bypassed intentionally: write-recency check is NOT applied here.

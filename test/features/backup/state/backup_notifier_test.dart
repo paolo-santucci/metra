@@ -3501,6 +3501,649 @@ void main() {
     );
   });
 
+  // -----------------------------------------------------------------------
+  // TASK-06 — unified `_inFlightOperation` guard carrying `BackupOperation`
+  // (spec §7.1 Group C + §7.2 Scenario D, FR-08/FR-09).
+  //
+  // Replaces `bool _switchInFlight` with `BackupOperation? _inFlightOperation`
+  // so build() reports the ACTUAL in-flight operation (not a hardcoded
+  // `switching`), and extends the re-entrancy guard to firstConnect/disconnect
+  // (previously only switchProvider guarded re-entrancy).
+  // -----------------------------------------------------------------------
+  group('TASK-06 — unified _inFlightOperation guard (FR-08, FR-09)', () {
+    // ── build() reports the actual in-flight operation (FR-08) ───────────
+    //
+    // 3-case table — one assert per op, per spec §7.1 Group C: a single
+    // combined test would miss which op leaked into build()'s output.
+    group('build() reports the actual in-flight operation (FR-08)', () {
+      test(
+        'connecting: build() returns BackupRunning(connecting) mid-firstConnect '
+        '— not hardcoded switching, not the premature BackupConnected the '
+        'already-written Drift state would otherwise derive',
+        () async {
+          final db = AppDatabase(NativeDatabase.memory());
+          addTearDown(db.close);
+          final realRepo = DriftAppSettingsRepository(db.appSettingsDao);
+          await realRepo.getOrCreate();
+
+          final releaser = Completer<void>();
+          final blockingStorage = _BlockingDeleteSecureStorage(releaser);
+
+          final fakeDrpbx = FakeDropboxProvider();
+          fakeDrpbx.currentEmailResult = 'a@b.test';
+          final fakeSyncLog = FakeSyncLogRepository();
+          final fakeRunner = _FakeRunner();
+
+          final container = ProviderContainer(
+            overrides: [
+              appSettingsRepositoryProvider.overrideWith((_) async => realRepo),
+              secureStorageProvider.overrideWithValue(blockingStorage),
+              backupDataProvider
+                  .overrideWith((_) async => BackupData(fakeRunner)),
+              restoreDataProvider
+                  .overrideWith((_) async => RestoreData(fakeRunner)),
+              cloudBackupProvider.overrideWithValue(fakeDrpbx),
+              resolveBackupProvider.overrideWith((ref, id) => fakeDrpbx),
+              syncLogRepositoryProvider.overrideWith((_) async => fakeSyncLog),
+            ],
+          );
+          addTearDown(container.dispose);
+          addTearDown(() {
+            if (!releaser.isCompleted) releaser.complete();
+          });
+
+          await container.read(backupNotifierProvider.future);
+
+          final firstConnectFuture = container
+              .read(backupNotifierProvider.notifier)
+              .firstConnect(SyncProvider.dropbox);
+
+          // Let the handshake's Drift writes (updateBackupState,
+          // clearBackupSuspended) land and the real Drift stream re-emit,
+          // triggering a rebuild — while firstConnect is still blocked
+          // inside the terminal storage.delete(kPassphraseKey) call.
+          await _pumpMicrotasks();
+
+          // Precondition: the handshake's Drift writes already completed.
+          final midSettings = await realRepo.getOrCreate();
+          expect(
+            midSettings.dropboxEmail,
+            'a@b.test',
+            reason: 'precondition: handshake Drift writes must have already '
+                'landed for this test to distinguish guarded vs. unguarded '
+                'build() behaviour',
+          );
+
+          final state = container.read(backupNotifierProvider).valueOrNull;
+          expect(state, isA<BackupRunning>());
+          expect(
+            (state as BackupRunning).operation,
+            BackupOperation.connecting,
+            reason: 'FR-08: build() must report the actual in-flight '
+                'operation while _inFlightOperation is set, not race ahead '
+                'to the derived BackupConnected state',
+          );
+
+          releaser.complete();
+          await firstConnectFuture;
+        },
+      );
+
+      test(
+        'disconnecting: build() returns BackupRunning(disconnecting) '
+        'mid-disconnect — not hardcoded switching, not the premature '
+        'BackupNotConnected the already-written Drift state would otherwise '
+        'derive',
+        () async {
+          final db = AppDatabase(NativeDatabase.memory());
+          addTearDown(db.close);
+          final realRepo = DriftAppSettingsRepository(db.appSettingsDao);
+          await realRepo.getOrCreate();
+          await realRepo.updateBackupState(
+            dropboxEmail: 'a@b.test',
+            lastBackupAt: null,
+          );
+
+          final releaser = Completer<void>();
+          final blockingStorage = _BlockingDeleteSecureStorage(releaser);
+          blockingStorage.values[BackupNotifier.kPassphraseKey] = 'pw';
+
+          final fakeDrpbx = FakeDropboxProvider();
+          final fakeSyncLog = FakeSyncLogRepository();
+          final fakeRunner = _FakeRunner();
+
+          final container = ProviderContainer(
+            overrides: [
+              appSettingsRepositoryProvider.overrideWith((_) async => realRepo),
+              secureStorageProvider.overrideWithValue(blockingStorage),
+              backupDataProvider
+                  .overrideWith((_) async => BackupData(fakeRunner)),
+              restoreDataProvider
+                  .overrideWith((_) async => RestoreData(fakeRunner)),
+              cloudBackupProvider.overrideWithValue(fakeDrpbx),
+              resolveBackupProvider.overrideWith((ref, id) => fakeDrpbx),
+              syncLogRepositoryProvider.overrideWith((_) async => fakeSyncLog),
+            ],
+          );
+          addTearDown(container.dispose);
+          addTearDown(() {
+            if (!releaser.isCompleted) releaser.complete();
+          });
+
+          final initial = await container.read(backupNotifierProvider.future);
+          expect(initial, isA<BackupConnected>());
+
+          final disconnectFuture =
+              container.read(backupNotifierProvider.notifier).disconnect();
+
+          // Let the Drift writes (updateBackupState nulling email,
+          // setActiveProvider(dropbox)) land and the real stream re-emit —
+          // while disconnect() is still blocked inside the terminal
+          // storage.delete(kPassphraseKey) call.
+          await _pumpMicrotasks();
+
+          // Precondition: the disconnect Drift writes already completed.
+          final midSettings = await realRepo.getOrCreate();
+          expect(
+            midSettings.dropboxEmail,
+            isNull,
+            reason: 'precondition: disconnect Drift writes must have '
+                'already landed for this test to distinguish guarded vs. '
+                'unguarded build() behaviour',
+          );
+
+          final state = container.read(backupNotifierProvider).valueOrNull;
+          expect(state, isA<BackupRunning>());
+          expect(
+            (state as BackupRunning).operation,
+            BackupOperation.disconnecting,
+            reason: 'FR-08: build() must report the actual in-flight '
+                'operation while _inFlightOperation is set, not race ahead '
+                'to the derived BackupNotConnected state',
+          );
+
+          releaser.complete();
+          await disconnectFuture;
+        },
+      );
+
+      test(
+        'switching: build() returns BackupRunning(switching) mid-switchProvider '
+        '(regression — the pre-existing hardcoded case)',
+        () async {
+          await settingsRepo.updateBackupState(
+            dropboxEmail: 'user@dropbox.com',
+            lastBackupAt: null,
+          );
+
+          final releaser = Completer<void>();
+          final blockingGoogleDrive =
+              _BlockingAuthGoogleDriveProvider(releaser);
+          final fakeICloud = FakeICloudProvider();
+
+          final container = ProviderContainer(
+            overrides: [
+              appSettingsRepositoryProvider.overrideWith(
+                (_) async => settingsRepo,
+              ),
+              secureStorageProvider.overrideWithValue(storage),
+              backupDataProvider.overrideWith((_) async => BackupData(runner)),
+              restoreDataProvider
+                  .overrideWith((_) async => RestoreData(runner)),
+              resolveBackupProvider.overrideWith((ref, id) {
+                switch (id) {
+                  case SyncProvider.dropbox:
+                    return fakeDropbox;
+                  case SyncProvider.googleDrive:
+                    return blockingGoogleDrive;
+                  case SyncProvider.iCloud:
+                    return fakeICloud;
+                }
+              }),
+              syncLogRepositoryProvider
+                  .overrideWith((_) async => fakeSyncLogRepo),
+            ],
+          );
+          addTearDown(container.dispose);
+          addTearDown(() {
+            if (!releaser.isCompleted) releaser.complete();
+          });
+
+          await container.read(backupNotifierProvider.future);
+
+          final switchFuture = container
+              .read(backupNotifierProvider.notifier)
+              .switchProvider(SyncProvider.googleDrive);
+          await Future<void>.delayed(Duration.zero);
+
+          final state = container.read(backupNotifierProvider).valueOrNull;
+          expect(state, isA<BackupRunning>());
+          expect(
+            (state as BackupRunning).operation,
+            BackupOperation.switching,
+          );
+
+          releaser.complete();
+          await switchFuture;
+        },
+      );
+    });
+
+    // ── guard clears on every exit path (FR-09 / D4) ──────────────────────
+    group('guard clears on every exit path (FR-09 / D4)', () {
+      test(
+        'firstConnect: guard clears after success — second call is not '
+        'rejected',
+        () async {
+          final container = makeContainer();
+          addTearDown(container.dispose);
+          await container.read(backupNotifierProvider.future);
+          final notifier = container.read(backupNotifierProvider.notifier);
+
+          await notifier.firstConnect(SyncProvider.dropbox);
+          // firstConnect's success path ends with ref.invalidateSelf(),
+          // which schedules — not synchronously runs — the rebuild; await
+          // .future so the rebuild (and thus _inFlightOperation's clearing
+          // being reflected in build()'s output) has actually landed before
+          // asserting on it.
+          expect(
+            await container.read(backupNotifierProvider.future),
+            isA<BackupConnected>(),
+          );
+          expect(fakeDropbox.authorizeCalls, 1);
+
+          await notifier.firstConnect(SyncProvider.dropbox);
+          expect(
+            fakeDropbox.authorizeCalls,
+            2,
+            reason: 'D4: guard must clear in finally after success — the '
+                'second firstConnect must actually run, not be rejected',
+          );
+        },
+      );
+
+      test(
+        'firstConnect: guard clears after failure — second call is not '
+        'rejected',
+        () async {
+          fakeDropbox.currentEmailResult = null; // forces SyncException
+          final container = makeContainer();
+          addTearDown(container.dispose);
+          await container.read(backupNotifierProvider.future);
+          final notifier = container.read(backupNotifierProvider.notifier);
+
+          await notifier.firstConnect(SyncProvider.dropbox);
+          expect(
+            container.read(backupNotifierProvider).valueOrNull,
+            isA<BackupErrorState>(),
+          );
+          expect(fakeDropbox.authorizeCalls, 1);
+
+          fakeDropbox.currentEmailResult = 'user@example.com';
+          await notifier.firstConnect(SyncProvider.dropbox);
+          expect(
+            fakeDropbox.authorizeCalls,
+            2,
+            reason: 'D4: guard must clear in finally after failure — the '
+                'retry must actually run, not be rejected',
+          );
+          final s = await container.read(backupNotifierProvider.future);
+          expect(s, isA<BackupConnected>());
+        },
+      );
+
+      test(
+        'disconnect: guard clears after success — second call is not '
+        'rejected',
+        () async {
+          await settingsRepo.updateBackupState(
+            dropboxEmail: 'a@b.com',
+            lastBackupAt: null,
+          );
+          final container = makeContainer();
+          addTearDown(container.dispose);
+          await container.read(backupNotifierProvider.future);
+          final notifier = container.read(backupNotifierProvider.notifier);
+
+          await notifier.disconnect();
+          expect(fakeDropbox.disconnectCalls, 1);
+
+          await notifier.disconnect();
+          expect(
+            fakeDropbox.disconnectCalls,
+            2,
+            reason: 'D4: guard must clear in finally after success — the '
+                'second disconnect must actually run, not be rejected',
+          );
+        },
+      );
+
+      test(
+        'disconnect: guard clears after failure — second call is not '
+        'rejected',
+        () async {
+          await settingsRepo.updateBackupState(
+            dropboxEmail: 'a@b.com',
+            lastBackupAt: null,
+          );
+          fakeDropbox.disconnectThrows = true;
+          final container = makeContainer();
+          addTearDown(container.dispose);
+          await container.read(backupNotifierProvider.future);
+          final notifier = container.read(backupNotifierProvider.notifier);
+
+          await notifier.disconnect();
+          expect(
+            container.read(backupNotifierProvider).valueOrNull,
+            isA<BackupErrorState>(),
+          );
+          expect(fakeDropbox.disconnectCalls, 1);
+
+          // FakeDropboxProvider.disconnectThrows auto-resets after firing once.
+          await notifier.disconnect();
+          expect(
+            fakeDropbox.disconnectCalls,
+            2,
+            reason: 'D4: guard must clear in finally after failure — the '
+                'retry must actually run, not be rejected',
+          );
+        },
+      );
+
+      test(
+        'switchProvider: guard clears on abort-gate failure (step 5) — '
+        'second call is not rejected',
+        () async {
+          await settingsRepo.updateBackupState(
+            dropboxEmail: 'user@dropbox.com',
+            lastBackupAt: null,
+          );
+          fakeDropbox.disconnectThrows = true;
+          final fakeGoogleDrive = _FakeGoogleDriveProvider();
+          final fakeICloud = FakeICloudProvider();
+
+          final container = ProviderContainer(
+            overrides: [
+              appSettingsRepositoryProvider.overrideWith(
+                (_) async => settingsRepo,
+              ),
+              secureStorageProvider.overrideWithValue(storage),
+              backupDataProvider.overrideWith((_) async => BackupData(runner)),
+              restoreDataProvider
+                  .overrideWith((_) async => RestoreData(runner)),
+              resolveBackupProvider.overrideWith((ref, id) {
+                switch (id) {
+                  case SyncProvider.dropbox:
+                    return fakeDropbox;
+                  case SyncProvider.googleDrive:
+                    return fakeGoogleDrive;
+                  case SyncProvider.iCloud:
+                    return fakeICloud;
+                }
+              }),
+              syncLogRepositoryProvider
+                  .overrideWith((_) async => fakeSyncLogRepo),
+            ],
+          );
+          addTearDown(container.dispose);
+          await container.read(backupNotifierProvider.future);
+          final notifier = container.read(backupNotifierProvider.notifier);
+
+          await notifier.switchProvider(SyncProvider.googleDrive);
+          expect(
+            container.read(backupNotifierProvider).valueOrNull,
+            isA<BackupErrorState>(),
+          );
+          expect(fakeDropbox.disconnectCalls, 1);
+
+          // FakeDropboxProvider.disconnectThrows auto-resets after firing once.
+          await notifier.switchProvider(SyncProvider.googleDrive);
+          expect(
+            fakeDropbox.disconnectCalls,
+            2,
+            reason: 'D4: guard must clear in finally after the abort-gate '
+                'failure — the retry must actually run, not be rejected',
+          );
+        },
+      );
+
+      test(
+        'switchProvider: guard clears on post-flip failure (step 11) — '
+        'second call is not rejected',
+        () async {
+          await settingsRepo.updateBackupState(
+            dropboxEmail: 'user@dropbox.com',
+            lastBackupAt: null,
+          );
+          final fakeGoogleDrive = _FakeGoogleDriveProvider()
+            ..authorizeThrows = true;
+          final fakeICloud = FakeICloudProvider();
+
+          final container = ProviderContainer(
+            overrides: [
+              appSettingsRepositoryProvider.overrideWith(
+                (_) async => settingsRepo,
+              ),
+              secureStorageProvider.overrideWithValue(storage),
+              backupDataProvider.overrideWith((_) async => BackupData(runner)),
+              restoreDataProvider
+                  .overrideWith((_) async => RestoreData(runner)),
+              resolveBackupProvider.overrideWith((ref, id) {
+                switch (id) {
+                  case SyncProvider.dropbox:
+                    return fakeDropbox;
+                  case SyncProvider.googleDrive:
+                    return fakeGoogleDrive;
+                  case SyncProvider.iCloud:
+                    return fakeICloud;
+                }
+              }),
+              syncLogRepositoryProvider
+                  .overrideWith((_) async => fakeSyncLogRepo),
+            ],
+          );
+          addTearDown(container.dispose);
+          await container.read(backupNotifierProvider.future);
+          final notifier = container.read(backupNotifierProvider.notifier);
+
+          await notifier.switchProvider(SyncProvider.googleDrive);
+          expect(
+            container.read(backupNotifierProvider).valueOrNull,
+            isA<BackupErrorState>(),
+          );
+          expect(fakeGoogleDrive.authorizeCalls, 1);
+
+          fakeGoogleDrive.authorizeThrows = false;
+          await notifier.switchProvider(SyncProvider.googleDrive);
+          expect(
+            fakeGoogleDrive.authorizeCalls,
+            2,
+            reason: 'D4: guard must clear in finally after the post-flip '
+                'failure — the retry must actually run, not be rejected',
+          );
+        },
+      );
+
+      test(
+        'switchProvider: guard clears on success — second call is not '
+        'rejected',
+        () async {
+          await settingsRepo.updateBackupState(
+            dropboxEmail: 'user@dropbox.com',
+            lastBackupAt: null,
+          );
+          final fakeGoogleDrive = _FakeGoogleDriveProvider();
+          final fakeICloud = FakeICloudProvider();
+
+          final container = ProviderContainer(
+            overrides: [
+              appSettingsRepositoryProvider.overrideWith(
+                (_) async => settingsRepo,
+              ),
+              secureStorageProvider.overrideWithValue(storage),
+              backupDataProvider.overrideWith((_) async => BackupData(runner)),
+              restoreDataProvider
+                  .overrideWith((_) async => RestoreData(runner)),
+              resolveBackupProvider.overrideWith((ref, id) {
+                switch (id) {
+                  case SyncProvider.dropbox:
+                    return fakeDropbox;
+                  case SyncProvider.googleDrive:
+                    return fakeGoogleDrive;
+                  case SyncProvider.iCloud:
+                    return fakeICloud;
+                }
+              }),
+              syncLogRepositoryProvider
+                  .overrideWith((_) async => fakeSyncLogRepo),
+            ],
+          );
+          addTearDown(container.dispose);
+          await container.read(backupNotifierProvider.future);
+          final notifier = container.read(backupNotifierProvider.notifier);
+
+          await notifier.switchProvider(SyncProvider.googleDrive);
+          expect(fakeGoogleDrive.authorizeCalls, 1);
+
+          // Switch back to dropbox — proves the guard cleared, since a
+          // wedged guard would silently reject this second call.
+          await notifier.switchProvider(SyncProvider.dropbox);
+          expect(
+            fakeDropbox.authorizeCalls,
+            greaterThanOrEqualTo(1),
+            reason: 'D4: guard must clear in finally after success — the '
+                'second switchProvider must actually run, not be rejected',
+          );
+        },
+      );
+    });
+
+    // ── re-entrancy across methods (FR-09) ─────────────────────────────────
+    group('re-entrancy across methods (FR-09)', () {
+      test(
+        'firstConnect in flight → concurrent disconnect() is rejected',
+        () async {
+          final releaser = Completer<void>();
+          final blockingGoogleDrive =
+              _BlockingAuthGoogleDriveProvider(releaser);
+
+          final container = ProviderContainer(
+            overrides: [
+              appSettingsRepositoryProvider.overrideWith(
+                (_) async => settingsRepo,
+              ),
+              secureStorageProvider.overrideWithValue(storage),
+              backupDataProvider.overrideWith((_) async => BackupData(runner)),
+              restoreDataProvider
+                  .overrideWith((_) async => RestoreData(runner)),
+              // disconnect() reads cloudBackupProvider directly.
+              cloudBackupProvider.overrideWithValue(fakeDropbox),
+              // firstConnect() reads resolveBackupProvider(target).
+              resolveBackupProvider
+                  .overrideWith((ref, id) => blockingGoogleDrive),
+              syncLogRepositoryProvider
+                  .overrideWith((_) async => fakeSyncLogRepo),
+            ],
+          );
+          addTearDown(container.dispose);
+          addTearDown(() {
+            if (!releaser.isCompleted) releaser.complete();
+          });
+
+          await container.read(backupNotifierProvider.future);
+          final notifier = container.read(backupNotifierProvider.notifier);
+
+          final firstConnectFuture =
+              notifier.firstConnect(SyncProvider.googleDrive);
+          await Future<void>.delayed(Duration.zero);
+
+          expect(
+            container.read(backupNotifierProvider).valueOrNull,
+            isA<BackupRunning>(),
+            reason: 'precondition: firstConnect must be in flight',
+          );
+
+          await notifier.disconnect();
+          expect(
+            fakeDropbox.disconnectCalls,
+            0,
+            reason: 'FR-09: concurrent disconnect() while firstConnect is '
+                'in flight must be rejected at entry',
+          );
+
+          releaser.complete();
+          await firstConnectFuture;
+        },
+      );
+
+      test(
+        'switchProvider in flight → concurrent firstConnect() is rejected',
+        () async {
+          await settingsRepo.updateBackupState(
+            dropboxEmail: 'user@dropbox.com',
+            lastBackupAt: null,
+          );
+          final releaser = Completer<void>();
+          final blockingGoogleDrive =
+              _BlockingAuthGoogleDriveProvider(releaser);
+          final fakeICloud = FakeICloudProvider();
+
+          final container = ProviderContainer(
+            overrides: [
+              appSettingsRepositoryProvider.overrideWith(
+                (_) async => settingsRepo,
+              ),
+              secureStorageProvider.overrideWithValue(storage),
+              backupDataProvider.overrideWith((_) async => BackupData(runner)),
+              restoreDataProvider
+                  .overrideWith((_) async => RestoreData(runner)),
+              resolveBackupProvider.overrideWith((ref, id) {
+                switch (id) {
+                  case SyncProvider.dropbox:
+                    return fakeDropbox;
+                  case SyncProvider.googleDrive:
+                    return blockingGoogleDrive;
+                  case SyncProvider.iCloud:
+                    return fakeICloud;
+                }
+              }),
+              syncLogRepositoryProvider
+                  .overrideWith((_) async => fakeSyncLogRepo),
+            ],
+          );
+          addTearDown(container.dispose);
+          addTearDown(() {
+            if (!releaser.isCompleted) releaser.complete();
+          });
+
+          await container.read(backupNotifierProvider.future);
+          final notifier = container.read(backupNotifierProvider.notifier);
+
+          final switchFuture =
+              notifier.switchProvider(SyncProvider.googleDrive);
+          await Future<void>.delayed(Duration.zero);
+
+          expect(
+            container.read(backupNotifierProvider).valueOrNull,
+            isA<BackupRunning>(),
+            reason: 'precondition: switchProvider must be in flight',
+          );
+
+          await notifier.firstConnect(SyncProvider.iCloud);
+          expect(
+            fakeICloud.authorizeCalls,
+            0,
+            reason: 'FR-09: concurrent firstConnect() while switchProvider '
+                'is in flight must be rejected at entry',
+          );
+
+          releaser.complete();
+          await switchFuture;
+        },
+      );
+    });
+  });
+
   // ── BUG-2 T-03: disconnect() resets activeProvider → iCloud disconnects ──
   //
   // Root cause: _isConnected(iCloud) probes the container via authorize() —
