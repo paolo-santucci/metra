@@ -24,9 +24,14 @@ import '../../../l10n/app_localizations.dart';
 import 'timeline_card.dart';
 
 class TimelineView extends StatelessWidget {
-  const TimelineView({super.key, required this.summaries});
+  const TimelineView({super.key, required this.summaries, this.onCardTap});
 
   final List<CycleSummary> summaries;
+
+  /// Invoked with the tapped entry's [CycleSummary] (FR-01/FR-02). `null`
+  /// keeps every [TimelineCard] display-only, as on the Archive Table view
+  /// (ui-design-bible §15 anti-pattern 9).
+  final ValueChanged<CycleSummary>? onCardTap;
 
   @override
   Widget build(BuildContext context) {
@@ -35,10 +40,14 @@ class TimelineView extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 90),
       itemCount: summaries.length,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (_, i) => TimelineCard(
-        summary: summaries[i],
-        isLast: i == summaries.length - 1,
-      ),
+      itemBuilder: (_, i) {
+        final summary = summaries[i];
+        return TimelineCard(
+          summary: summary,
+          isLast: i == summaries.length - 1,
+          onTap: onCardTap == null ? null : () => onCardTap!(summary),
+        );
+      },
     );
   }
 }

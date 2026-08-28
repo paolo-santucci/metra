@@ -158,6 +158,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get calendar_fab_label => 'Aggiungi o modifica il registro di oggi';
 
   @override
+  String get notification_channel_name => 'Mētra — Ciclo';
+
+  @override
   String get notification_prediction_title => 'Il tuo ciclo si avvicina';
 
   @override
@@ -520,9 +523,6 @@ class AppLocalizationsIt extends AppLocalizations {
       'I tuoi dati restano sul dispositivo. Collega Dropbox per conservare una copia cifrata nel cloud — solo tu puoi leggerla.';
 
   @override
-  String get backup_connect_dropbox => 'Collega Dropbox';
-
-  @override
   String backup_connected_as(String email) {
     return 'Connesso come: $email';
   }
@@ -658,6 +658,9 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get onboarding_date_placeholder => 'Seleziona data';
+
+  @override
+  String get onboarding_language_selector_label => 'Lingua';
 
   @override
   String get settings_section_about => 'Informazioni';
@@ -810,9 +813,6 @@ class AppLocalizationsIt extends AppLocalizations {
       'Collega un account per salvare i tuoi dati in modo sicuro e cifrato.';
 
   @override
-  String get backupConnectDropbox => 'Collega Dropbox';
-
-  @override
   String get backupAccountConnesso => 'Account connesso';
 
   @override
@@ -893,4 +893,36 @@ class AppLocalizationsIt extends AppLocalizations {
   String restoreSuccessToast(int count) {
     return 'Ripristinati $count elementi';
   }
+
+  @override
+  String get backupProviderNameDropbox => 'Dropbox';
+
+  @override
+  String get backupProviderNameGoogleDrive => 'Google Drive';
+
+  @override
+  String get backupProviderNameICloud => 'iCloud';
+
+  @override
+  String get backupProviderPickerTitle => 'Scegli un provider';
+
+  @override
+  String get backupConnectAction => 'Connetti';
+
+  @override
+  String get backupSwitchConfirmTitle => 'Cambiare provider?';
+
+  @override
+  String backupSwitchConfirmBody(String provider) {
+    return 'Passerai a $provider. La passphrase resta la stessa e i backup esistenti non vengono toccati; dovrai riconnetterti al nuovo provider.';
+  }
+
+  @override
+  String get backupSwitchConfirmSwitch => 'Cambia';
+
+  @override
+  String get backupProviderLabel => 'Provider';
+
+  @override
+  String get backupSwitchActionLabel => 'Cambia provider';
 }

@@ -20,7 +20,7 @@ import '../encryption_service.dart';
 import 'backup_file_entry.dart';
 import 'backup_filename.dart';
 import 'backup_service.dart';
-import 'dropbox_provider.dart';
+import 'cloud_backup_provider.dart';
 
 typedef RecomputeFn = Future<dynamic> Function();
 
@@ -28,6 +28,14 @@ typedef RecomputeFn = Future<dynamic> Function();
 /// TASK-04 reduced from 10 to 3; the 507 retry loop caps progressive-prune
 /// deletions at [kBackupRetentionMaxFiles] − 1 = 2.
 const int kBackupRetentionMaxFiles = 3;
+
+/// Providers whose cloud list-after-write is eventually consistent rather than
+/// synchronous. For these, a successful gateway write IS the success criterion:
+/// the post-upload [SyncOrchestrator.backup] listFiles() verification is
+/// best-effort and never fails the backup (iCloud Drive lags; the OS owns
+/// sync). Strongly-consistent providers (Dropbox, Google Drive) are
+/// deliberately absent and keep the synchronous verification.
+const Set<SyncProvider> kEventuallyConsistentProviders = {SyncProvider.iCloud};
 
 class SyncOrchestrator implements BackupRunner {
   SyncOrchestrator({
@@ -106,7 +114,7 @@ class SyncOrchestrator implements BackupRunner {
           await _syncLogRepo.append(
             SyncLogEntity(
               timestamp: _now(),
-              provider: SyncProvider.dropbox,
+              provider: _provider.id,
               operation: SyncOperation.backup,
               success: false,
               errorMessage: 'progressive-prune: ${oldest.name}',
@@ -116,13 +124,18 @@ class SyncOrchestrator implements BackupRunner {
         }
       }
       // Verify that the upload registered before pruning older files.
+      // For eventually-consistent providers (iCloud) the list may lag the
+      // write; skip the hard gate — gateway-write success is sufficient.
+      // Strongly-consistent providers (Dropbox, Google Drive) keep the guard.
       final files = await _provider.listFiles();
-      if (!files.any((e) => e.name == filename)) {
+      if (!kEventuallyConsistentProviders.contains(_provider.id) &&
+          !files.any((e) => e.name == filename)) {
         throw const SyncException('Upload verification failed');
       }
-      // Prune entries beyond the N=10 retention cap — best-effort; a per-file
-      // failure is logged and does not abort the overall backup operation.
-      // listFiles() returns entries newest-first; take(N) keeps the newest N.
+      // Prune entries beyond the retention cap (kBackupRetentionMaxFiles = 3) —
+      // best-effort; a per-file failure is logged and does not abort the overall
+      // backup operation. listFiles() returns entries newest-first; skip() skips
+      // the newest N entries, deleting only those beyond the cap.
       final pruneSet = files.skip(kBackupRetentionMaxFiles);
       for (final BackupFileEntry entry in pruneSet) {
         try {
@@ -131,7 +144,7 @@ class SyncOrchestrator implements BackupRunner {
           await _syncLogRepo.append(
             SyncLogEntity(
               timestamp: _now(),
-              provider: SyncProvider.dropbox,
+              provider: _provider.id,
               operation: SyncOperation.backup,
               success: false,
               errorMessage: 'prune-failure: ${entry.name}: $e',
@@ -147,7 +160,7 @@ class SyncOrchestrator implements BackupRunner {
       await _syncLogRepo.append(
         SyncLogEntity(
           timestamp: ts,
-          provider: SyncProvider.dropbox,
+          provider: _provider.id,
           operation: SyncOperation.backup,
           success: true,
         ),
@@ -156,7 +169,7 @@ class SyncOrchestrator implements BackupRunner {
       await _syncLogRepo.append(
         SyncLogEntity(
           timestamp: ts,
-          provider: SyncProvider.dropbox,
+          provider: _provider.id,
           operation: SyncOperation.backup,
           success: false,
           errorMessage: e.toString(),
@@ -201,7 +214,7 @@ class SyncOrchestrator implements BackupRunner {
       await _syncLogRepo.append(
         SyncLogEntity(
           timestamp: ts,
-          provider: SyncProvider.dropbox,
+          provider: _provider.id,
           operation: SyncOperation.restore,
           success: true,
         ),
@@ -211,7 +224,7 @@ class SyncOrchestrator implements BackupRunner {
       await _syncLogRepo.append(
         SyncLogEntity(
           timestamp: ts,
-          provider: SyncProvider.dropbox,
+          provider: _provider.id,
           operation: SyncOperation.restore,
           success: false,
           errorMessage: e.toString(),

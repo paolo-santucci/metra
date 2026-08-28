@@ -45,6 +45,7 @@ import 'package:metra/core/theme/metra_theme.dart';
 import 'package:metra/data/services/backup/backup_file_entry.dart';
 import 'package:metra/features/backup/backup_screen.dart';
 import 'package:metra/features/backup/state/backup_notifier.dart';
+import 'package:metra/domain/entities/sync_log_entity.dart';
 import 'package:metra/features/backup/state/backup_state.dart';
 import 'package:metra/features/backup/views/backup_connected_view.dart';
 import 'package:metra/features/backup/views/backup_error_view.dart';
@@ -104,6 +105,7 @@ class _StubBackupNotifier extends BackupNotifier {
       // eventually produce after a real rebuild).
       state = const AsyncData(
         BackupConnected(
+          provider: SyncProvider.dropbox,
           email: 'a@b.it',
           autoBackupActive: true,
           passphraseSet: true,
@@ -237,6 +239,7 @@ Future<void> _tapDialogConfirm(WidgetTester tester, String label) async {
 
 void main() {
   const connectedState = BackupConnected(
+    provider: SyncProvider.dropbox,
     email: 'a@b.it',
     autoBackupActive: true,
     passphraseSet: true,

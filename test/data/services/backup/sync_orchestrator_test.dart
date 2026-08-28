@@ -11,6 +11,7 @@ import 'package:metra/core/errors/metra_exception.dart';
 import 'package:metra/data/services/backup/backup_file_entry.dart';
 import 'package:metra/data/services/backup/backup_filename.dart';
 import 'package:metra/data/services/backup/backup_service.dart';
+import 'package:metra/data/services/backup/cloud_backup_provider.dart';
 import 'package:metra/data/services/backup/sync_orchestrator.dart';
 import 'package:metra/data/services/encryption_service.dart';
 import 'package:metra/domain/entities/daily_log_entity.dart';
@@ -19,6 +20,7 @@ import 'package:metra/domain/entities/sync_log_entity.dart';
 import '../../../helpers/fake_app_settings_repository.dart';
 import '../../../helpers/fake_daily_log_repository.dart';
 import '../../../helpers/fake_dropbox_provider.dart';
+import '../../../helpers/fake_icloud_provider.dart';
 import '../../../helpers/fake_sync_log_repository.dart';
 import '../../../helpers/in_memory_secure_storage.dart';
 
@@ -29,7 +31,7 @@ class _FakeRecompute {
 
 SyncOrchestrator _make({
   required InMemorySecureStorage storage,
-  required FakeDropboxProvider provider,
+  required CloudBackupProvider provider,
   required FakeAppSettingsRepository settingsRepo,
   required FakeSyncLogRepository syncLogRepo,
   required FakeDailyLogRepository logRepo,
@@ -285,6 +287,75 @@ void main() {
         );
         await expectLater(orch.backup(), throwsA(isA<SyncException>()));
         expect(syncLogRepo.appended.first.success, isFalse);
+      },
+    );
+
+    // ── Eventually-consistent provider tests ──────────────────────────────
+    // Test A — BUG-1: iCloud backup must succeed even when listFiles() lags.
+    test(
+      'backup_succeeds_and_writes_lastBackupAt_when_icloud_listfiles_lags',
+      () async {
+        storage.values[passphraseKey] = passphrase;
+        final fixedNow = DateTime.utc(2026, 4, 29, 10, 0, 0);
+        // FakeICloudProvider: upload() is a no-op (succeeds), listFiles()
+        // always returns [] — simulating iCloud eventual-consistency lag.
+        final icloudProvider = FakeICloudProvider();
+
+        final orch = _make(
+          storage: storage,
+          provider: icloudProvider,
+          settingsRepo: settingsRepo,
+          syncLogRepo: syncLogRepo,
+          logRepo: logRepo,
+          now: () => fixedNow,
+        );
+
+        // Act — must NOT throw despite listFiles() returning [].
+        await orch.backup();
+
+        // lastBackupAt must be written — was never written before the fix.
+        final settings = await settingsRepo.getOrCreate();
+        expect(settings.lastBackupAt, equals(fixedNow));
+
+        // Exactly one success log appended with the iCloud provider id.
+        final successLogs = syncLogRepo.appended
+            .where(
+              (e) => e.success && e.operation == SyncOperation.backup,
+            )
+            .toList();
+        expect(successLogs, hasLength(1));
+        expect(successLogs.first.provider, equals(SyncProvider.iCloud));
+      },
+    );
+
+    // Test B — regression guard: Dropbox keeps the hard verification gate.
+    test(
+      'backup_throws_upload_verification_failed_for_dropbox_when_file_absent',
+      () async {
+        storage.values[passphraseKey] = passphrase;
+        // Seed mode with empty list forces listFiles() to return [] even
+        // after a successful upload — simulating a verification miss.
+        provider.seedEntries = [];
+
+        final orch = _make(
+          storage: storage,
+          provider: provider,
+          settingsRepo: settingsRepo,
+          syncLogRepo: syncLogRepo,
+          logRepo: logRepo,
+        );
+
+        // Dropbox is NOT in kEventuallyConsistentProviders — the gate throws.
+        await expectLater(
+          orch.backup(),
+          throwsA(
+            isA<SyncException>().having(
+              (e) => e.message,
+              'message',
+              equals('Upload verification failed'),
+            ),
+          ),
+        );
       },
     );
 

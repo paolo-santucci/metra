@@ -24,16 +24,23 @@
 //   FR-15 / BUG-D04: _autoSyncIfConfigured routes through backupNotifierProvider.notifier.backupSilent().
 //   FR-18 / BUG-D06: _autoSyncIfConfigured catch emits debugPrint('[autoSync] ...').
 //
+// Also covers TASK-04 (code-review-10-findings SP, FR-10): the two silent
+// handlers in _initNotificationsAndVerifyPermission — the :117 catchError and
+// the :143 inner catch — each emit a debugPrint tagged '[initNotifications]'
+// with no behavioural change.
+//
 // Strategy: simulator helpers that mirror production logic (same pattern as
 // app_notification_wiring_test.dart). Source-substring safety nets guard
 // against simulator/production drift.
 
 import 'dart:io';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/domain/entities/app_settings_data.dart';
 import 'package:metra/domain/entities/cycle_prediction.dart';
+import 'package:metra/l10n/app_localizations.dart';
 
 import 'helpers/fake_notification_service.dart';
 
@@ -199,6 +206,62 @@ Future<void> _simulateAutoSyncIfConfigured({
   } catch (e) {
     debugPrintCapture.add('[autoSync] ${e.runtimeType}: $e');
   }
+}
+
+// ---------------------------------------------------------------------------
+// Simulator: _initNotificationsAndVerifyPermission (TASK-07, FR-10, #34).
+//
+// Mirrors the real method added to _MetraInnerState in lib/app.dart: resolve
+// the locale-derived Android channel display name BEFORE calling
+// notificationService.initialize(channelName), falling back to the
+// brand-neutral 'Mētra' literal on any settings/l10n failure (EC-20), then
+// always run the permission recheck afterward regardless of which branch
+// supplied the channel name.
+//
+// TASK-04 (code-review-10-findings SP, FR-10): the inner catch (:143) now
+// also emits a debugPrint tagged '[initNotifications]' — captured via the
+// optional debugPrintCapture list (same convention as _autoSyncIfConfigured's
+// debugPrintCapture above), with no change to the EC-20 fallback behaviour.
+// ---------------------------------------------------------------------------
+Future<void> _simulateInitNotificationsAndVerifyPermission({
+  required FakeNotificationService notificationService,
+  required Future<String> Function() loadLanguageCode,
+  required Future<String> Function(String languageCode) loadChannelName,
+  required Future<void> Function() verifyPermission,
+  List<String>? debugPrintCapture,
+}) async {
+  var channelName = 'Mētra';
+  try {
+    final languageCode = await loadLanguageCode();
+    channelName = await loadChannelName(languageCode);
+  } catch (e) {
+    // Settings/l10n unavailable at cold-start — brand-neutral fallback (EC-20).
+    debugPrintCapture?.add('[initNotifications] fallback: $e');
+  }
+  await notificationService.initialize(channelName);
+  await verifyPermission();
+}
+
+// ---------------------------------------------------------------------------
+// Simulator: initState()'s .catchError wrapper around
+// _initNotificationsAndVerifyPermission() (TASK-04, FR-10).
+//
+// Mirrors:
+//   _initNotificationsAndVerifyPermission().catchError((Object e) {
+//     debugPrint('[initNotifications] catchError: $e');
+//   });
+//
+// The handler parameter stays Object-typed, never rethrows, and returns
+// void — asserted here by the fact that awaiting this simulator always
+// completes even when initNotifications() throws (HC-8).
+// ---------------------------------------------------------------------------
+Future<void> _simulateInitNotificationsCatchError({
+  required Future<void> Function() initNotifications,
+  required List<String> debugPrintCapture,
+}) async {
+  await initNotifications().catchError((Object e) {
+    debugPrintCapture.add('[initNotifications] catchError: $e');
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -772,4 +835,357 @@ void main() {
       },
     );
   });
+
+  // ===========================================================================
+  // Group J — TASK-07 (#34): locale-derived Android notification channel name
+  // (FR-10, EC-20, EC-21, OQ-08)
+  // ===========================================================================
+
+  group('Group J: locale-derived notification channel name (TASK-07, #34)', () {
+    Future<String> loadChannelNameFor(String languageCode) async {
+      final l10n = await AppLocalizations.delegate.load(Locale(languageCode));
+      return l10n.notification_channel_name;
+    }
+
+    test(
+      'IT locale → initialize() is called with the Italian notification_channel_name',
+      () async {
+        final service = FakeNotificationService();
+
+        await _simulateInitNotificationsAndVerifyPermission(
+          notificationService: service,
+          loadLanguageCode: () async => 'it',
+          loadChannelName: loadChannelNameFor,
+          verifyPermission: service.hasNotificationPermission,
+        );
+
+        final expected = await loadChannelNameFor('it');
+        expect(service.channelName, equals(expected));
+        expect(service.initializeCallCount, equals(1));
+      },
+    );
+
+    test(
+      'EN locale → initialize() is called with the English notification_channel_name',
+      () async {
+        final service = FakeNotificationService();
+
+        await _simulateInitNotificationsAndVerifyPermission(
+          notificationService: service,
+          loadLanguageCode: () async => 'en',
+          loadChannelName: loadChannelNameFor,
+          verifyPermission: service.hasNotificationPermission,
+        );
+
+        final expected = await loadChannelNameFor('en');
+        expect(service.channelName, equals(expected));
+        expect(service.initializeCallCount, equals(1));
+      },
+    );
+
+    test(
+      'EC-20: settings/l10n load failure → falls back to the brand-neutral '
+      '"Mētra" literal AND the permission recheck still runs afterward',
+      () async {
+        final service = FakeNotificationService();
+
+        await _simulateInitNotificationsAndVerifyPermission(
+          notificationService: service,
+          loadLanguageCode: () async => throw Exception('settings unavailable'),
+          loadChannelName: loadChannelNameFor,
+          verifyPermission: service.hasNotificationPermission,
+        );
+
+        expect(
+          service.channelName,
+          equals('Mētra'),
+          reason: 'EC-20: brand-neutral fallback must be used when '
+              'settings/l10n resolution fails',
+        );
+        expect(
+          service.hasNotificationPermissionCallCount,
+          equals(1),
+          reason: 'the permission recheck must still run unconditionally after '
+              'initialize(), even when locale resolution failed (EC-20) — '
+              'the sequence must not be short-circuited',
+        );
+      },
+    );
+
+    test(
+      'EC-21: .initialize( appears exactly once in lib/app.dart — a later '
+      'settings/language change must not re-invoke it',
+      () {
+        final source = _appDartSource();
+        final count = '.initialize('.allMatches(source).length;
+        expect(
+          count,
+          equals(1),
+          reason: 'EC-21: there must be exactly one production call site '
+              'that invokes .initialize(...) — a later in-app language '
+              'change (SettingsNotifier.save(languageCode:)) must not '
+              're-invoke it, since initState() runs exactly once',
+        );
+      },
+    );
+
+    test(
+      'Deleted-contract grep guard: no zero-argument initialize call site '
+      'remains in any non-comment line under lib/ or test/',
+      () {
+        // Built via concatenation (not a single literal) so this guard's own
+        // source line is not itself a false positive when this same test
+        // scans test/app_test.dart.
+        const noArgCallPattern = '.initialize' '()';
+        final offenders = <String>[];
+        for (final dirName in ['lib', 'test']) {
+          final dir = Directory(dirName);
+          if (!dir.existsSync()) continue;
+          for (final entity in dir.listSync(recursive: true)) {
+            if (entity is! File || !entity.path.endsWith('.dart')) continue;
+            final lines = entity.readAsLinesSync();
+            for (final line in lines) {
+              if (line.trimLeft().startsWith('//')) {
+                continue; // skip comments/doc-comments (e.g. prose mentions)
+              }
+              if (line.contains(noArgCallPattern)) {
+                offenders.add(entity.path);
+                break;
+              }
+            }
+          }
+        }
+        expect(
+          offenders,
+          isEmpty,
+          reason: 'TASK-07 (#34): the zero-argument initialize call must be '
+              'fully migrated to initialize(channelName) everywhere; '
+              'offending files: $offenders',
+        );
+      },
+    );
+
+    test(
+      'Source-substring safety net: settingsNotifierProvider.future precedes '
+      'notification_channel_name, which precedes the .initialize( call site, '
+      'and _verifyNotificationPermissionOnColdStart() still runs '
+      'unconditionally afterward',
+      () {
+        final source = _appDartSource();
+        final settingsIdx = source.indexOf('settingsNotifierProvider.future');
+        final channelNameIdx = source.indexOf('notification_channel_name');
+        final initIdx = source.indexOf('.initialize(');
+        final verifyCallIdx =
+            source.indexOf('_verifyNotificationPermissionOnColdStart();');
+
+        expect(
+          settingsIdx,
+          greaterThanOrEqualTo(0),
+          reason: 'settingsNotifierProvider.future must be read before '
+              'resolving the channel name',
+        );
+        expect(
+          channelNameIdx,
+          greaterThan(settingsIdx),
+          reason: 'notification_channel_name must be resolved after '
+              'settingsNotifierProvider.future',
+        );
+        expect(
+          initIdx,
+          greaterThan(channelNameIdx),
+          reason: 'the .initialize( call must come after the '
+              'notification_channel_name resolution',
+        );
+        expect(
+          verifyCallIdx,
+          greaterThan(initIdx),
+          reason: 'FR-10: _verifyNotificationPermissionOnColdStart() must '
+              'still be invoked unconditionally after initialize(), '
+              'preserving the FR-07/BUG-B03 cold-start recheck ordering',
+        );
+      },
+    );
+  });
+
+  // ===========================================================================
+  // Group D — TASK-04 (code-review-10-findings SP, FR-10): initNotifications
+  // silent-handler diagnostics.
+  // ===========================================================================
+
+  group(
+    'Group D: initNotifications silent-handler diagnostics (TASK-04, FR-10)',
+    () {
+      test(
+        "catchError (:117): chained future throws → debugPrint contains "
+        "'[initNotifications]'; handler does not rethrow",
+        () async {
+          final captured = <String>[];
+
+          await expectLater(
+            _simulateInitNotificationsCatchError(
+              initNotifications: () async =>
+                  throw Exception('notification init failed'),
+              debugPrintCapture: captured,
+            ),
+            completes,
+            reason: 'catchError must not rethrow — the chained future '
+                'error must be swallowed (HC-8)',
+          );
+
+          expect(
+            captured,
+            hasLength(1),
+            reason: 'exactly one debugPrint line must be emitted by catchError',
+          );
+          expect(
+            captured.first,
+            contains('[initNotifications]'),
+            reason: "the catchError handler must tag its log with "
+                "'[initNotifications]'",
+          );
+        },
+      );
+
+      test(
+        "inner catch (:143): settings/l10n load throws → debugPrint "
+        "contains '[initNotifications]' AND the 'Mētra' fallback channel "
+        'name path still runs (EC-20)',
+        () async {
+          final service = FakeNotificationService();
+          final captured = <String>[];
+
+          await _simulateInitNotificationsAndVerifyPermission(
+            notificationService: service,
+            loadLanguageCode: () async =>
+                throw Exception('settings unavailable'),
+            loadChannelName: (languageCode) async {
+              final l10n =
+                  await AppLocalizations.delegate.load(Locale(languageCode));
+              return l10n.notification_channel_name;
+            },
+            verifyPermission: service.hasNotificationPermission,
+            debugPrintCapture: captured,
+          );
+
+          expect(
+            service.channelName,
+            equals('Mētra'),
+            reason: 'EC-20: brand-neutral fallback must still run when the '
+                'inner catch also logs',
+          );
+          expect(
+            captured,
+            hasLength(1),
+            reason: 'exactly one debugPrint line must be emitted by the '
+                'inner catch',
+          );
+          expect(
+            captured.first,
+            contains('[initNotifications]'),
+            reason: "the inner catch handler must tag its log with "
+                "'[initNotifications]'",
+          );
+        },
+      );
+
+      test(
+        'happy path: neither handler fires, so no debugPrint is emitted',
+        () async {
+          final service = FakeNotificationService();
+          final captured = <String>[];
+
+          await _simulateInitNotificationsCatchError(
+            initNotifications: () =>
+                _simulateInitNotificationsAndVerifyPermission(
+              notificationService: service,
+              loadLanguageCode: () async => 'it',
+              loadChannelName: (languageCode) async {
+                final l10n =
+                    await AppLocalizations.delegate.load(Locale(languageCode));
+                return l10n.notification_channel_name;
+              },
+              verifyPermission: service.hasNotificationPermission,
+              debugPrintCapture: captured,
+            ),
+            debugPrintCapture: captured,
+          );
+
+          expect(
+            captured,
+            isEmpty,
+            reason: 'no diagnostic should be logged on the happy path',
+          );
+        },
+      );
+
+      test(
+        'Grep guard: the new :117/:143 log literals avoid the four '
+        'forbidden substrings, and ".initialize(" count in lib/app.dart '
+        'stays exactly 1',
+        () {
+          final source = _appDartSource();
+
+          // Locate every '[initNotifications]' log call site and inspect a
+          // bounded single-line window around each so the forbidden-substring
+          // check targets the actual debugPrint argument, not the whole file.
+          const tag = '[initNotifications]';
+          final occurrences = <int>[];
+          var searchFrom = 0;
+          while (true) {
+            final idx = source.indexOf(tag, searchFrom);
+            if (idx == -1) break;
+            occurrences.add(idx);
+            searchFrom = idx + tag.length;
+          }
+
+          expect(
+            occurrences.length,
+            equals(2),
+            reason: 'expected exactly two [initNotifications] log call '
+                'sites (:117 catchError, :143 inner catch)',
+          );
+
+          const forbidden = [
+            'settingsNotifierProvider.future',
+            'notification_channel_name',
+            '.initialize(',
+            '_verifyNotificationPermissionOnColdStart();',
+          ];
+
+          for (final idx in occurrences) {
+            final windowEnd = (idx + 200).clamp(0, source.length);
+            final window = source.substring(idx, windowEnd);
+            final newlineIdx = window.indexOf('\n');
+            final singleLine =
+                newlineIdx == -1 ? window : window.substring(0, newlineIdx);
+            for (final needle in forbidden) {
+              expect(
+                singleLine,
+                isNot(contains(needle)),
+                reason: 'log literal at offset $idx must not contain the '
+                    "forbidden substring '$needle' (would corrupt the "
+                    'app_test.dart ordering greps, :934-973)',
+              );
+            }
+          }
+
+          final initializeCount = '.initialize('.allMatches(source).length;
+          expect(
+            initializeCount,
+            equals(1),
+            reason: 'TASK-04 must not introduce a second ".initialize(" '
+                'call site — the EC-21 guard above depends on exactly one '
+                'occurrence',
+          );
+
+          expect(
+            source,
+            contains('.catchError((Object'),
+            reason: 'HC-8: the catchError handler parameter must stay '
+                'Object-typed',
+          );
+        },
+      );
+    },
+  );
 }

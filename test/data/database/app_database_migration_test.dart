@@ -23,10 +23,10 @@ import 'package:metra/data/database/app_database.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 void main() {
-  test('schema version is 10', () {
+  test('schema version is 11', () {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
-    expect(db.schemaVersion, 10);
+    expect(db.schemaVersion, 11);
   });
 
   test(
@@ -86,8 +86,8 @@ void main() {
       expect(rows, hasLength(1));
       expect(rows.first.data['notification_time_minutes'], 540);
 
-      // And: schemaVersion is 10 (v6→v7, v7→v8, v8→v9, and v9→v10 migrations ran).
-      expect(db.schemaVersion, 10);
+      // And: schemaVersion is 11 (v6→v7, v7→v8, v8→v9, v9→v10, and v10→v11 migrations ran).
+      expect(db.schemaVersion, 11);
     },
   );
 
@@ -213,8 +213,8 @@ void main() {
       expect(settings.notificationTimeMinutes, 540);
       expect(settings.firstDayOfWeek, 0); // 0 = system
 
-      // And: schemaVersion is 10 (no migration ran — onCreate set it directly).
-      expect(db.schemaVersion, 10);
+      // And: schemaVersion is 11 (no migration ran — onCreate set it directly).
+      expect(db.schemaVersion, 11);
     },
   );
 
@@ -272,8 +272,8 @@ void main() {
       expect(rows, hasLength(1));
       expect(rows.first.data['first_day_of_week'], 0);
 
-      // And: schemaVersion is 10 (v7→v8, v8→v9, and v9→v10 all ran).
-      expect(db.schemaVersion, 10);
+      // And: schemaVersion is 11 (v7→v8, v8→v9, v9→v10, and v10→v11 all ran).
+      expect(db.schemaVersion, 11);
     },
   );
 
@@ -454,7 +454,7 @@ void main() {
         expect(cycleCount.data['c'], 2);
 
         // schemaVersion reflects the final target.
-        expect(db.schemaVersion, 10);
+        expect(db.schemaVersion, 11);
       },
     );
 
@@ -690,9 +690,9 @@ void main() {
     // FR-08/EC-13: idempotency — second open does not re-run migration --------
 
     test(
-      'FR-08/EC-13: idempotency — re-opening the database keeps user_version 10 and row count unchanged',
+      'FR-08/EC-13: idempotency — re-opening the database keeps user_version 11 and row count unchanged',
       () async {
-        // First open: migration runs.
+        // First open: migration runs (v9 → v11).
         final executor1 = NativeDatabase.memory(
           setup: (Database rawDb) {
             seedV9AppSettings(rawDb);
@@ -718,22 +718,22 @@ void main() {
 
         await db1.close();
 
-        // user_version must be 10 and row count unchanged.
-        expect(versionAfterFirst, 10);
+        // user_version must be 11 and row count unchanged.
+        expect(versionAfterFirst, 11);
         expect(countAfterFirst.data['c'], 2);
 
         // Second open: migration must NOT re-run (onCreate picks up user_version
         // and does not fire onUpgrade again because the version already matches).
         // For in-memory databases a second AppDatabase(NativeDatabase.memory())
         // creates a fresh empty DB, which triggers onCreate — that is the
-        // same code path a "fresh install at v10" takes. We verify idempotency
-        // by asserting that opening an already-migrated v10 database (simulated
-        // by seeding user_version=10 directly) leaves user_version at 10 and
+        // same code path a "fresh install at v11" takes. We verify idempotency
+        // by asserting that opening an already-migrated v11 database (simulated
+        // by seeding user_version=11 directly) leaves user_version at 11 and
         // preserves rows.
         final executor2 = NativeDatabase.memory(
           setup: (Database rawDb) {
-            // Full v10 schema — app_settings with backup_suspended, cycle_entries
-            // with UNIQUE constraint.
+            // Full v11 schema — app_settings with backup_suspended + active_provider,
+            // cycle_entries with UNIQUE constraint.
             rawDb.execute('''
               CREATE TABLE IF NOT EXISTS app_settings (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -750,7 +750,8 @@ void main() {
                 notification_time_minutes INTEGER NOT NULL DEFAULT 540,
                 first_day_of_week INTEGER NOT NULL DEFAULT 0,
                 last_log_or_symptom_write_at INTEGER,
-                backup_suspended INTEGER NOT NULL DEFAULT 0
+                backup_suspended INTEGER NOT NULL DEFAULT 0,
+                active_provider TEXT NOT NULL DEFAULT 'dropbox'
               )
             ''');
             rawDb.execute('INSERT INTO app_settings (id) VALUES (1)');
@@ -766,7 +767,7 @@ void main() {
             rawDb.execute(
               'INSERT INTO cycle_entries (start_date) VALUES (1000), (2000)',
             );
-            rawDb.execute('PRAGMA user_version = 10');
+            rawDb.execute('PRAGMA user_version = 11');
           },
         );
 
@@ -782,7 +783,7 @@ void main() {
             .customSelect('SELECT COUNT(*) AS c FROM cycle_entries')
             .getSingle();
 
-        expect(versionAfterSecond, 10);
+        expect(versionAfterSecond, 11);
         expect(countAfterSecond.data['c'], 2);
       },
     );
@@ -790,7 +791,7 @@ void main() {
     // FR-13: empty cycle_entries — migration completes cleanly ----------------
 
     test(
-      'FR-13: empty cycle_entries — migration completes with schemaVersion=10 and backup_suspended present',
+      'FR-13: empty cycle_entries — migration completes with schemaVersion=11 and backup_suspended present',
       () async {
         final executor = NativeDatabase.memory(
           setup: (Database rawDb) {
@@ -806,7 +807,7 @@ void main() {
 
         await db.customSelect('SELECT 1').get();
 
-        expect(db.schemaVersion, 10);
+        expect(db.schemaVersion, 11);
 
         // backup_suspended must exist.
         final rows = await db
@@ -854,7 +855,7 @@ void main() {
           throwsA(isA<SqliteException>()),
         );
 
-        expect(db.schemaVersion, 10);
+        expect(db.schemaVersion, 11);
       },
     );
 
@@ -980,6 +981,327 @@ void main() {
           'which is the necessary precondition for Drift to leave '
           'user_version at 9. Full rollback coverage is provided by the '
           'SQLite transaction semantics documented in Drift source.',
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // v10 → v11 migration: add active_provider to app_settings (FR-07, NFR-06)
+  // ---------------------------------------------------------------------------
+
+  group('v10 → v11 migration', () {
+    // Helper: seeds the full v10 app_settings schema (WITHOUT active_provider).
+    void seedV10AppSettings(Database rawDb, {String? dropboxEmail}) {
+      rawDb.execute('''
+        CREATE TABLE IF NOT EXISTS app_settings (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          language_code TEXT NOT NULL DEFAULT 'it',
+          dark_mode INTEGER,
+          pain_enabled INTEGER NOT NULL DEFAULT 1,
+          notes_enabled INTEGER NOT NULL DEFAULT 1,
+          notification_days_before INTEGER NOT NULL DEFAULT 2,
+          notifications_enabled INTEGER NOT NULL DEFAULT 0,
+          dropbox_email TEXT,
+          last_backup_at INTEGER,
+          onboarding_completed INTEGER NOT NULL DEFAULT 0,
+          declared_cycle_length INTEGER,
+          notification_time_minutes INTEGER NOT NULL DEFAULT 540,
+          first_day_of_week INTEGER NOT NULL DEFAULT 0,
+          last_log_or_symptom_write_at INTEGER,
+          backup_suspended INTEGER NOT NULL DEFAULT 0
+        )
+      ''');
+      if (dropboxEmail != null) {
+        rawDb.execute(
+          "INSERT INTO app_settings (id, dropbox_email, backup_suspended) "
+          "VALUES (1, ?, 1)",
+          [dropboxEmail],
+        );
+      } else {
+        rawDb.execute('INSERT INTO app_settings (id) VALUES (1)');
+      }
+    }
+
+    // Helper: seeds a v10 cycle_entries table (with UNIQUE constraint).
+    void seedV10CycleEntries(Database rawDb) {
+      rawDb.execute('''
+        CREATE TABLE IF NOT EXISTS cycle_entries (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          start_date INTEGER NOT NULL UNIQUE,
+          end_date INTEGER,
+          cycle_length INTEGER,
+          period_length INTEGER
+        )
+      ''');
+    }
+
+    // FR-07 / NFR-06: active_provider column added with string default 'dropbox'
+    test(
+      'FR-07: active_provider column exists in app_settings with default "dropbox"',
+      () async {
+        final executor = NativeDatabase.memory(
+          setup: (Database rawDb) {
+            seedV10AppSettings(rawDb);
+            seedV10CycleEntries(rawDb);
+            rawDb.execute('PRAGMA user_version = 10');
+          },
+        );
+
+        final db = AppDatabase(executor);
+        addTearDown(db.close);
+
+        await db.customSelect('SELECT 1').get();
+
+        final rows = await db
+            .customSelect('SELECT active_provider FROM app_settings')
+            .get();
+        expect(rows, hasLength(1));
+        expect(rows.first.data['active_provider'], 'dropbox');
+      },
+    );
+
+    // Verify schemaVersion is 11 after migration
+    test(
+      'v10→v11: schemaVersion is 11 after migration',
+      () async {
+        final executor = NativeDatabase.memory(
+          setup: (Database rawDb) {
+            seedV10AppSettings(rawDb);
+            seedV10CycleEntries(rawDb);
+            rawDb.execute('PRAGMA user_version = 10');
+          },
+        );
+
+        final db = AppDatabase(executor);
+        addTearDown(db.close);
+
+        await db.customSelect('SELECT 1').get();
+
+        expect(db.schemaVersion, 11);
+      },
+    );
+
+    // Column type check via PRAGMA table_info
+    test(
+      'active_provider column type is TEXT with default "dropbox" (PRAGMA table_info)',
+      () async {
+        final executor = NativeDatabase.memory(
+          setup: (Database rawDb) {
+            seedV10AppSettings(rawDb);
+            seedV10CycleEntries(rawDb);
+            rawDb.execute('PRAGMA user_version = 10');
+          },
+        );
+
+        final db = AppDatabase(executor);
+        addTearDown(db.close);
+
+        await db.customSelect('SELECT 1').get();
+
+        final cols =
+            await db.customSelect('PRAGMA table_info(app_settings)').get();
+        final activeProviderCol = cols.firstWhere(
+          (r) => r.data['name'] == 'active_provider',
+          orElse: () => throw StateError(
+            'active_provider column not found in app_settings',
+          ),
+        );
+
+        expect(
+          (activeProviderCol.data['type'] as String).toUpperCase(),
+          'TEXT',
+          reason:
+              'active_provider must be stored as TEXT, not an integer index',
+        );
+        expect(
+          activeProviderCol.data['dflt_value'],
+          "'dropbox'",
+          reason: 'active_provider DEFAULT must be the string "dropbox"',
+        );
+        // notnull == 1 confirms NOT NULL constraint
+        expect(
+          activeProviderCol.data['notnull'],
+          1,
+          reason: 'active_provider must be NOT NULL',
+        );
+      },
+    );
+
+    // Pre-existing row data is preserved byte-for-byte
+    test(
+      'v10→v11: pre-existing row columns are byte-for-byte unchanged after migration',
+      () async {
+        // Seed with non-default dropbox_email and backup_suspended=1 to ensure
+        // the migration does NOT touch these columns.
+        final executor = NativeDatabase.memory(
+          setup: (Database rawDb) {
+            seedV10AppSettings(rawDb, dropboxEmail: 'test@example.com');
+            seedV10CycleEntries(rawDb);
+            rawDb.execute('PRAGMA user_version = 10');
+          },
+        );
+
+        final db = AppDatabase(executor);
+        addTearDown(db.close);
+
+        await db.customSelect('SELECT 1').get();
+
+        // active_provider backfilled to 'dropbox' (column DEFAULT, not UPDATE).
+        final rows = await db
+            .customSelect(
+              'SELECT dropbox_email, backup_suspended, active_provider '
+              'FROM app_settings',
+            )
+            .get();
+        expect(rows, hasLength(1));
+        expect(
+          rows.first.data['dropbox_email'],
+          'test@example.com',
+          reason: 'dropboxEmail must be byte-for-byte unchanged (OQ-02)',
+        );
+        expect(
+          rows.first.data['backup_suspended'],
+          1,
+          reason: 'backup_suspended must be byte-for-byte unchanged',
+        );
+        expect(
+          rows.first.data['active_provider'],
+          'dropbox',
+          reason:
+              'active_provider must be backfilled to "dropbox" via column DEFAULT',
+        );
+      },
+    );
+
+    // EC-09 (idempotency): re-open an already-v11 DB → no double-add error
+    test(
+      'EC-09 (idempotency): re-opening an already-v11 database does not error',
+      () async {
+        // Seed the full v11 schema (active_provider already present) at user_version=11.
+        final executor = NativeDatabase.memory(
+          setup: (Database rawDb) {
+            rawDb.execute('''
+              CREATE TABLE IF NOT EXISTS app_settings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                language_code TEXT NOT NULL DEFAULT 'it',
+                dark_mode INTEGER,
+                pain_enabled INTEGER NOT NULL DEFAULT 1,
+                notes_enabled INTEGER NOT NULL DEFAULT 1,
+                notification_days_before INTEGER NOT NULL DEFAULT 2,
+                notifications_enabled INTEGER NOT NULL DEFAULT 0,
+                dropbox_email TEXT,
+                last_backup_at INTEGER,
+                onboarding_completed INTEGER NOT NULL DEFAULT 0,
+                declared_cycle_length INTEGER,
+                notification_time_minutes INTEGER NOT NULL DEFAULT 540,
+                first_day_of_week INTEGER NOT NULL DEFAULT 0,
+                last_log_or_symptom_write_at INTEGER,
+                backup_suspended INTEGER NOT NULL DEFAULT 0,
+                active_provider TEXT NOT NULL DEFAULT 'dropbox'
+              )
+            ''');
+            rawDb.execute('INSERT INTO app_settings (id) VALUES (1)');
+            rawDb.execute('''
+              CREATE TABLE IF NOT EXISTS cycle_entries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                start_date INTEGER NOT NULL UNIQUE,
+                end_date INTEGER,
+                cycle_length INTEGER,
+                period_length INTEGER
+              )
+            ''');
+            rawDb.execute('PRAGMA user_version = 11');
+          },
+        );
+
+        final db = AppDatabase(executor);
+        addTearDown(db.close);
+
+        // Must not throw — no duplicate column error.
+        await expectLater(
+          db.customSelect('SELECT 1').get(),
+          completes,
+        );
+
+        expect(db.schemaVersion, 11);
+      },
+    );
+
+    // Source-purity meta-test: clone of the from<9 test at :463-500
+    // Verifies the if (from < 11) block uses ONLY addColumn — no customStatement,
+    // no UPDATE, no INSERT backfill (NFR-06 purity guard).
+    test(
+      'NFR-06 migration purity: v10→v11 onUpgrade block uses only addColumn',
+      () {
+        final src = File(
+          'lib/data/database/app_database.dart',
+        ).readAsStringSync();
+
+        // Extract the 'if (from < 11) { ... }' block from onUpgrade.
+        final fromLt11Match = RegExp(
+          r'if\s*\(\s*from\s*<\s*11\s*\)\s*\{([^}]*)\}',
+          dotAll: true,
+        ).firstMatch(src);
+        expect(
+          fromLt11Match,
+          isNotNull,
+          reason: 'Expected an "if (from < 11) { ... }" block in onUpgrade',
+        );
+
+        final blockBody = fromLt11Match!.group(1)!;
+
+        expect(
+          blockBody,
+          contains('m.addColumn'),
+          reason: 'v10→v11 block must call m.addColumn',
+        );
+        expect(
+          blockBody,
+          isNot(contains('customStatement')),
+          reason: 'NFR-06: v10→v11 block must not use customStatement',
+        );
+        expect(
+          blockBody,
+          isNot(matches(RegExp(r'\bUPDATE\b', caseSensitive: false))),
+          reason: 'NFR-06: v10→v11 block must not contain UPDATE',
+        );
+        expect(
+          blockBody,
+          isNot(matches(RegExp(r'\bINSERT\b', caseSensitive: false))),
+          reason: 'NFR-06: v10→v11 block must not contain INSERT',
+        );
+      },
+    );
+
+    // dropboxEmail column is NOT renamed (OQ-02 compliance)
+    test(
+      'OQ-02: dropbox_email column still exists and is NOT renamed after v10→v11',
+      () async {
+        final executor = NativeDatabase.memory(
+          setup: (Database rawDb) {
+            seedV10AppSettings(rawDb);
+            seedV10CycleEntries(rawDb);
+            rawDb.execute('PRAGMA user_version = 10');
+          },
+        );
+
+        final db = AppDatabase(executor);
+        addTearDown(db.close);
+
+        await db.customSelect('SELECT 1').get();
+
+        final cols =
+            await db.customSelect('PRAGMA table_info(app_settings)').get();
+        final names = cols.map((r) => r.data['name'] as String).toList();
+        expect(
+          names,
+          contains('dropbox_email'),
+          reason: 'dropboxEmail must not be renamed (OQ-02)',
+        );
+        expect(
+          names,
+          isNot(contains('active_email')),
+        );
+      },
     );
   });
 

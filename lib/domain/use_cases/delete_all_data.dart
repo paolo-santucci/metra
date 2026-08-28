@@ -17,13 +17,11 @@
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../../core/constants/app_constants.dart';
+import '../entities/sync_log_entity.dart';
 import '../repositories/app_settings_repository.dart';
 import '../repositories/cycle_entry_repository.dart';
 import '../repositories/daily_log_repository.dart';
-
-// Same value as BackupNotifier.kPassphraseKey — kept in sync by code review.
-// Do NOT import from lib/features/ (CLAUDE.md §4 domain layering).
-const _kPassphraseKey = 'metra_backup_passphrase_v1';
 
 class DeleteAllData {
   const DeleteAllData(
@@ -41,11 +39,17 @@ class DeleteAllData {
   Future<void> execute() async {
     await _logRepo.deleteAll();
     await _cycleRepo.deleteAll();
+    // EC-08: provider reset + suspended sentinel are written atomically before
+    // the secure-storage passphrase wipe, ensuring the persisted state is always
+    // "disconnected, no passphrase, default provider" after a delete-all.
+    // FR-21: reset activeProvider to default via dedicated writer (NOT bulk save).
+    await _settingsRepo.setActiveProvider(SyncProvider.dropbox);
     await _settingsRepo.updateBackupSuspended(true);
     // BUG-B03: wipe cached passphrase so a fresh post-wipe install does not
     // read a stale value and report 'Backup automatico attivo' without a
-    // user-entered passphrase. HC-2 ordering: the suspended-sentinel write
-    // already preceded this delete, so the read-time guard is consistent.
-    await _secureStorage.delete(key: _kPassphraseKey);
+    // user-entered passphrase. HC-2 ordering: both sentinel writes above have
+    // completed before this delete fires, so the read-time guard is consistent.
+    // FR-23: key from shared constant — no inline literal.
+    await _secureStorage.delete(key: AppConstants.kBackupPassphraseKey);
   }
 }

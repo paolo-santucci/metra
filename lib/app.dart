@@ -19,6 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/l10n/locale_resolver.dart';
 import 'core/theme/metra_theme.dart';
 import 'domain/entities/app_settings_data.dart';
 import 'domain/entities/cycle_prediction.dart';
@@ -60,6 +61,28 @@ final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 /// One key instance for the lifetime of the app; no rebuild cost.
 final navigatorKey = GlobalKey<NavigatorState>();
 
+/// Resolves the stored Settings language preference to an effective [Locale],
+/// consuming the device's FULL ordered preferred-locale list.
+///
+/// This is the **single wiring seam** (C-01) used by both locale-resolution
+/// sites in [_MetraInnerState]:
+///   1. the notification-string path (two `AppLocalizations.delegate.load`
+///      call sites in the Riverpod listeners), and
+///   2. the [MaterialApp.router] `localeResolutionCallback`.
+///
+/// Delegates entirely to [resolveAppLocale] (the single source of truth,
+/// `lib/core/l10n/locale_resolver.dart`), passing
+/// `WidgetsBinding.instance.platformDispatcher.locales` — the FULL ordered
+/// preferred list (C-02), never the single primary `.locale`.
+///
+/// `@visibleForTesting`: exposed so `test/app_locale_resolution_widget_test.dart`
+/// can assert the wiring seam without mounting the full widget tree.
+@visibleForTesting
+Locale resolveLocaleFromPlatform(String stored) => resolveAppLocale(
+      stored: stored,
+      systemLocales: WidgetsBinding.instance.platformDispatcher.locales,
+    );
+
 /// Root widget — owns [ProviderScope] and accepts overrides for tests.
 class MetraApp extends StatelessWidget {
   const MetraApp({
@@ -90,18 +113,46 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
   void initState() {
     super.initState();
     // Best-effort: initialize notification channels. Failures are non-fatal
-    // (e.g. test environments without a platform channel).
-    // FR-07 / BUG-B03: chain the cold-start POST_NOTIFICATIONS re-check
-    // immediately after initialize() completes so we verify OS permission
-    // reality before the first scheduling call fires.
-    ref
-        .read(notificationServiceProvider)
-        .initialize()
-        .then((_) => _verifyNotificationPermissionOnColdStart())
-        .catchError((Object _) {});
+    // (e.g. test environments without a platform channel). FR-10
+    // (code-review-10-findings SP): log a diagnostic so real-device
+    // regressions are visible in device logs; the handler stays
+    // Object-typed, never rethrows, and returns void (HC-8).
+    _initNotificationsAndVerifyPermission().catchError((Object e) {
+      debugPrint('[initNotifications] catchError: $e');
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _autoSyncIfConfigured();
     });
+  }
+
+  // FR-10 (#34): resolve the locale-derived Android notification channel
+  // display name BEFORE creating the channel via initialize(). Reuses the
+  // resolveLocaleFromPlatform + AppLocalizations.delegate.load seam (C-01)
+  // already used by the two ref.listen locale sites in build(). Falls back
+  // to the brand-neutral 'Mētra' literal if settings or l10n are unavailable
+  // (EC-20).
+  //
+  // FR-07 / BUG-B03: chain the cold-start POST_NOTIFICATIONS re-check
+  // immediately after initialize() completes so we verify OS permission
+  // reality before the first scheduling call fires. initialize() never
+  // throws (domain contract), so _verifyNotificationPermissionOnColdStart()
+  // always still runs afterward — even when the locale resolution above
+  // fails (EC-20 fallback keeps the chain unbroken).
+  Future<void> _initNotificationsAndVerifyPermission() async {
+    var channelName = 'Mētra';
+    try {
+      final settings = await ref.read(settingsNotifierProvider.future);
+      final locale = resolveLocaleFromPlatform(settings.languageCode);
+      final l10n = await AppLocalizations.delegate.load(locale);
+      channelName = l10n.notification_channel_name;
+    } catch (e) {
+      // Settings/l10n unavailable at cold-start — brand-neutral fallback
+      // (EC-20). FR-10 (code-review-10-findings SP): log a diagnostic so
+      // this silent path is visible in device logs.
+      debugPrint('[initNotifications] fallback: $e');
+    }
+    await ref.read(notificationServiceProvider).initialize(channelName);
+    await _verifyNotificationPermissionOnColdStart();
   }
 
   // FR-07 / BUG-B03 / Fix #2: verify OS POST_NOTIFICATIONS permission at cold-start.
@@ -180,7 +231,7 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
         final currentSettings = ref.read(settingsNotifierProvider).valueOrNull;
         if (currentSettings == null) return;
         final l10n = await AppLocalizations.delegate
-            .load(Locale(_effectiveLangCode(currentSettings.languageCode)));
+            .load(resolveLocaleFromPlatform(currentSettings.languageCode));
         final scheduler =
             await ref.read(schedulePredictionNotificationProvider.future);
         try {
@@ -288,7 +339,7 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
 
         final prediction = ref.read(cyclePredictionProvider).valueOrNull;
         final l10n = await AppLocalizations.delegate
-            .load(Locale(_effectiveLangCode(currentSettings.languageCode)));
+            .load(resolveLocaleFromPlatform(currentSettings.languageCode));
         // FR-08: capture the localised failure message before await so the
         // locale is pinned to the user's current settings at scheduling time.
         final failureMessage = l10n.notificationScheduleFailedMessage;
@@ -346,20 +397,19 @@ class _MetraInnerState extends ConsumerState<_MetraInner> {
       darkTheme: MetraTheme.dark(),
       themeMode: themeMode,
       locale: locale,
+      // BUG-001/BUG-002 fix (FR-28/29/30): override Flutter's default
+      // first-supportedLocale fallback with the single shared resolver so
+      // the UI locale and the notification locale are always identical.
+      // The `deviceLocale` arg (single primary) is intentionally ignored in
+      // favour of the full `.locales` list via resolveLocaleFromPlatform (C-02).
+      // `locale: locale` (explicit Settings choice / null) still takes
+      // precedence when non-null (MaterialApp semantics are unchanged).
+      localeResolutionCallback: (deviceLocale, supportedLocales) =>
+          resolveLocaleFromPlatform(settings?.languageCode ?? ''),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: ref.watch(appRouterProvider),
       debugShowCheckedModeBanner: false,
     );
-  }
-
-  /// Resolves an empty [stored] code (= "follow system") to an actual
-  /// language code supported by the app.
-  static String _effectiveLangCode(String stored) {
-    if (stored.isNotEmpty) return stored;
-    final sys = WidgetsBinding.instance.platformDispatcher.locale.languageCode;
-    return AppLocalizations.supportedLocales.any((l) => l.languageCode == sys)
-        ? sys
-        : 'it';
   }
 }

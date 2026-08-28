@@ -71,7 +71,7 @@ void main() {
     const requiredKeys = <String>[
       'backupEmptyHeading',
       'backupEmptyBody',
-      'backupConnectDropbox',
+      // backupConnectDropbox retired in TASK-03 (M4) — replaced by backupConnectAction.
       'backupAccountConnesso',
       'backupStato',
       'backupAzioni',
@@ -114,6 +114,139 @@ void main() {
         );
       });
     }
+
+    // ── TASK-03 (M4) — new l10n keys + backupConnectDropbox retirement ──────
+    group('TASK-03 — M4 provider-picker l10n keys', () {
+      const newM4Keys = <String>[
+        'backupProviderNameDropbox',
+        'backupProviderNameGoogleDrive',
+        'backupProviderNameICloud',
+        'backupProviderPickerTitle',
+        'backupConnectAction',
+        'backupSwitchConfirmTitle',
+        'backupSwitchConfirmBody',
+        'backupSwitchConfirmSwitch',
+        // TASK-08 deviation: these row-label keys were missing from TASK-03 scope
+        // and are required for correct i18n in the connected-view changes.
+        'backupProviderLabel',
+        'backupSwitchActionLabel',
+      ];
+
+      for (final key in newM4Keys) {
+        test('key "$key" present in app_it.arb', () {
+          expect(
+            it.containsKey(key),
+            isTrue,
+            reason: 'app_it.arb is missing key: $key',
+          );
+        });
+
+        test('key "$key" present in app_en.arb', () {
+          expect(
+            en.containsKey(key),
+            isTrue,
+            reason: 'app_en.arb is missing key: $key',
+          );
+        });
+
+        test('key "$key" has non-empty @-description in app_it.arb', () {
+          final meta = it['@$key'] as Map<String, dynamic>?;
+          expect(
+            meta,
+            isNotNull,
+            reason: 'app_it.arb is missing @$key metadata',
+          );
+          final desc = meta!['description'] as String?;
+          expect(
+            desc?.trim(),
+            isNotEmpty,
+            reason:
+                '@$key.description in app_it.arb must be a non-empty string',
+          );
+        });
+
+        test('key "$key" has non-empty @-description in app_en.arb', () {
+          final meta = en['@$key'] as Map<String, dynamic>?;
+          expect(
+            meta,
+            isNotNull,
+            reason: 'app_en.arb is missing @$key metadata',
+          );
+          final desc = meta!['description'] as String?;
+          expect(
+            desc?.trim(),
+            isNotEmpty,
+            reason:
+                '@$key.description in app_en.arb must be a non-empty string',
+          );
+        });
+      }
+
+      test('backupConnectDropbox absent from app_it.arb (retired in TASK-03)',
+          () {
+        expect(
+          it.containsKey('backupConnectDropbox'),
+          isFalse,
+          reason:
+              'app_it.arb must not contain retired key backupConnectDropbox',
+        );
+      });
+
+      test('backupConnectDropbox absent from app_en.arb (retired in TASK-03)',
+          () {
+        expect(
+          en.containsKey('backupConnectDropbox'),
+          isFalse,
+          reason:
+              'app_en.arb must not contain retired key backupConnectDropbox',
+        );
+      });
+
+      test(
+          'backupConnectDropbox absent from requiredKeys list (retired in TASK-03)',
+          () {
+        expect(
+          requiredKeys.contains('backupConnectDropbox'),
+          isFalse,
+          reason:
+              'requiredKeys must not include retired key backupConnectDropbox',
+        );
+      });
+
+      test(
+          'backupSwitchConfirmBody declares {provider} placeholder in app_it.arb',
+          () {
+        final value = it['backupSwitchConfirmBody'] as String?;
+        expect(
+          value,
+          isNotNull,
+          reason: 'app_it.arb is missing backupSwitchConfirmBody',
+        );
+        expect(
+          value,
+          contains('{provider}'),
+          reason:
+              'backupSwitchConfirmBody in app_it.arb must contain {provider} placeholder',
+        );
+      });
+
+      test(
+          'backupSwitchConfirmBody declares {provider} placeholder in app_en.arb',
+          () {
+        final value = en['backupSwitchConfirmBody'] as String?;
+        expect(
+          value,
+          isNotNull,
+          reason: 'app_en.arb is missing backupSwitchConfirmBody',
+        );
+        expect(
+          value,
+          contains('{provider}'),
+          reason:
+              'backupSwitchConfirmBody in app_en.arb must contain {provider} placeholder',
+        );
+      });
+    });
 
     test('IT and EN share the same backup-screen key set (no orphaned keys)',
         () {

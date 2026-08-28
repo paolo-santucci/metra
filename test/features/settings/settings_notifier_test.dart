@@ -20,6 +20,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/domain/entities/app_settings_data.dart';
+import 'package:metra/domain/entities/sync_log_entity.dart';
 import 'package:metra/features/settings/state/settings_notifier.dart';
 import 'package:metra/providers/repository_providers.dart';
 
@@ -162,6 +163,9 @@ class _StreamingFakeAppSettingsRepository implements FakeAppSettingsRepository {
 
   @override
   List<String> get callLog => const [];
+
+  @override
+  Future<void> setActiveProvider(SyncProvider provider) async {}
 }
 
 ProviderContainer _makeStreamingContainer(

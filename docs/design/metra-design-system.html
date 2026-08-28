@@ -598,7 +598,9 @@ function S07_Segmented() {
     const [v, setV] = useState('timeline');
     const trackBg = dark ? 'rgba(237,228,211,0.10)' : 'rgba(43,37,33,0.08)';
     const activeBg = dark ? D.bg : L.bg;
-    const inactiveColor = dark ? 'rgba(237,228,211,0.50)' : 'rgba(43,37,33,0.50)';
+    // Idle-label alpha raised 2026-07-05 (FR-12 / OQ-QA-05) from 0.50 to clear the
+    // NFR-04 WCAG contrast floor (>=4.5:1) against the tinted track — see bible §5.4.
+    const inactiveColor = dark ? 'rgba(237,228,211,0.65)' : 'rgba(43,37,33,0.68)';
     return (
       <div>
         <div style={{ display:'inline-flex', background:trackBg, borderRadius:10, padding:3, gap:2 }}>

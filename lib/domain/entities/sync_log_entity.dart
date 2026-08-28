@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
-// googleDrive and oneDrive will be added in v1.1.
-enum SyncProvider { dropbox }
+// Shipped members: dropbox, googleDrive, iCloud (FR-03, FR-04).
+enum SyncProvider { dropbox, googleDrive, iCloud }
 
 enum SyncOperation { backup, restore, backupSkipped }
 

@@ -33,4 +33,15 @@ class AppConstants {
   static const double tapTargetMd = 48.0;
   static const double contentPad = 24.0;
   static const double maxWidth = 420.0;
+
+  static const String kBackupPassphraseKey = 'metra_backup_passphrase_v1';
+
+  // #26 — onboarding page-2 draft (secure storage, three separate string
+  // values — NOT JSON). See OnboardingNotifier for read/write/delete usage.
+  static const String kOnboardingDraftDateKey =
+      'metra_onboarding_draft_date_v1';
+  static const String kOnboardingDraftCycleLengthKey =
+      'metra_onboarding_draft_cycle_length_v1';
+  static const String kOnboardingDraftPeriodLengthKey =
+      'metra_onboarding_draft_period_length_v1';
 }

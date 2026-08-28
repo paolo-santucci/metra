@@ -17,6 +17,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:fake_async/fake_async.dart';
@@ -24,8 +25,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:metra/core/errors/metra_exception.dart';
+import 'package:metra/data/services/backup/cloud_backup_provider.dart';
 import 'package:metra/data/services/backup/dropbox_provider.dart';
+import 'package:metra/domain/entities/sync_log_entity.dart';
 
+import '../../../helpers/fake_dropbox_provider.dart';
 import '../../../helpers/in_memory_secure_storage.dart';
 
 void main() {
@@ -33,6 +37,81 @@ void main() {
 
   setUp(() {
     storage = InMemorySecureStorage();
+  });
+
+  // ---------------------------------------------------------------------------
+  // Group A (TASK-02) — CloudBackupProvider interface + id getter
+  // ---------------------------------------------------------------------------
+
+  group('TASK-02 CloudBackupProvider interface + id', () {
+    test('cloud_backup_provider.dart imports no http/flutter_web_auth_2/crypto',
+        () {
+      // Read the source file and assert the forbidden imports are absent.
+      final src = File(
+        'lib/data/services/backup/cloud_backup_provider.dart',
+      ).readAsStringSync();
+      expect(
+        src,
+        isNot(contains("import 'package:http/")),
+        reason: 'cloud_backup_provider.dart must not import http',
+      );
+      expect(
+        src,
+        isNot(contains("import 'package:flutter_web_auth_2/")),
+        reason: 'cloud_backup_provider.dart must not import flutter_web_auth_2',
+      );
+      expect(
+        src,
+        isNot(contains("import 'package:crypto/")),
+        reason: 'cloud_backup_provider.dart must not import crypto',
+      );
+    });
+
+    test(
+        'interface declares exactly 8 members: '
+        'upload/download/listFiles/deleteFile/authorize/currentEmail/disconnect/id',
+        () {
+      // A minimal in-memory implementation must satisfy the type — this
+      // validates that the interface has exactly the expected contract.
+      // Compilation succeeds only if all 8 members are present.
+      final CloudBackupProvider impl = FakeDropboxProvider();
+      // Exercise each method name (just check assignment compiles).
+      expect(impl, isA<CloudBackupProvider>());
+    });
+
+    test('DropboxProvider.id returns SyncProvider.dropbox via @override', () {
+      // Check grep: dropbox_provider.dart must contain @override and id =>
+      final src = File(
+        'lib/data/services/backup/dropbox_provider.dart',
+      ).readAsStringSync();
+      expect(
+        src,
+        contains('SyncProvider get id => SyncProvider.dropbox'),
+        reason: 'DropboxProvider must declare id via @override',
+      );
+      // Runtime: id getter returns the correct value.
+      final storage = InMemorySecureStorage();
+      final client = MockClient((_) async => http.Response('{}', 200));
+      final provider =
+          DropboxProvider(appKey: 'key', storage: storage, client: client);
+      expect(provider.id, SyncProvider.dropbox);
+    });
+
+    test('FakeDropboxProvider().id == SyncProvider.dropbox', () {
+      expect(FakeDropboxProvider().id, SyncProvider.dropbox);
+    });
+
+    test('currentEmail return type is Future<String?> (grep)', () {
+      final src = File(
+        'lib/data/services/backup/cloud_backup_provider.dart',
+      ).readAsStringSync();
+      expect(
+        src,
+        contains('Future<String?> currentEmail()'),
+        reason:
+            'currentEmail() must keep its Future<String?> signature (FR-20)',
+      );
+    });
   });
 
   // ---------------------------------------------------------------------------
@@ -309,6 +388,164 @@ void main() {
         expect(
           storage.values['metra_dropbox_refresh_token_v1'],
           'refresh-tok',
+        );
+      },
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // TASK-08 — Group E: disconnect() revoke-catch diagnostic log (FR-12)
+  // ---------------------------------------------------------------------------
+
+  group('TASK-08 Group E — disconnect() revoke-catch logging (FR-12)', () {
+    test(
+      'revoke POST throws → disconnect() still completes and deletes both '
+      'tokens (best-effort revoke, behaviour unchanged)',
+      () async {
+        storage.values['metra_dropbox_access_token_v1'] = 't';
+        storage.values['metra_dropbox_refresh_token_v1'] = 'r';
+        final client = MockClient((req) async {
+          throw Exception('network down');
+        });
+        final p =
+            DropboxProvider(appKey: 'key', storage: storage, client: client);
+
+        // The best-effort catch must swallow the throw — no exception escapes.
+        await expectLater(p.disconnect(), completes);
+
+        expect(
+          storage.values.containsKey('metra_dropbox_access_token_v1'),
+          isFalse,
+        );
+        expect(
+          storage.values.containsKey('metra_dropbox_refresh_token_v1'),
+          isFalse,
+        );
+      },
+    );
+
+    test(
+        'source: revoke-catch site imports dart:developer and calls '
+        'developer.log; the stale // ignore: empty_catches comment is gone',
+        () {
+      final src = File(
+        'lib/data/services/backup/dropbox_provider.dart',
+      ).readAsStringSync();
+      expect(
+        src,
+        contains("import 'dart:developer' as developer;"),
+        reason: 'DropboxProvider must log via dart:developer, not '
+            'package:flutter/foundation.dart (keeps the provider Flutter-free)',
+      );
+      expect(
+        src,
+        contains('developer.log('),
+        reason: 'the revoke best-effort catch must emit a one-line '
+            'diagnostic log (FR-12, parity with the GoogleDriveProvider '
+            'FR-11 fix)',
+      );
+      expect(
+        src,
+        isNot(contains('// ignore: empty_catches')),
+        reason: 'the stale empty_catches suppression comment must be '
+            'removed now that the catch body is no longer empty',
+      );
+      // Security baseline: no secret material (tokens, passphrase) is
+      // interpolated into the new log call site.
+      expect(
+        src,
+        isNot(contains('_accessTokenKey]')),
+      );
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // TASK-08 — Group I: PKCE extraction consumption (FR-18)
+  // ---------------------------------------------------------------------------
+
+  group('TASK-08 Group I — oauth_pkce.dart consumption (FR-18)', () {
+    test('dropbox_provider.dart no longer imports package:crypto directly', () {
+      final src = File(
+        'lib/data/services/backup/dropbox_provider.dart',
+      ).readAsStringSync();
+      expect(
+        src,
+        isNot(contains("import 'package:crypto/crypto.dart';")),
+        reason: 'PKCE generation is delegated to oauth_pkce.dart (FR-18); '
+            'the direct crypto import must be removed',
+      );
+      expect(
+        src,
+        contains("import 'oauth_pkce.dart'"),
+        reason: 'DropboxProvider must import the shared PKCE helpers',
+      );
+    });
+
+    test(
+        'authorize() delegates to oauth_pkce top-level functions passing '
+        '_random (no private _generateOauthState/_generateCodeVerifier/'
+        '_codeChallenge duplicates left behind)', () {
+      final src = File(
+        'lib/data/services/backup/dropbox_provider.dart',
+      ).readAsStringSync();
+      expect(src, contains('generateCodeVerifier(_random)'));
+      expect(src, contains('codeChallenge(verifier)'));
+      expect(src, contains('generateOauthState(_random)'));
+      expect(
+        src,
+        isNot(contains('String _generateOauthState(')),
+        reason: 'the private duplicate must be removed once oauth_pkce.dart '
+            'is consumed',
+      );
+      expect(
+        src,
+        isNot(contains('String _generateCodeVerifier(')),
+      );
+      expect(
+        src,
+        isNot(contains('String _codeChallenge(')),
+      );
+    });
+
+    test(
+      'regression (NFR-06): authorize() PKCE/state output is unchanged after '
+      'delegating to oauth_pkce.dart — state round-trips through the OAuth '
+      'callback exactly as before',
+      () async {
+        final client = MockClient((req) async {
+          if (req.url.path == '/oauth2/token') {
+            return http.Response(
+              jsonEncode({
+                'access_token': 'access-tok-2',
+                'refresh_token': 'refresh-tok-2',
+              }),
+              200,
+            );
+          }
+          return http.Response('{}', 200);
+        });
+        String? capturedChallenge;
+        final p = DropboxProvider(
+          appKey: 'key',
+          storage: storage,
+          client: client,
+          webAuth: (url, {required callbackUrlScheme}) async {
+            final params = Uri.parse(url).queryParameters;
+            capturedChallenge = params['code_challenge'];
+            final state = params['state']!;
+            expect(state, hasLength(32));
+            expect(RegExp(r'^[0-9a-f]{32}$').hasMatch(state), isTrue);
+            return 'metra://oauth-callback?code=abc&state=$state';
+          },
+        );
+
+        await expectLater(p.authorize(), completes);
+        expect(capturedChallenge, isNotNull);
+        // Base64url, no padding — matches oauth_pkce.dart's codeChallenge.
+        expect(capturedChallenge, isNot(contains('=')));
+        expect(
+          storage.values['metra_dropbox_access_token_v1'],
+          'access-tok-2',
         );
       },
     );

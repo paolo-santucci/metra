@@ -29,22 +29,69 @@ import '../../../domain/entities/pain_symptom_type.dart';
 import '../../../l10n/app_localizations.dart';
 
 class TimelineCard extends StatelessWidget {
-  const TimelineCard({super.key, required this.summary, required this.isLast});
+  const TimelineCard({
+    super.key,
+    required this.summary,
+    required this.isLast,
+    this.onTap,
+  });
 
   final CycleSummary summary;
   final bool isLast;
 
+  /// Navigates to the Calendar screen focused on this entry's start date
+  /// (FR-01/FR-02). `null` keeps the card display-only, as on the Archive
+  /// Table view (ui-design-bible §15 anti-pattern 9).
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
-    return IntrinsicHeight(
+    final body = _CardBody(summary: summary);
+
+    final card = IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _TimelineRail(isLast: isLast),
           const SizedBox(width: 16),
-          Expanded(child: _CardBody(summary: summary)),
+          Expanded(
+            child: onTap == null
+                ? body
+                // CalendarDay tap idiom (calendar_day.dart): opaque
+                // GestureDetector, no InkWell/Material ripple — the primary
+                // CTA is the only "button" in this system (ui-design-bible
+                // §5; single-tap exception §15 anti-pattern 9). The
+                // accessible Semantics(button) wrapper is applied one level
+                // up, around the whole card, so it owns a real semantics
+                // boundary node (see build() below).
+                : GestureDetector(
+                    onTap: onTap,
+                    behavior: HitTestBehavior.opaque,
+                    child: body,
+                  ),
+          ),
         ],
       ),
+    );
+
+    if (onTap == null) return card;
+
+    // CANON GAP: ui-design-bible §10.3 documents Timeline card visual
+    // anatomy but is silent on the composed accessible name for the
+    // single-tap-to-navigate exception (§15 anti-pattern 9). Unlike
+    // CalendarDay, which supplies one explicit terse Semantics.label and
+    // sets excludeSemantics:true, TimelineCard has no equivalent short
+    // label — its content lives in several descendant Text widgets
+    // (_Header/_ChipRow/_Footer). `container: true` without
+    // `excludeSemantics` lets those descendant nodes merge upward, so a
+    // screen reader announces the full card content as a single button.
+    // Flagged here per task acceptance criteria; revisit if the bible is
+    // amended with an explicit label spec for this control.
+    return Semantics(
+      container: true,
+      button: true,
+      enabled: true,
+      child: card,
     );
   }
 }

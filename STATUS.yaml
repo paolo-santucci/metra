@@ -1,7 +1,7 @@
 schema-version: 2
-last-updated: "2026-06-12T00:00:00+02:00"
+last-updated: "2026-07-13T02:15:00+02:00"
 active-plan: null
-last-plan: ".claude/docs/plans/archive/qp-20260525-backup-restore-toast.md"
+last-plan: ".claude/docs/plans/archive/sp-20260712-fix-code-review-10-findings-plan.md"
 
 # Owned by the short-plan skill. update-status preserves verbatim.
 short-plan:
@@ -20,6 +20,7 @@ short-plan:
     plan: null
     assess-dir: null
   phases:
+    brainstorm: pending
     assess: pending
     triage: pending
     spec: pending
@@ -35,90 +36,109 @@ short-plan:
 
 # Owned by the long-plan skill. update-status preserves verbatim.
 long-plan:
-  feature: "implement issues: #11, #12, #13, #16, #18, #20, #21, #22, #28, #29, #31, #32, #33"
-  slug: "implement-next-patch"
+  feature: |
+    Extend Métra cloud backup beyond Dropbox to Google Drive (cross-platform,
+    OAuth, drive.file scope, visible "Metra" folder) and iCloud (iOS/iPadOS
+    only, icloud_storage plugin + container entitlement, hidden on Android),
+    same rules as Dropbox (zero-knowledge AES-256-GCM + Argon2id, app-folder
+    isolation, retention=3, 507 progressive-prune). Single active provider at
+    a time (new activeProvider field; SyncProvider enum += googleDrive,iCloud);
+    switching = confirm → revoke old token → connect new → fresh chain;
+    passphrase REUSED across providers; old provider .enc files LEFT intact;
+    existing Dropbox users unaffected (additive DB migration). UI: CupertinoPicker
+    wheel in bottom sheet (both platforms) with Connect button, on empty view
+    and reachable from connected view for switching. Language: follow-system
+    fallback resolves Italian only for Italian system locale (incl. it-CH),
+    English for every other language (update _effectiveLangCode + MaterialApp
+    localeResolutionCallback); explicit Settings choice unaffected. Docs: new
+    internal dev guide .claude/docs/guides/cloud-provider-setup.md (not on Jekyll
+    site) for Google Drive + iCloud credential provisioning + Dropbox recap.
+  slug: "cloud-backup-google-drive-icloud"
   auto: false
-  request-type: bug-fix
+  request-type: feature
   paths:
-    spec: ".claude/docs/specs/lp-20260517-implement-next-patch-spec.md"
-    plan: ".claude/docs/plans/lp-20260517-implement-next-patch-plan.md"
-    assess-dir: ".claude/docs/specs/lp-20260517-implement-next-patch-assessment"
+    spec: ".claude/docs/specs/lp-20260624-cloud-backup-google-drive-icloud-spec.md"
+    plan: ".claude/docs/plans/lp-20260624-cloud-backup-google-drive-icloud-plan.md"
+    assess-dir: ".claude/docs/specs/lp-20260624-cloud-backup-google-drive-icloud-assessment"
   phases:
+    brainstorm: done
     assess: done
     spec: done
     plan: done
   approvals:
     spec: approved
-    plan: approved
 
-pending-consolidation: []
+pending-consolidation:
+  - plan-id: sp-20260712-fix-code-review-10-findings-spec
+    archived-date: "2026-07-13"
+    has-spec-impact: true
 
 recently-completed:
-  - date: "2026-06-12"
-    summary: "docs: audit and update EN backup help page — replaced 3 screenshot placeholder comments with real image tags; fixed wording alignment to IT source; merged upstream changes (25 screenshot assets, content edits) via stash-pop with no conflicts"
-  - date: "2026-06-11"
-    summary: "docs: add bug report page to Jekyll site (IT+EN) + bug report link in app Settings l10n files (2b78f34..4f36fa5)"
-  - date: "2026-06-10"
-    summary: "feat: add bug report link to Settings screen (17af3b6)"
-  - date: "2026-06-10"
-    summary: "docs: update backup help pages (IT+EN) for passphrase handling precision (b679c2c)"
-  - date: "2026-06-10"
-    summary: "audit: backup help pages (IT+EN) vs. spec — 3 discrepancies found: wrong 'what is backed up', misleading passphrase-every-time UX copy, passphrase-stored precision gap"
+  - date: "2026-07-13"
+    summary: "short-plan fix-code-review-10-findings CLOSED: all 6 waves / 12 tasks landed (BUG-B06 passphrase-wipe regression fixed via firstConnect/_completeProviderHandshake; unified in-flight guard; rollback TOCTOU closed; iCloud-probe memoization; cold-start guard ordering; PKCE + PickerItem extraction). Full repo suite 2051 passed/0 failed. Spec archived with 1 spec-delta pushed to pending-consolidation (gdrive-currentemail-null-on-failure). Still uncommitted."
+  - date: "2026-07-12"
+    summary: "code-review (high) of metra-1.1.0 vs main: 10 findings reported; headline = CONFIRMED regression: BackupNotifier.connect() (only path wiping stale reinstall passphrase, BUG-B06) is dead — empty-view CTA now routes to switchProvider which never touches the passphrase key. No commits; review only."
+  - date: "2026-07-06"
+    summary: "docs(help) 2ea598b: aligned it/en backup.md, settings.md, archive-stats.md with the shipped multi-provider backup (Google Drive/iCloud) and #3 Timeline->Calendar tap nav; had drifted since the feature shipped."
+  - date: "2026-07-06"
+    summary: "docs(canon) bde102a: re-derived backup.md and notifications.md canon specs against actual code (multi-provider switch flow; initialize(channelName) signature + #33 regression coverage)."
+  - date: "2026-07-06"
+    summary: "Manual reconciliation of the 4 feature-ids /finalize-plan refused (non-mechanical): onboarding-draft-persistence + onboarding-language-selector fingerprints stamped into onboarding.md, notifications-localised-channel-name stamped into notifications.md; segmented-control-idle-contrast-fix documented via ADR only. Minted D-019..D-022. pending-consolidation drained to empty."
 
 in-progress:
-  - title: "EN backup help page has uncommitted local edits"
-    state: "docs/en/help/backup.md has image tags + wording fix merged with upstream content edits; not yet committed."
+  - title: "code-review-10-findings fix — plan CLOSED, work UNCOMMITTED"
+    state: "Spec+plan archived (.claude/docs/{specs,plans}/archive/sp-20260712-fix-code-review-10-findings-*.md). All 12 tasks implemented and fully verified (2051 tests green). 1 spec-delta pending in pending-consolidation (gdrive-currentemail-null-on-failure)."
     touched:
-      - "docs/en/help/backup.md"
-    next-step: "Review diff and commit docs/en/help/backup.md with a docs: message."
+      - "lib/app.dart"
+      - "lib/features/backup/state/backup_notifier.dart"
+      - "lib/features/backup/views/backup_empty_view.dart"
+      - "lib/features/backup/widgets/backup_picker_sheet_internals.dart"
+      - "lib/features/backup/widgets/backup_provider_picker_sheet.dart"
+      - "lib/features/backup/widgets/picker_item.dart"
+      - "lib/providers/backup_providers.dart"
+      - "lib/data/services/backup/oauth_pkce.dart"
+      - "lib/data/services/backup/google_drive_provider.dart"
+      - "lib/data/services/backup/dropbox_provider.dart"
+    next-step: "Ask user how to commit (per-task commits per plan §4 vs one squashed commit), then open the metra-1.1.0 -> main PR."
     blocker: null
-  - title: "Quality CI fix on branch fix/quality-3.41.9-compat (not pushed)"
-    state: "4 split commits fix the Quality workflow: lockfile re-pinned to Flutter 3.41.9, SizeTransition axisAlignment compat, relative-date notification tests, restore-toast wording. Full pipeline verified locally."
+  - title: "v1.1.0-rc5 iOS TestFlight (run 28795580375) — deployed"
+    state: "Tagged v1.1.0-rc5 on b9a6388 (1.1.0+20). Carries gh-issues-batch (#3,26,27,33,34,36). CI green: deploy_testflight + build_ios."
     touched:
-      - "pubspec.lock"
-      - "lib/features/daily_entry/widgets/pain_intensity_slider.dart"
-      - "test/app_notification_wiring_test.dart"
-      - "test/domain/use_cases/schedule_prediction_notification_test.dart"
-      - "test/features/backup/backup_screen_test.dart"
-      - "test/integration/notification_link_restore_toast_test.dart"
-    next-step: "Push/merge fix/quality-3.41.9-compat into main so Quality CI goes green."
+      - "pubspec.yaml"
+    next-step: "On-device verify rc5: Timeline->Calendar tap, onboarding draft persist, language selector, plus rc1-4 regressions."
     blocker: null
-  - title: "main is now canonical (== old rollback/rc10); iOS black screen still to verify"
-    state: "main @4f36fa5. Android startup crash fixed (kotlin-android plugin applied), verified on Galaxy A32."
+  - title: "metra-1.1.0 — all LP milestones + gh-issues-batch pushed; awaiting PR into main"
+    state: "Tags rc1..rc5 pushed. 2026-07-12 code-review: 10 findings, 1 CONFIRMED regression (stale-passphrase wipe dead path) to fix pre-merge."
     touched:
-      - "android/app/build.gradle.kts"
-      - ".github/workflows/android.yml"
-    next-step: "Verify iOS rc20 TestFlight 1.0.2 (320) cold-start black screen (backup configured) is GONE."
-    blocker: "Awaiting iOS black-screen verification on TestFlight"
+      - "lib/features/backup/state/backup_notifier.dart"
+      - "lib/features/backup/views/backup_empty_view.dart"
+      - "lib/app.dart"
+    next-step: "Fix review finding #1 (first-connect passphrase wipe) before opening the metra-1.1.0 -> main PR."
+    blocker: null
 
 next-steps:
-  - "Commit uncommitted docs/en/help/backup.md edits (image tags + wording fix)"
-  - "Verify iOS rc20 TestFlight 1.0.2 (320) cold-start black screen (backup configured) is GONE — last open blocker before v1.0.2 final"
-  - "Push/merge branch fix/quality-3.41.9-compat into main to make the Quality CI workflow green again"
-  - "When iOS verified: tag v1.0.2 (or rc21) from main → v* trigger builds iOS TestFlight + Android signed split-APKs + AAB in one shot"
-  - "Re-attempt dependency upgrades (KGP phase 2: secure_storage 10.x, file_picker 11.x, timezone 5.x) only AFTER 1.0.2 ships"
-  - "FR-16 TestFlight sign-off: cold-start with iOS notification permission revoked → in-app toggle reflects 'off'"
-  - "Consider adding universal fat APK build to CI alongside split APKs for easier sideload testing distribution"
-  - "Screenshot refresh for backup-connected IT+EN (deferred — requires Android emulator with IT/EN locale)"
+  - "Run manual E2E Drive round-trip pre-merge gate (OQ-QA-05): back up to Google Drive -> download .enc -> verify unreadable binary -> restore on a 2nd Android device -> data identical."
+  - "Add GOOGLE_OAUTH_CLIENT_ID GitHub secret if not yet set (CI builds pass it via --dart-define on 5 build commands); local client now works with custom-URI-scheme enabled."
+  - "TASK-18/19 (help-doc screenshots for #27 language toggle) deferred — capture on-device: docs/it/help/assets/onboarding-welcome-it.png and docs/en/help/assets/onboarding-welcome-en.png."
+  - "After GitHub Pages rebuilds verify privacy policy live at metra.paolosantucci.com/{it,en}/privacy/, then resubmit to Google Play to clear privacy-policy rejection."
+  - "Download signed release-aab from Android CI run on main (d702ab3) and upload to Play Console (versionCode 12) to retry production promotion (16 KB page-size fix)."
+  - "Surprising finding: .gitignore excludes all of .claude/ except backup.md and notifications.md (force-added earlier). Confirm intentional before relying on git history for canon provenance."
+  - "backup-connect-{it,en}.png help screenshots still depict the pre-multi-provider Dropbox-only empty state; no provider-picker screenshot exists yet."
 
 known-issues:
-  - severity: critical
-    description: "iOS cold-start black screen (backup configured) — open. rollback/rc10 (now == main) reverts the KGP-2 dep upgrade as candidate fix; still pending TestFlight device verification (rc20 build 320). Android ClassNotFoundException crash is FIXED."
-    impact: high
-    workaround: "Confirm iOS black screen gone on device before tagging v1.0.2 final. Android CI rebuild produces working signed APKs."
   - severity: warning
-    description: "Local distrobox lacks the libsqlite3.so symlink, so DB/SQLCipher tests fail locally. CI (ubuntu) has the lib."
+    description: "iCloud eventual-consistency family (FIXED IN CODE, pending on-device re-verify via rc3/rc4 TestFlight): backup false-failure + Disconnect no-op fixed in 50e18d1/rc2; Restore PathNotFoundException fixed in 861c327/rc3."
+    impact: medium
+    workaround: "Pre-fix builds: backup succeeded despite false error; restore required re-triggering after file materialized."
+  - severity: warning
+    description: "Drift DB/SQLCipher tests need native sqlite3 lib absent in local distrobox; CI ubuntu has the lib."
     impact: low
-    workaround: "ln -sf /usr/lib/x86_64-linux-gnu/libsqlite3.so.0 /tmp/sqlitelib/libsqlite3.so then run flutter test with LD_LIBRARY_PATH=/tmp/sqlitelib"
+    workaround: "mkdir -p /tmp/sqlitelib && ln -sf /usr/lib/x86_64-linux-gnu/libsqlite3.so.0 /tmp/sqlitelib/libsqlite3.so then LD_LIBRARY_PATH=/tmp/sqlitelib flutter test"
   - severity: warning
-    description: "share_plus and package_info_plus still bundle KGP; share_plus 12.x has Kotlin K2 compilation bug; unblocks when file_picker 12.x is stable"
+    description: "share_plus and package_info_plus still bundle KGP; share_plus 12.x has Kotlin K2 compilation bug; unblocks when file_picker 12.x is stable."
     impact: low
-    workaround: "Accept KGP warnings on every build; auto-resolves when file_picker 12.x is stable"
+    workaround: "Accept KGP warnings on every build; auto-resolves when file_picker 12.x is stable."
   - severity: warning
-    description: "save_daily_log_test.dart future date rejection — intermittent failure near Italian midnight UTC (timezone/DST boundary)"
+    description: "save_daily_log_test.dart future date rejection — intermittent failure near Italian midnight UTC (timezone/DST boundary)."
     impact: medium
     workaround: null
-  - severity: warning
-    description: "iOS PermissionDenied vs PermissionBlocked indistinguishable via flutter_local_notifications v17 — both return PermissionBlocked"
-    impact: low
-    workaround: "Conservative UX: settings dialog always offered on iOS denial; slightly over-eager on first-time denials"

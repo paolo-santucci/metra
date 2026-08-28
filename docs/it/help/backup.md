@@ -1,7 +1,7 @@
 ---
 layout: help
 title: Backup su cloud
-subtitle: "Come collegare Dropbox e cosa significa concretamente \"crittografia end-to-end\"."
+subtitle: "Come collegare un provider cloud (Dropbox, Google Drive o iCloud) e cosa significa concretamente \"crittografia end-to-end\"."
 nav_title: Backup su cloud
 lang: it
 lang_ref: help-backup
@@ -13,28 +13,40 @@ help_order: 4
 
 I tuoi dati non lasciano mai il dispositivo a meno che tu non lo decida. Questa è la premessa di Mētra: **local-first** non è una modalità, è l'impostazione predefinita. Il backup è un'opzione, non un'aspettativa.
 
-Quando lo attivi, Mētra cifra l'intero database sul tuo dispositivo **prima** di caricarlo. Dropbox riceve un blob opaco che non può leggere. Nessun altro ha accesso ai tuoi dati, incluso chi ha scritto il codice.
+Quando lo attivi, Mētra cifra l'intero database sul tuo dispositivo **prima** di caricarlo. Qualsiasi provider tu scelga riceve solo un blob opaco che non può leggere. Nessun altro ha accesso ai tuoi dati, incluso chi ha scritto il codice.
 
 > ⚠️ **Non esiste il recupero della passphrase.** La chiave di cifratura è derivata dalla tua passphrase e vive solo sul tuo dispositivo, non su un server, non nel cloud. Se perdi la passphrase, il backup non può essere recuperato. Conservala in un posto sicuro, separato dal telefono (es. un gestore di password).
 
 ---
 
-## Collegare un provider cloud
+## Scegliere un provider cloud
 
-![Schermata backup prima della connessione: pulsante di connessione Dropbox.](/assets/backup-connect-it.png)
+![Schermata backup prima della connessione: pulsante di connessione, qui mostrato con Dropbox come esempio.](/assets/backup-connect-it.png)
+
+Mētra supporta tre provider. Solo uno può essere attivo alla volta, e ti vengono proposti solo quelli disponibili sulla tua piattaforma:
+
+| Provider | Disponibile su |
+|---|---|
+| **Dropbox** | Android e iOS |
+| **Google Drive** | Solo Android |
+| **iCloud** | Solo iOS |
+
+Per collegarti:
 
 1. Vai in **Impostazioni → Backup cloud**.
-2. Tocca **Collega Dropbox**.
-3. Verrai reindirizzata alla pagina di accesso del provider nel browser.
-4. Dopo aver autorizzato la connessione, torni a Mētra.
+2. Tocca **Collega**. Si apre una rotella di selezione con i provider disponibili sul tuo dispositivo.
+3. Scorri fino al provider che vuoi e conferma.
+4. Per Dropbox e Google Drive verrai reindirizzata alla pagina di accesso del provider nel browser: autorizza la connessione e tornerai a Mētra. Per iCloud non c'è nessuna pagina di accesso: Mētra verifica semplicemente di poter accedere al tuo account iCloud.
 
-Mētra richiede i permessi minimi: solo l'accesso a una cartella dedicata, non all'intero spazio di archiviazione cloud.
+Mētra richiede i permessi minimi per ciascun provider: solo l'accesso a una cartella dedicata (Dropbox, Google Drive), mai all'intero spazio di archiviazione cloud. L'accesso a iCloud è limitato al contenitore dell'app Mētra.
 
 ---
 
 ## Creare un backup
 
 ![Schermata backup dopo la connessione: email connessa, data ultimo backup, pulsanti \"Esegui backup\" e \"Disconnetti\".](/assets/backup-connected-it.png)
+
+La schermata da connessa mostra l'email dell'account per Dropbox e Google Drive. iCloud non ha un'email da mostrare — Mētra si limita a verificare che il contenitore sia raggiungibile, quindi quella riga viene omessa invece di restare vuota.
 
 Una volta collegata:
 
@@ -48,6 +60,16 @@ Una volta collegata:
 Dopo il backup iniziale, Mētra provvederà autonomamente a fare backup periodici.
 
 Mētra mantiene automaticamente i 3 backup cifrati più recenti nella cartella cloud; quelli più vecchi vengono rimossi dopo ogni backup riuscito. Nessuna impostazione modificabile — è la postura local-first / rispetta-l'utente-adulto.
+
+---
+
+## Cambiare provider
+
+Hai cambiato idea, o stai passando da un dispositivo Android a uno iOS (o viceversa)? Dalla schermata da connessa, tocca **Cambia provider**. Si apre la stessa rotella di selezione; scegli un provider diverso e conferma nella finestra di dialogo.
+
+- La tua passphrase viene riutilizzata — non ti verrà chiesto di impostarne una nuova.
+- I backup già presenti presso il provider precedente **restano dove sono**, intatti. Se vuoi eliminarli, devi farlo tu (vedi [Scollegare il provider](#scollegare-il-provider)).
+- Il nuovo provider segue lo stesso flusso di connessione descritto sopra.
 
 ---
 
@@ -70,7 +92,7 @@ Le impostazioni dell'app (tema, lingua, notifiche, durata del ciclo di riferimen
 1. Installa Mētra sul nuovo dispositivo (o dopo un ripristino di fabbrica).
 2. Completa il flusso di benvenuto, i numeri inseriti non contano, verranno sovrascritti dal ripristino.
 3. Vai in **Impostazioni → Backup cloud**.
-4. Collega il tuo account Dropbox. Se sono presenti backup ti verrà indicato e sarà riportata la data dell'ultimo.
+4. Collega il provider a cui avevi fatto il backup in precedenza (oppure scegline uno diverso dalla rotella se stai ripristinando da un'altra parte). Se sono presenti backup ti verrà indicato e sarà riportata la data dell'ultimo.
 5. Tocca **Ripristina da backup** e conferma nella finestra di avviso che i dati attuali verranno sostituiti.
 6. Apparirà un pannello con una rotella di selezione: scorri per scegliere la versione da ripristinare. Ogni voce mostra data e ora (fino a 3 backup disponibili, il più recente è quello più in alto).
 7. Tocca **Ripristina** per confermare, oppure **Annulla** per tornare indietro.
@@ -82,9 +104,9 @@ Le impostazioni dell'app (tema, lingua, notifiche, durata del ciclo di riferimen
 
 ## Scollegare il provider
 
-Tocca **Disconnetti** nella schermata backup per scollegare l'account cloud. I file di backup già sul cloud **non vengono eliminati**, devi farlo manualmente dall'app o dal sito di Dropbox.
+Tocca **Disconnetti** nella schermata backup per scollegare l'account cloud. I file di backup già sul cloud **non vengono eliminati** — devi farlo manualmente: dall'app o dal sito di Dropbox o Google Drive, oppure dalle impostazioni di iCloud, a seconda del provider a cui eri collegata.
 
-Mētra conserva fino a 3 backup cifrati più recenti nella cartella dell'app.
+Mētra conserva fino a 3 backup cifrati più recenti nella cartella dell'app, per il provider attivo.
 
 ---
 
@@ -92,7 +114,8 @@ Mētra conserva fino a 3 backup cifrati più recenti nella cartella dell'app.
 
 - Algoritmo di cifratura: **AES-256-GCM**.
 - Derivazione della chiave: **Argon2id** dalla tua passphrase.
-- La chiave di cifratura derivata non viene mai salvata da nessuna parte — né nel cloud né sul dispositivo. Viene calcolata dalla passphrase quando serve, utilizzata e poi scartata. La passphrase stessa è conservata nell'archiviazione sicura hardware del dispositivo (iOS Keychain / Android Keystore) in modo che i backup successivi possano avviarsi senza chiederti nulla.
+- La chiave di cifratura derivata non viene mai salvata da nessuna parte — né nel cloud né sul dispositivo. Viene calcolata dalla passphrase quando serve, utilizzata e poi scartata. La passphrase stessa è conservata nell'archiviazione sicura hardware del dispositivo (iOS Keychain / Android Keystore) in modo che i backup successivi possano avviarsi senza chiederti nulla, ed è condivisa tra i provider se ne cambi uno.
+- Le connessioni Dropbox e Google Drive usano OAuth; i token di accesso vivono nella stessa archiviazione sicura hardware della passphrase. iCloud non usa OAuth né token — Mētra vi accede direttamente tramite l'account iCloud del tuo dispositivo.
 - Il file di backup ha estensione `.enc` ed è archiviato in una cartella dedicata a Mētra nel tuo account cloud.
 
 Questi non sono annunci di marketing: sono le scelte specifiche nel codice. Puoi verificarlo leggendo `lib/data/services/encryption_service.dart`.

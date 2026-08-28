@@ -8,7 +8,8 @@ import 'dart:typed_data';
 import 'package:metra/core/errors/metra_exception.dart';
 import 'package:metra/data/services/backup/backup_file_entry.dart';
 import 'package:metra/data/services/backup/backup_filename.dart';
-import 'package:metra/data/services/backup/dropbox_provider.dart';
+import 'package:metra/data/services/backup/cloud_backup_provider.dart';
+import 'package:metra/domain/entities/sync_log_entity.dart';
 
 /// In-memory [CloudBackupProvider] for tests.
 ///
@@ -41,6 +42,23 @@ class FakeDropboxProvider implements CloudBackupProvider {
   /// Records every filename argument passed to [upload] (success or failure).
   final List<String> uploadCalls = [];
 
+  /// Number of times [disconnect] has been called (spy counter for TASK-05).
+  int disconnectCalls = 0;
+
+  /// Number of times [authorize] has been called (spy counter for TASK-05).
+  int authorizeCalls = 0;
+
+  /// When true, the next [disconnect] call throws a [SyncException] and resets
+  /// to false.  Used to simulate the abort-gate (EC-04) in switchProvider tests.
+  bool disconnectThrows = false;
+
+  /// Optional callback invoked synchronously inside [disconnect] after
+  /// incrementing [disconnectCalls] but before the optional throw.
+  ///
+  /// Used by the pre-flip-ordering test to inspect external state at the exact
+  /// moment disconnect() runs, without requiring a blocking fake.
+  void Function()? onDisconnectCalled;
+
   /// Simulates the email returned by [currentEmail].
   /// Set to null to simulate an email fetch failure.
   String? currentEmailResult = 'user@example.com';
@@ -68,13 +86,25 @@ class FakeDropboxProvider implements CloudBackupProvider {
   Map<String, Exception>? deleteThrows;
 
   @override
-  Future<void> authorize() async {}
+  SyncProvider get id => SyncProvider.dropbox;
+
+  @override
+  Future<void> authorize() async {
+    authorizeCalls++;
+  }
 
   @override
   Future<String?> currentEmail() async => currentEmailResult;
 
   @override
-  Future<void> disconnect() async {}
+  Future<void> disconnect() async {
+    disconnectCalls++;
+    onDisconnectCalled?.call();
+    if (disconnectThrows) {
+      disconnectThrows = false;
+      throw const SyncException('Dropbox disconnect failed');
+    }
+  }
 
   @override
   Future<void> upload(Uint8List blob, String filename) async {

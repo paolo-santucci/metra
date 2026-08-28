@@ -56,7 +56,12 @@ class FlutterNotificationService implements NotificationService {
   static const int kPredictionNotificationId = 1001;
 
   static const String _kChannelId = 'metra_cycle';
-  static const String _kChannelName = 'Mētra — Ciclo';
+
+  /// The Android notification channel's display name, supplied by the
+  /// caller via [initialize]. Defaults to a brand-neutral fallback until
+  /// [initialize] is called (TASK-07, FR-10, #34): the channel ID
+  /// ([_kChannelId]) stays fixed — only the display NAME is localised.
+  String _channelName = 'Mētra';
 
   FlutterNotificationService({
     @visibleForTesting FlutterLocalNotificationsPlugin? pluginOverride,
@@ -65,7 +70,8 @@ class FlutterNotificationService implements NotificationService {
   final FlutterLocalNotificationsPlugin _plugin;
 
   @override
-  Future<void> initialize() async {
+  Future<void> initialize(String channelName) async {
+    _channelName = channelName;
     tz.initializeTimeZones();
     try {
       final timeZoneName = await FlutterTimezone.getLocalTimezone();
@@ -93,10 +99,14 @@ class FlutterNotificationService implements NotificationService {
     );
     await _plugin.initialize(settings);
 
-    // Create the Android notification channel once; a no-op on re-creates.
-    const channel = AndroidNotificationChannel(
+    // Create (or re-create) the Android notification channel. Unconditional
+    // and idempotent by Android semantics alone: the channel ID never
+    // changes, so this never duplicates a channel; a display-name change is
+    // silently a no-op on already-installed devices (NFR-06, EC-19) — no
+    // branching needed here.
+    final channel = AndroidNotificationChannel(
       _kChannelId,
-      _kChannelName,
+      _channelName,
       importance: Importance.high,
     );
     await _plugin
@@ -177,28 +187,28 @@ class FlutterNotificationService implements NotificationService {
             kPredictionNotificationId,
             title,
             body,
-            const NotificationDetails(
+            NotificationDetails(
               android: AndroidNotificationDetails(
                 _kChannelId,
-                _kChannelName,
+                _channelName,
                 importance: Importance.high,
                 priority: Priority.high,
               ),
-              iOS: DarwinNotificationDetails(),
+              iOS: const DarwinNotificationDetails(),
             ),
           );
         }
         return const NotificationScheduleSuccess();
       }
 
-      const androidDetails = AndroidNotificationDetails(
+      final androidDetails = AndroidNotificationDetails(
         _kChannelId,
-        _kChannelName,
+        _channelName,
         importance: Importance.high,
         priority: Priority.high,
       );
       const iosDetails = DarwinNotificationDetails();
-      const details = NotificationDetails(
+      final details = NotificationDetails(
         android: androidDetails,
         iOS: iosDetails,
       );

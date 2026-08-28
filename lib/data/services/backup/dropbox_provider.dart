@@ -16,28 +16,19 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../core/errors/metra_exception.dart';
+import '../../../domain/entities/sync_log_entity.dart';
 import 'backup_file_entry.dart';
-
-abstract class CloudBackupProvider {
-  Future<void> upload(Uint8List blob, String filename);
-  Future<Uint8List> download(String filename);
-  Future<List<BackupFileEntry>> listFiles();
-  Future<void> deleteFile(String filename);
-
-  // Widening additions (C-08: additive-only)
-  Future<void> authorize();
-  Future<String?> currentEmail();
-  Future<void> disconnect();
-}
+import 'cloud_backup_provider.dart';
+import 'oauth_pkce.dart';
 
 class DropboxProvider implements CloudBackupProvider {
   DropboxProvider({
@@ -83,14 +74,17 @@ class DropboxProvider implements CloudBackupProvider {
         callbackUrlScheme: callbackUrlScheme,
       );
 
+  @override
+  SyncProvider get id => SyncProvider.dropbox;
+
   Future<bool> get isConnected async =>
       (await _storage.read(key: _accessTokenKey)) != null;
 
   @override
   Future<void> authorize() async {
-    final verifier = _generateCodeVerifier();
-    final challenge = _codeChallenge(verifier);
-    _oauthState = _generateOauthState();
+    final verifier = generateCodeVerifier(_random);
+    final challenge = codeChallenge(verifier);
+    _oauthState = generateOauthState(_random);
     final authUrl = Uri.https('www.dropbox.com', '/oauth2/authorize', {
       'client_id': _appKey,
       'response_type': 'code',
@@ -165,8 +159,12 @@ class DropboxProvider implements CloudBackupProvider {
           body: 'null',
           headers: {'Content-Type': 'application/json'},
         );
-        // ignore: empty_catches — revoke is best-effort; token is wiped below
-      } catch (_) {}
+      } catch (e) {
+        developer.log(
+          'disconnect: revoke failed: $e',
+          name: 'DropboxProvider',
+        );
+      }
     }
     await _storage.delete(key: _accessTokenKey);
     await _storage.delete(key: _refreshTokenKey);
@@ -294,26 +292,5 @@ class DropboxProvider implements CloudBackupProvider {
     final access = tokens['access_token'] as String;
     await _storage.write(key: _accessTokenKey, value: access);
     return access;
-  }
-
-  String _generateOauthState() {
-    final bytes = List<int>.generate(16, (_) => _random.nextInt(256));
-    return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-  }
-
-  String _generateCodeVerifier() {
-    const chars =
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
-    return List.generate(64, (_) => chars[_random.nextInt(chars.length)])
-        .join();
-  }
-
-  String _codeChallenge(String verifier) {
-    final digest = sha256.convert(utf8.encode(verifier)).bytes;
-    return base64Url
-        .encode(digest)
-        .replaceAll('=', '')
-        .replaceAll('+', '-')
-        .replaceAll('/', '_');
   }
 }

@@ -158,6 +158,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendar_fab_label => 'Add or edit today\'s log';
 
   @override
+  String get notification_channel_name => 'Mētra — Cycle';
+
+  @override
   String get notification_prediction_title => 'Your cycle is approaching';
 
   @override
@@ -518,9 +521,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your data stays on your device. Connect Dropbox to keep an encrypted copy in the cloud — only you can read it.';
 
   @override
-  String get backup_connect_dropbox => 'Connect Dropbox';
-
-  @override
   String backup_connected_as(String email) {
     return 'Connected as: $email';
   }
@@ -656,6 +656,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboarding_date_placeholder => 'Select date';
+
+  @override
+  String get onboarding_language_selector_label => 'Language';
 
   @override
   String get settings_section_about => 'About';
@@ -808,9 +811,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Connect an account to keep a secure, encrypted copy of your data in the cloud.';
 
   @override
-  String get backupConnectDropbox => 'Connect Dropbox';
-
-  @override
   String get backupAccountConnesso => 'Connected account';
 
   @override
@@ -889,4 +889,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String restoreSuccessToast(int count) {
     return '$count entries restored';
   }
+
+  @override
+  String get backupProviderNameDropbox => 'Dropbox';
+
+  @override
+  String get backupProviderNameGoogleDrive => 'Google Drive';
+
+  @override
+  String get backupProviderNameICloud => 'iCloud';
+
+  @override
+  String get backupProviderPickerTitle => 'Choose a provider';
+
+  @override
+  String get backupConnectAction => 'Connect';
+
+  @override
+  String get backupSwitchConfirmTitle => 'Switch provider?';
+
+  @override
+  String backupSwitchConfirmBody(String provider) {
+    return 'You will switch to $provider. Your passphrase stays the same and existing backups are not affected; you will need to reconnect to the new provider.';
+  }
+
+  @override
+  String get backupSwitchConfirmSwitch => 'Switch';
+
+  @override
+  String get backupProviderLabel => 'Provider';
+
+  @override
+  String get backupSwitchActionLabel => 'Switch provider';
 }

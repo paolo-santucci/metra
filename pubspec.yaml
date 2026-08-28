@@ -3,7 +3,7 @@ description: "Métra — privacy-first menstrual cycle tracker."
 publish_to: none
 # iOS version — source of truth for the iOS build.
 # Android version is pinned independently in android/app/build.gradle.kts.
-version: 1.0.2+15
+version: 1.1.0+21
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -55,6 +55,9 @@ dependencies:
   http: ^1.2.2
   flutter_web_auth_2: ^4.0.0
   crypto: ^3.0.3
+
+  # iCloud backup (added in M3), iOS/iPadOS only
+  icloud_storage: 2.2.0 # rule-8: no existing lib wraps the iOS ubiquity-container (iCloud Drive) API; exact-pinned (no caret) so the native binding cannot drift unreviewed
 
   # Export/share (added in P-5)
   file_picker: ^8.1.2

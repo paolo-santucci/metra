@@ -19,6 +19,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/util/nullable.dart';
 import 'package:metra/domain/entities/app_settings_data.dart';
 import 'package:metra/domain/entities/first_day_of_week_setting.dart';
+import 'package:metra/domain/entities/sync_log_entity.dart';
 
 import 'fake_app_settings_repository.dart';
 
@@ -150,6 +151,168 @@ void main() {
         (await fake.getOrCreate()).lastLogOrSymptomWriteAt,
         equals(t),
       );
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Group E — activeProvider threading (EC-10, TASK-04 / FR-13, NFR-05)
+  // ---------------------------------------------------------------------------
+  // Each of the six full-constructor copy blocks in FakeAppSettingsRepository
+  // must forward activeProvider unchanged. These tests are the silent-reset
+  // regression guard: they set activeProvider=googleDrive, invoke the
+  // operation that exercises each block, then assert activeProvider is STILL
+  // googleDrive. If any block omits the field, the default (dropbox) resets it
+  // and the corresponding test fails.
+  group(
+      'FakeAppSettingsRepository.activeProvider threading — EC-10 six-block guard',
+      () {
+    /// Seeds [repo] with [googleDrive] as the active provider.
+    Future<void> seedGoogleDrive(FakeAppSettingsRepository repo) async {
+      await repo.setActiveProvider(SyncProvider.googleDrive);
+    }
+
+    test('EC-10_block1_updateBackupState_preserves_activeProvider_googleDrive',
+        () async {
+      final repo = FakeAppSettingsRepository();
+      await seedGoogleDrive(repo);
+      await repo.updateBackupState(dropboxEmail: 'a@b', lastBackupAt: null);
+      final s = await repo.getOrCreate();
+      expect(
+        s.activeProvider,
+        equals(SyncProvider.googleDrive),
+        reason:
+            'updateBackupState (block 1) must not reset activeProvider to dropbox',
+      );
+    });
+
+    test(
+        'EC-10_block2_markOnboardingComplete_preserves_activeProvider_googleDrive',
+        () async {
+      final repo = FakeAppSettingsRepository();
+      await seedGoogleDrive(repo);
+      await repo.markOnboardingComplete();
+      final s = await repo.getOrCreate();
+      expect(
+        s.activeProvider,
+        equals(SyncProvider.googleDrive),
+        reason:
+            'markOnboardingComplete (block 2) must not reset activeProvider to dropbox',
+      );
+    });
+
+    test(
+        'EC-10_block3_saveDeclaredCycleLength_preserves_activeProvider_googleDrive',
+        () async {
+      final repo = FakeAppSettingsRepository();
+      await seedGoogleDrive(repo);
+      await repo.saveDeclaredCycleLength(28);
+      final s = await repo.getOrCreate();
+      expect(
+        s.activeProvider,
+        equals(SyncProvider.googleDrive),
+        reason:
+            'saveDeclaredCycleLength (block 3) must not reset activeProvider to dropbox',
+      );
+    });
+
+    test(
+        'EC-10_block4_updateLastDataWriteAt_preserves_activeProvider_googleDrive',
+        () async {
+      final repo = FakeAppSettingsRepository();
+      await seedGoogleDrive(repo);
+      await repo.updateLastDataWriteAt(DateTime.utc(2026, 6, 24));
+      final s = await repo.getOrCreate();
+      expect(
+        s.activeProvider,
+        equals(SyncProvider.googleDrive),
+        reason:
+            'updateLastDataWriteAt (block 4) must not reset activeProvider to dropbox',
+      );
+    });
+
+    test(
+        'EC-10_block5_updateBackupSuspended_preserves_activeProvider_googleDrive',
+        () async {
+      final repo = FakeAppSettingsRepository();
+      await seedGoogleDrive(repo);
+      await repo.updateBackupSuspended(true);
+      final s = await repo.getOrCreate();
+      expect(
+        s.activeProvider,
+        equals(SyncProvider.googleDrive),
+        reason:
+            'updateBackupSuspended (block 5) must not reset activeProvider to dropbox',
+      );
+    });
+
+    test(
+        'EC-10_block6_clearBackupSuspended_preserves_activeProvider_googleDrive',
+        () async {
+      final repo = FakeAppSettingsRepository();
+      await seedGoogleDrive(repo);
+      await repo.clearBackupSuspended();
+      final s = await repo.getOrCreate();
+      expect(
+        s.activeProvider,
+        equals(SyncProvider.googleDrive),
+        reason:
+            'clearBackupSuspended (block 6) must not reset activeProvider to dropbox',
+      );
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // setActiveProvider override — FR-13, NFR-05
+  // ---------------------------------------------------------------------------
+  group('FakeAppSettingsRepository.setActiveProvider', () {
+    test(
+        'setActiveProvider_iCloud_emits_AppSettingsData_with_activeProvider_iCloud_and_every_other_field_unchanged',
+        () async {
+      final repo = FakeAppSettingsRepository();
+      // Seed with a fully-populated entity so we can assert NO other field flips.
+      repo.storedSettings = AppSettingsData(
+        languageCode: 'it',
+        darkMode: true,
+        painEnabled: true,
+        notesEnabled: false,
+        notificationDaysBefore: 3,
+        notificationsEnabled: true,
+        dropboxEmail: 'x@y.com',
+        lastBackupAt: DateTime.utc(2026, 1, 15),
+        onboardingCompleted: true,
+        declaredCycleLength: 29,
+        notificationTimeMinutes: 600,
+        firstDayOfWeek: FirstDayOfWeekSetting.monday,
+        lastLogOrSymptomWriteAt: DateTime.utc(2026, 5, 1),
+        backupSuspended: false,
+        activeProvider: SyncProvider.dropbox,
+      );
+
+      await repo.setActiveProvider(SyncProvider.iCloud);
+
+      final s = await repo.getOrCreate();
+      expect(s.activeProvider, equals(SyncProvider.iCloud));
+      // Every other field must be preserved byte-for-byte.
+      expect(s.languageCode, equals('it'));
+      expect(s.darkMode, isTrue);
+      expect(s.painEnabled, isTrue);
+      expect(s.notesEnabled, isFalse);
+      expect(s.notificationDaysBefore, equals(3));
+      expect(s.notificationsEnabled, isTrue);
+      expect(s.dropboxEmail, equals('x@y.com'));
+      expect(s.lastBackupAt, equals(DateTime.utc(2026, 1, 15)));
+      expect(s.onboardingCompleted, isTrue);
+      expect(s.declaredCycleLength, equals(29));
+      expect(s.notificationTimeMinutes, equals(600));
+      expect(s.firstDayOfWeek, equals(FirstDayOfWeekSetting.monday));
+      expect(s.lastLogOrSymptomWriteAt, equals(DateTime.utc(2026, 5, 1)));
+      expect(s.backupSuspended, isFalse);
+    });
+
+    test('setActiveProvider_defaults_to_dropbox', () async {
+      final repo = FakeAppSettingsRepository();
+      final s = await repo.getOrCreate();
+      expect(s.activeProvider, equals(SyncProvider.dropbox));
     });
   });
 

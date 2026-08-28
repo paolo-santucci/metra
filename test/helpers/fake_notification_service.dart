@@ -20,6 +20,28 @@ import 'package:metra/domain/services/notification_service.dart';
 
 class FakeNotificationService implements NotificationService {
   bool initialized = false;
+
+  /// The channel-name argument passed to the most recent [initialize] call.
+  ///
+  /// Used by TASK-07 (#34) tests to assert the locale-derived Android
+  /// notification channel display name reaches the service correctly.
+  String? channelName;
+
+  /// Number of times [initialize] has been called.
+  ///
+  /// Used by TASK-07 (#34) tests (e.g. EC-21: exactly one call across a
+  /// simulated cold-start + later settings/language change).
+  int initializeCallCount = 0;
+
+  /// Records the order of cancel and schedule calls for order-regression testing.
+  ///
+  /// Per the `fake_cycle_entry_repository.dart` idiom, each call to
+  /// [cancelPredictionNotifications] appends `'cancel'`, and each call to
+  /// [schedulePredictionNotification] appends `'schedule'`. This log is used
+  /// by Group K, L, and Scenario G (#33, FR-09) to assert that the use case
+  /// always cancels existing notifications before scheduling new ones.
+  final List<String> callLog = [];
+
   final List<({DateTime notifyAt, String title, String body})> scheduled = [];
   int cancelCount = 0;
 
@@ -151,7 +173,11 @@ class FakeNotificationService implements NotificationService {
   DateTime _now() => _nowFn?.call() ?? _nowOverride ?? DateTime.now();
 
   @override
-  Future<void> initialize() async => initialized = true;
+  Future<void> initialize(String channelName) async {
+    initializeCallCount++;
+    this.channelName = channelName;
+    initialized = true;
+  }
 
   @override
   Future<NotificationScheduleResult> schedulePredictionNotification(
@@ -173,6 +199,10 @@ class FakeNotificationService implements NotificationService {
         ),
       );
     }
+
+    callLog.add(
+      'schedule',
+    ); // TASK-12 (#33): record call order for regression tests
 
     final local = notifyAt.toLocal();
     final notifyDay = DateTime(local.year, local.month, local.day);
@@ -202,6 +232,8 @@ class FakeNotificationService implements NotificationService {
         message: 'FakeNotificationService.throwOnNextCancel injected failure',
       );
     }
+    callLog
+        .add('cancel'); // TASK-12 (#33): record call order for regression tests
     cancelCount++;
     cancelCallCount++;
     scheduled.clear();

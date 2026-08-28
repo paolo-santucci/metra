@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Métra — M4 Picker + Switch-confirm · Mockup Light · APPROVED</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root { --canvas-gap: 72px; }
+body { background: #E2D9C8; font-family: 'Inter', sans-serif; min-height: 100vh; }
+.canvas { padding: 56px 48px 100px; display: flex; flex-direction: column; gap: var(--canvas-gap); }
+.row-header { margin-bottom: 20px; }
+.row-label {
+  font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase; color: rgba(43,37,33,0.38);
+}
+.row-title {
+  font-family: 'DM Serif Display', serif; font-size: 26px; color: #2B2521;
+  margin-top: 4px; letter-spacing: -0.01em;
+}
+.screens-row { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; }
+.screen-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.screen-cap {
+  font-family: 'Inter', sans-serif; font-size: 12px; color: rgba(43,37,33,0.68);
+  letter-spacing: 0.02em; text-align: center; max-width: 200px;
+}
+/* Phone shell */
+.phone {
+  width: 393px; height: 760px; border-radius: 44px; overflow: hidden; position: relative;
+  box-shadow: 0 0 0 1px rgba(43,37,33,0.14), 0 4px 16px rgba(43,37,33,0.12), 0 16px 56px rgba(43,37,33,0.2);
+  flex-shrink: 0;
+}
+.di {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  width: 120px; height: 36px; background: #1A1410; border-radius: 20px; z-index: 20;
+}
+.sb {
+  position: absolute; top: 0; left: 0; right: 0; height: 54px;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  padding: 0 28px 8px; z-index: 10;
+}
+.sc { position: absolute; top: 54px; left: 0; right: 0; bottom: 0; overflow: hidden; }
+.hi {
+  position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+  width: 134px; height: 5px; background: rgba(43,37,33,0.22); border-radius: 3px; z-index: 30;
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+/* ─────────────────────────────────────────────
+   DESIGN TOKENS — matching metra-screens-light.html verbatim
+   ───────────────────────────────────────────── */
+const C = {
+  sabbia:      '#F4EDE2',
+  terracotta:  '#C87456',
+  tc_scura:    '#9A4D32',
+  inchiostro:  '#2B2521',
+  surface:     '#FAF5EE',
+  bianco:      '#FDFAF6',
+};
+const FONT_D = "'DM Serif Display', serif";
+
+/* ─────────────────────────────────────────────
+   PHONE SHELL
+   ───────────────────────────────────────────── */
+function Phone({ children }) {
+  return (
+    <div className="phone" style={{ background: C.sabbia }}>
+      <div className="di" />
+      <div className="sb">
+        <span style={{ fontFamily: 'Inter', fontSize: 15, fontWeight: 600, color: C.inchiostro, letterSpacing: '-0.02em' }}>9:41</span>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <svg width="16" height="12" viewBox="0 0 16 12">
+            <rect x="0"   y="7"   width="3"   height="5"  rx="0.5" fill={C.inchiostro} />
+            <rect x="4.5" y="4.5" width="3"   height="7.5" rx="0.5" fill={C.inchiostro} />
+            <rect x="9"   y="2"   width="3"   height="10" rx="0.5" fill={C.inchiostro} />
+            <rect x="13.5" y="0"  width="2.5" height="12" rx="0.5" fill={C.inchiostro} opacity="0.3" />
+          </svg>
+          <svg width="22" height="12" viewBox="0 0 22 12">
+            <rect x="0.5" y="0.5" width="18" height="11" rx="2" stroke={C.inchiostro} strokeWidth="1.2" fill="none"/>
+            <rect x="2"   y="2"   width="14" height="8"  rx="1"  fill={C.inchiostro} />
+            <rect x="19.5" y="3.5" width="2" height="5"  rx="1"  fill={C.inchiostro} opacity="0.4" />
+          </svg>
+        </div>
+      </div>
+      <div className="sc">{children}</div>
+      <div className="hi" />
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   SETTINGS ATOMS — matching existing bible §18
+   ───────────────────────────────────────────── */
+function SettingsLabel({ children, first = false }) {
+  return (
+    <div style={{
+      paddingInline: 20, paddingTop: first ? 20 : 16, paddingBottom: 6,
+      fontFamily: 'Inter', fontSize: 12, fontWeight: 600,
+      letterSpacing: '0.04em', textTransform: 'uppercase',
+      color: 'rgba(43,37,33,0.38)',
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function SettingsCard({ children }) {
+  return (
+    <div style={{
+      marginInline: 20, background: C.bianco,
+      borderRadius: 12, overflow: 'hidden',
+      border: '1px solid rgba(43,37,33,0.07)',
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function SettingsDivider() {
+  return <div style={{ height: 1, background: 'rgba(43,37,33,0.07)', marginInline: 16 }} />;
+}
+
+function ChevronRight() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 22 22" fill="none">
+      <polyline points="8,4 15,11 8,18" stroke="rgba(43,37,33,0.30)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function SettingsRow({ label, value, action, destructive }) {
+  const labelColor = destructive ? C.terracotta : C.inchiostro;
+  return (
+    <div style={{
+      height: 44, paddingInline: 16,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    }}>
+      <span style={{ fontFamily: 'Inter', fontSize: 15, fontWeight: 400, color: labelColor }}>
+        {label}
+      </span>
+      {value && (
+        <span style={{ fontFamily: 'Inter', fontSize: 15, fontWeight: 400, color: 'rgba(43,37,33,0.55)' }}>
+          {value}
+        </span>
+      )}
+      {action && <ChevronRight />}
+    </div>
+  );
+}
+
+/* ── Tab bar ── */
+function TabBar() {
+  const tabs = ['Calendario', 'Oggi', 'Archivio', 'Statistiche', 'Impostazioni'];
+  return (
+    <div style={{
+      position: 'absolute', bottom: 0, left: 0, right: 0, height: 84,
+      background: 'rgba(244,237,226,0.94)',
+      borderTop: '1px solid rgba(43,37,33,0.08)',
+      display: 'flex', alignItems: 'flex-start', paddingTop: 10,
+    }}>
+      {tabs.map((tab, i) => {
+        const isActive = i === 4; /* Impostazioni */
+        return (
+          <div key={tab} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              <circle cx="11" cy="11" r="5"
+                stroke={isActive ? C.terracotta : C.inchiostro}
+                strokeWidth={isActive ? 2 : 1.5}
+                opacity={isActive ? 1 : 0.30}
+              />
+            </svg>
+            <span style={{
+              fontFamily: 'Inter', fontSize: 10,
+              fontWeight: isActive ? 600 : 400,
+              color: isActive ? C.terracotta : 'rgba(43,37,33,0.55)',
+            }}>{tab}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ── StatusIndicator — §18.11 ── */
+function StatusIndicator({ active = true }) {
+  const col = active ? C.terracotta : 'rgba(43,37,33,0.38)';
+  return (
+    <div style={{ height: 44, paddingInline: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ width: 8, height: 8, borderRadius: '50%', background: col }} />
+      <span style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 400, color: active ? C.inchiostro : 'rgba(43,37,33,0.38)' }}>
+        {active ? 'Backup automatico attivo' : 'Backup automatico sospeso'}
+      </span>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   REUSABLE BACKGROUNDS
+   ───────────────────────────────────────────── */
+
+/* BackupConnected — M4 layout.
+   New rows vs. existing: Provider row (top of Account connesso), Cambia provider in Azioni.
+   email=null → Account row hidden (iCloud case, FR-15 / EC-08). */
+function BackupConnectedBg({ provider = 'Google Drive', email = 'nome@gmail.com', faded = true }) {
+  const filterStyle = faded ? { filter: 'brightness(0.82)' } : {};
+  return (
+    <div style={{ height: '100%', background: C.sabbia, overflowY: 'auto', paddingBottom: 100, position: 'relative', ...filterStyle }}>
+
+      {/* Header */}
+      <div style={{ padding: '12px 24px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
+          <polyline points="14,4 7,11 14,18" stroke={C.inchiostro} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        <div style={{ fontFamily: FONT_D, fontSize: 26, color: C.inchiostro, lineHeight: 1.1 }}>Backup</div>
+      </div>
+
+      {/* ── Section 1: Account connesso — M4 adds Provider row at top ── */}
+      {/* OQ-05: provider name is a plain SettingsRow value, not a sentence */}
+      <SettingsLabel first>Account connesso</SettingsLabel>
+      <SettingsCard>
+        {/* Provider row — NEW in M4 (replaces EC-13 placeholder).
+            OQ-05: value is the plain provider name, e.g. "Google Drive" or "iCloud".
+            Not a sentence like "Connesso a Google Drive". */}
+        <SettingsRow label="Provider" value={provider} />
+        <SettingsDivider />
+        {/* Account row — hidden for iCloud (null email, EC-08) */}
+        {email && (
+          <>
+            <SettingsRow label="Account" value={email} />
+            <SettingsDivider />
+          </>
+        )}
+        <SettingsRow label="Ultimo backup" value="Oggi, 09:41" />
+        <SettingsDivider />
+        <SettingsRow label="Disconnetti" destructive />
+      </SettingsCard>
+
+      {/* ── Section 2: Stato ── */}
+      <SettingsLabel>Stato</SettingsLabel>
+      <SettingsCard><StatusIndicator active={true} /></SettingsCard>
+
+      {/* ── Section 3: Azioni — M4 appends "Cambia provider" row ── */}
+      <SettingsLabel>Azioni</SettingsLabel>
+      <SettingsCard>
+        <SettingsRow label="Esegui backup ora" action />
+        <SettingsDivider />
+        <SettingsRow label="Ripristina da backup" action />
+        <SettingsDivider />
+        {/* Switch-provider row — NEW in M4 (FR-08). SettingsRow.action per §18.6.2 Azioni. */}
+        <SettingsRow label="Cambia provider" action />
+      </SettingsCard>
+
+      <TabBar />
+    </div>
+  );
+}
+
+/* BackupEmpty — first-connect background for Android picker context */
+function BackupEmptyBg({ faded = true }) {
+  const filterStyle = faded ? { filter: 'brightness(0.82)' } : {};
+  return (
+    <div style={{ height: '100%', background: C.sabbia, position: 'relative', ...filterStyle }}>
+      {/* Header */}
+      <div style={{ padding: '12px 24px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
+          <polyline points="14,4 7,11 14,18" stroke={C.inchiostro} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        <div style={{ fontFamily: FONT_D, fontSize: 26, color: C.inchiostro, lineHeight: 1.1 }}>Backup</div>
+      </div>
+
+      {/* Empty state */}
+      <div style={{ padding: '60px 32px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none">
+          <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" stroke="rgba(43,37,33,0.22)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        <div style={{ fontFamily: FONT_D, fontSize: 22, color: C.inchiostro, textAlign: 'center', lineHeight: 1.2 }}>
+          Nessun backup configurato
+        </div>
+        <div style={{ fontFamily: 'Inter', fontSize: 14, color: 'rgba(43,37,33,0.50)', textAlign: 'center', lineHeight: 1.55, maxWidth: 240 }}>
+          I tuoi dati restano sul dispositivo. Puoi configurare un backup cifrato opzionale.
+        </div>
+      </div>
+
+      {/* CTA — "Connetti" (backupConnectAction, replaces former Dropbox-only CTA, FR-07) */}
+      <div style={{ position: 'absolute', bottom: 100, left: 24, right: 24 }}>
+        <div style={{ height: 56, background: C.terracotta, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 500, color: C.sabbia }}>Connetti</span>
+        </div>
+      </div>
+
+      <TabBar />
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   SURFACE 1 — BackupProviderPickerSheet chrome
+   Shared by iOS (3 provider) and Android (2 provider) variants.
+
+   CANON GAP 1: This sheet uses top-only 24 dp radius (MetraRadius.xxl, per spec),
+   but CupertinoPickerScaffold hardcodes MetraRadius.lg = 16 dp via ClipRRect.
+   TASK-06 must either (a) add a radius parameter to CupertinoPickerScaffold,
+   or (b) apply 24 dp via showModalBottomSheet shape at the call site.
+   Both approaches are valid; the decision is deferred to TASK-06 implementation.
+
+   CANON GAP 2: The toolbar center title ("Scegli un provider") has no slot in
+   the current CupertinoPickerScaffold API (which exposes only resetLabel /
+   confirmLabel, left / right). TASK-06 must extend the scaffold or use a
+   custom toolbar Row widget. If OQ-04 resolves to "no title", this gap closes.
+
+   Canon matches: itemExtent MetraSpacing.sp44 (44 dp), useMagnifier false,
+   looping false, selectionOverlay SizedBox.shrink() → ink-6% band rendered
+   separately, useSafeArea true (24 dp bottom spacer), transparent sheet bg,
+   barrierColor = textPrimary @ 0x40 = rgba(43,37,33,0.25).
+   ───────────────────────────────────────────── */
+function PickerSheetContent({ providers, selectedIdx }) {
+  /* Picker item: distance-based typography matching PickerItem in
+     backup_picker_sheet_internals.dart (dist-0: 16/w500/1.0; dist-1: 15/w400/0.35;
+     dist≥2: 15/w400/0.18). 3 visible slots × 44 dp = 132 dp. */
+  const renderItem = (provider, i) => {
+    const dist = Math.abs(i - selectedIdx);
+    const slotIdx = (i - selectedIdx) + 1; /* 0=top, 1=center(selected), 2=bottom */
+    if (slotIdx < 0 || slotIdx > 2) return null;
+    const fontSize   = dist === 0 ? 16 : 15;
+    const fontWeight = dist === 0 ? 500 : 400;
+    const opacity    = dist === 0 ? 1.0 : dist === 1 ? 0.35 : 0.18;
+    return (
+      <div key={i} style={{
+        position: 'absolute', top: slotIdx * 44, left: 0, right: 0, height: 44,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1,
+      }}>
+        <span style={{ fontFamily: 'Inter', fontSize, fontWeight, color: C.inchiostro, opacity }}>
+          {provider}
+        </span>
+      </div>
+    );
+  };
+
+  return (
+    /* CANON GAP 1: borderRadius 24px here per spec (MetraRadius.xxl),
+       differs from CupertinoPickerScaffold's 16px (MetraRadius.lg). */
+    <div style={{
+      position: 'absolute', bottom: 0, left: 0, right: 0,
+      background: C.sabbia,
+      borderRadius: '24px 24px 0 0',
+      overflow: 'hidden',
+    }}>
+
+      {/* Toolbar — Annulla | center title | Connetti
+          CANON GAP 2: center title slot not in CupertinoPickerScaffold API.
+          Toolbar text style: Inter 16 / w500 / terracotta (§18.10 parity rule). */}
+      <div style={{
+        height: 52, paddingInline: 16,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <span style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 500, color: C.terracotta, cursor: 'pointer' }}>
+          Annulla
+        </span>
+        {/* Center title — OQ-04: "Scegli un provider" is the assumed copy.
+            Style: Inter 13 / w500 / inchiostro-at-50% (unobtrusive, sub-action weight). */}
+        <span style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 500, color: 'rgba(43,37,33,0.50)' }}>
+          Scegli un provider
+        </span>
+        {/* Confirm — backupConnectAction = "Connetti" (FR-06, generalises backupConnectDropbox). */}
+        <span style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 500, color: C.terracotta, cursor: 'pointer' }}>
+          Connetti
+        </span>
+      </div>
+
+      {/* 1 dp divider */}
+      <div style={{ height: 1, background: 'rgba(43,37,33,0.07)' }} />
+
+      {/* CupertinoPicker wheel — 3 visible slots × 44 dp = 132 dp.
+          useMagnifier: false — no magnifier circle or gradient.
+          looping: false — wheel stops at first/last item.
+          selectionOverlay: SizedBox.shrink() — replaced by the ink-6% band below. */}
+      <div style={{ position: 'relative', height: 132, overflow: 'hidden' }}>
+
+        {/* Selection overlay — ink-6% band, 44 dp high, 10 dp radius, 16 dp h-inset.
+            Replaces CupertinoPicker's default magnifier overlay (selectionOverlay: SizedBox.shrink()). */}
+        <div style={{
+          position: 'absolute', top: 44, left: 16, right: 16, height: 44,
+          background: 'rgba(43,37,33,0.06)', borderRadius: 10,
+          pointerEvents: 'none', zIndex: 2,
+        }} />
+
+        {/* Provider rows — distance-based typography */}
+        {providers.map((p, i) => renderItem(p, i))}
+
+        {/* Empty top slot when selectedIdx === 0 (no item above first selection).
+            The slot is naturally empty (no absolute-positioned child at slotIdx=0). */}
+      </div>
+
+      {/* Bottom safe-area spacer — useSafeArea: true → 24 dp */}
+      <div style={{ height: 24 }} />
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   SCREEN A — BackupProviderPickerSheet · iOS (3 provider)
+   Context: switch flow from BackupConnected view.
+   selectedIdx=1 (Google Drive) → all 3 providers visible in the 3-slot wheel.
+   ───────────────────────────────────────────── */
+function ScreenPickerSheet_iOS() {
+  return (
+    <Phone>
+      {/* Faded BackupConnected M4 background */}
+      <BackupConnectedBg provider="Google Drive" email="nome@gmail.com" faded={true} />
+
+      {/* Scrim — textPrimary @ 0x40 = rgba(43,37,33,0.25) — mirrors BackupPickerSheet */}
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(43,37,33,0.25)' }} />
+
+      {/* CANON GAP 3 (authorization): §19.1 carve-out currently covers only
+          BackupPickerSheet (restore-file picker). BackupProviderPickerSheet is a
+          SECOND use of the bottom-sheet + CupertinoPicker pattern. The carve-out
+          must be EXTENDED before any Flutter implementation of TASK-06.
+          This mockup is the gate artifact that triggers that extension. */}
+      <PickerSheetContent
+        providers={['Dropbox', 'Google Drive', 'iCloud']}
+        selectedIdx={1}
+      />
+    </Phone>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   SCREEN B — BackupProviderPickerSheet · Android (2 provider)
+   Context: first-connect flow from BackupEmpty view.
+   selectedIdx=0 (Dropbox) → top slot empty, Dropbox centered, Google Drive below.
+   ───────────────────────────────────────────── */
+function ScreenPickerSheet_Android() {
+  return (
+    <Phone>
+      {/* Faded BackupEmpty background — first connect context */}
+      <BackupEmptyBg faded={true} />
+
+      {/* Scrim — textPrimary @ 0x40 = rgba(43,37,33,0.25) */}
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(43,37,33,0.25)' }} />
+
+      <PickerSheetContent
+        providers={['Dropbox', 'Google Drive']}
+        selectedIdx={0}
+      />
+    </Phone>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   SURFACE 2 — Switch-confirm MetraConfirmDialog
+   §19.8 carve-out already authorizes MetraConfirmDialog; no new canon extension needed.
+   Spec: title = backupSwitchConfirmTitle ("Cambiare provider?"),
+         body  = backupSwitchConfirmBody with {provider} placeholder,
+         cancel = commonCancel ("Annulla"), confirm = backupSwitchConfirmSwitch ("Cambia").
+   Chrome: §19.4 scrim rgba(43,37,33,0.40), maxWidth 310, MetraRadius.xxl 24 dp,
+           surface bg, padding 28/24/24/24.
+   ───────────────────────────────────────────── */
+function ScreenSwitchConfirmDialog() {
+  return (
+    <Phone>
+      {/* Faded BackupConnected M4 background */}
+      <BackupConnectedBg provider="Google Drive" email="nome@gmail.com" faded={true} />
+
+      {/* Scrim — §19.4 dialog convention: rgba(43,37,33,0.40) */}
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(43,37,33,0.40)' }} />
+
+      {/* Centred dialog — maxWidth 310, 24 dp radius (MetraRadius.xxl), surface bg */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        paddingInline: 24,
+      }}>
+        <div style={{
+          width: '100%', maxWidth: 310,
+          background: C.surface,
+          borderRadius: 24,
+          padding: '28px 24px 24px',
+        }}>
+
+          {/* Title — DM Serif Display 20 / w400 / inchiostro. §19.2 element #1. */}
+          <div style={{ fontFamily: FONT_D, fontSize: 20, fontWeight: 400, color: C.inchiostro, lineHeight: 1.2 }}>
+            Cambiare provider?
+          </div>
+
+          {/* Body — 12 dp gap. Inter 15 / w400 / ink-at-68%. §19.2 element #2.
+              backupSwitchConfirmBody carries {provider} placeholder (→ "iCloud" here).
+              Three sentences: passphrase reused + old backups intact + reconnect. */}
+          <div style={{
+            marginTop: 12,
+            fontFamily: 'Inter', fontSize: 15, fontWeight: 400,
+            color: 'rgba(43,37,33,0.68)', lineHeight: 1.55,
+          }}>
+            La passphrase resta invariata. I backup esistenti rimarranno intatti.
+            Verrai connesso a{' '}
+            {/* {provider} placeholder rendered — bold to show substitution point */}
+            <span style={{ fontWeight: 500, color: C.inchiostro }}>iCloud</span>.
+          </div>
+
+          {/* Actions — 28 dp gap from body, right-aligned row, 28 dp gap between buttons.
+              §19.2 element #5 / §19.5 CTA colour rule preserved from MetraConfirmDialog:
+              cancelLabel = terracotta (accentFlow), confirmLabel = tc_scura (accentFlowStrong). */}
+          <div style={{ marginTop: 28, display: 'flex', justifyContent: 'flex-end', gap: 28 }}>
+            {/* commonCancel = "Annulla" — Inter 16 / w500 / terracotta */}
+            <span style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 500, color: C.terracotta, cursor: 'pointer' }}>
+              Annulla
+            </span>
+            {/* backupSwitchConfirmSwitch = "Cambia" — Inter 16 / w500 / tc_scura */}
+            <span style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 500, color: C.tc_scura, cursor: 'pointer' }}>
+              Cambia
+            </span>
+          </div>
+        </div>
+      </div>
+    </Phone>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   SCREEN D — Updated BackupConnected view (no overlay)
+   Reference for OQ-05: shows the new Provider row and Cambia provider action
+   in context, without an overlay. iCloud variant below (null email).
+   ───────────────────────────────────────────── */
+function ScreenBackupConnectedM4_GoogleDrive() {
+  return (
+    <Phone>
+      <BackupConnectedBg provider="Google Drive" email="nome@gmail.com" faded={false} />
+    </Phone>
+  );
+}
+
+/* iCloud variant — email=null, Account row hidden per EC-08 */
+function ScreenBackupConnectedM4_iCloud() {
+  return (
+    <Phone>
+      {/* email prop omitted / falsy → Account row not rendered (FR-15 / EC-08) */}
+      <BackupConnectedBg provider="iCloud" email={null} faded={false} />
+    </Phone>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   SCREEN WRAPPER
+   ───────────────────────────────────────────── */
+function Scr({ label, children }) {
+  return (
+    <div className="screen-wrap">
+      <div className="screen-cap">{label}</div>
+      {children}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   ANNOTATION COMPONENTS
+   ───────────────────────────────────────────── */
+function Panel({ children }) {
+  return (
+    <div style={{
+      background: C.bianco, borderRadius: 16, padding: '28px 32px',
+      border: '1px solid rgba(43,37,33,0.10)',
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function PanelTitle({ children }) {
+  return (
+    <div style={{ fontFamily: FONT_D, fontSize: 20, color: C.inchiostro, marginBottom: 20 }}>
+      {children}
+    </div>
+  );
+}
+
+function OQSection({ id, title, children }) {
+  return (
+    <div style={{ marginBottom: 28 }}>
+      <div style={{
+        fontFamily: 'Inter', fontSize: 11, fontWeight: 600,
+        color: C.terracotta, letterSpacing: '0.08em', textTransform: 'uppercase',
+        marginBottom: 8,
+      }}>
+        {id} — {title}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Body({ children }) {
+  return (
+    <div style={{ fontFamily: 'Inter', fontSize: 15, color: C.inchiostro, lineHeight: 1.6, marginBottom: 12 }}>
+      {children}
+    </div>
+  );
+}
+
+function OptionRow({ label, recommended, note }) {
+  return (
+    <div style={{
+      padding: '10px 14px', borderRadius: 8, marginBottom: 8,
+      background: recommended ? 'rgba(200,116,86,0.08)' : 'rgba(43,37,33,0.04)',
+      borderLeft: recommended ? '3px solid rgba(200,116,86,0.40)' : '3px solid rgba(43,37,33,0.14)',
+    }}>
+      <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 500, color: C.inchiostro }}>
+        {recommended && '★ '}{label}
+      </div>
+      {note && (
+        <div style={{ fontFamily: 'Inter', fontSize: 13, color: 'rgba(43,37,33,0.68)', marginTop: 4 }}>
+          {note}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Rec({ children }) {
+  return (
+    <div style={{
+      padding: '10px 14px', borderRadius: 8,
+      background: 'rgba(200,116,86,0.08)', borderLeft: '3px solid rgba(200,116,86,0.40)',
+      fontFamily: 'Inter', fontSize: 14, color: 'rgba(43,37,33,0.68)', lineHeight: 1.5,
+    }}>
+      <strong style={{ color: C.inchiostro }}>Raccomandazione:</strong> {children}
+    </div>
+  );
+}
+
+function GapBadge({ id, children }) {
+  return (
+    <div style={{
+      padding: '10px 14px', borderRadius: 8, marginBottom: 10,
+      background: 'rgba(91,78,122,0.07)', borderLeft: '3px solid rgba(91,78,122,0.40)',
+      fontFamily: 'Inter', fontSize: 14, lineHeight: 1.5,
+    }}>
+      <span style={{ fontWeight: 600, color: '#5B4E7A' }}>CANON GAP {id}: </span>
+      <span style={{ color: 'rgba(43,37,33,0.80)' }}>{children}</span>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   ROOT APP
+   ───────────────────────────────────────────── */
+function App() {
+  return (
+    <div className="canvas">
+
+      {/* Header */}
+      <div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, marginBottom: 8 }}>
+          <div style={{ fontFamily: FONT_D, fontSize: 32, color: C.inchiostro }}>Métra</div>
+          <span style={{
+            fontFamily: 'Inter', fontSize: 12, fontWeight: 600,
+            letterSpacing: '0.08em', textTransform: 'uppercase',
+            color: 'rgba(43,37,33,0.38)',
+          }}>
+            M4 Picker + Switch-confirm · Mockup Light · APPROVED — 2026-06-25
+          </span>
+        </div>
+        <div style={{
+          fontFamily: 'Inter', fontSize: 13, color: 'rgba(43,37,33,0.68)',
+          lineHeight: 1.55, maxWidth: 640,
+        }}>
+          Canvas di revisione per la MC-01 / FR-01 UI-canon gate. Nessun file Flutter, bible, o design-system
+          è stato modificato. Questo artefatto richiede approvazione esplicita prima che TASK-06/07/08 possano procedere.
+          Spec ref: §4, §5.1, §6.1 EC-13, §7.3 — sp-20260625-m4-picker-switch-flow-spec.md.
+        </div>
+      </div>
+
+      {/* ── ROW 1: BackupProviderPickerSheet ── */}
+      <div>
+        <div className="row-header">
+          <div className="row-label">Superficie 1 — BackupProviderPickerSheet</div>
+          <div className="row-title">Selezione provider · iOS (3 provider) · Android (2 provider)</div>
+        </div>
+        <div className="screens-row">
+          <Scr label="iOS — switch flow da vista connessa (Google Drive selezionato, tutti e 3 visibili)">
+            <ScreenPickerSheet_iOS />
+          </Scr>
+          <Scr label="Android — primo collegamento da vista vuota (Dropbox selezionato, slot superiore vuoto)">
+            <ScreenPickerSheet_Android />
+          </Scr>
+        </div>
+      </div>
+
+      {/* ── ROW 2: Switch-confirm dialog + Updated connected view ── */}
+      <div>
+        <div className="row-header">
+          <div className="row-label">Superficie 2 — Switch-confirm MetraConfirmDialog · Vista connessa M4 (OQ-05)</div>
+          <div className="row-title">Conferma cambio provider · Vista connessa aggiornata</div>
+        </div>
+        <div className="screens-row">
+          <Scr label="Switch-confirm dialog — Cambiare provider? (scrim §19.4 40%)">
+            <ScreenSwitchConfirmDialog />
+          </Scr>
+          <Scr label="Vista connessa M4 — Google Drive con email (OQ-05: riga Provider = label semplice)">
+            <ScreenBackupConnectedM4_GoogleDrive />
+          </Scr>
+          <Scr label="Vista connessa M4 — iCloud senza email (EC-08: riga Account assente)">
+            <ScreenBackupConnectedM4_iCloud />
+          </Scr>
+        </div>
+      </div>
+
+      {/* ── CANON GAP SUMMARY ── */}
+      <Panel>
+        <PanelTitle>Canon Gap — riepilogo deviazioni rilevate</PanelTitle>
+        <GapBadge id="1">
+          <strong>Radius 24 dp vs 16 dp.</strong> BackupProviderPickerSheet usa top-only 24 dp (MetraRadius.xxl)
+          come da spec, ma CupertinoPickerScaffold hardcoda MetraRadius.lg = 16 dp via ClipRRect.
+          TASK-06 deve: (a) aggiungere un param <code>radius</code> a CupertinoPickerScaffold,
+          oppure (b) applicare 24 dp via <code>showModalBottomSheet(shape: …)</code>.
+          Non è un problema di design — il mockup mostra 24 dp come canon desiderato.
+        </GapBadge>
+        <GapBadge id="2">
+          <strong>Titolo centrale toolbar non supportato da CupertinoPickerScaffold.</strong>{' '}
+          L'API corrente espone solo <code>resetLabel</code> / <code>confirmLabel</code> (sinistra / destra).
+          TASK-06 deve estendere lo scaffold o usare una Row custom.
+          Se OQ-04 si risolve con "nessun titolo", questo gap si chiude senza modifiche allo scaffold.
+        </GapBadge>
+        <GapBadge id="3">
+          <strong>§19.1 carve-out non ancora esteso a BackupProviderPickerSheet (EC-13).</strong>{' '}
+          L'autorizzazione esistente copre solo BackupPickerSheet (picker di ripristino).
+          L'approvazione di questo mockup attiva l'estensione della §18.8/§19.1 carve-out
+          a BackupProviderPickerSheet. Nessun codice Flutter di TASK-06 può essere scritto prima.
+          Il dialog di switch usa §19.8 MetraConfirmDialog già autorizzato — nessun gap.
+        </GapBadge>
+      </Panel>
+
+      {/* ── OPEN QUESTIONS ── */}
+      <Panel>
+        <PanelTitle>Domande aperte — OQ-03 · OQ-04 · OQ-05</PanelTitle>
+
+        <OQSection id="OQ-03" title="Tap-target floor: 44 dp (MetraSpacing.sp44)">
+          <Body>
+            Confermare che il floor per le righe del picker sia <strong>44 dp (MetraSpacing.sp44)</strong>,
+            non 48 dp (floor generico Android Material).
+          </Body>
+          <Rec>
+            Confermare 44 dp. Il modulo backup usa già <code>MetraSpacing.sp44</code>
+            in <code>backup_picker_sheet_internals.dart:80</code> (<code>itemExtent: MetraSpacing.sp44</code>).
+            Allineare il nuovo picker allo stesso token evita un'incoerenza visiva nel medesimo modulo.
+            44 dp soddisfa il minimo iOS (44 pt) e WCAG 2.2 AA. La lieve deviazione dal floor
+            Material di 48 dp è accettabile per un componente Cupertino usato cross-platform.
+          </Rec>
+        </OQSection>
+
+        <OQSection id="OQ-04" title="Copy del titolo nella toolbar del picker">
+          <Body>
+            Quale testo appare nel centro della toolbar? Opzioni (★ = raccomandazione):
+          </Body>
+          <OptionRow
+            label='"Scegli un provider" / "Choose a provider"'
+            recommended
+            note='Assunto dalla spec. Imperativo, neutro, coerente con il tono Métra. Visibile nel mockup.'
+          />
+          <OptionRow
+            label='"Provider di backup" / "Backup provider"'
+            note='Più descrittivo; rischia di sembrare etichetta tecnica anziché istruzione.'
+          />
+          <OptionRow
+            label='Nessun titolo — toolbar: Annulla | [vuoto] | Connetti'
+            note='Allineato al BackupPickerSheet esistente (nessun titolo centrale). Chiude il CANON GAP 2 senza estendere CupertinoPickerScaffold. Soluzione più conservativa.'
+          />
+          <Rec>
+            "Scegli un provider" come da spec. Disambigua l'azione per l'utente. Se il titolo
+            risulta visivamente affollato su device piccoli, la terza opzione (no titolo) è la fallback
+            più pulita — coerente con il picker esistente e zero modifiche allo scaffold.
+          </Rec>
+        </OQSection>
+
+        <OQSection id="OQ-05" title="Riga provider nella vista connessa: label semplice o frase?">
+          <Body>
+            La riga del provider attivo nella sezione "Account connesso" mostra solo il nome
+            del provider (es. "iCloud") o una frase (es. "Connesso a iCloud")?
+            I mockup (Schermate D ed E) mostrano già la versione raccomandata.
+          </Body>
+          <OptionRow
+            label='SettingsRow label="Provider" value="iCloud" (static)'
+            recommended
+            note='Pattern key/value — coerente con "Account" e "Ultimo backup" nella stessa sezione. Visibile nei mockup D/E.'
+          />
+          <OptionRow
+            label='Row con solo il nome provider senza chiave (no label, solo value)'
+            note='Più minimalista; rompe la coerenza key/value della sezione. Non raccomandato.'
+          />
+          <Rec>
+            Confermare la prima opzione: <code>SettingsRow label="Provider" value="[nome provider]"</code>.
+            Per iCloud con email nulla, la riga "Account" è omessa — solo "Provider" e "Ultimo backup"
+            rimangono nella sezione 1 (visibile nel mockup E — vista iCloud senza email).
+            Il valore è sempre il display name dall'helper <code>backupProviderDisplayName()</code>,
+            mai derivato da <code>dropboxEmail</code>.
+          </Rec>
+        </OQSection>
+      </Panel>
+
+      {/* Footer */}
+      <div style={{
+        borderTop: '1px solid rgba(43,37,33,0.12)', paddingTop: 24,
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      }}>
+        <div style={{ fontFamily: FONT_D, fontSize: 18, color: C.inchiostro }}>Métra</div>
+        <span style={{ fontFamily: 'Inter', fontSize: 12, color: 'rgba(43,37,33,0.38)' }}>
+          M4 Picker Mockup · Light · Giugno 2026 · APPROVED (MC-01 / FR-01) — 2026-06-25
+        </span>
+      </div>
+
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

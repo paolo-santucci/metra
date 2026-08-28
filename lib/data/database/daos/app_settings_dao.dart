@@ -56,4 +56,14 @@ class AppSettingsDao extends DatabaseAccessor<AppDatabase>
   Future<void> setBackupSuspended(bool value) =>
       (update(appSettings)..where((t) => t.id.equals(1)))
           .write(AppSettingsCompanion(backupSuspended: Value(value)));
+
+  /// Writes only the [activeProvider] column on the singleton row.
+  ///
+  /// Single-column updater — no other column is touched. [value] is the
+  /// stable wire string for the provider (e.g. `'dropbox'`, `'google_drive'`,
+  /// `'icloud'`). Called exclusively by
+  /// [DriftAppSettingsRepository.setActiveProvider].
+  Future<void> setActiveProvider(String value) =>
+      (update(appSettings)..where((t) => t.id.equals(1)))
+          .write(AppSettingsCompanion(activeProvider: Value(value)));
 }

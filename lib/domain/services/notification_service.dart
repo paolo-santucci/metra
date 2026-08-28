@@ -82,7 +82,20 @@ abstract class NotificationService {
   /// Initialises the notification plugin and platform channels.
   ///
   /// Must be called once before any other method, typically from [main].
-  Future<void> initialize();
+  ///
+  /// [channelName] is the Android notification channel's display name shown
+  /// to the user in the system Settings app. The caller resolves it from
+  /// [AppLocalizations] (the `notification_channel_name` key) at cold-start,
+  /// via the existing `resolveLocaleFromPlatform` + `AppLocalizations.delegate.load`
+  /// seam already used in `app.dart` — this interface intentionally carries no
+  /// locale/l10n dependency of its own (domain layer purity).
+  ///
+  /// Idempotent and safe to call more than once: re-creating the Android
+  /// channel with a different display name (e.g. after a language change on
+  /// next cold-start) does not duplicate the channel — Android identifies
+  /// channels by their stable ID, not their name. This method must never
+  /// throw.
+  Future<void> initialize(String channelName);
 
   /// Schedules a single prediction-reminder notification.
   ///

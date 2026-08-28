@@ -25,19 +25,27 @@ import '../../core/theme/metra_colors.dart';
 import '../../core/theme/metra_spacing.dart';
 import '../../core/theme/metra_typography.dart';
 import '../../core/widgets/metra_wordmark.dart';
+import '../../core/widgets/segmented_control_metra.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/use_case_providers.dart';
+import '../settings/state/settings_notifier.dart';
 import 'state/onboarding_notifier.dart';
 
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _controller = PageController();
+
+  /// Guards against a duplicate `jumpToPage` when the hydrated-draft check
+  /// fires more than once — e.g. the synchronous `ref.read` snapshot in
+  /// `build()` below followed by the `ref.listen` callback firing again for
+  /// an unrelated later state mutation (spec § 4.3, OQ-06).
+  bool _didAutoAdvance = false;
 
   @override
   void dispose() {
@@ -52,8 +60,41 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
+  /// Jumps to page 2 exactly once, the first time [state] reports a
+  /// hydrated draft with a restorable date.
+  void _maybeAutoAdvance(OnboardingState state) {
+    if (!state.isHydrated || state.lastPeriodDate == null || _didAutoAdvance) {
+      return;
+    }
+    _didAutoAdvance = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_controller.hasClients) {
+        _controller.jumpToPage(1);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    // #26: auto-advance to page 2 when a restored draft has a date. Must be
+    // driven by `ref.read`/`ref.listen`, never `initState` — secure-storage
+    // hydration is a platform channel and always resolves in a LATER
+    // event-loop turn than `initState()`, so an `initState`-driven check
+    // would never observe the hydrated draft (spec OQ-06).
+    //
+    // `flutter_riverpod`'s `WidgetRef.listen` has no `fireImmediately`
+    // parameter (that only exists on `listenManual`, which isn't build()-safe
+    // — see riverpod 2.6.1 API), so the "already hydrated before this
+    // widget's first build" ordering is covered by a one-time `ref.read`
+    // snapshot here; the "hydrates later" ordering is covered by `ref.listen`
+    // below. `ref.read` (not `ref.watch`) is used so this ancestor widget
+    // does not rebuild on every downstream draft mutation (cycle length,
+    // period length) — only the one-shot auto-advance check is needed here.
+    _maybeAutoAdvance(ref.read(onboardingNotifierProvider));
+    ref.listen<OnboardingState>(onboardingNotifierProvider, (previous, next) {
+      _maybeAutoAdvance(next);
+    });
+
     return Scaffold(
       body: PageView(
         controller: _controller,
@@ -69,113 +110,160 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
 // ── Page 1: Welcome ──────────────────────────────────────────────────────────
 
-class _WelcomePage extends StatelessWidget {
+class _WelcomePage extends ConsumerWidget {
   const _WelcomePage({required this.onGetStarted});
 
   final VoidCallback onGetStarted;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final colors = MetraColors.of(context);
     final accentFlow = colors.accentFlow;
     final textPrimary = colors.textPrimary;
     final textSecondary = colors.textSecondary;
 
+    // #27 (FR-07/FR-08): current settings, read once per build so the
+    // selector and its onChanged handler agree on the same snapshot.
+    // `.valueOrNull` before the notifier resolves (or on AsyncError) simply
+    // defaults the selector to IT and makes `onChanged` a no-op below — the
+    // welcome page must never crash or block on the settings load.
+    final settings = ref.watch(settingsNotifierProvider).valueOrNull;
+    // languageCode == '' means "follow system" (no explicit choice yet);
+    // IT is Métra's primary locale (CLAUDE.md §5), so it is the default.
+    final selectedLanguageIndex = settings?.languageCode == 'en' ? 1 : 0;
+
     return SafeArea(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Stack(
         children: [
-          // Hero zone: wordmark + terracotta radial halos (spec § 12.1).
-          // Fixed at 340dp per DESIGN-BIBLE § 12.1 flex 0 0 340.
-          SizedBox(
-            height: 340,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Outer elliptical glow: rgba(200,116,86,0.05) → transparent 80%
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: RadialGradient(
-                      center: const Alignment(0, -0.4),
-                      radius: 0.85,
-                      colors: [
-                        accentFlow.withValues(alpha: 0.05),
-                        Colors.transparent,
-                      ],
-                      stops: const [0.0, 0.80],
-                    ),
-                  ),
-                ),
-                // Centered halo 220×220: rgba(200,116,86,0.12) → transparent 70%
-                Center(
-                  child: SizedBox(
-                    width: 220,
-                    height: 220,
-                    child: DecoratedBox(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Hero zone: wordmark + terracotta radial halos (spec § 12.1).
+              // Fixed at 340dp per DESIGN-BIBLE § 12.1 flex 0 0 340.
+              SizedBox(
+                height: 340,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Outer elliptical glow: rgba(200,116,86,0.05) → transparent 80%
+                    DecoratedBox(
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
                         gradient: RadialGradient(
+                          center: const Alignment(0, -0.4),
+                          radius: 0.85,
                           colors: [
-                            accentFlow.withValues(alpha: 0.12),
+                            accentFlow.withValues(alpha: 0.05),
                             Colors.transparent,
                           ],
-                          stops: const [0.0, 0.70],
+                          stops: const [0.0, 0.80],
                         ),
                       ),
                     ),
-                  ),
-                ),
-                // Wordmark
-                Center(
-                  child: Semantics(
-                    header: true,
-                    child: MetraWordmark(color: textPrimary),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Content zone: text scrolls; CTA is pinned at bottom.
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(36, 0, 36, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Manifesto headline: DM Serif Display 34 / lh 1.2 per § 12.1.
-                        Text(
-                          l10n.onboarding_tagline,
-                          style: MetraTypography.headlineLg
-                              .copyWith(color: textPrimary),
-                        ),
-                        const SizedBox(height: 14),
-                        Text(
-                          l10n.onboarding_privacy_line,
-                          style: MetraTypography.body.copyWith(
-                            color: textSecondary,
-                            height: 1.6,
+                    // Centered halo 220×220: rgba(200,116,86,0.12) → transparent 70%
+                    Center(
+                      child: SizedBox(
+                        width: 220,
+                        height: 220,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              colors: [
+                                accentFlow.withValues(alpha: 0.12),
+                                Colors.transparent,
+                              ],
+                              stops: const [0.0, 0.70],
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 40),
-                        Center(child: _MacronDots(color: accentFlow)),
-                      ],
+                      ),
                     ),
-                  ),
+                    // Wordmark
+                    Center(
+                      child: Semantics(
+                        header: true,
+                        child: MetraWordmark(color: textPrimary),
+                      ),
+                    ),
+                  ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(36, 0, 36, 28),
-                  child: FilledButton(
-                    style: _inchiostroCtaStyle(context),
-                    onPressed: onGetStarted,
-                    child: Text(l10n.onboarding_get_started),
-                  ),
+              ),
+              // Content zone: text scrolls; CTA is pinned at bottom.
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(36, 0, 36, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Manifesto headline: DM Serif Display 34 / lh 1.2 per § 12.1.
+                            Text(
+                              l10n.onboarding_tagline,
+                              style: MetraTypography.headlineLg
+                                  .copyWith(color: textPrimary),
+                            ),
+                            const SizedBox(height: 14),
+                            Text(
+                              l10n.onboarding_privacy_line,
+                              style: MetraTypography.body.copyWith(
+                                color: textSecondary,
+                                height: 1.6,
+                              ),
+                            ),
+                            const SizedBox(height: 40),
+                            Center(child: _MacronDots(color: accentFlow)),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(36, 0, 36, 28),
+                      child: FilledButton(
+                        style: _inchiostroCtaStyle(context),
+                        onPressed: onGetStarted,
+                        child: Text(l10n.onboarding_get_started),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
+            ],
+          ),
+          // #27 (FR-07/FR-08): compact top-corner IT·EN selector, clear of
+          // the hero wordmark/headline/subhead and the bottom-pinned CTA
+          // above (§12.1 geometry untouched — no new PageView page, no
+          // reuse of Settings' bottom-sheet picker).
+          Positioned(
+            top: 8,
+            right: 12,
+            // `container: true` gives the selector its own semantics
+            // boundary — without it, SegmentedControlMetra's ungrouped
+            // label bubbles up and merges with the hero wordmark's
+            // `Semantics(header: true)` node (both share the same
+            // nearest-boundary ancestor: the PageView's per-page semantics
+            // node), producing a compound "Mētra\nLanguage" label instead
+            // of the selector's own.
+            child: Semantics(
+              container: true,
+              child: SegmentedControlMetra(
+                segments: const ['IT', 'EN'],
+                selectedIndex: selectedLanguageIndex,
+                semanticsLabel: l10n.onboarding_language_selector_label,
+                onChanged: (index) {
+                  final current = settings;
+                  if (current == null) return;
+                  final newCode = index == 1 ? 'en' : 'it';
+                  // EC-15: selecting the already-active language is a no-op.
+                  if (current.languageCode == newCode) return;
+                  ref
+                      .read(settingsNotifierProvider.notifier)
+                      .save(current.copyWith(languageCode: newCode));
+                },
+              ),
             ),
           ),
         ],
@@ -407,6 +495,16 @@ class _DataPage extends ConsumerWidget {
         cycleLength: state.cycleLength,
         periodLength: state.periodLength,
       );
+      // #26: drop the persisted page-2 draft now that onboarding is
+      // complete. `clearDraft()` is documented to never rethrow, but this
+      // catch is defense in depth (matches OnboardingNotifier.setDate's own
+      // belt-and-braces guard style) — a swallowed failure here must never
+      // block navigation to the calendar.
+      try {
+        await notifier.clearDraft();
+      } catch (e) {
+        debugPrint('[_DataPage._onSubmit] clearDraft failed: $e');
+      }
       if (context.mounted) {
         context.go('/calendar');
       }

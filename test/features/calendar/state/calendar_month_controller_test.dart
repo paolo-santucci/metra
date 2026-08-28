@@ -180,6 +180,168 @@ void main() {
     });
   });
 
+  group('CalendarMonthNotifier — goToMonth()', () {
+    test('jumps directly to an arbitrary year/month from a loaded state',
+        () async {
+      final fakeRepo = _StreamableMonthRepo();
+      final container = _makeContainer(fakeRepo);
+      addTearDown(container.dispose);
+
+      await container.read(calendarMonthProvider.future);
+
+      container.read(calendarMonthProvider.notifier).goToMonth(2019, 6);
+
+      final state = container.read(calendarMonthProvider).valueOrNull;
+      expect(state?.year, equals(2019));
+      expect(state?.month, equals(6));
+
+      // Let the re-subscription triggered by goToMonth settle before
+      // teardown disposes the container (mirrors the delay convention used
+      // by the goToPrevMonth/goToNextMonth tests above).
+      await Future<void>.delayed(Duration.zero);
+    });
+
+    test(
+        'sets state immediately even while calendarMonthProvider is still '
+        'AsyncLoading — does NOT no-op (EC-02)', () async {
+      final fakeRepo = _StreamableMonthRepo();
+      final container = _makeContainer(fakeRepo);
+      addTearDown(container.dispose);
+
+      // Reading the notifier constructs it and starts build(), which
+      // suspends at its first await — the provider is still AsyncLoading
+      // at this point (no microtask has been pumped yet).
+      final notifier = container.read(calendarMonthProvider.notifier);
+      expect(container.read(calendarMonthProvider).isLoading, isTrue);
+
+      notifier.goToMonth(2018, 3);
+
+      final state = container.read(calendarMonthProvider).valueOrNull;
+      expect(state?.year, equals(2018));
+      expect(state?.month, equals(3));
+
+      // Let both the original build() subscription and the goToMonth
+      // re-subscription settle before teardown disposes the container.
+      await Future<void>.delayed(Duration.zero);
+    });
+
+    test(
+        'CONTRAST: goToPrevMonth still no-ops while calendarMonthProvider is '
+        'AsyncLoading (relative-nav behaviour unchanged)', () async {
+      final fakeRepo = _StreamableMonthRepo();
+      final container = _makeContainer(fakeRepo);
+      addTearDown(container.dispose);
+
+      final notifier = container.read(calendarMonthProvider.notifier);
+      expect(container.read(calendarMonthProvider).isLoading, isTrue);
+
+      notifier.goToPrevMonth();
+
+      expect(container.read(calendarMonthProvider).isLoading, isTrue);
+
+      // Let the original build() subscription settle before teardown
+      // disposes the container.
+      await Future<void>.delayed(Duration.zero);
+    });
+
+    test(
+        'CONTRAST: goToNextMonth still no-ops while calendarMonthProvider is '
+        'AsyncLoading (relative-nav behaviour unchanged)', () async {
+      final fakeRepo = _StreamableMonthRepo();
+      final container = _makeContainer(fakeRepo);
+      addTearDown(container.dispose);
+
+      final notifier = container.read(calendarMonthProvider.notifier);
+      expect(container.read(calendarMonthProvider).isLoading, isTrue);
+
+      notifier.goToNextMonth();
+
+      expect(container.read(calendarMonthProvider).isLoading, isTrue);
+
+      // Let the original build() subscription settle before teardown
+      // disposes the container.
+      await Future<void>.delayed(Duration.zero);
+    });
+
+    test(
+        'jumps to a month beyond the current-month+1 forward cap, uncapped '
+        '(EC-03)', () async {
+      final fakeRepo = _StreamableMonthRepo();
+      final container = _makeContainer(fakeRepo);
+      addTearDown(container.dispose);
+
+      await container.read(calendarMonthProvider.future);
+
+      final farFuture = DateTime(DateTime.now().year + 5, 6);
+      container
+          .read(calendarMonthProvider.notifier)
+          .goToMonth(farFuture.year, farFuture.month);
+
+      final state = container.read(calendarMonthProvider).valueOrNull;
+      expect(state?.year, equals(farFuture.year));
+      expect(state?.month, equals(farFuture.month));
+
+      // Let the re-subscription triggered by goToMonth settle before
+      // teardown disposes the container.
+      await Future<void>.delayed(Duration.zero);
+    });
+
+    test(
+        'CONTRAST: goToNextMonth is still capped at current month + 1 '
+        '(relative-nav cap logic untouched)', () async {
+      final fakeRepo = _StreamableMonthRepo();
+      final container = _makeContainer(fakeRepo);
+      addTearDown(container.dispose);
+
+      await container.read(calendarMonthProvider.future);
+      final now = DateTime.now();
+
+      // First advance: current month → current month + 1 (allowed).
+      container.read(calendarMonthProvider.notifier).goToNextMonth();
+      await Future<void>.delayed(Duration.zero);
+
+      final nextMonth = DateTime(now.year, now.month + 1);
+      final afterFirst = container.read(calendarMonthProvider).valueOrNull;
+      expect(afterFirst?.year, equals(nextMonth.year));
+      expect(afterFirst?.month, equals(nextMonth.month));
+
+      // Second advance: must still be a no-op — the cap is untouched by
+      // goToMonth's addition.
+      container.read(calendarMonthProvider.notifier).goToNextMonth();
+      await Future<void>.delayed(Duration.zero);
+
+      final afterSecond = container.read(calendarMonthProvider).valueOrNull;
+      expect(afterSecond?.year, equals(nextMonth.year));
+      expect(afterSecond?.month, equals(nextMonth.month));
+    });
+
+    test(
+        'boundary inputs month=1 and month=12 — no off-by-one/rollover '
+        'defect', () async {
+      final fakeRepo = _StreamableMonthRepo();
+      final container = _makeContainer(fakeRepo);
+      addTearDown(container.dispose);
+
+      await container.read(calendarMonthProvider.future);
+      final notifier = container.read(calendarMonthProvider.notifier);
+
+      notifier.goToMonth(2024, 1);
+      var state = container.read(calendarMonthProvider).valueOrNull;
+      expect(state?.year, equals(2024));
+      expect(state?.month, equals(1));
+      // Let this re-subscription settle before firing the next jump —
+      // mirrors the delay convention used by the goToPrevMonth/goToNextMonth
+      // tests above.
+      await Future<void>.delayed(Duration.zero);
+
+      notifier.goToMonth(2024, 12);
+      state = container.read(calendarMonthProvider).valueOrNull;
+      expect(state?.year, equals(2024));
+      expect(state?.month, equals(12));
+      await Future<void>.delayed(Duration.zero);
+    });
+  });
+
   group('CalendarMonthNotifier — logs map', () {
     test('state.logs is populated when repo emits entries', () async {
       final fakeRepo = _StreamableMonthRepo();

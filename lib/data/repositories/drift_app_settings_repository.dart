@@ -22,6 +22,7 @@ import '../../data/database/app_database.dart';
 import '../../data/database/daos/app_settings_dao.dart';
 import '../../domain/entities/app_settings_data.dart';
 import '../../domain/entities/first_day_of_week_setting.dart';
+import '../../domain/entities/sync_log_entity.dart';
 import '../../domain/repositories/app_settings_repository.dart';
 
 class DriftAppSettingsRepository implements AppSettingsRepository {
@@ -30,6 +31,22 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
   final AppSettingsDao _dao;
 
   // ---- mapping helpers ----
+
+  /// Maps a [SyncProvider] enum value to its stable DB wire string.
+  ///
+  /// Wire strings are defined by the DB contract (FR-04, NFR-06) and MUST
+  /// never use `.name`. An exhaustive switch here enforces that any future
+  /// enum member forces an explicit mapping before it compiles.
+  ///
+  /// Note: `DriftSyncLogRepository.providerToString` carries `@visibleForTesting`
+  /// and cannot be called from production code. This local copy is the canonical
+  /// settings-layer encoder. Both must produce identical wire strings.
+  static String _providerToWireString(SyncProvider provider) =>
+      switch (provider) {
+        SyncProvider.dropbox => 'dropbox',
+        SyncProvider.googleDrive => 'google_drive',
+        SyncProvider.iCloud => 'icloud',
+      };
 
   /// Maps a raw DB integer to [FirstDayOfWeekSetting].
   ///
@@ -41,6 +58,25 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
     }
     return FirstDayOfWeekSetting.values[idx];
   }
+
+  /// Maps a raw DB wire string to [SyncProvider].
+  ///
+  /// Clamp-don't-throw posture (FR-09, NFR-06, EC-03): any unrecognized or
+  /// forward value (e.g. a string written by a later build, then rolled back)
+  /// falls back to [SyncProvider.dropbox] rather than throwing. This keeps
+  /// settings load resilient to corruption and forward-migration artefacts.
+  ///
+  /// MUST remain a separate function from the strict sync-log mapper
+  /// (`_stringToProvider` in `DriftSyncLogRepository`), which throws on
+  /// unknown strings. The settings read path tolerates corrupt/forward values;
+  /// the sync-log read path does not.
+  static SyncProvider _activeProviderFromString(String value) =>
+      switch (value) {
+        'dropbox' => SyncProvider.dropbox,
+        'google_drive' => SyncProvider.googleDrive,
+        'icloud' => SyncProvider.iCloud,
+        _ => SyncProvider.dropbox, // clamp: unknown/forward value → dropbox
+      };
 
   static AppSettingsData _fromRow(AppSetting row) => AppSettingsData(
         languageCode: row.languageCode,
@@ -58,6 +94,7 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
         firstDayOfWeek: _firstDayOfWeekFromIndex(row.firstDayOfWeek),
         lastLogOrSymptomWriteAt: row.lastLogOrSymptomWriteAt?.toUtc(),
         backupSuspended: row.backupSuspended,
+        activeProvider: _activeProviderFromString(row.activeProvider),
       );
 
   // Excluded from _toCompanion (each owned by a dedicated writer):
@@ -65,6 +102,7 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
   //   - declaredCycleLength          → saveDeclaredCycleLength
   //   - lastLogOrSymptomWriteAt      → updateLastDataWriteAt
   //   - backupSuspended              → updateBackupSuspended
+  //   - activeProvider               → setActiveProvider
   // Adding any of these here would cause updateSettings() to silently
   // overwrite them. See spec FR-03 / NFR-08.
   static AppSettingsCompanion _toCompanion(AppSettingsData data) =>
@@ -79,6 +117,9 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
         firstDayOfWeek: Value(data.firstDayOfWeek.index),
         // backupSuspended: NOT in _toCompanion — owned by updateBackupSuspended (dedicated-writer pattern).
         // See AppSettingsRepository.updateBackupSuspended. Analogue: lastLogOrSymptomWriteAt.
+        // activeProvider: NOT in _toCompanion — owned by setActiveProvider (dedicated-writer pattern).
+        // See AppSettingsRepository.setActiveProvider. Emitting Companion.absent() here
+        // ensures updateSettings() can never clobber the dedicated-writer value (FR-10, EC-06).
       );
 
   // ---- interface implementation ----
@@ -130,6 +171,10 @@ class DriftAppSettingsRepository implements AppSettingsRepository {
   Future<void> updateBackupSuspended(bool value) => _dao.updateSettings(
         AppSettingsCompanion(backupSuspended: Value(value)),
       );
+
+  @override
+  Future<void> setActiveProvider(SyncProvider provider) =>
+      _dao.setActiveProvider(_providerToWireString(provider));
 
   @override
   Future<void> clearBackupSuspended() => _dao.setBackupSuspended(false);

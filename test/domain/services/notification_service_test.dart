@@ -35,7 +35,7 @@ class _StubNotificationService extends NotificationService {
       const NotificationScheduleSuccess();
 
   @override
-  Future<void> initialize() async {}
+  Future<void> initialize(String channelName) async {}
 
   @override
   Future<void> cancelPredictionNotifications() async {}

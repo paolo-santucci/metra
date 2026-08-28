@@ -168,13 +168,13 @@ void main() {
     });
   });
 
-  group('v10 schema (FR-01)', () {
+  group('v11 schema', () {
     test(
-      'fresh v10 database has lastLogOrSymptomWriteAt == null and schemaVersion == 10',
+      'fresh v11 database has lastLogOrSymptomWriteAt == null and schemaVersion == 11',
       () async {
         final db = AppDatabase(NativeDatabase.memory());
         addTearDown(db.close);
-        expect(db.schemaVersion, 10);
+        expect(db.schemaVersion, 11);
         final settings = await db.appSettingsDao.getOrCreateSettings();
         expect(settings.lastLogOrSymptomWriteAt, isNull);
       },

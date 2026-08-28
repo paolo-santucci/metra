@@ -17,14 +17,17 @@
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
 // TASK-18 — BackupConnectedView: async handler mixin
+// TASK-08 (M4) — handleSwitchProvider added
 //
 // Split per NFR-08 (≤ 150 LoC per file). Applied to _BackupConnectedViewState.
 //
 // Provides:
-//   handleBackup()    — FR-25
-//   handleRestore()   — FR-26 / FR-28 (new step order + four mounted guards)
-//   handleDisconnect() — FR-27
+//   handleBackup()         — FR-25
+//   handleRestore()        — FR-26 / FR-28 (new step order + four mounted guards)
+//   handleDisconnect()     — FR-27
+//   handleSwitchProvider() — FR-08 / FR-14 / EC-03 / EC-10 / EC-12 / OQ-QA-02
 
+import 'package:flutter/foundation.dart'; // defaultTargetPlatform
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -34,6 +37,8 @@ import '../../../providers/backup_providers.dart';
 import '../../../providers/encryption_provider.dart';
 import '../state/backup_notifier.dart';
 import '../widgets/backup_picker_sheet.dart';
+import '../widgets/backup_provider_labels.dart';
+import '../widgets/backup_provider_picker_sheet.dart';
 import '../widgets/metra_confirm_dialog.dart';
 import '../widgets/passphrase_dialog.dart';
 import 'backup_connected_view.dart';
@@ -175,5 +180,72 @@ mixin BackupConnectedHandlers on ConsumerState<BackupConnectedView> {
     if (confirmed != true) return;
     if (!mounted) return;
     await notifier.disconnect();
+  }
+
+  // ---------------------------------------------------------------------------
+  // handleSwitchProvider — FR-08 / FR-14 / EC-03 / EC-10 / EC-12 / OQ-QA-02
+  //
+  // Flow (spec §5.1 view-handler contract):
+  //   1. Open BackupProviderPickerSheet, pre-selected at the active provider's
+  //      index in availableProviders(defaultTargetPlatform).
+  //   2. picker == null → return (EC-01 cancel).
+  //   3. picker == connected.provider → return (EC-03 same-provider no-op,
+  //      NO confirm dialog).
+  //   4. MetraConfirmDialog (switch-confirm): cancelled → return (EC-12).
+  //   5. await notifier.switchProvider(picked) (FR-14).
+  //
+  // mounted-guard after each await (OQ-QA-02).
+  // messenger captured pre-await (handleRestore discipline).
+  // EC-10 gate (IgnorePointer) is applied in the view, not here.
+  // ---------------------------------------------------------------------------
+
+  Future<void> handleSwitchProvider() async {
+    final l10n = AppLocalizations.of(context)!;
+    final notifier = ref.read(backupNotifierProvider.notifier);
+    // Capture messenger before first await (avoids stale BuildContext).
+    // Unused in the current happy-path but kept per handleRestore discipline so
+    // future snack-bar additions don't miss the capture.
+    // ignore: unused_local_variable
+    final messenger = ScaffoldMessenger.of(context);
+
+    final connected = widget.state; // BackupConnected, always valid here
+
+    // Resolve the platform-filtered provider list (single source — FR-02).
+    final providers = availableProviders(defaultTargetPlatform);
+    // Clamp to 0 defensively: if state.provider is iCloud and we're on
+    // non-iOS (e.g. tests on Linux), indexOf returns -1.
+    final rawIndex = providers.indexOf(connected.provider);
+    final initialIndex = rawIndex < 0 ? 0 : rawIndex;
+
+    // ── Step 1: open provider picker ─────────────────────────────────────────
+    final picked = await BackupProviderPickerSheet.show(
+      context,
+      providers: providers,
+      initialIndex: initialIndex,
+    );
+    if (!mounted) return; // guard 1
+
+    // ── Step 2: cancel (picker dismissed) ────────────────────────────────────
+    if (picked == null) return;
+
+    // ── Step 3: same-provider short-circuit (EC-03) ───────────────────────────
+    // No dialog, no switchProvider call — selecting the already-active provider
+    // is a no-op per spec §6.1 EC-03 and bible §18.6.2.
+    if (picked == connected.provider) return;
+
+    // ── Step 4: switch-confirm dialog (FR-14 / EC-12) ─────────────────────────
+    final displayName = backupProviderDisplayName(l10n, picked);
+    final confirmed = await MetraConfirmDialog.show(
+      context,
+      title: l10n.backupSwitchConfirmTitle,
+      body: l10n.backupSwitchConfirmBody(displayName),
+      cancelLabel: l10n.commonCancel,
+      confirmLabel: l10n.backupSwitchConfirmSwitch,
+    );
+    if (!mounted) return; // guard 2
+    if (confirmed != true) return; // EC-12 cancel
+
+    // ── Step 5: execute switch ────────────────────────────────────────────────
+    await notifier.switchProvider(picked); // FR-14 / FR-08
   }
 }

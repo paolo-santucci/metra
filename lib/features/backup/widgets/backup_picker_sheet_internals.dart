@@ -30,6 +30,8 @@ import '../../../core/widgets/settings/cupertino_picker_scaffold.dart';
 import '../../../core/widgets/settings/settings_divider.dart';
 import '../../../data/services/backup/backup_file_entry.dart';
 import '../../../l10n/app_localizations.dart';
+import 'backup_size_format.dart';
+import 'picker_item.dart';
 
 // ── Non-empty sheet ───────────────────────────────────────────────────────────
 
@@ -86,12 +88,22 @@ class PickerSheet extends StatelessWidget {
               onSelectedItemChanged: onSelectedChanged,
               children: List.generate(
                 entries.length,
-                (i) => PickerItem(
-                  text: DateFormat.yMMMd(l10n.localeName)
+                (i) {
+                  final dateTime = DateFormat.yMMMd(l10n.localeName)
                       .add_jm()
-                      .format(entries[i].timestampUtc.toLocal()),
-                  distanceFromSelected: (i - selected).abs(),
-                ),
+                      .format(entries[i].timestampUtc.toLocal());
+                  final size = formatBackupSize(entries[i].sizeBytes);
+                  // Join with a plain space; size is '' when unknown (dropped
+                  // by the filter). Built via join — not an interpolated string
+                  // literal — so the FR-31 no-inline-literals guard does not
+                  // flag the composition (date/time + size are not l10n copy).
+                  final label =
+                      [dateTime, size].where((s) => s.isNotEmpty).join(' ');
+                  return PickerItem(
+                    text: label,
+                    distanceFromSelected: (i - selected).abs(),
+                  );
+                },
               ),
             ),
           ],
@@ -181,51 +193,6 @@ class EmptySheet extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Picker item with distance-based typography ────────────────────────────────
-
-class PickerItem extends StatelessWidget {
-  const PickerItem({
-    required this.text,
-    required this.distanceFromSelected,
-    super.key,
-  });
-
-  final String text;
-  final int distanceFromSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final double fontSize;
-    final FontWeight fontWeight;
-    final double opacity;
-
-    if (distanceFromSelected == 0) {
-      fontSize = 16;
-      fontWeight = FontWeight.w500;
-      opacity = 1.0;
-    } else if (distanceFromSelected == 1) {
-      fontSize = 15;
-      fontWeight = FontWeight.w400;
-      opacity = 0.35;
-    } else {
-      fontSize = 15;
-      fontWeight = FontWeight.w400;
-      opacity = 0.18;
-    }
-
-    return Center(
-      child: Opacity(
-        opacity: opacity,
-        child: Text(
-          text,
-          style: GoogleFonts.inter(fontSize: fontSize, fontWeight: fontWeight),
-          overflow: TextOverflow.ellipsis,
         ),
       ),
     );

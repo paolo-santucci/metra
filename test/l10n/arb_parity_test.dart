@@ -32,7 +32,8 @@ void main() {
       const newBackupKeys = [
         'backupEmptyHeading',
         'backupEmptyBody',
-        'backupConnectDropbox',
+        // backupConnectDropbox retired in TASK-03 (M4) — replaced by backupConnectAction.
+        'backupConnectAction',
         'backupAccountConnesso',
         'backupStato',
         'backupAzioni',

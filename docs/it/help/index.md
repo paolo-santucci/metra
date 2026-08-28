@@ -20,6 +20,8 @@ La prima volta che apri Mētra non trovi un account da creare né un indirizzo e
 
 Vedrai il wordmark **Mētra** e un breve manifesto su cosa è l'app... e cosa non è. Vale la pena leggerlo: fissa le aspettative prima ancora di iniziare a usarla.
 
+In alto a destra trovi il selettore **IT · EN**: tocca la lingua che preferisci prima di toccare Inizia.
+
 Tocca **Inizia** per continuare.
 
 ---

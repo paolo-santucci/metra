@@ -20,6 +20,8 @@ The first time you open Mētra, there is no account to create and no email to en
 
 You see the **Mētra** wordmark and a short manifesto about what the app is — and what it isn't. Worth reading: it sets the frame before you log a single day.
 
+A small **IT / EN** segmented control in the top-right corner switches the app language before you tap **Get started**.
+
 Tap **Get started** to continue.
 
 ---

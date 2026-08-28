@@ -28,6 +28,7 @@ import 'package:metra/domain/use_cases/delete_all_data.dart';
 import 'package:metra/core/widgets/settings/metra_toggle.dart';
 import 'package:metra/core/widgets/settings/settings_row.dart';
 import 'package:metra/features/backup/state/backup_notifier.dart';
+import 'package:metra/domain/entities/sync_log_entity.dart';
 import 'package:metra/features/backup/state/backup_state.dart';
 import 'package:metra/features/settings/settings_screen.dart';
 import 'package:metra/features/settings/state/settings_notifier.dart';
@@ -746,6 +747,7 @@ void main() {
           _wrap(
             [settingsNotifierProvider.overrideWith(() => stub)],
             backupState: const BackupConnected(
+              provider: SyncProvider.dropbox,
               email: 'user@example.com',
               autoBackupActive: true,
               passphraseSet: true,

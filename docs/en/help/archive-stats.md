@@ -28,7 +28,7 @@ The Timeline view groups your entries by **cycle**, one card per cycle, most rec
 	- ochre with a star for **symptoms**, covering all symptoms logged during that cycle;
 	- grey with a pen icon, indicating **notes**.
 
-Scroll up to go further back.
+Scroll up to go further back. Tap a card to open the Calendar, focused on the month that cycle started in.
 
 ---
 

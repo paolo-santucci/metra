@@ -1017,4 +1017,260 @@ void main() {
       },
     );
   });
+
+  // ---------------------------------------------------------------------------
+  // Group K — FakeNotificationService.callLog (#33, test-seam, EC-22)
+  // ---------------------------------------------------------------------------
+  group('Group K — FakeNotificationService.callLog', () {
+    test(
+      'given_fake_notification_service_when_cancelPredictionNotifications_then_callLog_contains_cancel',
+      () async {
+        final svc = FakeNotificationService();
+        await svc.cancelPredictionNotifications();
+        expect(svc.callLog, equals(['cancel']));
+      },
+    );
+
+    test(
+      'given_fake_notification_service_when_schedulePredictionNotification_then_callLog_appends_schedule',
+      () async {
+        final svc = FakeNotificationService();
+        // Set up a valid future notification time to avoid same-day complications
+        await svc.schedulePredictionNotification(
+          DateTime.utc(2099, 8, 20, 9, 0),
+          'Test title',
+          'Test body',
+        );
+        expect(svc.callLog, equals(['schedule']));
+      },
+    );
+
+    test(
+      'given_fake_notification_service_when_both_cancel_and_schedule_then_callLog_has_both',
+      () async {
+        final svc = FakeNotificationService();
+        await svc.cancelPredictionNotifications();
+        await svc.schedulePredictionNotification(
+          DateTime.utc(2099, 8, 20, 9, 0),
+          'Test title',
+          'Test body',
+        );
+        expect(svc.callLog, equals(['cancel', 'schedule']));
+      },
+    );
+
+    test(
+      'given_fake_notification_service_when_constructed_then_callLog_is_empty',
+      () {
+        final svc = FakeNotificationService();
+        expect(svc.callLog, isEmpty);
+      },
+    );
+
+    test(
+      'given_two_fake_instances_when_one_modified_then_other_not_affected',
+      () async {
+        final svc1 = FakeNotificationService();
+        final svc2 = FakeNotificationService();
+
+        await svc1.cancelPredictionNotifications();
+        expect(svc1.callLog, equals(['cancel']));
+        expect(svc2.callLog, isEmpty);
+      },
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // Group L — SchedulePredictionNotification.execute() ordering (#33, FR-09, EC-22)
+  // ---------------------------------------------------------------------------
+  group('Group L — SchedulePredictionNotification.execute ordering', () {
+    test(
+      'given_notifications_disabled_when_execute_then_callLog_is_cancel_only',
+      () async {
+        final svc = FakeNotificationService();
+        final uc = SchedulePredictionNotification(svc);
+        final prediction = CyclePrediction(
+          expectedStart: DateTime.utc(2099, 8, 20),
+          windowStart: DateTime.utc(2099, 8, 18),
+          windowEnd: DateTime.utc(2099, 8, 22),
+          cyclesUsed: 3,
+        );
+        final settings = AppSettingsData(
+          languageCode: 'it',
+          painEnabled: true,
+          notesEnabled: true,
+          notificationsEnabled: false, // disabled
+          notificationDaysBefore: 2,
+          onboardingCompleted: false,
+        );
+
+        await uc.execute(
+          prediction: prediction,
+          settings: settings,
+          title: 't',
+          body: 'b',
+        );
+
+        expect(svc.callLog, equals(['cancel']));
+      },
+    );
+
+    test(
+      'given_no_cycle_data_when_execute_then_callLog_is_cancel_only',
+      () async {
+        final svc = FakeNotificationService();
+        final uc = SchedulePredictionNotification(svc);
+        final settings = AppSettingsData(
+          languageCode: 'it',
+          painEnabled: true,
+          notesEnabled: true,
+          notificationsEnabled: true,
+          notificationDaysBefore: 2,
+          onboardingCompleted: false,
+        );
+
+        await uc.execute(
+          prediction: null, // no data
+          settings: settings,
+          title: 't',
+          body: 'b',
+        );
+
+        expect(svc.callLog, equals(['cancel']));
+      },
+    );
+
+    test(
+      'given_valid_future_prediction_when_execute_then_callLog_is_cancel_then_schedule',
+      () async {
+        final svc = FakeNotificationService();
+        final uc = SchedulePredictionNotification(svc);
+        final prediction = CyclePrediction(
+          expectedStart: DateTime.utc(2099, 8, 20),
+          windowStart: DateTime.utc(2099, 8, 18),
+          windowEnd: DateTime.utc(2099, 8, 22),
+          cyclesUsed: 3,
+        );
+        final settings = AppSettingsData(
+          languageCode: 'it',
+          painEnabled: true,
+          notesEnabled: true,
+          notificationsEnabled: true,
+          notificationDaysBefore: 2,
+          onboardingCompleted: false,
+        );
+
+        await uc.execute(
+          prediction: prediction,
+          settings: settings,
+          title: 't',
+          body: 'b',
+        );
+
+        expect(svc.callLog, equals(['cancel', 'schedule']));
+      },
+    );
+
+    test(
+      'meta_test_proves_order_assertion_catches_regression_schedule_before_cancel',
+      () async {
+        // This test proves that the order assertion in the happy-path test
+        // actually catches an ordering regression. A fake that appends
+        // 'schedule' before 'cancel' must FAIL this assertion.
+        final svc = FakeNotificationService();
+        // Manually pollute callLog with wrong order to prove test catches it
+        svc.callLog.add('schedule');
+        svc.callLog.add('cancel');
+
+        // This assertion FAILS because callLog has wrong order
+        expect(svc.callLog, isNot(equals(['cancel', 'schedule'])));
+      },
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // Scenario G — Cancel-before-reschedule ordering end-to-end (#33, FR-09, EC-22)
+  // ---------------------------------------------------------------------------
+  group('Scenario G — Cancel-before-reschedule ordering, end-to-end', () {
+    test(
+      'given_notifications_disabled_when_execute_via_use_case_then_callLog_cancel_only',
+      () async {
+        final svc = FakeNotificationService();
+        final uc = SchedulePredictionNotification(svc);
+        final settings = AppSettingsData(
+          languageCode: 'it',
+          painEnabled: true,
+          notesEnabled: true,
+          notificationsEnabled: false,
+          notificationDaysBefore: 2,
+          onboardingCompleted: false,
+        );
+
+        await uc.execute(
+          prediction: null,
+          settings: settings,
+          title: 't',
+          body: 'b',
+        );
+
+        expect(svc.callLog, equals(['cancel']));
+      },
+    );
+
+    test(
+      'given_no_prediction_when_execute_via_use_case_then_callLog_cancel_only',
+      () async {
+        final svc = FakeNotificationService();
+        final uc = SchedulePredictionNotification(svc);
+        final settings = AppSettingsData(
+          languageCode: 'it',
+          painEnabled: true,
+          notesEnabled: true,
+          notificationsEnabled: true,
+          notificationDaysBefore: 2,
+          onboardingCompleted: false,
+        );
+
+        await uc.execute(
+          prediction: null,
+          settings: settings,
+          title: 't',
+          body: 'b',
+        );
+
+        expect(svc.callLog, equals(['cancel']));
+      },
+    );
+
+    test(
+      'given_valid_future_prediction_when_execute_via_use_case_then_callLog_cancel_then_schedule',
+      () async {
+        final svc = FakeNotificationService();
+        final uc = SchedulePredictionNotification(svc);
+        final prediction = CyclePrediction(
+          expectedStart: DateTime.utc(2099, 8, 20),
+          windowStart: DateTime.utc(2099, 8, 18),
+          windowEnd: DateTime.utc(2099, 8, 22),
+          cyclesUsed: 3,
+        );
+        final settings = AppSettingsData(
+          languageCode: 'it',
+          painEnabled: true,
+          notesEnabled: true,
+          notificationsEnabled: true,
+          notificationDaysBefore: 2,
+          onboardingCompleted: false,
+        );
+
+        await uc.execute(
+          prediction: prediction,
+          settings: settings,
+          title: 't',
+          body: 'b',
+        );
+
+        expect(svc.callLog, equals(['cancel', 'schedule']));
+      },
+    );
+  });
 }

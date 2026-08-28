@@ -250,6 +250,11 @@
     "description": "Accessibility label for the floating action button on the calendar screen"
   },
 
+  "notification_channel_name": "Mētra — Ciclo",
+  "@notification_channel_name": {
+    "description": "Android notification channel display name shown in system settings; resolved from AppLocalizations and passed to NotificationService.initialize() at cold-start"
+  },
+
   "notification_prediction_title": "Il tuo ciclo si avvicina",
   "@notification_prediction_title": {
     "description": "Title for the prediction notification"
@@ -775,11 +780,6 @@
     "description": "Body text shown on the backup screen when no provider is connected"
   },
 
-  "backup_connect_dropbox": "Collega Dropbox",
-  "@backup_connect_dropbox": {
-    "description": "Button to initiate Dropbox OAuth connection"
-  },
-
   "backup_connected_as": "Connesso come: {email}",
   "@backup_connected_as": {
     "description": "Status line showing the connected Dropbox account email",
@@ -980,6 +980,11 @@
   "onboarding_date_placeholder": "Seleziona data",
   "@onboarding_date_placeholder": { "description": "Placeholder text in the date input when no date is selected" },
 
+  "onboarding_language_selector_label": "Lingua",
+  "@onboarding_language_selector_label": {
+    "description": "Accessibility label for the top-corner IT/EN language selector on the onboarding welcome page (SegmentedControlMetra semanticsLabel)"
+  },
+
   "settings_section_about": "Informazioni",
   "@settings_section_about": {
     "description": "Settings group header: about section"
@@ -1175,11 +1180,6 @@
     "description": "Body text of the empty-state view on the Backup screen; encourages the user to connect a cloud account"
   },
 
-  "backupConnectDropbox": "Collega Dropbox",
-  "@backupConnectDropbox": {
-    "description": "CTA button label on the Backup empty-state view; initiates Dropbox OAuth connection"
-  },
-
   "backupAccountConnesso": "Account connesso",
   "@backupAccountConnesso": {
     "description": "Section heading on the connected-state Backup screen showing the authenticated provider account"
@@ -1308,5 +1308,61 @@
         "type": "int"
       }
     }
+  },
+
+  "backupProviderNameDropbox": "Dropbox",
+  "@backupProviderNameDropbox": {
+    "description": "Display name for the Dropbox cloud backup provider; shown in the picker and on the connected-view provider row"
+  },
+
+  "backupProviderNameGoogleDrive": "Google Drive",
+  "@backupProviderNameGoogleDrive": {
+    "description": "Display name for the Google Drive cloud backup provider; shown in the picker and on the connected-view provider row"
+  },
+
+  "backupProviderNameICloud": "iCloud",
+  "@backupProviderNameICloud": {
+    "description": "Display name for the iCloud cloud backup provider (iOS only); shown in the picker and on the connected-view provider row"
+  },
+
+  "backupProviderPickerTitle": "Scegli un provider",
+  "@backupProviderPickerTitle": {
+    "description": "Title shown at the top of the BackupProviderPickerSheet bottom sheet (OQ-04 confirmed)"
+  },
+
+  "backupConnectAction": "Connetti",
+  "@backupConnectAction": {
+    "description": "Confirm button label on the BackupProviderPickerSheet; initiates connection to the selected provider. Replaces the retired backupConnectDropbox key."
+  },
+
+  "backupSwitchConfirmTitle": "Cambiare provider?",
+  "@backupSwitchConfirmTitle": {
+    "description": "Title of the switch-provider MetraConfirmDialog shown before switching from one connected provider to another"
+  },
+
+  "backupSwitchConfirmBody": "Passerai a {provider}. La passphrase resta la stessa e i backup esistenti non vengono toccati; dovrai riconnetterti al nuovo provider.",
+  "@backupSwitchConfirmBody": {
+    "description": "Body text of the switch-provider confirmation dialog; explains passphrase reuse and that old .enc backups are left intact",
+    "placeholders": {
+      "provider": {
+        "type": "String",
+        "example": "Google Drive"
+      }
+    }
+  },
+
+  "backupSwitchConfirmSwitch": "Cambia",
+  "@backupSwitchConfirmSwitch": {
+    "description": "Confirm button label on the switch-provider confirmation dialog; proceeds with switching to the new provider"
+  },
+
+  "backupProviderLabel": "Provider",
+  "@backupProviderLabel": {
+    "description": "Row label for the active-provider name row in Section 1 (Account connesso) of the backup connected view (TASK-08 / FR-15)."
+  },
+
+  "backupSwitchActionLabel": "Cambia provider",
+  "@backupSwitchActionLabel": {
+    "description": "Row label for the switch-provider action row in Section 3 (Azioni) of the backup connected view (TASK-08 / FR-08)."
   }
 }

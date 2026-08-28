@@ -48,6 +48,7 @@ import 'package:metra/features/backup/views/backup_connected_view.dart';
 import 'package:metra/features/backup/views/backup_empty_view.dart';
 import 'package:metra/features/backup/views/backup_error_view.dart';
 import 'package:metra/l10n/app_localizations.dart';
+import 'package:metra/domain/entities/sync_log_entity.dart';
 import 'package:metra/providers/backup_providers.dart';
 import 'package:metra/providers/encryption_provider.dart';
 
@@ -202,6 +203,7 @@ void main() {
       await tester.pumpWidget(
         _wrap(
           const BackupConnected(
+            provider: SyncProvider.dropbox,
             email: 'a@b.it',
             autoBackupActive: true,
             passphraseSet: true,
@@ -327,6 +329,7 @@ void main() {
         });
 
         const connectedState = BackupConnected(
+          provider: SyncProvider.dropbox,
           email: 'scaffold@test.com',
           autoBackupActive: true,
           passphraseSet: true,
@@ -445,6 +448,7 @@ void main() {
         await tester.pumpWidget(
           _wrap(
             const BackupConnected(
+              provider: SyncProvider.dropbox,
               email: 'scaffold@test.com',
               autoBackupActive: false,
               passphraseSet: true,
@@ -499,6 +503,7 @@ void main() {
         });
 
         const state = BackupConnected(
+          provider: SyncProvider.dropbox,
           email: 'a@b.test',
           autoBackupActive: false,
           passphraseSet: false,
@@ -528,6 +533,7 @@ void main() {
         });
 
         const state = BackupConnected(
+          provider: SyncProvider.dropbox,
           email: 'a@b.test',
           autoBackupActive: true,
           passphraseSet: true,
@@ -557,6 +563,7 @@ void main() {
         });
 
         const state = BackupConnected(
+          provider: SyncProvider.dropbox,
           email: 'a@b.test',
           autoBackupActive: false,
           passphraseSet: true,
@@ -654,6 +661,7 @@ void main() {
       (tester) async {
         final stub = _StubBackupNotifier(
           const BackupConnected(
+            provider: SyncProvider.dropbox,
             email: 'k@test.app',
             autoBackupActive: true,
             passphraseSet: true,
@@ -663,6 +671,7 @@ void main() {
         await tester.pumpWidget(
           _wrap(
             const BackupConnected(
+              provider: SyncProvider.dropbox,
               email: 'k@test.app',
               autoBackupActive: true,
               passphraseSet: true,
@@ -688,6 +697,7 @@ void main() {
       (tester) async {
         final stub = _StubBackupNotifier(
           const BackupConnected(
+            provider: SyncProvider.dropbox,
             email: 'k@test.app',
             autoBackupActive: true,
             passphraseSet: true,
@@ -699,6 +709,7 @@ void main() {
         await tester.pumpWidget(
           _wrap(
             const BackupConnected(
+              provider: SyncProvider.dropbox,
               email: 'k@test.app',
               autoBackupActive: true,
               passphraseSet: true,
@@ -732,6 +743,7 @@ void main() {
         final completer = Completer<int?>();
         final stub = _StubBackupNotifier(
           const BackupConnected(
+            provider: SyncProvider.dropbox,
             email: 'k@test.app',
             autoBackupActive: true,
             passphraseSet: true,
@@ -741,6 +753,7 @@ void main() {
         await tester.pumpWidget(
           _wrap(
             const BackupConnected(
+              provider: SyncProvider.dropbox,
               email: 'k@test.app',
               autoBackupActive: true,
               passphraseSet: true,

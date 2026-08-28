@@ -392,4 +392,136 @@ void main() {
       expect(coloredBox.color, isNot(MetraColors.light.bgPrimary));
     },
   );
+
+  // ── Optional center title slot (TASK-06 / CG-2) ──────────────────────────
+  // The scaffold gains an OPTIONAL `String? title` param rendered as a
+  // non-tappable center label (fontSize 17, w600, textPrimary). Existing
+  // callers that pass title:null must be visually UNCHANGED.
+
+  testWidgets(
+    'CupertinoPickerScaffold: title=null renders no center title text',
+    (tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          CupertinoPickerScaffold(
+            onReset: () {},
+            onConfirm: () {},
+            child: const SizedBox(height: 200),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Default toolbar labels still resolve correctly.
+      expect(find.text('Ripristina'), findsOneWidget);
+      expect(find.text('OK'), findsOneWidget);
+
+      // No additional text node should appear between the toolbar buttons.
+      // All visible Text widgets in the toolbar are the button labels only.
+      final allTexts = tester
+          .widgetList<Text>(find.byType(Text))
+          .map((t) => t.data ?? '')
+          .where((s) => s.isNotEmpty)
+          .toList();
+      // The only non-empty Text widgets in a default scaffold are the two
+      // button labels. Extra text would indicate a phantom title.
+      expect(
+        allTexts.toSet(),
+        equals({'Ripristina', 'OK'}),
+        reason: 'title:null must not render any extra Text node',
+      );
+    },
+  );
+
+  testWidgets(
+    'CupertinoPickerScaffold: title renders in center, is non-tappable, w600, textPrimary',
+    (tester) async {
+      const testTitle = 'Choose a provider';
+      await tester.pumpWidget(
+        _wrap(
+          CupertinoPickerScaffold(
+            onReset: () {},
+            onConfirm: () {},
+            title: testTitle,
+            child: const SizedBox(height: 200),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Title text is visible.
+      final titleFinder = find.text(testTitle);
+      expect(
+        titleFinder,
+        findsOneWidget,
+        reason: 'Center title must be rendered when title is non-null',
+      );
+
+      // Title is positioned between the two buttons (center).
+      final resetDx = tester.getCenter(find.text('Ripristina')).dx;
+      final confirmDx = tester.getCenter(find.text('OK')).dx;
+      final titleDx = tester.getCenter(titleFinder).dx;
+      expect(
+        titleDx,
+        greaterThan(resetDx),
+        reason: 'Center title must be to the right of the reset button',
+      );
+      expect(
+        titleDx,
+        lessThan(confirmDx),
+        reason: 'Center title must be to the left of the confirm button',
+      );
+
+      // Title is NOT inside a GestureDetector (non-tappable).
+      final gdAncestors = find.ancestor(
+        of: titleFinder,
+        matching: find.byType(GestureDetector),
+      );
+      expect(
+        gdAncestors,
+        findsNothing,
+        reason:
+            'Center title must have NO GestureDetector ancestor (non-tappable)',
+      );
+
+      // Title text style: Inter 17 / w600 / textPrimary.
+      final titleWidget = tester.widget<Text>(titleFinder);
+      expect(
+        titleWidget.style?.fontWeight,
+        FontWeight.w600,
+        reason: 'Center title must use fontWeight w600 per §18.10.2',
+      );
+      expect(
+        titleWidget.style?.fontSize,
+        17.0,
+        reason: 'Center title must use fontSize 17 per §18.10.2',
+      );
+      expect(
+        titleWidget.style?.color,
+        MetraColors.light.textPrimary,
+        reason: 'Center title must use textPrimary (inchiostro) per §18.10.2',
+      );
+
+      // Existing buttons still fire (no regression from layout change).
+      var resetFired = false;
+      var confirmFired = false;
+      await tester.pumpWidget(
+        _wrap(
+          CupertinoPickerScaffold(
+            onReset: () => resetFired = true,
+            onConfirm: () => confirmFired = true,
+            title: testTitle,
+            child: const SizedBox(height: 200),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.tap(find.text('Ripristina'));
+      await tester.pump();
+      expect(resetFired, isTrue);
+      await tester.tap(find.text('OK'));
+      await tester.pump();
+      expect(confirmFired, isTrue);
+    },
+  );
 }

@@ -122,6 +122,20 @@ class CalendarMonthNotifier extends AsyncNotifier<CalendarMonthState> {
     );
   }
 
+  /// Jumps directly to [year]/[month] (#3, Timeline → Calendar focus).
+  ///
+  /// Unlike [goToPrevMonth]/[goToNextMonth] this does NOT early-return on
+  /// unloaded ([AsyncLoading]) state, and is NOT bounded by the
+  /// current-month+1 forward cap. The caller supplies a concrete target (a
+  /// logged cycle's start month, always <= today in practice).
+  void goToMonth(int year, int month) {
+    state = AsyncData(CalendarMonthState(year: year, month: month));
+    _subscribeToMonth(year, month).then(
+      (s) => state = AsyncData(s),
+      onError: (Object e, StackTrace st) => state = AsyncError(e, st),
+    );
+  }
+
   void goToPrevMonth() {
     final current = state.valueOrNull;
     if (current == null) return;

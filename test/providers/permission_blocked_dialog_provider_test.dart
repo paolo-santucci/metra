@@ -51,7 +51,7 @@ class _ThrowingNotificationService implements NotificationService {
   // ── Stub implementations (unused in these tests) ─────────────────────────
 
   @override
-  Future<void> initialize() async {}
+  Future<void> initialize(String channelName) async {}
 
   @override
   Future<NotificationScheduleResult> schedulePredictionNotification(
@@ -85,7 +85,7 @@ class _NormalNotificationService implements NotificationService {
   }
 
   @override
-  Future<void> initialize() async {}
+  Future<void> initialize(String channelName) async {}
 
   @override
   Future<NotificationScheduleResult> schedulePredictionNotification(

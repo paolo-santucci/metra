@@ -20,36 +20,45 @@
 // Covers:
 //   1. Widget structure: heading, body, CTA present; cloud icon 64×64;
 //      body capped at 240dp; CTA anchored 24dp from bottom safe-area.
-//   2. CTA tap → notifier.connect() called once.
+//   2. CTA tap → BackupProviderPickerSheet opens (FR-07, TASK-07).
+//      Full wiring assertions (firstConnect, cancel/confirm, EC-01/02/10)
+//      live in test/features/backup/backup_empty_view_test.dart.
 //   3. HC-2 gate: CTA disabled during BackupRunning(connecting).
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/theme/metra_theme.dart';
+import 'package:metra/domain/entities/sync_log_entity.dart';
 import 'package:metra/features/backup/state/backup_notifier.dart';
 import 'package:metra/features/backup/state/backup_state.dart';
 import 'package:metra/features/backup/views/backup_empty_view.dart';
+import 'package:metra/features/backup/widgets/backup_provider_picker_sheet.dart';
 import 'package:metra/l10n/app_localizations.dart';
 
 // ---------------------------------------------------------------------------
 // Fake notifier helpers
 // ---------------------------------------------------------------------------
 
-/// Records how many times [connect] was called.
+/// Records how many times [firstConnect] was called.
+///
+/// OQ-QA-02 hygiene (TASK-01): renamed from the stale `connect()` override
+/// after the dead `BackupNotifier.connect()` method was removed (FR-04) and
+/// replaced by `firstConnect(SyncProvider target)`.
 class _FakeBackupNotifier extends AsyncNotifier<BackupState>
     implements BackupNotifier {
   _FakeBackupNotifier(this._initialState);
 
   final BackupState _initialState;
-  int connectCalls = 0;
+  int firstConnectCalls = 0;
 
   @override
   Future<BackupState> build() async => _initialState;
 
   @override
-  Future<void> connect() async {
-    connectCalls++;
+  Future<void> firstConnect(SyncProvider target) async {
+    firstConnectCalls++;
   }
 
   // All other BackupNotifier methods are not exercised in these tests.
@@ -137,22 +146,41 @@ void main() {
     },
   );
 
-  // ── 2. CTA tap → connect() called once ───────────────────────────────────
+  // ── 2. CTA tap → provider picker opens (TASK-07 / FR-07) ───────────────────
+  //
+  // After TASK-07 the CTA no longer calls connect() directly; it opens the
+  // BackupProviderPickerSheet. Full wiring assertions (switchProvider calls,
+  // cancel / confirm paths, EC-01, EC-02, EC-10) live in:
+  //   test/features/backup/backup_empty_view_test.dart
 
   testWidgets(
-    'BackupEmptyView: CTA tap → notifier.connect() called once',
+    'BackupEmptyView: CTA tap → BackupProviderPickerSheet opens (FR-07)',
     (tester) async {
+      // physicalSize + DPR=1.0: prevents CupertinoPickerScaffold toolbar
+      // overflow inside the picker sheet (Flutter test default DPR is 3.0).
+      tester.view.physicalSize = const Size(800, 4000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       final fake = _FakeBackupNotifier(const BackupNotConnected());
       await tester.pumpWidget(_harness(fake));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('backup_empty_cta')));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
+      // The picker sheet must be open; firstConnect() must not fire until
+      // the user confirms a provider (TASK-07).
       expect(
-        fake.connectCalls,
-        1,
-        reason: 'connect() must be called exactly once on CTA tap',
+        find.byKey(const Key('sheetRoot')),
+        findsOneWidget,
+        reason: 'Provider picker must open after CTA tap (FR-07)',
+      );
+      expect(
+        fake.firstConnectCalls,
+        0,
+        reason: 'firstConnect() must NOT fire before the picker is confirmed',
       );
     },
   );
@@ -185,11 +213,12 @@ void main() {
   // ── 4. HC-2 concurrency guard (EC-05): tap with pre-seeded BackupRunning ──
 
   testWidgets(
-    'BackupEmptyView: tap CTA with pre-seeded BackupRunning does NOT call connect()',
+    'BackupEmptyView: tap CTA with pre-seeded BackupRunning does NOT call '
+    'firstConnect()',
     (tester) async {
       // Stub is pre-seeded to BackupRunning(connecting) before any tap.
       // The HC-2 view-side gate (onPressed == null) must fire before the notifier
-      // is ever reached — so connectCalls must remain 0.
+      // is ever reached — so firstConnectCalls must remain 0.
       final fake =
           _FakeBackupNotifier(const BackupRunning(BackupOperation.connecting));
       await tester.pumpWidget(_harness(fake));
@@ -203,11 +232,63 @@ void main() {
       await tester.pump();
 
       expect(
-        fake.connectCalls,
+        fake.firstConnectCalls,
         0,
-        reason:
-            'connect() must NOT be called when the CTA tap-gate fires (HC-2, EC-05)',
+        reason: 'firstConnect() must NOT be called when the CTA tap-gate '
+            'fires (HC-2, EC-05)',
       );
+    },
+  );
+
+  // ── 5. FR-07 (C3): picker pre-select stays initialIndex 0 ─────────────────
+  //
+  // TASK-11 verification (C-07, unchanged): the empty-view CTA never derives
+  // the picker's initial selection from the persisted `activeProvider`
+  // sentinel. This view is only ever shown for BackupState ==
+  // BackupNotConnected — which is exactly the state a post-iCloud-disconnect
+  // sentinel (activeProvider==dropbox, dropboxEmail==null, FR-06) resolves
+  // to — so BackupNotConnected here IS that scenario from the view's
+  // perspective. Run under an iOS platform override so
+  // availableProviders(iOS) == [dropbox, iCloud], matching the real
+  // post-iCloud-disconnect flow.
+
+  testWidgets(
+    'BackupEmptyView: CTA opens picker with initialIndex == 0, independent '
+    'of the persisted activeProvider sentinel (FR-07 / C3)',
+    (tester) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      // try/finally (not addTearDown): the testWidgets foundation-debug-var
+      // invariant check runs before addTearDown callbacks fire, so the
+      // override must be reset before the test body returns (established
+      // pattern — see backup_picker_sheet_test.dart).
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      try {
+        final fake = _FakeBackupNotifier(const BackupNotConnected());
+        await tester.pumpWidget(_harness(fake));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byKey(const Key('backup_empty_cta')));
+        await tester.pumpAndSettle();
+
+        final sheet = tester.widget<BackupProviderPickerSheet>(
+          find.byKey(const Key('sheetRoot')),
+        );
+        expect(
+          sheet.initialIndex,
+          0,
+          reason: 'FR-07/C-07: the picker must always open with '
+              'initialIndex 0 — never derived from the persisted '
+              'activeProvider sentinel (which, after an iCloud disconnect, '
+              'is dropbox with a null email — not a genuine Dropbox '
+              'connection)',
+        );
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
     },
   );
 }

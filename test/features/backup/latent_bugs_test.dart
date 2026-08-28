@@ -40,6 +40,7 @@
 //
 // Platform matrix: all (Linux CI — no device required).
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -54,6 +55,7 @@ import 'package:metra/domain/use_cases/backup_data.dart';
 import 'package:metra/domain/use_cases/restore_data.dart';
 import 'package:metra/features/backup/backup_screen.dart';
 import 'package:metra/features/backup/state/backup_notifier.dart';
+import 'package:metra/domain/entities/sync_log_entity.dart';
 import 'package:metra/features/backup/state/backup_state.dart';
 import 'package:metra/features/backup/widgets/backup_picker_sheet.dart';
 import 'package:metra/features/backup/widgets/metra_confirm_dialog.dart';
@@ -78,6 +80,24 @@ import '../../helpers/in_memory_secure_storage.dart';
 class _OkRunner implements BackupRunner {
   @override
   Future<void> backup() async {}
+
+  @override
+  Future<int> restore({String? filename}) async => 0;
+}
+
+/// A [BackupRunner] whose [backup] does not resolve until [_completer]
+/// completes — lets Group K (TASK-09) stage a state mutation while
+/// `_runBackup()`'s underlying orchestrator call is still pending, then
+/// release it to resolve `Ok()`.
+class _CompleterGatedRunner implements BackupRunner {
+  _CompleterGatedRunner(this._completer);
+
+  final Completer<void> _completer;
+
+  @override
+  Future<void> backup() async {
+    await _completer.future;
+  }
 
   @override
   Future<int> restore({String? filename}) async => 0;
@@ -212,6 +232,7 @@ void main() {
         );
         final stub = _StubBackupNotifier(
           const BackupConnected(
+            provider: SyncProvider.dropbox,
             email: 'test@metra.app',
             autoBackupActive: true,
             passphraseSet: true,
@@ -221,6 +242,7 @@ void main() {
         await tester.pumpWidget(
           _wrap(
             const BackupConnected(
+              provider: SyncProvider.dropbox,
               email: 'test@metra.app',
               autoBackupActive: true,
               passphraseSet: true,
@@ -354,6 +376,7 @@ void main() {
         await assertNoCrash(
           tester,
           const BackupConnected(
+            provider: SyncProvider.dropbox,
             email: 'i2@metra.app',
             autoBackupActive: false,
             passphraseSet: true,
@@ -807,6 +830,382 @@ void main() {
             2,
             reason:
                 'cycleDayForDateProvider must be invalidated by restore Ok branch',
+          );
+        },
+      );
+    },
+  );
+
+  // =========================================================================
+  // K — TASK-09 / L1 (FEAT-BUG-003): passphrase-rollback TOCTOU fix (FR-20)
+  // =========================================================================
+  //
+  // `_runBackup()` changes `Future<void>` → `Future<bool>` (true on Ok(),
+  // false on Err()). `backupWithPassphrase` must key the rollback decision
+  // off that returned bool, not a post-hoc `state.valueOrNull is
+  // BackupErrorState` inspection — the latter is racy: anything that mutates
+  // `state` between the orchestrator call resolving and the inspection (e.g.
+  // a concurrent settings-stream rebuild) can make a genuinely successful
+  // backup look like a failure (or vice versa) at inspection time.
+  //
+  // G1 stages exactly that race with a completer-gated orchestrator: while
+  // `_runBackup()`'s `uc()` call is still pending, `state` is mutated to
+  // `BackupErrorState` (standing in for "whatever a concurrent rebuild left
+  // behind") — then the orchestrator resolves `Ok()`. A state-inspection
+  // implementation would misread the leftover `BackupErrorState` and roll
+  // back the passphrase despite the real success; the fix must not.
+  //
+  // G2 is the non-race control: a genuine `Err()` still rolls back.
+  // G3 is a source-grep guard: `_runBackup()` stays a private implementation
+  // detail with zero call sites outside `backup_notifier.dart`.
+
+  group(
+    'K — TASK-09 / L1 (FEAT-BUG-003): passphrase-rollback TOCTOU fix (FR-20)',
+    () {
+      FakeAppSettingsRepository settingsRepo() => FakeAppSettingsRepository()
+        ..storedSettings = AppSettingsData.defaults().copyWith(
+          dropboxEmail: const Nullable('a@b.test'),
+        );
+
+      ProviderContainer makeContainer({
+        required BackupRunner runner,
+        required InMemorySecureStorage storage,
+      }) =>
+          ProviderContainer(
+            overrides: [
+              appSettingsRepositoryProvider.overrideWith(
+                (_) async => settingsRepo(),
+              ),
+              secureStorageProvider.overrideWithValue(storage),
+              backupDataProvider.overrideWith(
+                (_) async => BackupData(runner),
+              ),
+              restoreDataProvider.overrideWith(
+                (_) async => RestoreData(runner),
+              ),
+              cloudBackupProvider.overrideWithValue(FakeDropboxProvider()),
+              syncLogRepositoryProvider.overrideWith(
+                (_) async => FakeSyncLogRepository(),
+              ),
+            ],
+          );
+
+      // G1: TOCTOU race closed — Ok() completes AFTER a concurrent state
+      // mutation (standing in for a concurrent stream rebuild) has already
+      // set state to BackupErrorState. The rollback decision must use the
+      // bool _runBackup() returns, not the racy state snapshot.
+      test(
+        'G1_backupWithPassphrase_does_not_roll_back_when_a_concurrent_state_'
+        'mutation_leaves_BackupErrorState_but_runBackup_actually_succeeds',
+        () async {
+          final completer = Completer<void>();
+          final runner = _CompleterGatedRunner(completer);
+          final storage = InMemorySecureStorage()
+            ..values[BackupNotifier.kPassphraseKey] = 'old-pass';
+          final container = makeContainer(runner: runner, storage: storage);
+          addTearDown(container.dispose);
+          addTearDown(() {
+            if (!completer.isCompleted) completer.complete();
+          });
+
+          await container.read(backupNotifierProvider.future);
+          final notifier = container.read(backupNotifierProvider.notifier);
+
+          // Act (part 1): start the manual backup — it will block inside
+          // _runBackup() awaiting the gated orchestrator call.
+          unawaited(notifier.backupWithPassphrase('new-pass'));
+          await Future<void>.delayed(Duration.zero);
+
+          expect(
+            container.read(backupNotifierProvider).valueOrNull,
+            isA<BackupRunning>(),
+            reason: 'orchestrator call must be pending before the race is '
+                'staged',
+          );
+
+          // Stage the race: something concurrent (e.g. a settings-stream
+          // rebuild) leaves BackupErrorState in `state` WHILE the real
+          // orchestrator call is still in flight and has not yet resolved.
+          notifier.state = const AsyncData(
+            BackupErrorState('concurrent-rebuild-noise'),
+          );
+
+          // Act (part 2): the orchestrator now genuinely succeeds.
+          completer.complete();
+          await Future<void>.delayed(Duration.zero);
+          await Future<void>.delayed(Duration.zero);
+
+          expect(
+            storage.values[BackupNotifier.kPassphraseKey],
+            equals('new-pass'),
+            reason: '_runBackup() returned true (Ok()) — the rollback '
+                'decision must key off that, not the racy BackupErrorState '
+                'left in state by the concurrent mutation. A '
+                'state-inspection implementation wrongly rolls back here.',
+          );
+        },
+      );
+
+      // G2: regression — a genuine Err() (no race) still rolls back, exactly
+      // as the existing groups at test/features/backup/state/backup_notifier_test.dart
+      // already assert; kept here too since it is the direct control case for G1.
+      test(
+        'G2_backupWithPassphrase_rolls_back_when_runBackup_genuinely_fails',
+        () async {
+          final runner = FakeBackupRunner()
+            ..backupError = const SyncException('network error');
+          final storage = InMemorySecureStorage()
+            ..values[BackupNotifier.kPassphraseKey] = 'old-pass';
+          final container = makeContainer(runner: runner, storage: storage);
+          addTearDown(container.dispose);
+
+          await container.read(backupNotifierProvider.future);
+          await container
+              .read(backupNotifierProvider.notifier)
+              .backupWithPassphrase('new-pass');
+
+          expect(
+            storage.values[BackupNotifier.kPassphraseKey],
+            equals('old-pass'),
+            reason: 'a genuine Err() (no race) must still roll back the '
+                'passphrase — unchanged regression behaviour',
+          );
+          expect(
+            container.read(backupNotifierProvider).valueOrNull,
+            isA<BackupErrorState>(),
+          );
+        },
+      );
+
+      // G3: _runBackup stays a private implementation detail — zero call
+      // sites outside backup_notifier.dart. Scoped to lib/: Dart's leading-
+      // underscore privacy already forbids any other *library* from calling
+      // it (a cross-file call site would not compile), so this is a
+      // source-grep sanity guard against the method ever being renamed away
+      // from that privacy or duplicated/re-exported elsewhere in lib/.
+      // Comments/prose mentioning "_runBackup(" (in this very file, or in
+      // other test files' doc comments) are not call sites and are excluded
+      // by scoping the scan to lib/ only.
+      test(
+        'G3_runBackup_has_zero_call_sites_outside_backup_notifier_dart',
+        () {
+          final hits = _grepDartFiles(
+            ['lib'],
+            RegExp(r'_runBackup\('),
+          )
+              .where(
+                (hit) => !hit.startsWith(
+                  'lib/features/backup/state/backup_notifier.dart:',
+                ),
+              )
+              .toList();
+          expect(
+            hits,
+            isEmpty,
+            reason: '_runBackup( must have zero call sites outside '
+                'backup_notifier.dart (it stays private).\nHits:\n'
+                '${hits.join('\n')}',
+          );
+        },
+      );
+    },
+  );
+
+  // =========================================================================
+  // L — TASK-11 / L2 (FEAT-BUG-004): cold-start guard ordering (FR-21) +
+  //     truthful skip-log attribution (FR-06)
+  // =========================================================================
+  //
+  // Pre-fix, `backupSilent()`/`backupNow()` evaluate their `BackupRunning` /
+  // `BackupNotConnected` guards against `state.valueOrNull` WITHOUT first
+  // awaiting `future` (the AsyncNotifier's `build()` completion). During a
+  // true cold start `state.valueOrNull` is `null` (`AsyncLoading`) — neither
+  // guard matches `null`, so both guards are vacuous and execution falls
+  // through into the write-recency check / `_runBackup()`, bypassing whatever
+  // `build()` would have derived (including `BackupNotConnected`).
+  //
+  // L1 stages exactly that race with a Completer-gated
+  // `appSettingsRepositoryProvider` future: the notifier is read (kicking off
+  // `build()`, which suspends at its first `await`) and `backupSilent()` is
+  // invoked immediately, before the gate opens. The persisted settings
+  // represent the post-iCloud-disconnect dropbox sentinel
+  // (`activeProvider==dropbox`, `dropboxEmail==null`, FR-06) with a
+  // write-recency shape that WOULD trip the skip-log write site if the guard
+  // were vacuous. The fix must resolve `future` first, observe
+  // `BackupNotConnected`, and return before either write site is reachable.
+  //
+  // L2 is the same shape for `backupNow()`.
+  // L3 is the non-race control: a genuinely-connected Dropbox account still
+  // gets a truthfully-attributed `backupSkipped` entry when the recency guard
+  // trips (FR-06 regression).
+
+  group(
+    'L — TASK-11 / L2 (FEAT-BUG-004): cold-start guard ordering (FR-21) + '
+    'truthful attribution (FR-06)',
+    () {
+      ProviderContainer makeGatedContainer({
+        required Completer<FakeAppSettingsRepository> gate,
+        required InMemorySecureStorage storage,
+        required FakeBackupRunner runner,
+        required FakeSyncLogRepository syncLogRepo,
+      }) =>
+          ProviderContainer(
+            overrides: [
+              appSettingsRepositoryProvider.overrideWith((_) => gate.future),
+              secureStorageProvider.overrideWithValue(storage),
+              backupDataProvider.overrideWith((_) async => BackupData(runner)),
+              restoreDataProvider
+                  .overrideWith((_) async => RestoreData(runner)),
+              cloudBackupProvider.overrideWithValue(FakeDropboxProvider()),
+              syncLogRepositoryProvider.overrideWith((_) async => syncLogRepo),
+            ],
+          );
+
+      // L1: backupSilent() — cold-start + disconnected sentinel.
+      test(
+        'L1_backupSilent_awaits_build_before_evaluating_guards_'
+        'disconnected_sentinel_writes_zero_entries',
+        () async {
+          final repo = FakeAppSettingsRepository();
+          // Recency-trip shape: a pre-fix vacuous guard would fall through
+          // into the write-recency check and misattribute a skip entry to
+          // the dropbox sentinel (FR-06). dropboxEmail stays null.
+          await repo.updateBackupState(
+            dropboxEmail: null,
+            lastBackupAt: DateTime.utc(2026, 1, 1),
+          );
+          await repo.updateLastDataWriteAt(DateTime.utc(2026, 1, 1));
+
+          final gate = Completer<FakeAppSettingsRepository>();
+          final storage = InMemorySecureStorage();
+          final runner = FakeBackupRunner();
+          final syncLogRepo = FakeSyncLogRepository();
+
+          final container = makeGatedContainer(
+            gate: gate,
+            storage: storage,
+            runner: runner,
+            syncLogRepo: syncLogRepo,
+          );
+          addTearDown(container.dispose);
+          addTearDown(() {
+            if (!gate.isCompleted) gate.complete(repo);
+          });
+
+          final notifier = container.read(backupNotifierProvider.notifier);
+
+          // Precondition: build() has not resolved — true cold start.
+          expect(
+            container.read(backupNotifierProvider).valueOrNull,
+            isNull,
+            reason: 'build() must still be AsyncLoading at call time — the '
+                'gated appSettingsRepositoryProvider future has not resolved',
+          );
+
+          final call = notifier.backupSilent();
+          gate.complete(repo);
+          await call;
+
+          expect(
+            runner.backupCallCount,
+            0,
+            reason: 'E2: backupSilent() must fire ZERO orchestrator calls '
+                'once it observes BackupNotConnected',
+          );
+          expect(
+            syncLogRepo.appended,
+            isEmpty,
+            reason: 'FR-06: the disconnected dropbox sentinel must not '
+                'produce a misattributed backupSkipped entry',
+          );
+        },
+      );
+
+      // L2: backupNow() — same cold-start ordering fix.
+      test(
+        'L2_backupNow_awaits_build_before_evaluating_guards_'
+        'disconnected_sentinel_fires_zero_orchestrator_calls',
+        () async {
+          final repo = FakeAppSettingsRepository();
+          final gate = Completer<FakeAppSettingsRepository>();
+          final storage = InMemorySecureStorage()
+            ..values[BackupNotifier.kPassphraseKey] = 'pw';
+          final runner = FakeBackupRunner();
+          final syncLogRepo = FakeSyncLogRepository();
+
+          final container = makeGatedContainer(
+            gate: gate,
+            storage: storage,
+            runner: runner,
+            syncLogRepo: syncLogRepo,
+          );
+          addTearDown(container.dispose);
+          addTearDown(() {
+            if (!gate.isCompleted) gate.complete(repo);
+          });
+
+          final notifier = container.read(backupNotifierProvider.notifier);
+
+          expect(
+            container.read(backupNotifierProvider).valueOrNull,
+            isNull,
+            reason: 'build() must still be AsyncLoading at call time',
+          );
+
+          final call = notifier.backupNow();
+          gate.complete(repo);
+          await call;
+
+          expect(
+            runner.backupCallCount,
+            0,
+            reason: 'FR-21: backupNow() must observe BackupNotConnected once '
+                'build() resolves and never call the orchestrator',
+          );
+        },
+      );
+
+      // L3: FR-06 regression — a genuine connection still attributes
+      // truthfully when the recency guard trips.
+      test(
+        'L3_genuine_dropbox_connection_still_attributes_backupSkipped_'
+        'to_dropbox',
+        () async {
+          final repo = FakeAppSettingsRepository();
+          await repo.updateBackupState(
+            dropboxEmail: 'a@b.test',
+            lastBackupAt: DateTime.utc(2026, 1, 1),
+          );
+          await repo.updateLastDataWriteAt(DateTime.utc(2026, 1, 1));
+
+          final storage = InMemorySecureStorage()
+            ..values[BackupNotifier.kPassphraseKey] = 'pw';
+          final runner = FakeBackupRunner();
+          final syncLogRepo = FakeSyncLogRepository();
+
+          final container = ProviderContainer(
+            overrides: [
+              appSettingsRepositoryProvider.overrideWith(
+                (_) async => repo,
+              ),
+              secureStorageProvider.overrideWithValue(storage),
+              backupDataProvider.overrideWith((_) async => BackupData(runner)),
+              restoreDataProvider
+                  .overrideWith((_) async => RestoreData(runner)),
+              cloudBackupProvider.overrideWithValue(FakeDropboxProvider()),
+              syncLogRepositoryProvider.overrideWith((_) async => syncLogRepo),
+            ],
+          );
+          addTearDown(container.dispose);
+
+          await container.read(backupNotifierProvider.future);
+          await container.read(backupNotifierProvider.notifier).backupSilent();
+
+          expect(syncLogRepo.appended, hasLength(1));
+          expect(syncLogRepo.appended.single.provider, SyncProvider.dropbox);
+          expect(
+            syncLogRepo.appended.single.operation,
+            SyncOperation.backupSkipped,
           );
         },
       );
