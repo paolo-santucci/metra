@@ -4818,4 +4818,135 @@ void main() {
       },
     );
   });
+
+  // ===========================================================================
+  // TASK-11 — Group C1 (FR-06/EC-06): post-iCloud-disconnect cold-start
+  // attribution.
+  //
+  // disconnect() persists the ONLY "disconnected" representation this SP
+  // permits (C-07): activeProvider=dropbox, dropboxEmail=null. That sentinel
+  // is indistinguishable, at the Drift-row level, from a genuine (but
+  // never-yet-backed-up) Dropbox connection — the notifier must never read it
+  // as "connected to Dropbox".
+  //
+  // This test simulates a cold app restart: a FRESH BackupNotifier instance
+  // (session 2) reads the SAME persisted settings a prior session (session 1)
+  // left behind after an iCloud disconnect, and backupSilent() is invoked
+  // before build() has had any chance to resolve. Pre-fix (FR-21 vacuous
+  // guard), `state.valueOrNull` is `null` at call time, neither the
+  // BackupRunning nor the BackupNotConnected guard matches, and execution
+  // falls through into the write-recency check — which (primed below to
+  // trip) would append a `backupSkipped` entry mis-attributed to
+  // `SyncProvider.dropbox`, the very sentinel that means "not connected"
+  // (defect 3 / FR-06). Post-fix, `backupSilent()` awaits `future` first,
+  // observes the real `BackupNotConnected` state, and returns before either
+  // write site is reachable.
+  // ===========================================================================
+
+  group(
+    'TASK-11 Group C1 — FR-06/EC-06: post-iCloud-disconnect cold-start '
+    'attribution',
+    () {
+      test(
+        'fresh cold-start notifier over the persisted post-disconnect '
+        'sentinel observes BackupNotConnected before either backupSkipped '
+        'write site — zero misattributed entries',
+        () async {
+          final db = AppDatabase(NativeDatabase.memory());
+          addTearDown(db.close);
+          final realRepo = DriftAppSettingsRepository(db.appSettingsDao);
+          await realRepo.getOrCreate();
+          await realRepo.setActiveProvider(SyncProvider.iCloud);
+
+          final fakeICloud = FakeICloudProvider(authorizeThrows: false);
+          final testStorage = InMemorySecureStorage();
+          final testRunner = _FakeRunner();
+          final testSyncLog = FakeSyncLogRepository();
+
+          // ── Session 1: connect to iCloud, then disconnect ────────────────
+          final container1 = ProviderContainer(
+            overrides: [
+              appSettingsRepositoryProvider.overrideWith(
+                (_) async => realRepo,
+              ),
+              secureStorageProvider.overrideWithValue(testStorage),
+              backupDataProvider
+                  .overrideWith((_) async => BackupData(testRunner)),
+              restoreDataProvider
+                  .overrideWith((_) async => RestoreData(testRunner)),
+              cloudBackupProvider.overrideWithValue(fakeICloud),
+              syncLogRepositoryProvider.overrideWith((_) async => testSyncLog),
+            ],
+          );
+          final connected =
+              await container1.read(backupNotifierProvider.future);
+          expect(connected, isA<BackupConnected>());
+
+          await container1.read(backupNotifierProvider.notifier).disconnect();
+          // Let the disconnect flow's Drift writes land before tearing down.
+          await Future<void>.delayed(Duration.zero);
+          await Future<void>.delayed(Duration.zero);
+          container1.dispose();
+
+          // Sanity: the persisted row matches the disconnected sentinel shape.
+          final persisted = await realRepo.getOrCreate();
+          expect(persisted.activeProvider, SyncProvider.dropbox);
+          expect(persisted.dropboxEmail, isNull);
+
+          // Prime a write-recency shape that WOULD trip the skip-log write
+          // site in a pre-fix (vacuous-guard) implementation — dropboxEmail
+          // stays null (sentinel preserved).
+          await realRepo.updateBackupState(
+            dropboxEmail: null,
+            lastBackupAt: DateTime.utc(2026, 1, 1),
+          );
+          await realRepo.updateLastDataWriteAt(DateTime.utc(2026, 1, 1));
+
+          // ── Session 2: fresh notifier, simulated cold-start tick ─────────
+          final container2 = ProviderContainer(
+            overrides: [
+              appSettingsRepositoryProvider.overrideWith(
+                (_) async => realRepo,
+              ),
+              secureStorageProvider.overrideWithValue(testStorage),
+              backupDataProvider
+                  .overrideWith((_) async => BackupData(testRunner)),
+              restoreDataProvider
+                  .overrideWith((_) async => RestoreData(testRunner)),
+              cloudBackupProvider.overrideWithValue(fakeICloud),
+              syncLogRepositoryProvider.overrideWith((_) async => testSyncLog),
+            ],
+          );
+          addTearDown(container2.dispose);
+
+          final notifier = container2.read(backupNotifierProvider.notifier);
+
+          // Precondition (C1): build() has not resolved at call time —
+          // Dart's async-suspension semantics guarantee `state.valueOrNull`
+          // is still null immediately after `.notifier` is first read.
+          expect(
+            container2.read(backupNotifierProvider).valueOrNull,
+            isNull,
+            reason: 'build() must still be AsyncLoading (cold-start) at the '
+                'moment backupSilent() is invoked',
+          );
+
+          await notifier.backupSilent();
+
+          expect(
+            testRunner.backupCalled,
+            isFalse,
+            reason: 'FR-21: backupSilent() must resolve build() before '
+                'evaluating its guards',
+          );
+          expect(
+            testSyncLog.appended,
+            isEmpty,
+            reason: 'FR-06: the disconnected dropbox sentinel must never '
+                'produce a misattributed backupSkipped entry',
+          );
+        },
+      );
+    },
+  );
 }

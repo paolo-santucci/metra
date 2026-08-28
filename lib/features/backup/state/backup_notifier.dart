@@ -507,6 +507,19 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
   }
 
   Future<void> backupSilent() async {
+    // FR-21 (L2/FEAT-BUG-004 cold-start fix): resolve build() BEFORE
+    // evaluating the guards below. Without this, a cold-start invocation
+    // racing ahead of the first build() (state still AsyncLoading,
+    // valueOrNull == null) sees neither guard match — null is not
+    // BackupRunning, null is not BackupNotConnected — so both guards are
+    // vacuous and execution falls through into the write-recency check
+    // using data read directly off the repository, bypassing whatever
+    // build() would have derived. Concretely this let backupSilent() run
+    // (and, per FR-06, misattribute a backupSkipped entry to the dropbox
+    // sentinel) right after an iCloud disconnect, before the very first
+    // build() had resolved BackupNotConnected. Awaiting `future` blocks
+    // until build() completes, making the guards non-vacuous.
+    await future;
     if (state.valueOrNull is BackupRunning) return;
     // Not configured: no account is connected, so there is nowhere to back up.
     // Without this guard, a passphrase left in secure storage after Dropbox
@@ -588,6 +601,10 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
   ///   4. null passphrase → silent return
   ///   5. → _runBackup()
   Future<void> backupNow() async {
+    // FR-21 (L2/FEAT-BUG-004 cold-start fix): resolve build() BEFORE
+    // evaluating the guards below — same rationale as backupSilent() above.
+    await future;
+
     // Guard 1: already running.
     if (state.valueOrNull is BackupRunning) return;
 
