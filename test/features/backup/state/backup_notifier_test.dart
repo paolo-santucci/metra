@@ -9,6 +9,7 @@ import 'dart:io';
 import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/errors/metra_exception.dart';
 import 'package:metra/core/utils/result.dart';
@@ -226,6 +227,159 @@ class _BlockingAuthGoogleDriveProvider implements CloudBackupProvider {
   Future<void> deleteFile(String filename) async {}
 }
 
+// ---------------------------------------------------------------------------
+// TASK-01 — Group A ordering-spy infrastructure (BUG-B06 wipe restoration).
+//
+// These three spies share a single `events` list so a whole-flow test can
+// assert the exact cross-object call order: authorize -> currentEmail ->
+// listFiles -> updateBackupState -> clearBackupSuspended -> secureStorage
+// .delete(kPassphraseKey) (HC-2: the wipe must be strictly last).
+// ---------------------------------------------------------------------------
+
+/// Ordering-spy [CloudBackupProvider] — records each handshake step into the
+/// shared [events] list.
+class _OrderedSpyProvider implements CloudBackupProvider {
+  _OrderedSpyProvider(this.events);
+
+  final List<String> events;
+  String? currentEmailResult = 'user@example.com';
+  bool authorizeThrows = false;
+  bool listFilesThrows = false;
+
+  @override
+  SyncProvider get id => SyncProvider.dropbox;
+
+  @override
+  Future<void> authorize() async {
+    events.add('authorize');
+    if (authorizeThrows) {
+      throw const SyncException('auth failed');
+    }
+  }
+
+  @override
+  Future<String?> currentEmail() async {
+    events.add('currentEmail');
+    return currentEmailResult;
+  }
+
+  @override
+  Future<void> disconnect() async {
+    events.add('disconnect');
+  }
+
+  @override
+  Future<void> upload(Uint8List blob, String filename) async {}
+
+  @override
+  Future<Uint8List> download(String filename) async => Uint8List(0);
+
+  @override
+  Future<List<BackupFileEntry>> listFiles() async {
+    events.add('listFiles');
+    if (listFilesThrows) {
+      throw Exception('list failed');
+    }
+    return [];
+  }
+
+  @override
+  Future<void> deleteFile(String filename) async {}
+}
+
+/// Ordering-spy [FakeAppSettingsRepository] — records [updateBackupState] and
+/// [clearBackupSuspended] into the shared [events] list before delegating to
+/// the real fake implementation.
+class _OrderedSpySettingsRepo extends FakeAppSettingsRepository {
+  _OrderedSpySettingsRepo(this.events);
+
+  final List<String> events;
+
+  @override
+  Future<void> updateBackupState({
+    required String? dropboxEmail,
+    required DateTime? lastBackupAt,
+  }) async {
+    events.add('updateBackupState');
+    await super.updateBackupState(
+      dropboxEmail: dropboxEmail,
+      lastBackupAt: lastBackupAt,
+    );
+  }
+
+  @override
+  Future<void> clearBackupSuspended() async {
+    events.add('clearBackupSuspended');
+    await super.clearBackupSuspended();
+  }
+}
+
+/// Ordering-spy [InMemorySecureStorage] — records [delete] calls into the
+/// shared [events] list before delegating to the real fake implementation.
+class _OrderedSpyStorage extends InMemorySecureStorage {
+  _OrderedSpyStorage(this.events);
+
+  final List<String> events;
+
+  @override
+  Future<void> delete({
+    required String key,
+    IOSOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    MacOsOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    events.add('secureStorage.delete:$key');
+    await super.delete(key: key);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// TASK-06 — blocking-secure-storage spy (unified _inFlightOperation guard).
+//
+// [firstConnect] and [disconnect] both end with a terminal
+// `storage.delete(key: _passphraseKey)` call BEFORE `ref.invalidateSelf()`.
+// By the time that delete() runs, every Drift write the handshake performs
+// has already landed — so without the guard, a mid-operation rebuild
+// (triggered by the real Drift stream re-emitting) would derive the FINAL
+// post-operation state early. Blocking here, with a real
+// [DriftAppSettingsRepository], creates a deterministic window to prove
+// build() still reports [BackupRunning] for the actual in-flight operation
+// instead of racing ahead to [BackupConnected] / [BackupNotConnected].
+// ---------------------------------------------------------------------------
+class _BlockingDeleteSecureStorage extends InMemorySecureStorage {
+  _BlockingDeleteSecureStorage(this.release);
+
+  final Completer<void> release;
+
+  @override
+  Future<void> delete({
+    required String key,
+    IOSOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    MacOsOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    await release.future;
+    await super.delete(key: key);
+  }
+}
+
+/// Pumps the microtask/event queue [times] rounds so a real Drift stream
+/// emission (and the downstream Riverpod rebuild it triggers) has a chance
+/// to propagate before the test inspects notifier state. Safe to over-pump:
+/// the caller keeps the notifier's async op blocked on a [Completer] for the
+/// duration, so there is no risk of racing the operation's own completion.
+Future<void> _pumpMicrotasks([int times = 10]) async {
+  for (var i = 0; i < times; i++) {
+    await Future<void>.delayed(Duration.zero);
+  }
+}
+
 void main() {
   late FakeAppSettingsRepository settingsRepo;
   late InMemorySecureStorage storage;
@@ -249,6 +403,10 @@ void main() {
         backupDataProvider.overrideWith((_) async => BackupData(runner)),
         restoreDataProvider.overrideWith((_) async => RestoreData(runner)),
         cloudBackupProvider.overrideWithValue(fakeDropbox),
+        // TASK-01: firstConnect/switchProvider resolve via resolveBackupProvider
+        // (CC-2), never cloudBackupProvider — so the family override must also
+        // route to fakeDropbox for tests that call firstConnect(dropbox).
+        resolveBackupProvider.overrideWith((ref, id) => fakeDropbox),
         syncLogRepositoryProvider.overrideWith((_) async => fakeSyncLogRepo),
       ],
     );
@@ -486,28 +644,32 @@ void main() {
     expect(storage.values.containsKey('metra_backup_passphrase_v1'), isFalse);
   });
 
-  group('BackupNotifier.connect — existing backup check', () {
-    test('connect() — empty Dropbox → BackupConnected(lastBackupAt: null)',
+  group('BackupNotifier.firstConnect — existing backup check', () {
+    test('firstConnect() — empty Dropbox → BackupConnected(lastBackupAt: null)',
         () async {
       // fakeDropbox.currentEmailResult = 'user@example.com' (default)
       // fakeDropbox.files is empty (default)
       final container = makeContainer();
       addTearDown(container.dispose);
       await container.read(backupNotifierProvider.future);
-      await container.read(backupNotifierProvider.notifier).connect();
+      await container
+          .read(backupNotifierProvider.notifier)
+          .firstConnect(SyncProvider.dropbox);
       final s = await container.read(backupNotifierProvider.future);
       expect(s, isA<BackupConnected>());
       expect((s as BackupConnected).lastBackupAt, isNull);
       expect(s.email, equals('user@example.com'));
     });
 
-    test('connect() — one backup file → BackupConnected(lastBackupAt set)',
+    test('firstConnect() — one backup file → BackupConnected(lastBackupAt set)',
         () async {
       fakeDropbox.files['metra_backup_20260429T100000Z.enc'] = Uint8List(0);
       final container = makeContainer();
       addTearDown(container.dispose);
       await container.read(backupNotifierProvider.future);
-      await container.read(backupNotifierProvider.notifier).connect();
+      await container
+          .read(backupNotifierProvider.notifier)
+          .firstConnect(SyncProvider.dropbox);
       final s = await container.read(backupNotifierProvider.future);
       expect(s, isA<BackupConnected>());
       expect(
@@ -516,14 +678,16 @@ void main() {
       );
     });
 
-    test('connect() — multiple files → lastBackupAt = newest', () async {
+    test('firstConnect() — multiple files → lastBackupAt = newest', () async {
       // FakeDropboxProvider.listFiles() sorts desc, so newest is first.
       fakeDropbox.files['metra_backup_20260429T100000Z.enc'] = Uint8List(0);
       fakeDropbox.files['metra_backup_20260101T000000Z.enc'] = Uint8List(0);
       final container = makeContainer();
       addTearDown(container.dispose);
       await container.read(backupNotifierProvider.future);
-      await container.read(backupNotifierProvider.notifier).connect();
+      await container
+          .read(backupNotifierProvider.notifier)
+          .firstConnect(SyncProvider.dropbox);
       final s = await container.read(backupNotifierProvider.future);
       expect(s, isA<BackupConnected>());
       expect(
@@ -532,27 +696,347 @@ void main() {
       );
     });
 
-    test('connect() — listFiles throws → connect succeeds, lastBackupAt: null',
-        () async {
+    test(
+        'firstConnect() — listFiles throws → firstConnect succeeds, '
+        'lastBackupAt: null', () async {
       fakeDropbox.failNextList = true;
       final container = makeContainer();
       addTearDown(container.dispose);
       await container.read(backupNotifierProvider.future);
-      await container.read(backupNotifierProvider.notifier).connect();
+      await container
+          .read(backupNotifierProvider.notifier)
+          .firstConnect(SyncProvider.dropbox);
       final s = await container.read(backupNotifierProvider.future);
       expect(s, isA<BackupConnected>());
       expect((s as BackupConnected).lastBackupAt, isNull);
     });
 
-    test('connect() — currentEmail returns null → BackupErrorState', () async {
+    test('firstConnect() — currentEmail returns null → BackupErrorState',
+        () async {
       fakeDropbox.currentEmailResult = null;
       final container = makeContainer();
       addTearDown(container.dispose);
       await container.read(backupNotifierProvider.future);
-      await container.read(backupNotifierProvider.notifier).connect();
+      await container
+          .read(backupNotifierProvider.notifier)
+          .firstConnect(SyncProvider.dropbox);
       final s = container.read(backupNotifierProvider).valueOrNull;
       expect(s, isA<BackupErrorState>());
     });
+  });
+
+  // -----------------------------------------------------------------------
+  // TASK-01 — Group A: BUG-B06 first-connect wipe + shared handshake
+  // (spec §7.1 Group A / §7.2 Scenario A/B).
+  //
+  // This is the CRITICAL-regression coverage the whole SP exists to restore:
+  // the M4 rewire routed the empty-view first-connect CTA through
+  // switchProvider (which never touches kPassphraseKey), leaving the BUG-B06
+  // stale-passphrase wipe in a dead connect() with zero callers and no test
+  // coverage. These tests are net-new and were confirmed RED against the
+  // pre-fix source (switchProvider-only CTA, no firstConnect method).
+  // -----------------------------------------------------------------------
+  group('TASK-01 Group A — firstConnect BUG-B06 wipe + handshake ordering', () {
+    ProviderContainer makeOrderedContainer({
+      required List<String> events,
+      required _OrderedSpyProvider provider,
+      required _OrderedSpySettingsRepo repo,
+      required _OrderedSpyStorage storage,
+    }) {
+      return ProviderContainer(
+        overrides: [
+          appSettingsRepositoryProvider.overrideWith((_) async => repo),
+          secureStorageProvider.overrideWithValue(storage),
+          backupDataProvider.overrideWith((_) async => BackupData(runner)),
+          restoreDataProvider.overrideWith((_) async => RestoreData(runner)),
+          // CC-2: firstConnect must resolve via resolveBackupProvider, never
+          // cloudBackupProvider. Pin cloudBackupProvider to a DIFFERENT spy
+          // instance so a stale read would be caught by A6 below.
+          cloudBackupProvider.overrideWithValue(FakeDropboxProvider()),
+          resolveBackupProvider.overrideWith((ref, id) => provider),
+          syncLogRepositoryProvider.overrideWith((_) async => fakeSyncLogRepo),
+        ],
+      );
+    }
+
+    // ── A1 (EC-01): happy path — full ordering + wipe + invalidateSelf ──────
+    test(
+      'A1 EC-01 happy path: never-connected device — handshake runs in '
+      'order [authorize, currentEmail, listFiles, updateBackupState, '
+      'clearBackupSuspended] then deletes kPassphraseKey; final state == '
+      'BackupConnected(passphraseSet: false)',
+      () async {
+        final events = <String>[];
+        final provider = _OrderedSpyProvider(events);
+        final repo = _OrderedSpySettingsRepo(events);
+        final orderedStorage = _OrderedSpyStorage(events);
+        // No kPassphraseKey seeded — never-connected device.
+
+        final container = makeOrderedContainer(
+          events: events,
+          provider: provider,
+          repo: repo,
+          storage: orderedStorage,
+        );
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        await container
+            .read(backupNotifierProvider.notifier)
+            .firstConnect(SyncProvider.dropbox);
+
+        expect(
+          events,
+          [
+            'authorize',
+            'currentEmail',
+            'listFiles',
+            'updateBackupState',
+            'clearBackupSuspended',
+            'secureStorage.delete:${BackupNotifier.kPassphraseKey}',
+          ],
+          reason: 'EC-01: firstConnect must run the handshake in exact order '
+              'then wipe kPassphraseKey as the terminal secure-storage op',
+        );
+        expect(
+          orderedStorage.values.containsKey(BackupNotifier.kPassphraseKey),
+          isFalse,
+          reason: 'kPassphraseKey must be absent after firstConnect',
+        );
+
+        final s = await container.read(backupNotifierProvider.future);
+        expect(s, isA<BackupConnected>());
+        expect(
+          (s as BackupConnected).passphraseSet,
+          isFalse,
+          reason: 'no passphrase written yet → passphraseSet must be false',
+        );
+      },
+    );
+
+    // ── A2 (EC-02): stale passphrase — delete fires AFTER clearBackupSuspended
+    test(
+      'A2 EC-02 stale-passphrase: pre-seeded kPassphraseKey is absent after '
+      'firstConnect AND the delete is recorded AFTER clearBackupSuspended '
+      '(HC-2 ordering)',
+      () async {
+        final events = <String>[];
+        final provider = _OrderedSpyProvider(events);
+        final repo = _OrderedSpySettingsRepo(events);
+        final orderedStorage = _OrderedSpyStorage(events);
+        orderedStorage.values[BackupNotifier.kPassphraseKey] = 'stale-value';
+
+        final container = makeOrderedContainer(
+          events: events,
+          provider: provider,
+          repo: repo,
+          storage: orderedStorage,
+        );
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        await container
+            .read(backupNotifierProvider.notifier)
+            .firstConnect(SyncProvider.dropbox);
+
+        expect(
+          orderedStorage.values.containsKey(BackupNotifier.kPassphraseKey),
+          isFalse,
+          reason: 'BUG-B06: stale kPassphraseKey must be wiped by firstConnect',
+        );
+        final clearIdx = events.indexOf('clearBackupSuspended');
+        final deleteIdx = events
+            .indexOf('secureStorage.delete:${BackupNotifier.kPassphraseKey}');
+        expect(clearIdx, greaterThanOrEqualTo(0));
+        expect(deleteIdx, greaterThanOrEqualTo(0));
+        expect(
+          deleteIdx,
+          greaterThan(clearIdx),
+          reason: 'HC-2: the passphrase wipe must fire AFTER '
+              'clearBackupSuspended, never before',
+        );
+      },
+    );
+
+    // ── A3: firstConnect failure — authorize() throws ───────────────────────
+    test(
+      'A3 firstConnect failure: authorize() throws → BackupErrorState, '
+      'kPassphraseKey untouched, no Drift write, no invalidateSelf',
+      () async {
+        final events = <String>[];
+        final provider = _OrderedSpyProvider(events)..authorizeThrows = true;
+        final repo = _OrderedSpySettingsRepo(events);
+        final orderedStorage = _OrderedSpyStorage(events);
+        orderedStorage.values[BackupNotifier.kPassphraseKey] = 'must-survive';
+
+        final container = makeOrderedContainer(
+          events: events,
+          provider: provider,
+          repo: repo,
+          storage: orderedStorage,
+        );
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        await container
+            .read(backupNotifierProvider.notifier)
+            .firstConnect(SyncProvider.dropbox);
+
+        expect(
+          container.read(backupNotifierProvider).valueOrNull,
+          isA<BackupErrorState>(),
+        );
+        expect(
+          orderedStorage.values[BackupNotifier.kPassphraseKey],
+          'must-survive',
+          reason: 'authorize() failure must never touch kPassphraseKey',
+        );
+        expect(
+          events,
+          isNot(contains('updateBackupState')),
+          reason: 'authorize() throwing must prevent any Drift write',
+        );
+        expect(
+          events,
+          isNot(contains('clearBackupSuspended')),
+          reason: 'authorize() throwing must prevent any Drift write',
+        );
+        expect(
+          events,
+          isNot(
+            contains('secureStorage.delete:${BackupNotifier.kPassphraseKey}'),
+          ),
+          reason: 'the BUG-B06 wipe must never fire on a failed handshake',
+        );
+      },
+    );
+
+    // ── A4 (EC-03): currentEmail()==null for non-iCloud → SyncException ─────
+    test(
+      'A4 EC-03: currentEmail() returns null for dropbox → BackupErrorState '
+      '("Could not fetch account") before any Drift write',
+      () async {
+        final events = <String>[];
+        final provider = _OrderedSpyProvider(events)..currentEmailResult = null;
+        final repo = _OrderedSpySettingsRepo(events);
+        final orderedStorage = _OrderedSpyStorage(events);
+
+        final container = makeOrderedContainer(
+          events: events,
+          provider: provider,
+          repo: repo,
+          storage: orderedStorage,
+        );
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        await container
+            .read(backupNotifierProvider.notifier)
+            .firstConnect(SyncProvider.dropbox);
+
+        final s = container.read(backupNotifierProvider).valueOrNull;
+        expect(s, isA<BackupErrorState>());
+        expect(
+          (s as BackupErrorState).message,
+          equals('Could not fetch account'),
+        );
+        expect(
+          events,
+          isNot(contains('updateBackupState')),
+          reason: 'EC-03: the null-email guard must throw before any '
+              'Drift write',
+        );
+      },
+    );
+
+    // ── A5 (EC-04): listFiles() throws → best-effort, handshake completes ──
+    test(
+      'A5 EC-04: listFiles() throws → handshake still completes '
+      'updateBackupState + clearBackupSuspended and the wipe still fires '
+      '(best-effort, no rethrow)',
+      () async {
+        final events = <String>[];
+        final provider = _OrderedSpyProvider(events)..listFilesThrows = true;
+        final repo = _OrderedSpySettingsRepo(events);
+        final orderedStorage = _OrderedSpyStorage(events);
+
+        final container = makeOrderedContainer(
+          events: events,
+          provider: provider,
+          repo: repo,
+          storage: orderedStorage,
+        );
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        await container
+            .read(backupNotifierProvider.notifier)
+            .firstConnect(SyncProvider.dropbox);
+
+        expect(
+          container.read(backupNotifierProvider).valueOrNull,
+          isNot(isA<BackupErrorState>()),
+          reason: 'EC-04: a best-effort listFiles() failure must not '
+              'surface as BackupErrorState',
+        );
+        expect(events, contains('updateBackupState'));
+        expect(events, contains('clearBackupSuspended'));
+        expect(
+          events,
+          contains('secureStorage.delete:${BackupNotifier.kPassphraseKey}'),
+          reason: 'the handshake must still complete and firstConnect must '
+              'still perform the BUG-B06 wipe',
+        );
+      },
+    );
+
+    // ── A6 (CC-2): firstConnect resolves via resolveBackupProvider, NEVER
+    //     cloudBackupProvider ───────────────────────────────────────────────
+    test(
+      'A6 CC-2: firstConnect resolves target via resolveBackupProvider, '
+      'not cloudBackupProvider (stale-read hazard)',
+      () async {
+        final events = <String>[];
+        final provider = _OrderedSpyProvider(events);
+        final repo = _OrderedSpySettingsRepo(events);
+        final orderedStorage = _OrderedSpyStorage(events);
+        final staleCloudBackupProvider = FakeDropboxProvider();
+
+        final container = ProviderContainer(
+          overrides: [
+            appSettingsRepositoryProvider.overrideWith((_) async => repo),
+            secureStorageProvider.overrideWithValue(orderedStorage),
+            backupDataProvider.overrideWith((_) async => BackupData(runner)),
+            restoreDataProvider.overrideWith((_) async => RestoreData(runner)),
+            // Deliberately mismatched — if firstConnect used cloudBackupProvider
+            // it would authorize this stale fake instead of the spy.
+            cloudBackupProvider.overrideWithValue(staleCloudBackupProvider),
+            resolveBackupProvider.overrideWith((ref, id) => provider),
+            syncLogRepositoryProvider
+                .overrideWith((_) async => fakeSyncLogRepo),
+          ],
+        );
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        await container
+            .read(backupNotifierProvider.notifier)
+            .firstConnect(SyncProvider.dropbox);
+
+        expect(
+          events,
+          contains('authorize'),
+          reason: 'CC-2: resolveBackupProvider(target) must be authorized',
+        );
+        expect(
+          staleCloudBackupProvider.authorizeCalls,
+          0,
+          reason:
+              'CC-2: cloudBackupProvider must NOT be used by firstConnect — '
+              'the stale fake must never be authorized',
+        );
+      },
+    );
   });
 
   // -----------------------------------------------------------------------
@@ -1327,9 +1811,9 @@ void main() {
   });
 
   // -----------------------------------------------------------------------
-  // FR-17 / BUG-C04 — debugPrint in connect() catch block
+  // FR-17 / BUG-C04 — debugPrint in firstConnect() catch block
   // -----------------------------------------------------------------------
-  group('FR-17 — connect() catch block emits debugPrint', () {
+  group('FR-17 — firstConnect() catch block emits debugPrint', () {
     late List<String> captured;
     late DebugPrintCallback originalDebugPrint;
 
@@ -1360,6 +1844,9 @@ void main() {
             backupDataProvider.overrideWith((_) async => BackupData(runner)),
             restoreDataProvider.overrideWith((_) async => RestoreData(runner)),
             cloudBackupProvider.overrideWithValue(throwing),
+            // firstConnect resolves via resolveBackupProvider (CC-2), not
+            // cloudBackupProvider — route dropbox to the throwing fake too.
+            resolveBackupProvider.overrideWith((ref, id) => throwing),
           ],
         );
         addTearDown(container.dispose);
@@ -1384,12 +1871,14 @@ void main() {
         );
 
         await container.read(backupNotifierProvider.future);
-        await container.read(backupNotifierProvider.notifier).connect();
+        await container
+            .read(backupNotifierProvider.notifier)
+            .firstConnect(SyncProvider.dropbox);
 
         // Verify the debugPrint line was emitted.
         final printLine = captured.firstWhere(
           (l) =>
-              l.contains('[BackupNotifier.connect]') &&
+              l.contains('[BackupNotifier.firstConnect]') &&
               l.contains('SocketException') &&
               l.contains('boom'),
           orElse: () => '',
@@ -1398,7 +1887,7 @@ void main() {
           printLine,
           isNotEmpty,
           reason:
-              'Expected a debugPrint line containing [BackupNotifier.connect], '
+              'Expected a debugPrint line containing [BackupNotifier.firstConnect], '
               'SocketException, and boom',
         );
 
@@ -1437,12 +1926,17 @@ void main() {
             backupDataProvider.overrideWith((_) async => BackupData(runner)),
             restoreDataProvider.overrideWith((_) async => RestoreData(runner)),
             cloudBackupProvider.overrideWithValue(throwing),
+            // firstConnect resolves via resolveBackupProvider (CC-2), not
+            // cloudBackupProvider — route dropbox to the throwing fake too.
+            resolveBackupProvider.overrideWith((ref, id) => throwing),
           ],
         );
         addTearDown(container.dispose);
 
         await container.read(backupNotifierProvider.future);
-        await container.read(backupNotifierProvider.notifier).connect();
+        await container
+            .read(backupNotifierProvider.notifier)
+            .firstConnect(SyncProvider.dropbox);
 
         // Verify user-visible error message uses e.message (not the generic string).
         final s = container.read(backupNotifierProvider).valueOrNull;
@@ -1451,14 +1945,14 @@ void main() {
 
         // Verify debugPrint was still emitted (unconditional, not branched).
         final printLine = captured.firstWhere(
-          (l) => l.contains('[BackupNotifier.connect]'),
+          (l) => l.contains('[BackupNotifier.firstConnect]'),
           orElse: () => '',
         );
         expect(
           printLine,
           isNotEmpty,
           reason:
-              'Expected a debugPrint line containing [BackupNotifier.connect] '
+              'Expected a debugPrint line containing [BackupNotifier.firstConnect] '
               'even for MetraException (SyncException) paths',
         );
       },
@@ -1807,17 +2301,19 @@ void main() {
   });
 
   // -----------------------------------------------------------------------
-  // BUG-B04 — connect() clears backupSuspended before invalidateSelf()
+  // BUG-B04 — firstConnect() clears backupSuspended before invalidateSelf()
   // Verifies that after a wipe (backupSuspended=true), reconnecting via
-  // connect() clears the sentinel so the user is not permanently suspended.
+  // firstConnect() clears the sentinel so the user is not permanently
+  // suspended.
   //
   // Uses a real DriftAppSettingsRepository over an in-memory DB so that
   // the reactive appSettingsStreamProvider emits updated values after
-  // connect() mutates the repo — same pattern as BUG-B01 test.
+  // firstConnect() mutates the repo — same pattern as BUG-B01 test.
   // -----------------------------------------------------------------------
-  group('BUG-B04 — connect() clears backupSuspended before invalidate', () {
+  group('BUG-B04 — firstConnect() clears backupSuspended before invalidate',
+      () {
     test(
-      'connect_clears_backupSuspended_before_invalidate',
+      'firstConnect_clears_backupSuspended_before_invalidate',
       () async {
         // Setup: real DriftAppSettingsRepository over an in-memory Drift DB.
         final db = AppDatabase(NativeDatabase.memory());
@@ -1848,6 +2344,7 @@ void main() {
             restoreDataProvider
                 .overrideWith((_) async => RestoreData(fakeRunner)),
             cloudBackupProvider.overrideWithValue(fakeDrpbx),
+            resolveBackupProvider.overrideWith((ref, id) => fakeDrpbx),
             syncLogRepositoryProvider.overrideWith((_) async => fakeSyncLog),
           ],
         );
@@ -1862,8 +2359,10 @@ void main() {
           reason: 'precondition: no email → BackupNotConnected',
         );
 
-        // Act: connect().
-        await container.read(backupNotifierProvider.notifier).connect();
+        // Act: firstConnect().
+        await container
+            .read(backupNotifierProvider.notifier)
+            .firstConnect(SyncProvider.dropbox);
 
         // Let the Drift stream propagate the email + suspended=false writes.
         await Future<void>.delayed(Duration.zero);
@@ -1874,8 +2373,8 @@ void main() {
         expect(
           settings.backupSuspended,
           isFalse,
-          reason: 'BUG-B04: connect() must call clearBackupSuspended() so the '
-              'user is not stuck in suspended state after reconnecting',
+          reason: 'BUG-B04: firstConnect() must call clearBackupSuspended() so '
+              'the user is not stuck in suspended state after reconnecting',
         );
 
         // Assert 2: final state is BackupConnected(autoBackupActive: false,
@@ -1887,7 +2386,7 @@ void main() {
         expect(
           connected.email,
           equals('a@b.test'),
-          reason: 'email should be set from connect()',
+          reason: 'email should be set from firstConnect()',
         );
         expect(
           connected.autoBackupActive,
@@ -2167,6 +2666,9 @@ void main() {
           backupDataProvider.overrideWith((_) async => BackupData(runner)),
           restoreDataProvider.overrideWith((_) async => RestoreData(runner)),
           cloudBackupProvider.overrideWithValue(iCloudProvider),
+          // firstConnect resolves via resolveBackupProvider (CC-2), not
+          // cloudBackupProvider — route iCloud to the same fake too.
+          resolveBackupProvider.overrideWith((ref, id) => iCloudProvider),
           syncLogRepositoryProvider.overrideWith((_) async => fakeSyncLogRepo),
         ],
       );
@@ -2296,10 +2798,11 @@ void main() {
       },
     );
 
-    // I-07 FR-16: connect() iCloud (currentEmail()==null) stores dropboxEmail:null,
-    //             completes without SyncException
+    // I-07 FR-16: firstConnect() iCloud (currentEmail()==null) stores
+    //             dropboxEmail:null, completes without SyncException
     test(
-      'I-07 FR-16: connect() iCloud stores dropboxEmail:null, NO SyncException',
+      'I-07 FR-16: firstConnect() iCloud stores dropboxEmail:null, '
+      'NO SyncException',
       () async {
         await settingsRepo.setActiveProvider(SyncProvider.iCloud);
         final container = makeIcloudContainer(
@@ -2308,15 +2811,18 @@ void main() {
         addTearDown(container.dispose);
         await container.read(backupNotifierProvider.future);
 
-        // connect() must complete without throwing and must NOT emit BackupErrorState.
-        await container.read(backupNotifierProvider.notifier).connect();
+        // firstConnect() must complete without throwing and must NOT emit
+        // BackupErrorState.
+        await container
+            .read(backupNotifierProvider.notifier)
+            .firstConnect(SyncProvider.iCloud);
 
         // Stored settings must have dropboxEmail = null for iCloud.
         final settings = await settingsRepo.getOrCreate();
         expect(
           settings.dropboxEmail,
           isNull,
-          reason: 'FR-16: iCloud connect() must store dropboxEmail:null '
+          reason: 'FR-16: iCloud firstConnect() must store dropboxEmail:null '
               '(no email available), not throw SyncException',
         );
 
@@ -2325,7 +2831,7 @@ void main() {
         expect(
           s,
           isNot(isA<BackupErrorState>()),
-          reason: 'FR-16: connect() for iCloud must not throw '
+          reason: 'FR-16: firstConnect() for iCloud must not throw '
               'SyncException("Could not fetch account") when email is null',
         );
       },
@@ -2470,12 +2976,12 @@ void main() {
     );
 
     // ── S-02: no notifier routing ────────────────────────────────────────────
-    // Verifies that BackupNotifier.connect() and .disconnect() are not invoked.
-    // Proxy: both notifier-level methods delete the passphrase key.  If the key
-    // is still present after switch, neither was called.
+    // Verifies that BackupNotifier.firstConnect() and .disconnect() are not
+    // invoked. Proxy: both notifier-level methods delete the passphrase key.
+    // If the key is still present after switch, neither was called.
     test(
-      'S-02 no notifier routing: notifier connect()/disconnect() NOT invoked '
-      '— passphrase key survives (both methods delete it)',
+      'S-02 no notifier routing: notifier firstConnect()/disconnect() NOT '
+      'invoked — passphrase key survives (both methods delete it)',
       () async {
         await settingsRepo.updateBackupState(
           dropboxEmail: 'user@dropbox.com',

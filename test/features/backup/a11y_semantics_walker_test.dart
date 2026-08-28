@@ -67,7 +67,7 @@ class _StubBackupNotifier extends BackupNotifier {
   Future<BackupState> build() async => _initial;
 
   @override
-  Future<void> connect() async {}
+  Future<void> firstConnect(SyncProvider target) async {}
 
   @override
   Future<void> backupNow() async {}

@@ -29,6 +29,7 @@ import 'package:metra/data/repositories/drift_cycle_entry_repository.dart';
 import 'package:metra/data/repositories/drift_daily_log_repository.dart';
 import 'package:metra/domain/entities/cycle_entry_entity.dart';
 import 'package:metra/domain/entities/cycle_prediction.dart';
+import 'package:metra/domain/entities/sync_log_entity.dart';
 import 'package:metra/domain/repositories/app_settings_repository.dart';
 import 'package:metra/domain/use_cases/backup_data.dart';
 import 'package:metra/domain/use_cases/restore_data.dart';
@@ -129,6 +130,9 @@ void main() {
           restoreDataProvider
               .overrideWith((_) async => RestoreData(backupRunner)),
           cloudBackupProvider.overrideWithValue(fakeDropbox),
+          // firstConnect resolves via resolveBackupProvider (CC-2), not
+          // cloudBackupProvider — route dropbox to the same fake too.
+          resolveBackupProvider.overrideWith((ref, id) => fakeDropbox),
           syncLogRepositoryProvider.overrideWith((_) async => fakeSyncLog),
         ],
       );
@@ -193,10 +197,12 @@ void main() {
             '→ autoBackupActive=false without a manual invalidateSelf()',
       );
 
-      // ── Act 3: reconnect via connect() ───────────────────────────────────
-      await container.read(backupNotifierProvider.notifier).connect();
+      // ── Act 3: reconnect via firstConnect() ───────────────────────────────
+      await container
+          .read(backupNotifierProvider.notifier)
+          .firstConnect(SyncProvider.dropbox);
 
-      // Pump to let the Drift stream propagate after connect() writes.
+      // Pump to let the Drift stream propagate after firstConnect() writes.
       await Future<void>.delayed(Duration.zero);
       await Future<void>.delayed(Duration.zero);
 
@@ -205,9 +211,8 @@ void main() {
       expect(
         settingsAfterConnect.backupSuspended,
         isFalse,
-        reason:
-            'BUG-B04: connect() must call clearBackupSuspended() so user is not '
-            'permanently stuck in suspended state after reconnect',
+        reason: 'BUG-B04: firstConnect() must call clearBackupSuspended() so '
+            'user is not permanently stuck in suspended state after reconnect',
       );
 
       // Assert 3b: state is BackupConnected with no passphrase yet
@@ -217,7 +222,7 @@ void main() {
       expect(
         s3c.email,
         equals('a@b.test'),
-        reason: 'email must be set from connect()',
+        reason: 'email must be set from firstConnect()',
       );
       expect(
         s3c.passphraseSet,
@@ -259,8 +264,8 @@ void main() {
       expect(
         s4c.autoBackupActive,
         isTrue,
-        reason: 'BUG-B02: sentinel cleared by connect() + passphrase now set '
-            '→ autoBackupActive=true',
+        reason: 'BUG-B02: sentinel cleared by firstConnect() + passphrase '
+            'now set → autoBackupActive=true',
       );
       expect(
         s4c.lastBackupAt,

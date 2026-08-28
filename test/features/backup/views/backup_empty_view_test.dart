@@ -2,9 +2,9 @@
 //
 // This file is part of Métra.
 //
-// Métra is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published
-// by the Free Software Foundation, either version 3 of the License,
+// Métra is free software: you can redistribute it or/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License,
 // or (at your option) any later version.
 //
 // Métra is distributed in the hope that it will be useful,
@@ -21,7 +21,7 @@
 //   1. Widget structure: heading, body, CTA present; cloud icon 64×64;
 //      body capped at 240dp; CTA anchored 24dp from bottom safe-area.
 //   2. CTA tap → BackupProviderPickerSheet opens (FR-07, TASK-07).
-//      Full wiring assertions (switchProvider, cancel/confirm, EC-01/02/10)
+//      Full wiring assertions (firstConnect, cancel/confirm, EC-01/02/10)
 //      live in test/features/backup/backup_empty_view_test.dart.
 //   3. HC-2 gate: CTA disabled during BackupRunning(connecting).
 
@@ -38,20 +38,20 @@ import 'package:metra/l10n/app_localizations.dart';
 // Fake notifier helpers
 // ---------------------------------------------------------------------------
 
-/// Records how many times [connect] was called.
+/// Records how many times [firstConnect] was called.
 class _FakeBackupNotifier extends AsyncNotifier<BackupState>
     implements BackupNotifier {
   _FakeBackupNotifier(this._initialState);
 
   final BackupState _initialState;
-  int connectCalls = 0;
+  int firstConnectCalls = 0;
 
   @override
   Future<BackupState> build() async => _initialState;
 
   @override
-  Future<void> connect() async {
-    connectCalls++;
+  Future<void> firstConnect(SyncProvider target) async {
+    firstConnectCalls++;
   }
 
   // All other BackupNotifier methods are not exercised in these tests.
@@ -142,7 +142,7 @@ void main() {
   // ── 2. CTA tap → provider picker opens (TASK-07 / FR-07) ───────────────────
   //
   // After TASK-07 the CTA no longer calls connect() directly; it opens the
-  // BackupProviderPickerSheet. Full wiring assertions (switchProvider calls,
+  // BackupProviderPickerSheet. Full wiring assertions (firstConnect calls,
   // cancel / confirm paths, EC-01, EC-02, EC-10) live in:
   //   test/features/backup/backup_empty_view_test.dart
 
@@ -163,16 +163,17 @@ void main() {
       await tester.tap(find.byKey(const Key('backup_empty_cta')));
       await tester.pumpAndSettle();
 
-      // The picker sheet must be open; connect() must never be called (TASK-07).
+      // The picker sheet must be open; firstConnect() must not fire until
+      // the user confirms a provider (TASK-07).
       expect(
         find.byKey(const Key('sheetRoot')),
         findsOneWidget,
         reason: 'Provider picker must open after CTA tap (FR-07)',
       );
       expect(
-        fake.connectCalls,
+        fake.firstConnectCalls,
         0,
-        reason: 'connect() must NOT be called — CTA now routes through picker',
+        reason: 'firstConnect() must NOT fire before the picker is confirmed',
       );
     },
   );
@@ -205,11 +206,12 @@ void main() {
   // ── 4. HC-2 concurrency guard (EC-05): tap with pre-seeded BackupRunning ──
 
   testWidgets(
-    'BackupEmptyView: tap CTA with pre-seeded BackupRunning does NOT call connect()',
+    'BackupEmptyView: tap CTA with pre-seeded BackupRunning does NOT call '
+    'firstConnect()',
     (tester) async {
       // Stub is pre-seeded to BackupRunning(connecting) before any tap.
       // The HC-2 view-side gate (onPressed == null) must fire before the notifier
-      // is ever reached — so connectCalls must remain 0.
+      // is ever reached — so firstConnectCalls must remain 0.
       final fake =
           _FakeBackupNotifier(const BackupRunning(BackupOperation.connecting));
       await tester.pumpWidget(_harness(fake));
@@ -223,10 +225,10 @@ void main() {
       await tester.pump();
 
       expect(
-        fake.connectCalls,
+        fake.firstConnectCalls,
         0,
-        reason:
-            'connect() must NOT be called when the CTA tap-gate fires (HC-2, EC-05)',
+        reason: 'firstConnect() must NOT be called when the CTA tap-gate '
+            'fires (HC-2, EC-05)',
       );
     },
   );

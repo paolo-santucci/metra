@@ -30,9 +30,16 @@
 // Rewires the CTA to open BackupProviderPickerSheet (FR-07 / EC-01 / EC-02 / EC-10).
 //   (1) Open BackupProviderPickerSheet → picker returns SyncProvider? or null.
 //   (2) null → no-op (EC-01: user cancelled).
-//   (3) Non-null → await notifier.switchProvider(picked). No MetraConfirmDialog
-//       because this is a first connect — the forget step is an idempotent
-//       no-op on a never-connected state (EC-02).
+//   (3) Non-null → await notifier.firstConnect(picked). No MetraConfirmDialog
+//       because this is a first connect — there is no previous provider to
+//       forget; firstConnect never calls disconnect() (EC-02).
+//
+// TASK-01 (defect-1 fix) — CTA now calls firstConnect(picked) instead of
+// switchProvider(picked). switchProvider is contractually passphrase-free
+// (FR-13); routing the empty-view first-connect flow through it silently
+// dropped the BUG-B06 stale-passphrase wipe. firstConnect runs the same
+// authorize/currentEmail/listFiles/updateBackupState/clearBackupSuspended
+// handshake, then performs the wipe as its terminal secure-storage op.
 //
 // Follows the handleRestore discipline from backup_connected_view_handlers.dart:
 //   • notifier reference captured before first await.
@@ -66,11 +73,11 @@ class _BackupEmptyViewState extends ConsumerState<BackupEmptyView> {
   // ---------------------------------------------------------------------------
 
   /// Opens the provider picker and, if the user confirms, calls
-  /// [BackupNotifier.switchProvider] with the selected provider.
+  /// [BackupNotifier.firstConnect] with the selected provider.
   ///
   /// No [MetraConfirmDialog] is shown: this is a first-connect flow where
-  /// there is nothing to lose (EC-02). The forget step inside [switchProvider]
-  /// is an idempotent no-op when no provider has ever been connected.
+  /// there is nothing to lose (EC-02) — there is no previous provider to
+  /// forget, and [firstConnect] never calls disconnect().
   ///
   /// Caller must ensure the CTA is not tapped while [isRunning] (EC-10);
   /// the [onPressed:null] gate in [build] enforces this.
@@ -87,8 +94,8 @@ class _BackupEmptyViewState extends ConsumerState<BackupEmptyView> {
     if (picked == null) return; // user cancelled — EC-01
     if (!mounted) return; // mounted-guard after first await
 
-    // Step 2: switch to the chosen provider — no confirm dialog (EC-02).
-    await notifier.switchProvider(picked);
+    // Step 2: first-connect to the chosen provider — no confirm dialog (EC-02).
+    await notifier.firstConnect(picked);
     if (!mounted) return; // mounted-guard after second await
   }
 

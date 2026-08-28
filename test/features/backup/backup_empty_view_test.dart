@@ -18,10 +18,15 @@
 
 // TASK-07 (M4) — BackupEmptyView widget tests.
 //
+// TASK-01 (defect-1 fix): the CTA now calls firstConnect(picked) instead of
+// switchProvider(picked) — restores the BUG-B06 stale-passphrase wipe that
+// was silently dropped when the M4 rewire routed first-connect through the
+// passphrase-free switchProvider (spec §4.3 defect 1, Scenario A1).
+//
 // TDD contract (write failing, confirm red, then implement):
-//   handleConnectViaPicker happy: picker→googleDrive → notifier.switchProvider(googleDrive)
-//              called once; NO MetraConfirmDialog shown (EC-02).
-//   cancel: picker→null → switchProvider NOT called; view unchanged (EC-01).
+//   handleConnectViaPicker happy: picker→googleDrive → notifier.firstConnect(googleDrive)
+//              called once, switchProvider called zero times; NO MetraConfirmDialog (EC-02).
+//   cancel: picker→null → firstConnect NOT called; view unchanged (EC-01).
 //   CTA enabled (isRunning==false): onPressed non-null; tap opens picker (FR-07).
 //   CTA disabled (isRunning==true): onPressed==null; tapping region does NOT open picker (EC-10).
 //
@@ -51,18 +56,32 @@ import 'package:metra/l10n/app_localizations.dart';
 // Spy notifier
 // ---------------------------------------------------------------------------
 
-/// Spy [BackupNotifier] that records [switchProvider] call arguments and
-/// returns [_initial] from [build()] without touching any real provider.
+/// Spy [BackupNotifier] that records [firstConnect] and [switchProvider]
+/// call arguments and returns [_initial] from [build()] without touching
+/// any real provider.
+///
+/// Tracks BOTH methods so Scenario A1 (TASK-01) can assert firstConnect is
+/// called exactly once AND switchProvider is called zero times — proving
+/// the CTA no longer routes first-connect through the passphrase-free
+/// switch path (the CRITICAL regression this SP restores).
 class _SpyBackupNotifier extends BackupNotifier {
   _SpyBackupNotifier(this._initial);
 
   final BackupState _initial;
+
+  /// Arguments passed to [firstConnect], in call order.
+  final List<SyncProvider> firstConnectCalls = [];
 
   /// Arguments passed to [switchProvider], in call order.
   final List<SyncProvider> switchProviderCalls = [];
 
   @override
   Future<BackupState> build() async => _initial;
+
+  @override
+  Future<void> firstConnect(SyncProvider target) async {
+    firstConnectCalls.add(target);
+  }
 
   @override
   Future<void> switchProvider(SyncProvider target) async {
@@ -106,8 +125,9 @@ void main() {
     // ── Happy path ───────────────────────────────────────────────────────────
 
     testWidgets(
-      'happy_path: picker confirmed with default selection → '
-      'switchProvider(dropbox) called once; NO MetraConfirmDialog (EC-02)',
+      'happy_path (Scenario A1): picker confirmed with default selection → '
+      'firstConnect(dropbox) called once, switchProvider called zero times; '
+      'NO MetraConfirmDialog (EC-02)',
       (tester) async {
         tester.view.physicalSize = const Size(800, 4000);
         tester.view.devicePixelRatio = 1.0;
@@ -136,24 +156,33 @@ void main() {
         );
 
         // Confirm with default selection (Dropbox, initialIndex=0).
-        // The wiring-under-test is: picked provider → switchProvider(picked).
+        // The wiring-under-test is: picked provider → firstConnect(picked).
         // The picker's own scroll behaviour (selecting googleDrive/iCloud) is
         // covered by backup_provider_picker_sheet_test.dart.
         await tester.tap(find.byKey(const Key('confirm')));
         await tester.pumpAndSettle();
 
-        // switchProvider must have been called exactly once with the selected
-        // provider (Dropbox, index 0 by default).
+        // firstConnect must have been called exactly once with the selected
+        // provider (Dropbox, index 0 by default); switchProvider must never
+        // be called from the empty-view CTA (TASK-01 defect-1 fix).
         expect(
-          spy.switchProviderCalls,
+          spy.firstConnectCalls,
           hasLength(1),
-          reason: 'switchProvider must be called exactly once — FR-07',
+          reason:
+              'firstConnect must be called exactly once — FR-07/Scenario A1',
         );
         expect(
-          spy.switchProviderCalls.first,
+          spy.firstConnectCalls.first,
           SyncProvider.dropbox,
           reason:
-              'switchProvider must receive the provider selected in the picker',
+              'firstConnect must receive the provider selected in the picker',
+        );
+        expect(
+          spy.switchProviderCalls,
+          isEmpty,
+          reason: 'switchProvider must NEVER be called by the empty-view '
+              'CTA — routing first-connect through it drops the BUG-B06 '
+              'wipe (the CRITICAL regression this SP restores)',
         );
 
         // No MetraConfirmDialog at any point in the flow (EC-02: first connect,
@@ -169,7 +198,7 @@ void main() {
     // ── Cancel ───────────────────────────────────────────────────────────────
 
     testWidgets(
-      'cancel: picker Annulla → switchProvider NOT called; view unchanged (EC-01)',
+      'cancel: picker Annulla → firstConnect NOT called; view unchanged (EC-01)',
       (tester) async {
         tester.view.physicalSize = const Size(800, 4000);
         tester.view.devicePixelRatio = 1.0;
@@ -191,10 +220,10 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(
-          spy.switchProviderCalls,
+          spy.firstConnectCalls,
           isEmpty,
           reason:
-              'switchProvider must NOT be called when picker is cancelled — EC-01',
+              'firstConnect must NOT be called when picker is cancelled — EC-01',
         );
 
         // View is still showing the empty state.
@@ -285,10 +314,10 @@ void main() {
           reason: 'Picker must NOT open when CTA is disabled — EC-10',
         );
         expect(
-          spy.switchProviderCalls,
+          spy.firstConnectCalls,
           isEmpty,
           reason:
-              'switchProvider must NOT be called when CTA is disabled — EC-10',
+              'firstConnect must NOT be called when CTA is disabled — EC-10',
         );
       },
     );

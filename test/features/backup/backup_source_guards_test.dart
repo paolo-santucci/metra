@@ -334,6 +334,170 @@ void main() {
     );
   });
 
+  // ── Group N: firstConnect / _completeProviderHandshake span exclusion ───
+  //
+  // TASK-01 (defect-1 fix, spec §7.1 Group N / OQ-QA-01 extension): the new
+  // firstConnect (BUG-B06 wipe) and _completeProviderHandshake (shared
+  // authorize->currentEmail->listFiles->updateBackupState->clearBackupSuspended
+  // sequence) methods must be defined OUTSIDE the switchProvider->
+  // backupWithPassphrase marker span so G-02/G-04 keep asserting the correct
+  // body. This group also re-confirms both span markers are present exactly
+  // once, that the helper body stays passphrase-free (same invariant as
+  // switchProvider's body), that firstConnect's body DOES reference the
+  // passphrase-key delete (positive control — proves the extraction points
+  // are meaningful, not just "the string never appears anywhere"), and that
+  // the dead connect() method (zero callers, FR-04) is fully removed.
+
+  group(
+      'Group N — firstConnect/_completeProviderHandshake span exclusion '
+      '(TASK-01)', () {
+    const notifierPath = 'lib/features/backup/state/backup_notifier.dart';
+    const switchMarker = 'Future<void> switchProvider(';
+    const backupWithPassphraseMarker = 'Future<void> backupWithPassphrase(';
+    const firstConnectMarker = 'Future<void> firstConnect(';
+    const handshakeMarker = 'Future<void> _completeProviderHandshake(';
+
+    late String source;
+
+    setUp(() async {
+      source = await _readSource(notifierPath);
+    });
+
+    test(
+      'switchProvider and backupWithPassphrase markers are each present '
+      'exactly once',
+      () {
+        expect(
+          switchMarker.allMatches(source).length,
+          1,
+          reason: 'the switchProvider marker must remain present exactly '
+              'once — G-02/G-04 depend on a unique span boundary',
+        );
+        expect(
+          backupWithPassphraseMarker.allMatches(source).length,
+          1,
+          reason: 'the backupWithPassphrase marker must remain present '
+              'exactly once — G-02/G-04 depend on a unique span boundary',
+        );
+      },
+    );
+
+    test(
+      'firstConnect marker lies OUTSIDE the switchProvider->'
+      'backupWithPassphrase span',
+      () {
+        final switchIdx = source.indexOf(switchMarker);
+        final backupWithPassphraseIdx =
+            source.indexOf(backupWithPassphraseMarker);
+        final firstConnectIdx = source.indexOf(firstConnectMarker);
+        expect(
+          firstConnectIdx,
+          greaterThanOrEqualTo(0),
+          reason: 'firstConnect must be defined in backup_notifier.dart',
+        );
+        expect(
+          firstConnectIdx < switchIdx ||
+              firstConnectIdx > backupWithPassphraseIdx,
+          isTrue,
+          reason: 'firstConnect must be defined outside the switchProvider->'
+              'backupWithPassphrase marker span (G-02/G-04)',
+        );
+      },
+    );
+
+    test(
+      '_completeProviderHandshake marker lies OUTSIDE the switchProvider->'
+      'backupWithPassphrase span',
+      () {
+        final switchIdx = source.indexOf(switchMarker);
+        final backupWithPassphraseIdx =
+            source.indexOf(backupWithPassphraseMarker);
+        final handshakeIdx = source.indexOf(handshakeMarker);
+        expect(
+          handshakeIdx,
+          greaterThanOrEqualTo(0),
+          reason: '_completeProviderHandshake must be defined in '
+              'backup_notifier.dart',
+        );
+        expect(
+          handshakeIdx < switchIdx || handshakeIdx > backupWithPassphraseIdx,
+          isTrue,
+          reason: '_completeProviderHandshake must be defined outside the '
+              'switchProvider->backupWithPassphrase marker span (G-02/G-04)',
+        );
+      },
+    );
+
+    test(
+      '_completeProviderHandshake body contains no passphrase-key '
+      'identifier (same invariant as switchProvider body)',
+      () {
+        final handshakeBody = _extractBetween(
+          source,
+          handshakeMarker,
+          firstConnectMarker,
+        );
+        expect(
+          handshakeBody,
+          isNotEmpty,
+          reason: 'test sanity: handshake body must be non-empty',
+        );
+        for (final identifier in [
+          'kPassphraseKey',
+          '_passphraseKey',
+          'kBackupPassphraseKey',
+          'metra_backup_passphrase_v1',
+        ]) {
+          expect(
+            handshakeBody,
+            isNot(contains(identifier)),
+            reason: '_completeProviderHandshake must not reference '
+                '"$identifier" — the helper is passphrase-free (FR-01/CC-1)',
+          );
+        }
+      },
+    );
+
+    test(
+      'firstConnect body DOES reference the passphrase-key delete '
+      '(positive control — proves the BUG-B06 wipe lives here)',
+      () {
+        final firstConnectBody = _extractBetween(
+          source,
+          firstConnectMarker,
+          'Future<void> disconnect(',
+        );
+        expect(
+          firstConnectBody,
+          isNotEmpty,
+          reason: 'test sanity: firstConnect body must be non-empty',
+        );
+        expect(
+          firstConnectBody.contains('_passphraseKey') ||
+              firstConnectBody.contains('kPassphraseKey'),
+          isTrue,
+          reason: 'firstConnect must reference the passphrase key — this is '
+              'the BUG-B06 wipe restoration this whole SP exists for',
+        );
+        expect(
+          firstConnectBody,
+          contains('storage.delete'),
+          reason: 'firstConnect must call storage.delete(...) as its '
+              'terminal secure-storage op (BUG-B06)',
+        );
+      },
+    );
+
+    test('dead connect() method is fully removed (FR-04)', () {
+      expect(
+        'Future<void> connect('.allMatches(source).length,
+        0,
+        reason: 'FR-04: the dead connect() method (zero callers pre-fix) '
+            'must be removed — firstConnect replaces it',
+      );
+    });
+  });
+
   // ── G-05: No unauthorized data-layer imports in backup widgets / views ────
   //
   // NFR-07: strict UI → Domain → Data layering.  Files in
