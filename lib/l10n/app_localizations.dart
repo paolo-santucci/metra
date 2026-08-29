@@ -1706,6 +1706,18 @@ abstract class AppLocalizations {
   /// **'Connetti'**
   String get backupConnectAction;
 
+  /// Shown by BackupErrorView when the OAuth flow failed because no launchable browser app was found (e.g. Chrome disabled-until-used on Samsung).
+  ///
+  /// In it, this message translates to:
+  /// **'Métra ha bisogno di un browser per connettersi al servizio cloud, ma non è stato trovato alcun browser disponibile. Tocca «Attiva browser» per aprire le impostazioni del browser e attivarlo, poi torna qui e riprova. Se non c\'è alcun browser installato, installane uno dal Play Store prima di riprovare.'**
+  String get backupErrorNoBrowserMessage;
+
+  /// Button label on BackupErrorView that opens the browser app's info screen in system Settings so the user can enable it.
+  ///
+  /// In it, this message translates to:
+  /// **'Attiva browser'**
+  String get backupErrorEnableBrowser;
+
   /// Title of the switch-provider MetraConfirmDialog shown before switching from one connected provider to another
   ///
   /// In it, this message translates to:

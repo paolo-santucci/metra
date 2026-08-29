@@ -65,7 +65,8 @@ class BackupScreen extends ConsumerWidget {
             context,
             operation,
           ),
-        BackupErrorState(:final message) => BackupErrorView(message: message),
+        BackupErrorState(:final message, :final kind) =>
+          BackupErrorView(message: message, kind: kind),
       },
     );
   }

@@ -910,6 +910,13 @@ class AppLocalizationsIt extends AppLocalizations {
   String get backupConnectAction => 'Connetti';
 
   @override
+  String get backupErrorNoBrowserMessage =>
+      'Métra ha bisogno di un browser per connettersi al servizio cloud, ma non è stato trovato alcun browser disponibile. Tocca «Attiva browser» per aprire le impostazioni del browser e attivarlo, poi torna qui e riprova. Se non c\'è alcun browser installato, installane uno dal Play Store prima di riprovare.';
+
+  @override
+  String get backupErrorEnableBrowser => 'Attiva browser';
+
+  @override
   String get backupSwitchConfirmTitle => 'Cambiare provider?';
 
   @override

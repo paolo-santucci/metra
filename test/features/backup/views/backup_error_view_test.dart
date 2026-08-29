@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:metra/core/theme/metra_theme.dart';
@@ -34,12 +35,13 @@ class _StubNotifier extends BackupNotifier {
 
 Widget _wrap({
   required String message,
+  BackupErrorKind kind = BackupErrorKind.generic,
   _StubNotifier? stub,
 }) {
   return ProviderScope(
     overrides: [
       backupNotifierProvider.overrideWith(
-        () => stub ?? _StubNotifier(BackupErrorState(message)),
+        () => stub ?? _StubNotifier(BackupErrorState(message, kind: kind)),
       ),
     ],
     child: MaterialApp(
@@ -47,7 +49,7 @@ Widget _wrap({
       locale: const Locale('en'),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: BackupErrorView(message: message),
+      home: BackupErrorView(message: message, kind: kind),
     ),
   );
 }
@@ -172,6 +174,89 @@ void main() {
 
         // AppBar with backup title (EN locale).
         expect(find.text('Backup'), findsOneWidget);
+      },
+    );
+  });
+
+  group('BackupErrorView — no-browser kind', () {
+    const kBrowserSettingsChannel = 'metra/browser_settings';
+
+    testWidgets(
+      'renders localised no-browser message + "Enable browser" CTA + retry CTA',
+      (tester) async {
+        await tester.pumpWidget(
+          _wrap(message: 'ignored raw', kind: BackupErrorKind.noBrowser),
+        );
+        await tester.pumpAndSettle();
+
+        // The raw message must NOT be shown — the localised one replaces it.
+        expect(find.text('ignored raw'), findsNothing);
+
+        // EN localised no-browser message is rendered.
+        expect(
+          find.textContaining('Métra needs a web browser'),
+          findsOneWidget,
+        );
+
+        // Two CTAs: "Enable browser" (primary) + the generic retry.
+        expect(find.text('Enable browser'), findsOneWidget);
+        expect(
+          find.widgetWithText(
+            ElevatedButton,
+            'Something went wrong. Please try again.',
+          ),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets(
+      '"Enable browser" tap invokes metra/browser_settings openAppDetails '
+      'with com.android.chrome',
+      (tester) async {
+        MethodCall? captured;
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(
+          const MethodChannel(kBrowserSettingsChannel),
+          (call) async {
+            captured = call;
+            return true;
+          },
+        );
+        addTearDown(() {
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+              .setMockMethodCallHandler(
+            const MethodChannel(kBrowserSettingsChannel),
+            null,
+          );
+        });
+
+        await tester.pumpWidget(
+          _wrap(message: 'm', kind: BackupErrorKind.noBrowser),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Enable browser'));
+        await tester.pumpAndSettle();
+
+        expect(captured, isNotNull);
+        expect(captured!.method, 'openAppDetails');
+        expect(captured!.arguments, {
+          'packageName': 'com.android.chrome',
+        });
+      },
+    );
+
+    testWidgets(
+      'generic kind renders the raw message and no "Enable browser" CTA',
+      (tester) async {
+        await tester.pumpWidget(
+          _wrap(message: 'Network error', kind: BackupErrorKind.generic),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Network error'), findsOneWidget);
+        expect(find.text('Enable browser'), findsNothing);
       },
     );
   });

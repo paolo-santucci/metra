@@ -917,6 +917,16 @@
     "description": "Confirm button label on the BackupProviderPickerSheet; initiates connection to the selected provider. Replaces the retired backupConnectDropbox key."
   },
 
+  "backupErrorNoBrowserMessage": "Métra needs a web browser to connect to the cloud service, but no available browser was found. Tap \"Enable browser\" to open your browser's settings and enable it, then come back and try again. If no browser is installed, install one from the Play Store first.",
+  "@backupErrorNoBrowserMessage": {
+    "description": "Shown by BackupErrorView when the OAuth flow failed because no launchable browser app was found (e.g. Chrome disabled-until-used on Samsung)."
+  },
+
+  "backupErrorEnableBrowser": "Enable browser",
+  "@backupErrorEnableBrowser": {
+    "description": "Button label on BackupErrorView that opens the browser app's info screen in system Settings so the user can enable it."
+  },
+
   "backupSwitchConfirmTitle": "Switch provider?",
   "@backupSwitchConfirmTitle": {
     "description": "Title of the switch-provider MetraConfirmDialog shown before switching from one connected provider to another"
