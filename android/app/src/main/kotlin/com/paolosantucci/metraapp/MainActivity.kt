@@ -36,6 +36,12 @@ class MainActivity : FlutterActivity() {
     // user lands directly on the app's notification settings, not the global list.
     private val kNotifSettingsChannel = "metra/notification_settings"
 
+    // Channel for opening another app's info screen in system Settings.
+    // Used by the cloud-backup connect flow to take the user straight to a
+    // browser app's "Enable" page when no browser is in a launchable state
+    // (e.g. Chrome sitting in DISABLED_UNTIL_USED on Samsung devices).
+    private val kBrowserSettingsChannel = "metra/browser_settings"
+
     // Registers the battery-optimisation MethodChannel so Flutter can query
     // PowerManager.isIgnoringBatteryOptimizations and fire the OS settings
     // intent without adding a new native library.
@@ -89,6 +95,25 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+
+        // Registers the browser-settings MethodChannel so the backup connect
+        // flow can open a browser app's info screen (or the full apps list as a
+        // fallback) when OAuth cannot find a launchable browser.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, kBrowserSettingsChannel)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "openAppDetails" -> {
+                        val pkg = call.argument<String>("packageName")
+                        if (pkg == null) {
+                            result.success(false)
+                        } else {
+                            result.success(openAppDetailsSettings(pkg))
+                        }
+                    }
+                    "openAppsSettings" -> result.success(openAllAppsSettings())
+                    else -> result.notImplemented()
+                }
+            }
     }
 
     // Hosting the OAuth intent-filter on MainActivity (singleTop) instead of
@@ -126,6 +151,29 @@ class MainActivity : FlutterActivity() {
             // consumer can't pick the OAuth URL up after super dispatches.
             intent.data = null
             intent.action = null
+        }
+    }
+
+    private fun openAppDetailsSettings(packageName: String): Boolean {
+        return try {
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                .setData(Uri.parse("package:$packageName"))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    private fun openAllAppsSettings(): Boolean {
+        return try {
+            val intent = Intent(Settings.ACTION_APPLICATION_SETTINGS)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+            true
+        } catch (e: Exception) {
+            false
         }
     }
 }
