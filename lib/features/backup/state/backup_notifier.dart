@@ -18,6 +18,7 @@ import '../../../providers/backup_providers.dart';
 import '../../../providers/encryption_provider.dart';
 import '../../../providers/repository_providers.dart';
 import '../../../providers/use_case_providers.dart';
+import 'backup_connect_error.dart';
 import 'backup_state.dart';
 
 class BackupNotifier extends AsyncNotifier<BackupState> {
@@ -142,9 +143,8 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     if (!await _isConnected(settings)) {
       return const BackupNotConnected();
     }
-    final passphrase = await ref
-        .read(secureStorageProvider)
-        .read(key: _passphraseKey);
+    final passphrase =
+        await ref.read(secureStorageProvider).read(key: _passphraseKey);
     final passphraseSet = passphrase != null && passphrase.isNotEmpty;
     final autoBackupActive = !settings.backupSuspended && passphraseSet;
     return BackupConnected(
@@ -271,13 +271,7 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
       ref.invalidateSelf();
     } catch (e) {
       debugPrint('[BackupNotifier.firstConnect] ${e.runtimeType}: $e');
-      state = AsyncData(
-        BackupErrorState(
-          e is MetraException
-              ? e.message
-              : 'Something went wrong. Please try again.',
-        ),
-      );
+      state = AsyncData(backupErrorFromException(e));
     } finally {
       _inFlightOperation = null;
     }
@@ -414,13 +408,7 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
           '[BackupNotifier.switchProvider] abort gate — old.disconnect() '
           'failed: $e; aborting switch, activeProvider unchanged',
         );
-        state = AsyncData(
-          BackupErrorState(
-            e is MetraException
-                ? e.message
-                : 'Something went wrong. Please try again.',
-          ),
-        );
+        state = AsyncData(backupErrorFromException(e));
         return;
       }
 
@@ -446,13 +434,7 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
           '[BackupNotifier.switchProvider] post-flip failure — $e; '
           'activeProvider stays ${target.name} (OQ-01, no rollback)',
         );
-        state = AsyncData(
-          BackupErrorState(
-            e is MetraException
-                ? e.message
-                : 'Something went wrong. Please try again.',
-          ),
-        );
+        state = AsyncData(backupErrorFromException(e));
         return;
       }
     } finally {
@@ -581,9 +563,8 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     }
     // Cases: (c) first-ever backup, or (d) new data exists → proceed.
 
-    final pass = await ref
-        .read(secureStorageProvider)
-        .read(key: _passphraseKey);
+    final pass =
+        await ref.read(secureStorageProvider).read(key: _passphraseKey);
     if (pass == null) return;
     await _runBackup();
   }
@@ -624,9 +605,8 @@ class BackupNotifier extends AsyncNotifier<BackupState> {
     }
 
     // Guard 4: no passphrase — nothing to encrypt with.
-    final pass = await ref
-        .read(secureStorageProvider)
-        .read(key: _passphraseKey);
+    final pass =
+        await ref.read(secureStorageProvider).read(key: _passphraseKey);
     if (pass == null) return;
 
     // Guard 5 bypassed intentionally: write-recency check is NOT applied here.

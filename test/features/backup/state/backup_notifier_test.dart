@@ -8,6 +8,7 @@ import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -244,6 +245,7 @@ class _OrderedSpyProvider implements CloudBackupProvider {
   final List<String> events;
   String? currentEmailResult = 'user@example.com';
   bool authorizeThrows = false;
+  Object? authorizeError;
   bool listFilesThrows = false;
 
   @override
@@ -252,6 +254,9 @@ class _OrderedSpyProvider implements CloudBackupProvider {
   @override
   Future<void> authorize() async {
     events.add('authorize');
+    if (authorizeError != null) {
+      throw authorizeError!;
+    }
     if (authorizeThrows) {
       throw const SyncException('auth failed');
     }
@@ -908,6 +913,51 @@ void main() {
           ),
           reason: 'the BUG-B06 wipe must never fire on a failed handshake',
         );
+      },
+    );
+
+    // ── A3b: firstConnect failure — authorize() throws PlatformException
+    //        wrapping ActivityNotFoundException (no launchable browser on
+    //        Android, e.g. Chrome in DISABLED_UNTIL_USED). The notifier must
+    //        classify it as BackupErrorKind.noBrowser so the error view can
+    //        offer the "Enable browser" shortcut.
+    test(
+      'A3b firstConnect failure: authorize() throws ActivityNotFoundException '
+      'PlatformException → BackupErrorState(kind: noBrowser)',
+      () async {
+        final events = <String>[];
+        final noBrowserException = PlatformException(
+          code: 'error',
+          message:
+              'No Activity found to handle Intent { act=android.intent.action.VIEW '
+              'dat=https://www.dropbox.com/... flg=0x30000000 (has extras) }',
+          details:
+              'android.content.ActivityNotFoundException: No Activity found to '
+              'handle Intent { act=android.intent.action.VIEW dat=https://www.dropbox.com/... }',
+        );
+        final provider = _OrderedSpyProvider(events)
+          ..authorizeError = noBrowserException;
+        final repo = _OrderedSpySettingsRepo(events);
+        final orderedStorage = _OrderedSpyStorage(events);
+
+        final container = makeOrderedContainer(
+          events: events,
+          provider: provider,
+          repo: repo,
+          storage: orderedStorage,
+        );
+        addTearDown(container.dispose);
+        await container.read(backupNotifierProvider.future);
+
+        await container
+            .read(backupNotifierProvider.notifier)
+            .firstConnect(SyncProvider.dropbox);
+
+        final s = container.read(backupNotifierProvider).valueOrNull;
+        expect(s, isA<BackupErrorState>());
+        final err = s as BackupErrorState;
+        expect(err.kind, BackupErrorKind.noBrowser);
+        expect(err.message, contains('browser'));
       },
     );
 

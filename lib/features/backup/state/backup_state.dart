@@ -58,6 +58,9 @@ class BackupRunning extends BackupState {
 }
 
 class BackupErrorState extends BackupState {
-  const BackupErrorState(this.message);
+  const BackupErrorState(this.message, {this.kind = BackupErrorKind.generic});
   final String message;
+  final BackupErrorKind kind;
 }
+
+enum BackupErrorKind { generic, noBrowser }
