@@ -47,7 +47,7 @@ void main() {
   // ── Toolbar layout ────────────────────────────────────────────────────────
 
   testWidgets(
-    'CupertinoPickerScaffold: Ripristina left + OK right, both Inter 16 w500 terracotta',
+    'CupertinoPickerScaffold: Ripristina left + OK right, both Inter 17 w600 terracotta',
     (tester) async {
       await tester.pumpWidget(
         _wrap(
@@ -69,11 +69,10 @@ void main() {
       final confirmOffset = tester.getCenter(find.text('OK'));
       expect(resetOffset.dx, lessThan(confirmOffset.dx));
 
-      // Verify text style: Inter 16 w500 terracotta.
       final expectedColor = MetraColors.light.accentFlow;
       final expectedStyle = GoogleFonts.inter(
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
+        fontSize: 17,
+        fontWeight: FontWeight.w600,
         color: expectedColor,
       );
 

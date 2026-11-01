@@ -344,7 +344,7 @@ void main() {
   // ── Per-item typography ──────────────────────────────────────────────────
 
   testWidgets(
-    'should_render_selected_item_inter16_w500_opacity1_at_distance_0',
+    'selected_item_inherits_uniform_wheel_typography',
     (tester) async {
       debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
       try {
@@ -380,33 +380,15 @@ void main() {
         final itemTextFinder = find.text(expectedText);
         expect(itemTextFinder, findsOneWidget);
 
-        // The text is wrapped in Opacity(opacity: 1.0).
-        final opacity = tester.widget<Opacity>(
-          find
-              .ancestor(
-                of: itemTextFinder,
-                matching: find.byType(Opacity),
-              )
-              .first,
+        final resolvedStyle =
+            DefaultTextStyle.of(tester.element(itemTextFinder)).style;
+        expect(
+          resolvedStyle.fontSize,
+          21.0,
         );
         expect(
-          opacity.opacity,
-          1.0,
-          reason: 'Distance-0 item must have opacity 1.0',
-        );
-
-        // Font style: Inter 16 / w500.
-        final textWidget = tester.widget<Text>(itemTextFinder);
-        final resolvedStyle = textWidget.style;
-        expect(
-          resolvedStyle?.fontSize,
-          16.0,
-          reason: 'Distance-0 item must use fontSize 16',
-        );
-        expect(
-          resolvedStyle?.fontWeight,
-          FontWeight.w500,
-          reason: 'Distance-0 item must use fontWeight w500',
+          resolvedStyle.fontWeight,
+          FontWeight.w400,
         );
       } finally {
         debugDefaultTargetPlatformOverride = null;
@@ -415,7 +397,7 @@ void main() {
   );
 
   testWidgets(
-    'should_render_distance1_items_inter15_w400_opacity035',
+    'adjacent_items_inherit_uniform_wheel_typography',
     (tester) async {
       debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
       try {
@@ -451,31 +433,15 @@ void main() {
         final itemTextFinder = find.text(expectedText);
         expect(itemTextFinder, findsOneWidget);
 
-        final opacity = tester.widget<Opacity>(
-          find
-              .ancestor(
-                of: itemTextFinder,
-                matching: find.byType(Opacity),
-              )
-              .first,
+        final resolvedStyle =
+            DefaultTextStyle.of(tester.element(itemTextFinder)).style;
+        expect(
+          resolvedStyle.fontSize,
+          21.0,
         );
         expect(
-          opacity.opacity,
-          closeTo(0.35, 0.001),
-          reason: 'Distance-1 item must have opacity 0.35',
-        );
-
-        final textWidget = tester.widget<Text>(itemTextFinder);
-        final resolvedStyle = textWidget.style;
-        expect(
-          resolvedStyle?.fontSize,
-          15.0,
-          reason: 'Distance-1 item must use fontSize 15',
-        );
-        expect(
-          resolvedStyle?.fontWeight,
+          resolvedStyle.fontWeight,
           FontWeight.w400,
-          reason: 'Distance-1 item must use fontWeight w400',
         );
       } finally {
         debugDefaultTargetPlatformOverride = null;
@@ -484,7 +450,7 @@ void main() {
   );
 
   testWidgets(
-    'should_render_distance2_plus_items_inter15_w400_opacity018',
+    'distant_items_inherit_uniform_wheel_typography',
     (tester) async {
       debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
       try {
@@ -520,31 +486,15 @@ void main() {
         final itemTextFinder = find.text(expectedText);
         expect(itemTextFinder, findsOneWidget);
 
-        final opacity = tester.widget<Opacity>(
-          find
-              .ancestor(
-                of: itemTextFinder,
-                matching: find.byType(Opacity),
-              )
-              .first,
+        final resolvedStyle =
+            DefaultTextStyle.of(tester.element(itemTextFinder)).style;
+        expect(
+          resolvedStyle.fontSize,
+          21.0,
         );
         expect(
-          opacity.opacity,
-          closeTo(0.18, 0.001),
-          reason: 'Distance-≥2 item must have opacity 0.18',
-        );
-
-        final textWidget = tester.widget<Text>(itemTextFinder);
-        final resolvedStyle = textWidget.style;
-        expect(
-          resolvedStyle?.fontSize,
-          15.0,
-          reason: 'Distance-≥2 item must use fontSize 15',
-        );
-        expect(
-          resolvedStyle?.fontWeight,
+          resolvedStyle.fontWeight,
           FontWeight.w400,
-          reason: 'Distance-≥2 item must use fontWeight w400',
         );
       } finally {
         debugDefaultTargetPlatformOverride = null;
@@ -1020,7 +970,7 @@ void main() {
       final result = await Process.run('grep', [
         '-n',
         'looping: false',
-        'lib/features/backup/widgets/backup_picker_sheet_internals.dart',
+        'lib/core/widgets/settings/metra_picker_wheel.dart',
       ]);
       final lines = (result.stdout as String)
           .trim()

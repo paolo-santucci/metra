@@ -37,7 +37,7 @@ import '../../../l10n/app_localizations.dart';
 ///
 /// Background colour: [MetraColors.bgPrimary] (sabbia / sand).
 /// Top corners: [MetraRadius.lg] (16 dp) rounded.
-/// Button typography: Inter 16 / w500 / [MetraColors.accentFlow] (terracotta).
+/// Button typography: Inter 17 / w600 / [MetraColors.accentFlow] (terracotta).
 ///
 /// [resetLabel] and [confirmLabel] default to the l10n values
 /// `common_restore` ("Ripristina") and `common_ok` ("OK") when omitted.
@@ -54,9 +54,7 @@ import '../../../l10n/app_localizations.dart';
 /// home-indicator overlap. Pass `false` (default) for Settings call sites
 /// inside a ShellRoute where safe-area is already handled by the shell.
 ///
-/// The private `_CupertinoPickerScaffold` in `settings_screen.dart` retains a
-/// different stateful API (debounce + resetKey). Do NOT remove it — that is
-/// TASK-12's responsibility.
+/// [WheelPickerScaffold] adds debounced settings saves and reset support.
 class CupertinoPickerScaffold extends StatelessWidget {
   const CupertinoPickerScaffold({
     required this.child,
@@ -104,12 +102,29 @@ class CupertinoPickerScaffold extends StatelessWidget {
     final colors = MetraColors.of(context);
     final l10n = AppLocalizations.of(context)!;
     final buttonStyle = GoogleFonts.inter(
-      fontSize: 16,
-      fontWeight: FontWeight.w500,
+      fontSize: 17,
+      fontWeight: FontWeight.w600,
       color: colors.accentFlow,
     );
 
-    final pickerChild = useSafeArea ? SafeArea(child: child) : child;
+    final pickerStyle = GoogleFonts.inter(
+      fontSize: 21,
+      fontWeight: FontWeight.w400,
+      color: colors.textPrimary,
+    );
+    final themedChild = CupertinoTheme(
+      data: CupertinoThemeData(
+        brightness: Theme.of(context).brightness,
+        primaryColor: colors.accentFlow,
+        textTheme: CupertinoTextThemeData(
+          pickerTextStyle: pickerStyle,
+          dateTimePickerTextStyle: pickerStyle,
+        ),
+      ),
+      child: child,
+    );
+    final pickerChild =
+        useSafeArea ? SafeArea(top: false, child: themedChild) : themedChild;
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(
@@ -117,78 +132,88 @@ class CupertinoPickerScaffold extends StatelessWidget {
       ),
       child: ColoredBox(
         color: colors.bgPrimary,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Toolbar row — 3-slot layout: [reset | center | confirm].
-            // When title is null the center slot is a Spacer() so the left
-            // and right buttons are pushed to the edges (same visual as the
-            // former spaceBetween layout — existing callers unchanged).
-            Row(
-              children: [
-                Semantics(
-                  button: true,
-                  label: resetLabel ?? l10n.common_restore,
-                  child: GestureDetector(
-                    onTap: onReset,
-                    behavior: HitTestBehavior.opaque,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: MetraSpacing.s4,
-                        vertical: MetraSpacing.sp14,
-                      ),
-                      child: Text(
-                        resetLabel ?? l10n.common_restore,
-                        style: buttonStyle,
-                      ),
-                    ),
-                  ),
-                ),
-                // Center slot: optional non-tappable title (CG-2 / §18.10.2).
-                if (title != null)
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        title!, // ! safe: guarded by null check above
-                        style: GoogleFonts.inter(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                          color: colors.textPrimary,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height -
+                MediaQuery.paddingOf(context).top,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Toolbar row — 3-slot layout: [reset | center | confirm].
+              // When title is null the center slot is a Spacer() so the left
+              // and right buttons are pushed to the edges (same visual as the
+              // former spaceBetween layout — existing callers unchanged).
+              Row(
+                children: [
+                  Flexible(
+                    child: Semantics(
+                      button: true,
+                      label: resetLabel ?? l10n.common_restore,
+                      child: GestureDetector(
+                        onTap: onReset,
+                        behavior: HitTestBehavior.opaque,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: MetraSpacing.s4,
+                            vertical: MetraSpacing.sp14,
+                          ),
+                          child: Text(
+                            resetLabel ?? l10n.common_restore,
+                            style: buttonStyle,
+                          ),
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  )
-                else
-                  const Spacer(),
-                Semantics(
-                  key: confirmKey,
-                  button: true,
-                  label: confirmLabel ?? l10n.common_ok,
-                  child: GestureDetector(
-                    onTap: onConfirm,
-                    behavior: HitTestBehavior.opaque,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: MetraSpacing.s4,
-                        vertical: MetraSpacing.sp14,
-                      ),
-                      child: Text(
-                        confirmLabel ?? l10n.common_ok,
-                        style: buttonStyle,
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            // 1 dp separator
-            const SettingsDivider(),
-            // Picker content
-            pickerChild,
-          ],
+                  // Center slot: optional non-tappable title (CG-2 / §18.10.2).
+                  if (title != null)
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          title!, // ! safe: guarded by null check above
+                          style: GoogleFonts.inter(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                            color: colors.textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
+                  else
+                    const Spacer(),
+                  Flexible(
+                    child: Semantics(
+                      key: confirmKey,
+                      button: true,
+                      label: confirmLabel ?? l10n.common_ok,
+                      child: GestureDetector(
+                        onTap: onConfirm,
+                        behavior: HitTestBehavior.opaque,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: MetraSpacing.s4,
+                            vertical: MetraSpacing.sp14,
+                          ),
+                          child: Text(
+                            confirmLabel ?? l10n.common_ok,
+                            style: buttonStyle,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              // 1 dp separator
+              const SettingsDivider(),
+              // Picker content
+              Flexible(child: pickerChild),
+            ],
+          ),
         ),
       ),
     );
@@ -246,72 +271,29 @@ class _WheelPickerScaffoldState extends State<WheelPickerScaffold> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final colors = MetraColors.of(context);
-
-    return CupertinoTheme(
-      data: CupertinoThemeData(
-        brightness: Theme.of(context).brightness,
-        primaryColor: colors.accentFlow,
-      ),
-      child: Container(
-        height: 310,
-        color: colors.bgSurface,
-        child: Column(
-          children: [
-            SizedBox(
-              height: 44,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Semantics(
-                    label: l10n.common_restore,
-                    button: true,
-                    child: CupertinoButton(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      onPressed: () {
-                        _debounce?.cancel();
-                        _debounce = null;
-                        widget.onRestore();
-                        setState(() => _resetKey = UniqueKey());
-                      },
-                      child: Text(
-                        l10n.common_restore,
-                        style: TextStyle(
-                          color: colors.accentFlow,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 17,
-                        ),
-                      ),
-                    ),
-                  ),
-                  CupertinoButton(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    onPressed: () {
-                      if (_debounce?.isActive == true) {
-                        _debounce!.cancel();
-                        _debounce = null;
-                        widget.onAutoSave();
-                      }
-                      Navigator.of(context).pop();
-                    },
-                    child: Text(
-                      l10n.common_ok,
-                      style: TextStyle(
-                        color: colors.accentFlow,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 17,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: widget.wheelBuilder(_resetKey, _scheduleAutoSave),
-            ),
-          ],
-        ),
-      ),
+    return CupertinoPickerScaffold(
+      resetLabel: l10n.common_restore,
+      confirmLabel: l10n.common_ok,
+      useSafeArea: true,
+      onReset: _restore,
+      onConfirm: _confirm,
+      child: widget.wheelBuilder(_resetKey, _scheduleAutoSave),
     );
+  }
+
+  void _restore() {
+    _debounce?.cancel();
+    _debounce = null;
+    widget.onRestore();
+    setState(() => _resetKey = UniqueKey());
+  }
+
+  void _confirm() {
+    if (_debounce?.isActive == true) {
+      _debounce!.cancel();
+      _debounce = null;
+      widget.onAutoSave();
+    }
+    Navigator.of(context).pop();
   }
 }

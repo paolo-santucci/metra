@@ -27,6 +27,7 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/metra_colors.dart';
 import '../../../core/theme/metra_spacing.dart';
 import '../../../core/widgets/settings/cupertino_picker_scaffold.dart';
+import '../../../core/widgets/settings/metra_picker_wheel.dart';
 import '../../../core/widgets/settings/settings_divider.dart';
 import '../../../data/services/backup/backup_file_entry.dart';
 import '../../../l10n/app_localizations.dart';
@@ -55,58 +56,31 @@ class PickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = MetraColors.of(context);
     return CupertinoPickerScaffold(
       resetLabel: l10n.commonCancel,
       confirmLabel: l10n.backupPickerConfirm,
       onReset: onCancel,
       onConfirm: onConfirm,
       useSafeArea: true,
-      child: SizedBox(
-        height: MetraSpacing.sp44 * 5,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Positioned(
-              left: MetraSpacing.s4,
-              right: MetraSpacing.s4,
-              child: Container(
-                height: MetraSpacing.sp44,
-                decoration: BoxDecoration(
-                  color: colors.textPrimary.withAlpha(0x0F),
-                  borderRadius: BorderRadius.circular(MetraRadius.smm),
-                ),
-              ),
-            ),
-            CupertinoPicker(
-              itemExtent: MetraSpacing.sp44,
-              scrollController:
-                  FixedExtentScrollController(initialItem: selected),
-              useMagnifier: false,
-              looping: false,
-              selectionOverlay: const SizedBox.shrink(),
-              onSelectedItemChanged: onSelectedChanged,
-              children: List.generate(
-                entries.length,
-                (i) {
-                  final dateTime = DateFormat.yMMMd(l10n.localeName)
-                      .add_jm()
-                      .format(entries[i].timestampUtc.toLocal());
-                  final size = formatBackupSize(entries[i].sizeBytes);
-                  // Join with a plain space; size is '' when unknown (dropped
-                  // by the filter). Built via join — not an interpolated string
-                  // literal — so the FR-31 no-inline-literals guard does not
-                  // flag the composition (date/time + size are not l10n copy).
-                  final label =
-                      [dateTime, size].where((s) => s.isNotEmpty).join(' ');
-                  return PickerItem(
-                    text: label,
-                    distanceFromSelected: (i - selected).abs(),
-                  );
-                },
-              ),
-            ),
-          ],
+      child: MetraPickerWheel(
+        initialItem: selected,
+        onSelectedItemChanged: onSelectedChanged,
+        children: List.generate(
+          entries.length,
+          (i) {
+            final dateTime = DateFormat.yMMMd(l10n.localeName)
+                .add_jm()
+                .format(entries[i].timestampUtc.toLocal());
+            final size = formatBackupSize(entries[i].sizeBytes);
+            // Join with a plain space; size is '' when unknown (dropped
+            // by the filter). Built via join — not an interpolated string
+            // literal — so the FR-31 no-inline-literals guard does not
+            // flag the composition (date/time + size are not l10n copy).
+            final label = [dateTime, size].where((s) => s.isNotEmpty).join(' ');
+            return PickerItem(
+              text: label,
+            );
+          },
         ),
       ),
     );
@@ -125,8 +99,8 @@ class EmptySheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = MetraColors.of(context);
     final btnStyle = GoogleFonts.inter(
-      fontSize: 16,
-      fontWeight: FontWeight.w500,
+      fontSize: 17,
+      fontWeight: FontWeight.w600,
       color: colors.accentFlow,
     );
     return ClipRRect(

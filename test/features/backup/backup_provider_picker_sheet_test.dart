@@ -738,30 +738,25 @@ void main() {
             'Provider rows must render via the shared PickerItem widget — FR-19',
       );
 
-      // Byte-identical render parity: selected row (distance 0) keeps the
-      // Inter 16 / w500 / opacity 1.0 styling the deleted
-      // _ProviderPickerItem used to produce.
-      final selectedPickerItem = tester.widget<PickerItem>(
-        find.byType(PickerItem).first,
-      );
-      expect(selectedPickerItem.distanceFromSelected, 0);
-
       final selectedText = tester.widget<Text>(
         find.descendant(
           of: find.byType(PickerItem).first,
           matching: find.byType(Text),
         ),
       );
-      expect(selectedText.style?.fontSize, 16.0);
-      expect(selectedText.style?.fontWeight, FontWeight.w500);
-
-      final selectedOpacity = tester.widget<Opacity>(
+      expect(selectedText.style, isNull);
+      final inheritedStyle = DefaultTextStyle.of(
+        tester.element(find.text(selectedText.data!).first),
+      ).style;
+      expect(inheritedStyle.fontSize, 21);
+      expect(inheritedStyle.fontWeight, FontWeight.w400);
+      expect(
         find.descendant(
           of: find.byType(PickerItem).first,
           matching: find.byType(Opacity),
         ),
+        findsNothing,
       );
-      expect(selectedOpacity.opacity, 1.0);
     },
   );
 

@@ -1224,15 +1224,18 @@ void main() {
         await tester.tap(find.text('Orario notifica'));
         await tester.pumpAndSettle();
 
-        // Drag +15 min: 4 scroll items * 32 px/item = 128 px → 555 min.
         final pickerFinder = find.byType(CupertinoDatePicker);
-        final pickerRect = tester.getRect(pickerFinder);
-        await tester.dragFrom(
-          Offset(400, pickerRect.center.dy),
-          const Offset(0, -128),
+        final minuteWheel = tester.widget<CupertinoPicker>(
+          find
+              .descendant(
+                of: pickerFinder,
+                matching: find.byType(CupertinoPicker),
+              )
+              .at(1),
         );
-        // pumpAndSettle fires the 250 ms debounce (default step = 100 ms).
+        minuteWheel.scrollController!.jumpToItem(3);
         await tester.pumpAndSettle();
+        await tester.pump(const Duration(milliseconds: 300));
 
         expect(
           stub.savedSettings?.notificationTimeMinutes,

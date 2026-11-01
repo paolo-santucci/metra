@@ -40,6 +40,7 @@ import '../../l10n/app_localizations.dart';
 import '../../providers/app_info_provider.dart';
 import '../../providers/use_case_providers.dart';
 import '../../core/widgets/settings/cupertino_picker_scaffold.dart';
+import '../../core/widgets/settings/metra_picker_wheel.dart';
 import '../../core/widgets/settings/metra_toggle.dart';
 import '../../core/widgets/settings/settings_card.dart';
 import '../../core/widgets/settings/settings_divider.dart';
@@ -560,16 +561,21 @@ class SettingsScreen extends ConsumerWidget {
     await showCupertinoModalPopup<void>(
       context: context,
       builder: (ctx) => WheelPickerScaffold(
-        wheelBuilder: (resetKey, scheduleAutoSave) => CupertinoDatePicker(
-          key: resetKey,
-          mode: CupertinoDatePickerMode.time,
-          minuteInterval: 5,
-          initialDateTime: initial,
-          use24hFormat: MediaQuery.alwaysUse24HourFormatOf(ctx),
-          onDateTimeChanged: (dt) {
-            currentMinutes = dt.hour * 60 + dt.minute;
-            scheduleAutoSave();
-          },
+        wheelBuilder: (resetKey, scheduleAutoSave) => SizedBox(
+          height: (MediaQuery.textScalerOf(ctx).scale(21) + 23) * 5,
+          child: CupertinoDatePicker(
+            key: resetKey,
+            backgroundColor: MetraColors.of(ctx).bgPrimary,
+            itemExtent: MediaQuery.textScalerOf(ctx).scale(21) + 23,
+            mode: CupertinoDatePickerMode.time,
+            minuteInterval: 5,
+            initialDateTime: initial,
+            use24hFormat: MediaQuery.alwaysUse24HourFormatOf(ctx),
+            onDateTimeChanged: (dt) {
+              currentMinutes = dt.hour * 60 + dt.minute;
+              scheduleAutoSave();
+            },
+          ),
         ),
         onAutoSave: () => _save(
           ref,
@@ -609,42 +615,22 @@ class SettingsScreen extends ConsumerWidget {
     await showCupertinoModalPopup<void>(
       context: context,
       builder: (ctx) {
-        final colors = MetraColors.of(ctx);
         return WheelPickerScaffold(
-          wheelBuilder: (resetKey, scheduleAutoSave) => CupertinoTheme(
-            data: CupertinoThemeData(
-              brightness: Theme.of(ctx).brightness,
-              primaryColor: colors.accentFlow,
-              textTheme: CupertinoTextThemeData(
-                pickerTextStyle: TextStyle(
-                  color: colors.textPrimary,
-                  fontSize: 21,
-                ),
-              ),
-            ),
-            child: CupertinoPicker(
-              key: resetKey,
-              scrollController: FixedExtentScrollController(
-                initialItem: selectedIndex,
-              ),
-              itemExtent: 44,
-              onSelectedItemChanged: (i) {
-                selectedIndex = i;
-                scheduleAutoSave();
-              },
-              children: [
-                for (int i = 1; i <= AppConstants.kMaxAdvanceDays; i++)
-                  Center(
-                    child: Text(
-                      l10n.settings_advance_value(i),
-                      style: TextStyle(
-                        color: colors.textPrimary,
-                        fontSize: 21,
-                      ),
-                    ),
+          wheelBuilder: (resetKey, scheduleAutoSave) => MetraPickerWheel(
+            key: resetKey,
+            initialItem: selectedIndex,
+            onSelectedItemChanged: (i) {
+              selectedIndex = i;
+              scheduleAutoSave();
+            },
+            children: [
+              for (int i = 1; i <= AppConstants.kMaxAdvanceDays; i++)
+                Center(
+                  child: Text(
+                    l10n.settings_advance_value(i),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
           onAutoSave: () => _save(
             ref,
