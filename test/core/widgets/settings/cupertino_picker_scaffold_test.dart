@@ -17,7 +17,9 @@
 
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -44,6 +46,81 @@ Widget _wrap(Widget child, {ThemeData? theme}) => MaterialApp(
     );
 
 void main() {
+  for (final cupertinoRoute in [true, false]) {
+    for (final dark in [true, false]) {
+      for (final titled in [true, false]) {
+        final leadingLabel = titled ? 'Annulla' : 'Ripristina';
+        final trailingLabel = titled ? 'Connetti' : 'OK';
+        testWidgets(
+          'popup header stays edge-aligned and undecorated: Cupertino=$cupertinoRoute dark=$dark titled=$titled',
+          (tester) async {
+            tester.view.physicalSize = const Size(390, 844);
+            tester.view.devicePixelRatio = 1;
+            addTearDown(tester.view.reset);
+            await tester.pumpWidget(
+              _wrap(
+                Builder(
+                  builder: (context) => TextButton(
+                    onPressed: () {
+                      Widget sheet(BuildContext context) =>
+                          CupertinoPickerScaffold(
+                            resetLabel: leadingLabel,
+                            confirmLabel: trailingLabel,
+                            title: titled ? 'Scegli un provider' : null,
+                            onReset: () {},
+                            onConfirm: () {},
+                            child: const SizedBox(height: 220),
+                          );
+                      if (cupertinoRoute) {
+                        showCupertinoModalPopup<void>(
+                          context: context,
+                          builder: sheet,
+                        );
+                      } else {
+                        showModalBottomSheet<void>(
+                          context: context,
+                          builder: sheet,
+                        );
+                      }
+                    },
+                    child: const Text('Open'),
+                  ),
+                ),
+                theme: dark ? MetraTheme.dark() : MetraTheme.light(),
+              ),
+            );
+            await tester.tap(find.text('Open'));
+            await tester.pumpAndSettle();
+            final sheetRect =
+                tester.getRect(find.byType(CupertinoPickerScaffold));
+            final leadingRect = tester.getRect(find.text(leadingLabel));
+            final trailingRect = tester.getRect(find.text(trailingLabel));
+            expect(leadingRect.left - sheetRect.left, closeTo(16, 0.01));
+            expect(sheetRect.right - trailingRect.right, closeTo(16, 0.01));
+            if (titled) {
+              final titleRect = tester.getRect(find.text('Scegli un provider'));
+              expect(titleRect.center.dx, closeTo(sheetRect.center.dx, 0.01));
+            }
+            expect(
+              leadingRect.center.dy,
+              closeTo(trailingRect.center.dy, 0.01),
+            );
+            for (final label in [
+              leadingLabel,
+              trailingLabel,
+              if (titled) 'Scegli un provider',
+            ]) {
+              final paragraph =
+                  tester.renderObject<RenderParagraph>(find.text(label));
+              expect(paragraph.text.style?.decoration, TextDecoration.none);
+            }
+            expect(tester.takeException(), isNull);
+          },
+        );
+      }
+    }
+  }
+
   // ── Toolbar layout ────────────────────────────────────────────────────────
 
   testWidgets(

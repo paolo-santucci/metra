@@ -105,7 +105,7 @@ class CupertinoPickerScaffold extends StatelessWidget {
       fontSize: 17,
       fontWeight: FontWeight.w600,
       color: colors.accentFlow,
-    );
+    ).copyWith(inherit: false, decoration: TextDecoration.none);
 
     final pickerStyle = GoogleFonts.inter(
       fontSize: 21,
@@ -141,78 +141,81 @@ class CupertinoPickerScaffold extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Toolbar row — 3-slot layout: [reset | center | confirm].
-              // When title is null the center slot is a Spacer() so the left
-              // and right buttons are pushed to the edges (same visual as the
-              // former spaceBetween layout — existing callers unchanged).
-              Row(
-                children: [
-                  Flexible(
-                    child: Semantics(
-                      button: true,
-                      label: resetLabel ?? l10n.common_restore,
-                      child: GestureDetector(
-                        onTap: onReset,
-                        behavior: HitTestBehavior.opaque,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: MetraSpacing.s4,
-                            vertical: MetraSpacing.sp14,
+              LayoutBuilder(
+                builder: (context, constraints) => SizedBox(
+                  height: MediaQuery.textScalerOf(context).scale(24) +
+                      MetraSpacing.sp14 * 2,
+                  child: NavigationToolbar(
+                    centerMiddle: true,
+                    leading: ConstrainedBox(
+                      constraints:
+                          BoxConstraints(maxWidth: constraints.maxWidth / 2),
+                      child: _toolbarAction(
+                        resetLabel ?? l10n.common_restore,
+                        onReset,
+                        buttonStyle,
+                      ),
+                    ),
+                    middle: title == null
+                        ? null
+                        : Text(
+                            title!,
+                            style:
+                                buttonStyle.copyWith(color: colors.textPrimary),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          child: Text(
-                            resetLabel ?? l10n.common_restore,
-                            style: buttonStyle,
-                          ),
-                        ),
+                    trailing: ConstrainedBox(
+                      constraints:
+                          BoxConstraints(maxWidth: constraints.maxWidth / 2),
+                      child: _toolbarAction(
+                        confirmLabel ?? l10n.common_ok,
+                        onConfirm,
+                        buttonStyle,
+                        key: confirmKey,
                       ),
                     ),
                   ),
-                  // Center slot: optional non-tappable title (CG-2 / §18.10.2).
-                  if (title != null)
-                    Expanded(
-                      child: Center(
-                        child: Text(
-                          title!, // ! safe: guarded by null check above
-                          style: GoogleFonts.inter(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w600,
-                            color: colors.textPrimary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    )
-                  else
-                    const Spacer(),
-                  Flexible(
-                    child: Semantics(
-                      key: confirmKey,
-                      button: true,
-                      label: confirmLabel ?? l10n.common_ok,
-                      child: GestureDetector(
-                        onTap: onConfirm,
-                        behavior: HitTestBehavior.opaque,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: MetraSpacing.s4,
-                            vertical: MetraSpacing.sp14,
-                          ),
-                          child: Text(
-                            confirmLabel ?? l10n.common_ok,
-                            style: buttonStyle,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
               // 1 dp separator
               const SettingsDivider(),
               // Picker content
               Flexible(child: pickerChild),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _toolbarAction(
+    String label,
+    VoidCallback onTap,
+    TextStyle style, {
+    Key? key,
+  }) {
+    return Semantics(
+      key: key,
+      button: true,
+      label: label,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: MetraSpacing.s4,
+            vertical: MetraSpacing.sp14,
+          ),
+          child: Center(
+            widthFactor: 1,
+            heightFactor: 1,
+            child: Text(
+              label,
+              style: style,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ),
       ),
