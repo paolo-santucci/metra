@@ -11,13 +11,31 @@ help_order: 3
 
 ## Scheda Archivio
 
-La scheda **Archivio** (icona onda) raccoglie l'intera storia delle tue registrazioni. È la parte dell'app che non prevede azioni, solo lettura. Puoi visualizzarla in due modi, selezionabili con il cursore in cima alla schermata.
+La scheda **Archivio** (icona onda) raccoglie l'intera storia delle tue registrazioni. Puoi visualizzarla in due modi, selezionabili con il cursore in cima alla schermata, e restringere l'elenco ai soli cicli che ti interessano con la ricerca e i filtri.
+
+---
+
+### Ricerca e filtri
+
+Il filtro si apre dall'icona a imbuto che sta sulla stessa riga del cursore Timeline/Tabella, a destra. All'inizio è chiusa e l'elenco mostra tutti i cicli: toccala per far comparire il campo di ricerca e la fila di chip, toccala di nuovo per chiuderli e azzerare il filtro.
+
+Ricerca e filtri valgono solo per la vista Timeline. La vista Tabella mostra sempre la storia completa e non ha ricerca né filtri: se ci passi con un filtro attivo, il filtro viene azzerato.
+
+Il campo **Cerca nelle note** cerca nel testo delle note libere che hai scritto nella registrazione dei giorni. Non distingue maiuscole da minuscole e ignora gli accenti: *perche* trova anche *perché*. L'elenco si aggiorna circa 300 millisecondi dopo l'ultima lettera, non a ogni carattere. La X a destra del campo svuota il testo cercato.
+
+Sotto il campo c'è una fila di chip, uno per ogni sintomo registrato nei tuoi cicli, con le etichette personalizzate che hai scritto tu. I chip restano gli stessi anche mentre un filtro è attivo. Tocca un chip per selezionarlo, toccalo di nuovo per toglierlo.
+
+Ricerca e filtri si combinano: un ciclo resta in elenco solo se ha tutti i sintomi che hai selezionato e, se hai scritto qualcosa nel campo di ricerca, solo se almeno una delle sue note contiene il testo cercato.
+
+Con un filtro attivo compare una riga con il numero di cicli che corrispondono (per esempio 3 cicli) e l'azione **Rimuovi filtri**, che azzera insieme testo e chip. Se nessun ciclo corrisponde, al posto dell'elenco compare il messaggio **Nessun ciclo corrisponde ai filtri**, con l'azione **Rimuovi filtri** per ripartire.
+
+Quando esci dalla scheda e rientri, ricerca e filtri ripartono da zero e il pannello si richiude.
 
 ---
 
 ### Vista Timeline
 
-![Vista Timeline: lista verticale di card ciclo, ognuna con data di inizio, durata, pill flusso e chip sintomi.](/assets/archive-timeline-it.png)
+![Vista Timeline: il cursore Timeline/Tabella con l'icona a imbuto a destra, sotto il campo di ricerca nelle note e la fila di chip sintomi aperti, poi la lista verticale di card ciclo, ognuna con data di inizio, durata, pill flusso e chip sintomi.](/assets/archive-timeline-it.png)
 
 La vista Timeline raggruppa le tue registrazioni per **ciclo**, mostrando un ciclo per card, dall'ultimo in cima fino al primo in fondo. Ogni card mostra:
 
@@ -34,7 +52,7 @@ Scorri verso l'alto per risalire nel tempo. Tocca una card per aprire il Calenda
 
 ### Vista Tabella
 
-![Vista Tabella: righe sono i giorni, colonne sono data, flusso, dolore, sintomi, note. Celle con codice colore.](/assets/archive-table-it.png)
+![Vista Tabella: il cursore Timeline/Tabella senza imbuto, perché la Tabella non filtra, poi le righe dei cicli con le colonne Mese, Ciclo, Durata e Flusso.](/assets/archive-table-it.png)
 
 La vista Tabella mostra una riga per ogni mese registrato, utile quando vuoi confrontare più mesi in un colpo d'occhio. Colonne:
 

@@ -710,6 +710,48 @@ abstract class AppLocalizations {
   /// **'Ciclo dal {start}, in corso'**
   String timeline_card_a11y_in_progress(String start);
 
+  /// Hint and a11y label for the Archivio note-search field
+  ///
+  /// In it, this message translates to:
+  /// **'Cerca nelle note'**
+  String get timeline_search_hint;
+
+  /// a11y label for the note-search clear affordance
+  ///
+  /// In it, this message translates to:
+  /// **'Cancella la ricerca'**
+  String get timeline_search_clear_a11y;
+
+  /// Cycles matching the active filters, announced as a polite live region
+  ///
+  /// In it, this message translates to:
+  /// **'{count, plural, =1{{count} ciclo} other{{count} cicli}}'**
+  String timeline_filter_results_count(int count);
+
+  /// Clear-all action for the active filters
+  ///
+  /// In it, this message translates to:
+  /// **'Rimuovi filtri'**
+  String get timeline_filter_clear_all;
+
+  /// No-match message shown when the filters exclude every cycle
+  ///
+  /// In it, this message translates to:
+  /// **'Nessun ciclo corrisponde ai filtri'**
+  String get timeline_filter_no_match;
+
+  /// Clear-filters action offered by the no-match state
+  ///
+  /// In it, this message translates to:
+  /// **'Rimuovi filtri'**
+  String get timeline_filter_no_match_action;
+
+  /// a11y label for the funnel that reveals/hides the symptom filter chips
+  ///
+  /// In it, this message translates to:
+  /// **'Filtri sintomi'**
+  String get timeline_filters_toggle_a11y;
+
   /// Archivio screen title (§ 10.1)
   ///
   /// In it, this message translates to:

@@ -27,6 +27,10 @@ Widget _wrap(Widget child, ThemeData theme) => MaterialApp(
       home: Scaffold(body: Center(child: child)),
     );
 
+/// Weight actually applied to the chip's label [Text] node.
+FontWeight? _labelWeight(WidgetTester tester) =>
+    tester.widget<Text>(find.text(_testLabel)).style?.fontWeight;
+
 const _testLabel = 'Stanchezza';
 const _testSemantics = 'Stanchezza, selezionato';
 const _testSemanticsUnselected = 'Stanchezza, non selezionato';
@@ -167,4 +171,138 @@ void main() {
     await tester.tap(find.byType(ChoiceChipMetra));
     expect(received, isTrue);
   });
+
+  // ── idleFontWeight opt-in extension (spec §5.1.F, canon §1.2) ─────────────
+  //
+  // Canon §1.2 "Filter / chip label": Inter 13, 400 idle / 500 selected. The
+  // parameter defaults to null so the daily-entry rendering (and its goldens)
+  // stay byte-identical at w500.
+
+  testWidgets('idle label w500 by default', (tester) async {
+    await tester.pumpWidget(
+      _wrap(
+        ChoiceChipMetra(
+          label: _testLabel,
+          selected: false,
+          onSelected: (_) {},
+          semanticsLabel: _testSemanticsUnselected,
+        ),
+        MetraTheme.light(),
+      ),
+    );
+    expect(_labelWeight(tester), FontWeight.w500);
+  });
+
+  testWidgets('selected label w500 by default', (tester) async {
+    await tester.pumpWidget(
+      _wrap(
+        ChoiceChipMetra(
+          label: _testLabel,
+          selected: true,
+          onSelected: (_) {},
+          semanticsLabel: _testSemantics,
+        ),
+        MetraTheme.light(),
+      ),
+    );
+    expect(_labelWeight(tester), FontWeight.w500);
+  });
+
+  testWidgets('idle label w400 when opted in', (tester) async {
+    await tester.pumpWidget(
+      _wrap(
+        ChoiceChipMetra(
+          label: _testLabel,
+          selected: false,
+          onSelected: (_) {},
+          semanticsLabel: _testSemanticsUnselected,
+          idleFontWeight: FontWeight.w400,
+        ),
+        MetraTheme.light(),
+      ),
+    );
+    expect(_labelWeight(tester), FontWeight.w400);
+  });
+
+  testWidgets('selected label stays w500 at w400', (tester) async {
+    await tester.pumpWidget(
+      _wrap(
+        ChoiceChipMetra(
+          label: _testLabel,
+          selected: true,
+          onSelected: (_) {},
+          semanticsLabel: _testSemantics,
+          idleFontWeight: FontWeight.w400,
+        ),
+        MetraTheme.light(),
+      ),
+    );
+    expect(_labelWeight(tester), FontWeight.w500);
+  });
+
+  testWidgets('label stays 13 px at w400', (tester) async {
+    await tester.pumpWidget(
+      _wrap(
+        ChoiceChipMetra(
+          label: _testLabel,
+          selected: false,
+          onSelected: (_) {},
+          semanticsLabel: _testSemanticsUnselected,
+          idleFontWeight: FontWeight.w400,
+        ),
+        MetraTheme.light(),
+      ),
+    );
+    final style = tester.widget<Text>(find.text(_testLabel)).style;
+    expect(style?.fontSize, 13.0);
+  });
+
+  // FR-16 / NFR-03 hold under BOTH weights and both selection states.
+  for (final weight in const <FontWeight?>[null, FontWeight.w400]) {
+    testWidgets('toggled false, tap target — $weight', (tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          ChoiceChipMetra(
+            label: _testLabel,
+            selected: false,
+            onSelected: (_) {},
+            semanticsLabel: _testSemanticsUnselected,
+            idleFontWeight: weight,
+          ),
+          MetraTheme.light(),
+        ),
+      );
+
+      final size = tester.getSize(find.byType(ChoiceChipMetra));
+      expect(size.width, greaterThanOrEqualTo(44));
+      expect(size.height, greaterThanOrEqualTo(44));
+
+      final semantics = tester.getSemantics(find.byType(ChoiceChipMetra));
+      expect(semantics.label, _testSemanticsUnselected);
+      expect(semantics.flagsCollection.isToggled, isNot(Tristate.isTrue));
+    });
+
+    testWidgets('toggled true, tap target — $weight', (tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          ChoiceChipMetra(
+            label: _testLabel,
+            selected: true,
+            onSelected: (_) {},
+            semanticsLabel: _testSemantics,
+            idleFontWeight: weight,
+          ),
+          MetraTheme.light(),
+        ),
+      );
+
+      final size = tester.getSize(find.byType(ChoiceChipMetra));
+      expect(size.width, greaterThanOrEqualTo(44));
+      expect(size.height, greaterThanOrEqualTo(44));
+
+      final semantics = tester.getSemantics(find.byType(ChoiceChipMetra));
+      expect(semantics.label, _testSemantics);
+      expect(semantics.flagsCollection.isToggled, Tristate.isTrue);
+    });
+  }
 }

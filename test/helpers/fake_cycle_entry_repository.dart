@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Métra. If not, see <https://www.gnu.org/licenses/>.
 
+import 'dart:async';
+
 import 'package:metra/domain/entities/cycle_entry_entity.dart';
 import 'package:metra/domain/repositories/cycle_entry_repository.dart';
 
@@ -22,8 +24,42 @@ class FakeCycleEntryRepository implements CycleEntryRepository {
   final List<CycleEntryEntity> entries = [];
   int _nextId = 1;
 
+  StreamController<List<CycleEntryEntity>>? _watchController;
+
+  /// Switches [watchAll] to controllable mode and returns the backing
+  /// controller.
+  ///
+  /// Tests that need several emissions call this once and then push each
+  /// emission with [emitCycles]. Callers that never call it keep the default
+  /// single-emission [Stream.value] behaviour untouched.
+  StreamController<List<CycleEntryEntity>> enableControllableWatchAll() {
+    final controller = StreamController<List<CycleEntryEntity>>();
+    _watchController = controller;
+    return controller;
+  }
+
+  /// Pushes one [watchAll] emission containing [cycles].
+  void emitCycles(List<CycleEntryEntity> cycles) {
+    final controller = _watchController;
+    if (controller == null) {
+      throw StateError('Call enableControllableWatchAll() first.');
+    }
+    controller.add(List<CycleEntryEntity>.of(cycles));
+  }
+
+  /// Closes the controllable [watchAll] controller when one is active.
+  Future<void> close() async {
+    final controller = _watchController;
+    _watchController = null;
+    await controller?.close();
+  }
+
   @override
-  Stream<List<CycleEntryEntity>> watchAll() => Stream.value(List.from(entries));
+  Stream<List<CycleEntryEntity>> watchAll() {
+    final controller = _watchController;
+    if (controller != null) return controller.stream;
+    return Stream.value(List.from(entries));
+  }
 
   @override
   Future<List<CycleEntryEntity>> getRecent(int n) async =>

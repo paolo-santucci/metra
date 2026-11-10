@@ -11,13 +11,31 @@ help_order: 3
 
 ## Archive tab
 
-The **Archive** tab (wave icon) holds the full record of your logged entries. This is the part of the app for reading, not doing. You can view it in two ways, switchable with a segmented control at the top of the screen.
+The **Archive** tab (wave icon) holds the full record of your logged entries. You can view it in two ways, switchable with a segmented control at the top of the screen, and narrow the list down to the cycles that interest you with search and filters.
+
+---
+
+### Search and filters
+
+Filters open from the funnel icon on the same line as the Timeline/Table switch, on the right. It starts closed and the list shows every cycle: tap it to reveal the search field and the chip row, tap it again to hide them and reset the filters.
+
+Search and filters apply to the Timeline view only. The Table view always shows the full history and has neither search nor filters: switching to it clears any active filter.
+
+The **Search in notes** field looks through the free notes you wrote when logging your days. It ignores capital letters and accents: *perche* also finds *perché*. The list updates about 300 milliseconds after the last letter, not on every character. The X on the right of the field clears the text you searched for.
+
+Below the field is a row of chips, one for each symptom recorded in your cycles, including the custom labels you wrote yourself. The chips stay the same even while a filter is active. Tap a chip to select it, tap it again to remove it.
+
+Search and filters combine: a cycle stays in the list only if it has all the symptoms you selected and, if you typed something into the search field, only if at least one of its notes contains the text you searched for. A cycle with the right symptoms but no matching note does not stay.
+
+While a filter is active and at least one cycle matches, a row shows how many cycles match (3 cycles, for example) along with the **Clear filters** action, which resets the text and the chips together. When no cycle matches, the list is replaced by the message **No cycles match the filters**, with the same **Clear filters** action to start over.
+
+When you leave the tab and come back, search and filters start from zero and the panel closes again.
 
 ---
 
 ### Timeline view
 
-![Timeline view: a vertical list of cycle cards, each showing start date, length, flow pill, and symptom chips.](/assets/archive-timeline-en.png)
+![Timeline view: the Timeline/Table switch with the funnel icon on its right, the search-in-notes field and the row of symptom chips open below it, then the vertical list of cycle cards, each showing start date, length, flow pill, and symptom chips.](/assets/archive-timeline-en.png)
 
 The Timeline view groups your entries by **cycle**, one card per cycle, most recent at the top, earliest at the bottom. Each card shows:
 
@@ -34,7 +52,7 @@ Scroll up to go further back. Tap a card to open the Calendar, focused on the mo
 
 ### Table view
 
-![Table view: rows are months, columns are month, cycle, duration, flow. Colour-coded cells.](/assets/archive-table-en.png)
+![Table view: the Timeline/Table switch with no funnel, since the Table view does not filter, then the cycle rows with the columns Month, Cycle, Dur., and Flow.](/assets/archive-table-en.png)
 
 The Table view shows one row per logged month, useful when you want to compare several months at a glance. Columns:
 

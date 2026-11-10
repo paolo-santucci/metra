@@ -43,3 +43,15 @@ class TimelineNotifier extends AutoDisposeAsyncNotifier<List<CycleSummary>> {
     return completer.future;
   }
 }
+
+/// Emits the free-note text of every daily log, keyed by UTC-midnight date.
+///
+/// Parallel path to [timelineProvider]: both are driven by the same cycle-table
+/// `watchAll()` trigger, so notes and summaries re-emit in lockstep. Consumed
+/// only by the Archivio screen and auto-disposed with it, so note text never
+/// leaks across tab switches (§4.3.4).
+final timelineNotesProvider =
+    StreamProvider.autoDispose<Map<DateTime, String>>((ref) async* {
+  final uc = await ref.watch(getCycleNotesProvider.future);
+  yield* uc();
+});

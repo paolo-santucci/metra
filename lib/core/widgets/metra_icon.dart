@@ -141,6 +141,14 @@ abstract final class MetraIcons {
 
   static const String filter = '<path d="M22 3H2l8 9.46V19l4 2v-8.54z" $_sc/>';
 
+  /// Refined funnel: same silhouette as [filter], drawn as one closed,
+  /// round-cornered outline (rounded joins, narrower throat) — the Archivio
+  /// filter toggle. [filter] stays for existing call sites.
+  static const String filterRefined =
+      '<path d="M3.7 5.2A1.2 1.2 0 0 1 4.9 4h14.2a1.2 1.2 0 0 1 .9 2'
+      'l-6.2 6.8v5a1 1 0 0 1-1.6.8l-2.1-1.4a1 1 0 0 1-.4-.8v-3.6'
+      'L3.6 6a1.2 1.2 0 0 1 .1-.8z" $_sc/>';
+
   static const String info = '<circle cx="12" cy="12" r="9" $_sc/>'
       '<path d="M12 8v1M12 12v4" $_sc/>';
 

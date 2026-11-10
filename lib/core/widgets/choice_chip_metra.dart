@@ -24,6 +24,20 @@ import '../theme/metra_spacing.dart';
 /// selected, light gray fill with ink border when unselected. No checkmark —
 /// the design relies on fill color alone. Semantics uses [toggled] to announce
 /// selection state to screen readers.
+///
+/// Anatomy is canon `docs/canon/ui-design-bible.md` §6.1: radius 18 (= ½ × the
+/// 36 dp chip body), terracotta fill with sabbia text and a transparent border
+/// when selected, colour-only selection, no checkmark (§15.2). The 44 dp
+/// minimum hit area (NFR-03) wraps that body. The label takes the §1.2
+/// "Filter / chip label" row (Inter 13).
+///
+/// [idleFontWeight] is the opt-in for the Archivio filter row, which passes
+/// [FontWeight.w400] per canon §1.2 ("Filter / chip label": 400 idle / 500
+/// selected). `null` — the default — keeps the daily-entry rendering at `w500`
+/// so existing call sites and goldens are unchanged. The selected label always
+/// renders `w500`, whatever this value is.
+///
+/// <!-- CANON GAP: filter-chip visual surface — OQ-02 -->
 class ChoiceChipMetra extends StatelessWidget {
   const ChoiceChipMetra({
     super.key,
@@ -31,6 +45,7 @@ class ChoiceChipMetra extends StatelessWidget {
     required this.selected,
     required this.onSelected,
     required this.semanticsLabel,
+    this.idleFontWeight,
   });
 
   final String label;
@@ -38,12 +53,18 @@ class ChoiceChipMetra extends StatelessWidget {
   final ValueChanged<bool> onSelected;
   final String semanticsLabel;
 
+  /// Weight applied to the label while unselected. `null` (default) keeps
+  /// `FontWeight.w500` — the daily-entry rendering. The Archivio filter row
+  /// passes [FontWeight.w400] per canon §1.2 "Filter / chip label".
+  final FontWeight? idleFontWeight;
+
   @override
   Widget build(BuildContext context) {
     final colors = MetraColors.of(context);
     final bgSelected = colors.accentFlow;
     final fgSelected = colors.bgPrimary;
     final textPrimary = colors.textPrimary;
+    final idleWeight = idleFontWeight ?? FontWeight.w500;
 
     // Container without `alignment` stays intrinsic-width under Wrap's loose
     // constraints. Row(mainAxisSize.min) gives horizontal centering for the
@@ -81,7 +102,7 @@ class ChoiceChipMetra extends StatelessWidget {
                   label,
                   style: MetraTypography.caption.copyWith(
                     color: selected ? fgSelected : textPrimary,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: selected ? FontWeight.w500 : idleWeight,
                   ),
                 ),
               ],

@@ -360,6 +360,35 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get timeline_search_hint => 'Search in notes';
+
+  @override
+  String get timeline_search_clear_a11y => 'Clear search';
+
+  @override
+  String timeline_filter_results_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cycles',
+      one: '$count cycle',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timeline_filter_clear_all => 'Clear filters';
+
+  @override
+  String get timeline_filter_no_match => 'No cycles match the filters';
+
+  @override
+  String get timeline_filter_no_match_action => 'Clear filters';
+
+  @override
+  String get timeline_filters_toggle_a11y => 'Symptom filters';
+
+  @override
   String get archive_title => 'Archive';
 
   @override

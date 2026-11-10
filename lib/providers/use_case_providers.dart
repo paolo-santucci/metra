@@ -22,6 +22,7 @@ import '../domain/services/cycle_prediction_service.dart';
 import '../domain/services/notification_service.dart';
 import '../domain/use_cases/complete_onboarding.dart';
 import '../domain/use_cases/compute_cycle_stats.dart';
+import '../domain/use_cases/get_cycle_notes.dart';
 import '../domain/use_cases/get_cycle_summaries.dart';
 import '../domain/use_cases/get_month_logs.dart';
 import '../domain/use_cases/delete_all_data.dart';
@@ -58,6 +59,12 @@ final getCycleSummariesProvider = FutureProvider<GetCycleSummaries>((
   final logRepo = await ref.watch(dailyLogRepositoryProvider.future);
   final cycleRepo = await ref.watch(cycleEntryRepositoryProvider.future);
   return GetCycleSummaries(logRepo, cycleRepo);
+});
+
+final getCycleNotesProvider = FutureProvider<GetCycleNotes>((ref) async {
+  final logRepo = await ref.watch(dailyLogRepositoryProvider.future);
+  final cycleRepo = await ref.watch(cycleEntryRepositoryProvider.future);
+  return GetCycleNotes(logRepo, cycleRepo);
 });
 
 final computeCycleStatsProvider = FutureProvider<ComputeCycleStats>((

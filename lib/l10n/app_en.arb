@@ -316,6 +316,37 @@
       "start": { "type": "String" }
     }
   },
+  "timeline_search_hint": "Search in notes",
+  "@timeline_search_hint": {
+    "description": "Hint and a11y label for the Archivio note-search field"
+  },
+  "timeline_search_clear_a11y": "Clear search",
+  "@timeline_search_clear_a11y": {
+    "description": "a11y label for the note-search clear affordance"
+  },
+  "timeline_filter_results_count": "{count, plural, =1{{count} cycle} other{{count} cycles}}",
+  "@timeline_filter_results_count": {
+    "description": "Cycles matching the active filters, announced as a polite live region",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "timeline_filter_clear_all": "Clear filters",
+  "@timeline_filter_clear_all": {
+    "description": "Clear-all action for the active filters"
+  },
+  "timeline_filter_no_match": "No cycles match the filters",
+  "@timeline_filter_no_match": {
+    "description": "No-match message shown when the filters exclude every cycle"
+  },
+  "timeline_filter_no_match_action": "Clear filters",
+  "@timeline_filter_no_match_action": {
+    "description": "Clear-filters action offered by the no-match state"
+  },
+  "timeline_filters_toggle_a11y": "Symptom filters",
+  "@timeline_filters_toggle_a11y": {
+    "description": "a11y label for the funnel that reveals/hides the symptom filter chips"
+  },
   "archive_title": "Archive",
   "@archive_title": { "description": "Archivio screen title (§ 10.1)" },
 

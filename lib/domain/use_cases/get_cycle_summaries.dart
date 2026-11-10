@@ -22,6 +22,7 @@ import '../entities/flow_type.dart';
 import '../entities/pain_symptom_data.dart';
 import '../repositories/cycle_entry_repository.dart';
 import '../repositories/daily_log_repository.dart';
+import '../services/cycle_date_range.dart';
 
 class GetCycleSummaries {
   const GetCycleSummaries(this._logRepo, this._cycleRepo);
@@ -38,27 +39,23 @@ class GetCycleSummaries {
 
     final allLogs = await _logRepo.getAllOrderedByDate();
 
-    final today = DateTime.now().toUtc();
-    final todayNorm = DateTime.utc(today.year, today.month, today.day);
+    final todayNorm = CycleDateRange.todayNorm();
 
     // The trailing (current) cycle is the one with the greatest startDate.
     // Its range must extend to today so non-period logs recorded after the
     // last bleed day (endDate) are still included in the summary.
-    final trailingStart =
-        cycles.map((c) => c.startDate).reduce((a, b) => a.isAfter(b) ? a : b);
+    final trailingStart = CycleDateRange.trailingStartOf(cycles);
 
     final summaries = await Future.wait(
       cycles.map((cycle) async {
-        final isTrailing = cycle.startDate == trailingStart;
-        final rangeEnd = isTrailing ? todayNorm : (cycle.endDate ?? todayNorm);
+        final range = CycleDateRange.resolve(
+          cycle: cycle,
+          trailingStart: trailingStart,
+          todayNorm: todayNorm,
+        );
 
-        final logsInRange = allLogs
-            .where(
-              (l) =>
-                  !l.date.isBefore(cycle.startDate) &&
-                  !l.date.isAfter(rangeEnd),
-            )
-            .toList();
+        final logsInRange =
+            allLogs.where((l) => range.contains(l.date)).toList();
 
         // Collect distinct symptom entries across the cycle (including custom).
         final symptomSet = <PainSymptomData>{};

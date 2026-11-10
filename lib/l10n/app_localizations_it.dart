@@ -362,6 +362,35 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
+  String get timeline_search_hint => 'Cerca nelle note';
+
+  @override
+  String get timeline_search_clear_a11y => 'Cancella la ricerca';
+
+  @override
+  String timeline_filter_results_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cicli',
+      one: '$count ciclo',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timeline_filter_clear_all => 'Rimuovi filtri';
+
+  @override
+  String get timeline_filter_no_match => 'Nessun ciclo corrisponde ai filtri';
+
+  @override
+  String get timeline_filter_no_match_action => 'Rimuovi filtri';
+
+  @override
+  String get timeline_filters_toggle_a11y => 'Filtri sintomi';
+
+  @override
   String get archive_title => 'Archivio';
 
   @override
