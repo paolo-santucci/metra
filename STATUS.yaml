@@ -1,5 +1,5 @@
 schema-version: 2
-last-updated: "2026-11-14T21:12:00+01:00"
+last-updated: "2026-11-14T21:17:00+01:00"
 active-plan: null
 last-plan: "docs/plans/archive/sp-20261109-timeline-filter-symptoms-note-search-plan.md"
 
@@ -77,41 +77,29 @@ pending-consolidation:
     has-spec-impact: true
 
 recently-completed:
+  - date: 2026-11-14
+    summary: "feat(ci) 9147736 — android-play.yml: manual-dispatch Play publish (build AAB, jarsigner verify, upload via API), guard test, internal guide, Jekyll exclude for docs/guides/."
+  - date: 2026-11-14
+    summary: "chore(release) 3936c0d — Android bumped to 1.2.0+15; versionCode 14 was already consumed by the v1.1.0 upload."
+  - date: 2026-11-14
+    summary: "Publish run 43635701985 — app published to the Play internal testing track, versionCode 15, status completed (Edit 16511698345311221599)."
   - date: 2026-11-10
     summary: "feat(timeline) 47a5254 — note search + symptom filters on Archivio (funnel toggle reveals search field + chips, Timeline-only filtering); full gate green, 2265 tests."
   - date: 2026-11-10
-    summary: "chore(tools) f32c74b — Android emulator installer + help-screenshot composer scripts."
-  - date: 2026-11-10
     summary: "chore(release) d66d255 — version bumped to 1.2.0+27 for TestFlight."
 
-in-progress:
-  - title: "Play Store publishing path"
-    state: "android-play.yml: manual dispatch, build, jarsigner verify, upload; guard test + internal guide."
-    touched:
-      - ".github/workflows/android-play.yml"
-      - "test/ci/play_publish_workflow_test.dart"
-      - "docs/guides/play-store-publishing.md"
-      - "docs/_config.yml"
-      - "AGENTS.md"
-    next-step: "Add secrets.PLAY_SERVICE_ACCOUNT_JSON, confirm Play versionCode high-water mark, dispatch track=internal."
-    blocker: "No Play Developer API service account on GitHub yet."
-  - title: "AGENTS.md instruction file"
-    state: "Authored 2026-11-09: verified commands, CI gates, distrobox/iOS quirks, layering, dual versioning, docs map. Uncommitted."
-    touched:
-      - "AGENTS.md"
-    next-step: "Review then commit; also add help-root: frontmatter (docs/it/help + docs/en/help) per the sp-20261109 plan recommendation."
-    blocker: null
+in-progress: []
 
 next-steps:
-  - "Create the Play Developer API service account (GCP project + Google Play Android Developer API + Play Console invite with release permissions), then `gh secret set PLAY_SERVICE_ACCOUNT_JSON`; steps in docs/guides/play-store-publishing.md."
-  - "Read Play Console's highest uploaded versionCode and bump `android/app/build.gradle.kts` above it before the first android-play.yml dispatch (currently 14)."
-  - "Verify metra-release.keystore SHA-256 matches upload_cert.der before the first publish — a mismatch reads as a Play-side certificate error."
+  - "Verify the 1.2.0+15 internal build on a physical device (upload through the internal testing opt-in link, not the CI artifact)."
   - "Fix the sp-20260712 pending-consolidation entry's section-anchor in docs/specs/archive/ (googledriveprovider slug), then run /finalize-plan — the drain is oldest-first stop-on-fail and currently blocks the clean sp-20261109 timeline entry (6 deltas, exit 0) behind it."
   - "Manual E2E Drive round-trip gate (OQ-QA-05) plus live privacy-policy URL before dispatching any non-internal track: back up to Google Drive -> download .enc -> verify unreadable binary -> restore on a 2nd Android device -> data identical."
+  - "Add help-root: frontmatter (docs/it/help + docs/en/help) per the sp-20261109 plan recommendation."
   - "Review the four refreshed help screenshots (docs/assets/archive-{timeline,table}-{it,en}.png, committed in 47a5254) and refresh backup-connect-{it,en}.png, which still show the pre-multi-provider Dropbox-only empty state."
   - "Selected-chip contrast is 2.97:1 in the light theme, 0.03 under the 3:1 non-text floor (pre-existing terracotta/sabbia pair) — needs a canon/token decision; tracked for a dedicated accessibility plan."
   - "On-device verify the no-browser path on the Samsung A32 and confirm the 'Enable browser' dialog plus Settings deep-link works."
   - "Recheck v1.1.1-rc2 picker header alignment and underline fixes on an iPhone; Apple processing status unverified."
+  - "actions/setup-java@v4 and actions/checkout@v4 are deprecated (v5 migration) across all four workflows; ubuntu-latest migrates to Ubuntu 26 after 2026-10-19."
   - "Surprising finding: .gitignore excludes all of .claude/ except backup.md and notifications.md (force-added earlier). Confirm intentional before relying on git history for canon provenance."
 
 known-issues:
