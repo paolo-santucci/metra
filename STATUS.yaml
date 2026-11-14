@@ -1,5 +1,5 @@
 schema-version: 2
-last-updated: "2026-11-10T22:35:00+01:00"
+last-updated: "2026-11-14T21:12:00+01:00"
 active-plan: null
 last-plan: "docs/plans/archive/sp-20261109-timeline-filter-symptoms-note-search-plan.md"
 
@@ -76,46 +76,42 @@ pending-consolidation:
     archived-date: "2026-11-10"
     has-spec-impact: true
 
-recently-completed: []
+recently-completed:
+  - date: 2026-11-10
+    summary: "feat(timeline) 47a5254 — note search + symptom filters on Archivio (funnel toggle reveals search field + chips, Timeline-only filtering); full gate green, 2265 tests."
+  - date: 2026-11-10
+    summary: "chore(tools) f32c74b — Android emulator installer + help-screenshot composer scripts."
+  - date: 2026-11-10
+    summary: "chore(release) d66d255 — version bumped to 1.2.0+27 for TestFlight."
 
 in-progress:
-  - title: "Archivio filter + note search"
-    state: "Full gate green (2265 tests, format/analyze/headers clean). UX revised per operator: funnel on the view-toggle line reveals search field + chips (collapsed by default, closing clears them); filtering is Timeline-only, Table stays unfiltered. Uncommitted: domain files, widget extensions, 7 l10n keys, screen, help pages, refreshed screenshots, 2 tools scripts."
+  - title: "Play Store publishing path"
+    state: "android-play.yml: manual dispatch, build, jarsigner verify, upload; guard test + internal guide."
     touched:
-      - "lib/domain/services/"
-      - "lib/features/timeline/timeline_screen.dart"
-      - "lib/core/widgets/"
-      - "lib/l10n/app_it.arb"
-      - "docs/it/help/archive-stats.md"
-      - "docs/assets/"
-      - "tools/install-android-emulator.sh"
-      - "tools/compose-help-screenshot.py"
-    next-step: "Review the diff, then commit as feat(timeline)."
-    blocker: null
-  - title: "Android v1.1.0 release"
-    state: "f7a8e5f; versionCode 14. CI 41338576606 passed debug/release APK and signed AAB builds with Java 17."
-    touched:
-      - "android/app/build.gradle.kts"
-      - "pubspec.yaml"
-    next-step: "Build signed release AAB and upload after privacy URLs are live."
-    blocker: "Privacy-policy rebuild pending."
+      - ".github/workflows/android-play.yml"
+      - "test/ci/play_publish_workflow_test.dart"
+      - "docs/guides/play-store-publishing.md"
+      - "docs/_config.yml"
+      - "AGENTS.md"
+    next-step: "Add secrets.PLAY_SERVICE_ACCOUNT_JSON, confirm Play versionCode high-water mark, dispatch track=internal."
+    blocker: "No Play Developer API service account on GitHub yet."
   - title: "AGENTS.md instruction file"
     state: "Authored 2026-11-09: verified commands, CI gates, distrobox/iOS quirks, layering, dual versioning, docs map. Uncommitted."
     touched:
       - "AGENTS.md"
-    next-step: "Review then commit."
+    next-step: "Review then commit; also add help-root: frontmatter (docs/it/help + docs/en/help) per the sp-20261109 plan recommendation."
     blocker: null
 
 next-steps:
-  - "Commit the Archivio filter/search work (archived plan: docs/plans/archive/sp-20261109-timeline-filter-symptoms-note-search-plan.md)."
-  - "Review the four refreshed help screenshots (docs/assets/archive-{timeline,table}-{it,en}.png) before committing — captured on AVD metra-api36 and composited into the existing frame by tools/compose-help-screenshot.py."
+  - "Create the Play Developer API service account (GCP project + Google Play Android Developer API + Play Console invite with release permissions), then `gh secret set PLAY_SERVICE_ACCOUNT_JSON`; steps in docs/guides/play-store-publishing.md."
+  - "Read Play Console's highest uploaded versionCode and bump `android/app/build.gradle.kts` above it before the first android-play.yml dispatch (currently 14)."
+  - "Verify metra-release.keystore SHA-256 matches upload_cert.der before the first publish — a mismatch reads as a Play-side certificate error."
+  - "Fix the sp-20260712 pending-consolidation entry's section-anchor in docs/specs/archive/ (googledriveprovider slug), then run /finalize-plan — the drain is oldest-first stop-on-fail and currently blocks the clean sp-20261109 timeline entry (6 deltas, exit 0) behind it."
+  - "Manual E2E Drive round-trip gate (OQ-QA-05) plus live privacy-policy URL before dispatching any non-internal track: back up to Google Drive -> download .enc -> verify unreadable binary -> restore on a 2nd Android device -> data identical."
+  - "Review the four refreshed help screenshots (docs/assets/archive-{timeline,table}-{it,en}.png, committed in 47a5254) and refresh backup-connect-{it,en}.png, which still show the pre-multi-provider Dropbox-only empty state."
   - "Selected-chip contrast is 2.97:1 in the light theme, 0.03 under the 3:1 non-text floor (pre-existing terracotta/sabbia pair) — needs a canon/token decision; tracked for a dedicated accessibility plan."
-  - "Run manual E2E Drive round-trip pre-prod gate (OQ-QA-05) before Play Console upload: back up to Google Drive -> download .enc -> verify unreadable binary -> restore on a 2nd Android device -> data identical."
   - "On-device verify the no-browser path on the Samsung A32 and confirm the 'Enable browser' dialog plus Settings deep-link works."
   - "Recheck v1.1.1-rc2 picker header alignment and underline fixes on an iPhone; Apple processing status unverified."
-  - "TASK-18/19 (help-doc screenshots for #27 language toggle) deferred — capture on-device: docs/it/help/assets/onboarding-welcome-it.png and docs/en/help/assets/onboarding-welcome-en.png."
-  - "backup-connect-{it,en}.png help screenshots still depict the pre-multi-provider Dropbox-only empty state; refresh after rc8 verification."
-  - "Validate tools/setup-environment.sh on a fresh Ubuntu machine (uncommitted)."
   - "Surprising finding: .gitignore excludes all of .claude/ except backup.md and notifications.md (force-added earlier). Confirm intentional before relying on git history for canon provenance."
 
 known-issues:
