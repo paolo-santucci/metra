@@ -37,8 +37,9 @@ android {
         // Android version is pinned here, independent of pubspec.yaml.
         // iOS version is tracked in pubspec.yaml (and set via --build-name in ios.yml CI).
         // Bump versionCode by +1 for every Play Store submission (must be strictly increasing).
-        versionCode = 14
-        versionName = "1.1.0"
+        // versionCode 14 was consumed by the v1.1.0 upload; 15 carries the 1.2.0 codebase.
+        versionCode = 15
+        versionName = "1.2.0"
     }
 
     signingConfigs {
