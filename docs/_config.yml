@@ -59,6 +59,11 @@ defaults:
     values:
       layout: "page"
 
+# Internal developer docs (credential provisioning, CI secret rotation). They
+# must never reach the public site: GitHub Pages builds this whole directory.
+exclude:
+  - guides/
+
 # Plugins
 plugins:
   - jekyll-feed
