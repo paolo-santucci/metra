@@ -151,7 +151,7 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.paolosantucci.metraapp
           releaseFiles: build/app/outputs/bundle/release/com.paolosantucci.metraapp-release.aab
-          track: ${{ inputs.track }}
+          tracks: ${{ inputs.track }}
           status: ${{ inputs.status }}
 
       - name: Summary
